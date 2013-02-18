@@ -105,7 +105,7 @@
 
 <h3>サンプルのコード</h3>
 
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<figure class='code'><figcaption><span>TileOverlayDemoActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -131,33 +131,353 @@
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
 <span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>/** This returns moon tiles. */
-</span><span class='line'>private static final String MOON_MAP_URL_FORMAT =
-</span><span class='line'>        "http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw/%d/%d/%d.jpg";
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/** This returns moon tiles. */</span>
+</span><span class='line'><span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">MOON_MAP_URL_FORMAT</span> <span class="o">=</span>
+</span><span class='line'>        <span class="s">&quot;http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw/%d/%d/%d.jpg&quot;</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'>private GoogleMap mMap;
+</span><span class='line'><span class="kd">private</span> <span class="n">GoogleMap</span> <span class="n">mMap</span><span class="o">;</span>
 </span><span class='line'>
-</span><span class='line'>private void setUpMap() {
-</span><span class='line'>    mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+</span><span class='line'><span class="kd">private</span> <span class="kt">void</span> <span class="nf">setUpMap</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">mMap</span><span class="o">.</span><span class="na">setMapType</span><span class="o">(</span><span class="n">GoogleMap</span><span class="o">.</span><span class="na">MAP_TYPE_NONE</span><span class="o">);</span>
 </span><span class='line'>
-</span><span class='line'>    TileProvider tileProvider = new UrlTileProvider(256, 256) {
-</span><span class='line'>        @Override
-</span><span class='line'>        public synchronized URL getTileUrl(int x, int y, int zoom) {
-</span><span class='line'>            // The moon tile coordinate system is reversed.  This is not normal.
-</span><span class='line'>            int reversedY = (1 &lt;&lt; zoom) - y - 1;
-</span><span class='line'>           String s = String.format(Locale.US, MOON_MAP_URL_FORMAT, zoom, x, reversedY);
-</span><span class='line'>            URL url = null;
-</span><span class='line'>            try {
-</span><span class='line'>                url = new URL(s);
-</span><span class='line'>            } catch (MalformedURLException e) {
-</span><span class='line'>                throw new AssertionError(e);
-</span><span class='line'>            }
-</span><span class='line'>            return url;
-</span><span class='line'>        }
-</span><span class='line'>    };
-</span><span class='line'>    mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+</span><span class='line'>    <span class="n">TileProvider</span> <span class="n">tileProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UrlTileProvider</span><span class="o">(</span><span class="mi">256</span><span class="o">,</span> <span class="mi">256</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">synchronized</span> <span class="n">URL</span> <span class="nf">getTileUrl</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">,</span> <span class="kt">int</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// The moon tile coordinate system is reversed.  This is not normal.</span>
+</span><span class='line'>            <span class="kt">int</span> <span class="n">reversedY</span> <span class="o">=</span> <span class="o">(</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">-</span> <span class="n">y</span> <span class="o">-</span> <span class="mi">1</span><span class="o">;</span>
+</span><span class='line'>           <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">Locale</span><span class="o">.</span><span class="na">US</span><span class="o">,</span> <span class="n">MOON_MAP_URL_FORMAT</span><span class="o">,</span> <span class="n">zoom</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">reversedY</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">URL</span> <span class="n">url</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">url</span> <span class="o">=</span> <span class="k">new</span> <span class="n">URL</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">MalformedURLException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">AssertionError</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">url</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'>    <span class="n">mMap</span><span class="o">.</span><span class="na">addTileOverlay</span><span class="o">(</span><span class="k">new</span> <span class="n">TileOverlayOptions</span><span class="o">().</span><span class="na">tileProvider</span><span class="o">(</span><span class="n">tileProvider</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
+
+<p>修正前のコードは、Google Moon のタイル画像を使用しています。</p>
+
+<p>これを OpenStreetMap を使用するように改造します。</p>
+
+<figure class='code'><figcaption><span>OsmTileOverlayDemoActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/** This returns moon tiles. */</span>
+</span><span class='line'><span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">OSM_MAP_URL_FORMAT</span> <span class="o">=</span>
+</span><span class='line'>        <span class="s">&quot;http://tile.openstreetmap.org/%d/%d/%d.png&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="n">GoogleMap</span> <span class="n">mMap</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="kt">void</span> <span class="nf">setUpMap</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">mMap</span><span class="o">.</span><span class="na">setMapType</span><span class="o">(</span><span class="n">GoogleMap</span><span class="o">.</span><span class="na">MAP_TYPE_NONE</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">TileProvider</span> <span class="n">tileProvider</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UrlTileProvider</span><span class="o">(</span><span class="mi">256</span><span class="o">,</span> <span class="mi">256</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kd">synchronized</span> <span class="n">URL</span> <span class="nf">getTileUrl</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">,</span> <span class="kt">int</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">Locale</span><span class="o">.</span><span class="na">US</span><span class="o">,</span> <span class="n">OSM_MAP_URL_FORMAT</span><span class="o">,</span> <span class="n">zoom</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">URL</span> <span class="n">url</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">url</span> <span class="o">=</span> <span class="k">new</span> <span class="n">URL</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">MalformedURLException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">throw</span> <span class="k">new</span> <span class="nf">AssertionError</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">url</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'>    <span class="n">mMap</span><span class="o">.</span><span class="na">addTileOverlay</span><span class="o">(</span><span class="k">new</span> <span class="n">TileOverlayOptions</span><span class="o">().</span><span class="na">tileProvider</span><span class="o">(</span><span class="n">tileProvider</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>できました。うーん、簡単すぎる。
+URL は OpenStreetMap のものを使います。y軸の値は、Google Moon では逆順となっていたのを正順のまま使用するだけです。</p>
+
+<p>こんな感じで表示できます。
+<img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osm.png" alt="OpenStreetMap on Google Map API" />
+移動、拡大・縮小だけでなく、API v2 の恩恵で、回転やチルトもできるのが嬉しいですね。</p>
+
+<h2>TileOverlay を透過させる</h2>
+
+<p>さて、ベース地図を Google から他のものに差し替えてしまうならこれまでの使い方で十分でしょう。しかし Google のベクトル3Dグリグリ地図をベース地図として使いたいとは誰しもが思うことでしょう。</p>
+
+<p>ここでは、Google地図の上に TileOverlay を透過で表示することにチャレンジしてみます。
+ケースとしては、雨雲レーダーのメッシュや、統計メッシュなどを重ね合わせる事が考えられます。</p>
+
+<p>さて、API v2 のもう一つの新機能 GroundOverlay には <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/GroundOverlay#setTransparency(float">setTransparentcy</a> というズバリなメソッドがあり、それを使えば一発です。</p>
+
+<p>しかし、TileOverlay とその関連クラスには、透過に関するメソッドは見当たりません。
+そこで TileProvider でダウンロードされた画像データを直接弄って、透過にします。</p>
+
+<p>TileProvider は文字通り <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile">Tile</a> を Provide します。そしてこの Tile はタイル画像データそのものです。</p>
+
+<p><a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile#data">Tile.data</a> の説明には次のように記述があります。</p>
+
+<blockquote><p>A byte array containing the image data. The image will be created from this data by calling <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/null#decodeByteArray(byte[],%20int,%20int">decodeByteArray(byte[], int, int)</a>).</p></blockquote>
+
+<p>つまりこのプロパティの中身を透過させてあげれば良さげ、という事になります。</p>
+
+<p>上記のコードで使用した UrlTileProvider の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/UrlTileProvider#getTile(int,%20int,%20int">getTile</a> を override して…と思ったら、
+＿人人人人人人人人人＿
+＞　突然の final！　＜
+￣<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>￣</sup></sup></sup></sup></sup></sup></sup></sup>
+という事で override できません。</p>
+
+<p>仕方ががないので、独自の TileProvider を別途用意して、UrlTileProvider を内包する形で <code>TransparencyUrlTileProvider</code> というクラスを実装します。</p>
+
+<figure class='code'><figcaption><span>TransparencyUrlTileProvider.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">TransparencyUrlTileProvider</span> <span class="kd">implements</span> <span class="n">TileProvider</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">OSM_MAP_URL_FORMAT</span> <span class="o">=</span> <span class="s">&quot;http://tile.openstreetmap.org/%d/%d/%d.png&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">private</span> <span class="kt">int</span> <span class="n">_transparency</span><span class="o">;</span> <span class="c1">// 透過率(0〜255)</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">UrlTileProvider</span> <span class="n">_osmTileProv</span><span class="o">;</span> <span class="c1">// 内包する TileProvider</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">TransparencyUrlTileProvider</span><span class="o">(</span><span class="kt">int</span> <span class="n">width</span><span class="o">,</span> <span class="kt">int</span> <span class="n">height</span><span class="o">,</span> <span class="kt">int</span> <span class="n">transparency</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">_transparency</span> <span class="o">=</span> <span class="n">transparency</span><span class="o">;</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">_osmTileProv</span> <span class="o">=</span> <span class="k">new</span> <span class="n">UrlTileProvider</span><span class="o">(</span><span class="n">width</span><span class="o">,</span> <span class="n">height</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="n">URL</span> <span class="nf">getTileUrl</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">,</span> <span class="kt">int</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="n">String</span> <span class="n">s</span> <span class="o">=</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="n">Locale</span><span class="o">.</span><span class="na">US</span><span class="o">,</span> <span class="n">OSM_MAP_URL_FORMAT</span><span class="o">,</span> <span class="n">zoom</span><span class="o">,</span> <span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+</span><span class='line'>              <span class="n">URL</span> <span class="n">url</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">url</span> <span class="o">=</span> <span class="k">new</span> <span class="n">URL</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">MalformedURLException</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="k">throw</span> <span class="k">new</span> <span class="nf">AssertionError</span><span class="o">(</span><span class="n">e</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              <span class="k">return</span> <span class="n">url</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">};</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">Tile</span> <span class="nf">getTile</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">,</span> <span class="kt">int</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">Tile</span> <span class="n">tile</span> <span class="o">=</span> <span class="n">_osmTileProv</span><span class="o">.</span><span class="na">getTile</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">,</span> <span class="n">zoom</span><span class="o">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// TODO ここで Tile の透過処理を行う</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">return</span> <span class="n">tile</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使う側は、こんな感じになります。</p>
+
+<figure class='code'><figcaption><span>OsmTileOverlayDemoActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">GoogleMap</span> <span class="n">mMap</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="kt">void</span> <span class="nf">setUpMap</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// mMap.setMapType(GoogleMap.MAP_TYPE_NONE); ベース地図は消さない</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">mMap</span><span class="o">.</span><span class="na">addTileOverlay</span><span class="o">(</span>
+</span><span class='line'>        <span class="k">new</span> <span class="nf">TileOverlayOptions</span><span class="o">()</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">tileProvider</span><span class="o">(</span>
+</span><span class='line'>            <span class="k">new</span> <span class="nf">TransparencyUrlTileProvider</span><span class="o">(</span><span class="mi">256</span><span class="o">,</span> <span class="mi">256</span><span class="o">,</span> <span class="mi">100</span><span class="o">)));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここまでで改造前と同じく OpenStreetMap が「非透過で」表示されるのは確認できます。</p>
+
+<p>次にいよいよ Bitmap の透過処理です。
+まず、Tile から Bitmap を抜き出します。API リファレンスによると、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile#data">Tile.data</a> というメンバがあるハズが…見つかりません。代わりに <code>Tile.bM</code> という byte[] なメンバがあります。こいつで間違いないでしょう。</p>
+
+<p>Tile.bM の byte[] から Bitmap インスタンスを生成します。</p>
+
+<pre><code>Bitmap bitmap = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
+</code></pre>
+
+<p>次に透過処理ですが、Android ではちょっと面倒なようです。
+以下のサイトを参考にさせて頂いて、関数を作成しました。</p>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/hypercrab/20110730/1312038162">Android: Bitmap の背景を透明にする - 入隠者通信 ～病を嗜む～</a></li>
+</ul>
+
+
+<figure class='code'><figcaption><span>makeTransparentBmp.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="kd">static</span> <span class="n">Bitmap</span> <span class="nf">makeTransparentBmp</span><span class="o">(</span><span class="kd">final</span> <span class="n">Bitmap</span> <span class="n">bmp</span><span class="o">,</span> <span class="kt">int</span> <span class="n">transparency</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>     <span class="kt">int</span> <span class="n">width</span> <span class="o">=</span> <span class="n">bmp</span><span class="o">.</span><span class="na">getWidth</span><span class="o">();</span>
+</span><span class='line'>     <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="n">bmp</span><span class="o">.</span><span class="na">getHeight</span><span class="o">();</span>
+</span><span class='line'>     <span class="kt">int</span><span class="o">[]</span> <span class="n">pixels</span> <span class="o">=</span> <span class="k">new</span> <span class="kt">int</span><span class="o">[</span><span class="n">width</span> <span class="o">*</span> <span class="n">height</span><span class="o">];</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="n">Bitmap</span> <span class="n">bitmap</span> <span class="o">=</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">createBitmap</span><span class="o">(</span><span class="n">width</span><span class="o">,</span><span class="n">height</span><span class="o">,</span><span class="n">Bitmap</span><span class="o">.</span><span class="na">Config</span><span class="o">.</span><span class="na">ARGB_8888</span> <span class="o">);</span>
+</span><span class='line'>     <span class="n">bmp</span><span class="o">.</span><span class="na">getPixels</span><span class="o">(</span><span class="n">pixels</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">width</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">width</span><span class="o">,</span> <span class="n">height</span><span class="o">);</span>
+</span><span class='line'>     <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">height</span><span class="o">;</span> <span class="n">y</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>       <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">width</span><span class="o">;</span> <span class="n">x</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>           <span class="kt">int</span> <span class="n">pixel</span> <span class="o">=</span> <span class="n">pixels</span><span class="o">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">width</span><span class="o">];</span>
+</span><span class='line'>           <span class="n">pixels</span><span class="o">[</span><span class="n">x</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">width</span><span class="o">]</span> <span class="o">=</span> <span class="n">Color</span><span class="o">.</span><span class="na">argb</span><span class="o">(</span><span class="n">transparency</span><span class="o">,</span>
+</span><span class='line'>                   <span class="n">Color</span><span class="o">.</span><span class="na">red</span><span class="o">(</span><span class="n">pixel</span><span class="o">),</span> <span class="n">Color</span><span class="o">.</span><span class="na">green</span><span class="o">(</span><span class="n">pixel</span><span class="o">),</span> <span class="n">Color</span><span class="o">.</span><span class="na">blue</span><span class="o">(</span><span class="n">pixel</span><span class="o">));</span>
+</span><span class='line'>       <span class="o">}</span>
+</span><span class='line'>     <span class="o">}</span>
+</span><span class='line'>     <span class="n">bitmap</span><span class="o">.</span><span class="na">eraseColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">argb</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">));</span>
+</span><span class='line'>     <span class="n">bitmap</span><span class="o">.</span><span class="na">setPixels</span><span class="o">(</span><span class="n">pixels</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">width</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">width</span><span class="o">,</span> <span class="n">height</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>     <span class="k">return</span> <span class="n">bitmap</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>では TODO の所に組み込みます。</p>
+
+<figure class='code'><figcaption><span>TransparencyUrlTileProvider.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">TransparencyUrlTileProvider</span> <span class="kd">implements</span> <span class="n">TileProvider</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="o">&lt;</span><span class="err">前略</span><span class="o">&gt;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">Tile</span> <span class="nf">getTile</span><span class="o">(</span><span class="kt">int</span> <span class="n">x</span><span class="o">,</span> <span class="kt">int</span> <span class="n">y</span><span class="o">,</span> <span class="kt">int</span> <span class="n">zoom</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">Tile</span> <span class="n">tile</span> <span class="o">=</span> <span class="n">_osmTileProv</span><span class="o">.</span><span class="na">getTile</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">,</span> <span class="n">zoom</span><span class="o">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// Tile の透過処理を行う</span>
+</span><span class='line'>       <span class="n">Bitmap</span> <span class="n">bmp</span> <span class="o">=</span> <span class="n">BitmapFactory</span><span class="o">.</span><span class="na">decodeByteArray</span><span class="o">(</span><span class="n">tile</span><span class="o">.</span><span class="na">bM</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">tile</span><span class="o">.</span><span class="na">bM</span><span class="o">.</span><span class="na">length</span><span class="o">);</span>
+</span><span class='line'>       <span class="n">Bitmap</span> <span class="n">transparentBmp</span> <span class="o">=</span> <span class="n">makeTransparentBmp</span><span class="o">(</span><span class="n">bmp</span><span class="o">,</span> <span class="n">_transparency</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>       <span class="c1">// Tile を作り直す</span>
+</span><span class='line'>      <span class="n">ByteArrayOutputStream</span> <span class="n">bos</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ByteArrayOutputStream</span><span class="o">();</span>
+</span><span class='line'>      <span class="n">transparentBmp</span><span class="o">.</span><span class="na">compress</span><span class="o">(</span><span class="n">CompressFormat</span><span class="o">.</span><span class="na">PNG</span><span class="o">,</span> <span class="mi">100</span><span class="o">,</span> <span class="n">bos</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">Tile</span> <span class="n">tranparentTile</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Tile</span><span class="o">(</span><span class="n">tile</span><span class="o">.</span><span class="na">width</span><span class="o">,</span> <span class="n">tile</span><span class="o">.</span><span class="na">height</span><span class="o">,</span> <span class="n">bos</span><span class="o">.</span><span class="na">toByteArray</span><span class="o">());</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">return</span> <span class="n">tranparentTile</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="o">&lt;</span><span class="err">以下略</span><span class="o">&gt;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osmwithg.png" alt="OpenStreetMap with Google Map API" /></p>
+
+<p>これは、GoogleMap の衛星写真の上に OpenStreetMap を透過して重ねた例です（分かりづらい</p>
+
+<h2>まとめ</h2>
+
+<p>このように Google Maps Android API v2 では、TileProvider を使って、タイル地図画像を簡単に表示させることができます。</p>
+
+<p>Google Maps Javascript API や、MapKit でも他のタイル地図画像を利用することはできましたが、それらよりもより簡単に使えます。ハックというよりも API が公式にサポートしている、という感じです。</p>
+
+<p>これまで Android には、Javascript の OpenLayers や、 iOS の route-me のような、地図タイルデータソースを扱える地図SDKはありませんでした（いや OsmDroid くらいか）</p>
+
+<p>それを Google Maps Android API v2 がサポートしたのですから使わない手はありません。地図SDK としては一番高性能で事実上標準なのですから。</p>
+
+<p>これに、OpenStreetMap や電子国土地図、衛星画像などの背景地図や、統計データメッシュや、アメダスなどの主題図的なタイル地図が重ねられるといろいろできそうだなあ、という感じです。
+(Yahoo! さんの<a href="http://weather.yahoo.co.jp/weather/zoomradar/">雨雲レーダー</a> のタイル画像もこっそり試してみて「こりゃ面白い」と思ったので公式に提供して欲しいですｗ)</p>
+
+<p>私にはタイル地図データを作る知識は無いので、タイル地図のポータルみたいなものがあるといいなあと思います。 <a href="https://www.facebook.com/chitaikyo">地図タイル工法協会</a> さんよろしくおねがいします。</p>
+
+<p>というわけで、Android で地図使いたいなら(今のところ) Google Maps API v2 一択！ 他社さんもガンバレ！</p>
+
+<p>※あれ？このネタどこが FOSS4G だ？ま、いっか。</p>
 </div>
   
   
