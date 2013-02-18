@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T00:31:30+09:00</updated>
+  <updated>2013-02-19T00:42:46+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,50 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/"/>
+    <updated>2013-02-19T00:41:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug</id>
+    <content type="html"><![CDATA[<p><a href="mixi%20Engineers'%20Blog%20http://alpha.mixi.co.jp/2013/11572/">Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話</a> を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。</p>
+
+<h2>症状</h2>
+
+<p>下記条件を満たす時に、LocationManager.requestLocationUpdates すると、最新の位置が取得されず、<strong>前回測位した位置</strong> が返される。</p>
+
+<p>時刻は更新されてたか、、、あーどうだったかな。</p>
+
+<h2>条件</h2>
+
+<ul>
+<li>NETWORK_PROVIDER で位置を取得した場合（GPS じゃない）</li>
+<li>WiFi が無効の場合（つまり携帯電話の基地局のみを使った測位の場合）</li>
+<li>スリープ中な場合</li>
+<li>HTC J である(IS03, Nexus S では発生してない。 HTC J Butterfly はわからない)</li>
+</ul>
+
+
+<h2>こんな事してたら見つけた</h2>
+
+<p>早い話が HexRinger なんですが、このアプリは、AlarmManager で一定時間毎に WiFi/基地局から位置を取得しています。デバッグで移動中のログを取ってたら、「この時間帯、電車で寝てたのになんか位置変わってないんだけどｗ」となりました。</p>
+
+<h2>対策</h2>
+
+<p>WakeLock する。ただし PARTIAL_WAKE_LOCK だとダメで、画面も起こしてやらないとダメだった。
+SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪やん。</p>
+
+<h2>いろいろ試した事とか推測</h2>
+
+<ul>
+<li>測位前に通信させればいけるか？と思ったけどダメだった。</li>
+<li>そもそも「最寄りの基地局情報」がスリープ状態だと更新されないんじゃないか説。</li>
+</ul>
+
+
+<p>設置場所が山奥過ぎてこの地雷を踏む人はそうはいないと思いますが、「HTC J だけど問題ないよ？」「Butterfly でもダメだったわー」とかの情報あったらコメントください。 m(<em> </em>)m</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
