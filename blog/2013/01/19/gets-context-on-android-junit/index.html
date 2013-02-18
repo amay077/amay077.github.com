@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？ - Experiments Never Fail</title>
+  <title>Android の jUnit テストで Context が欲しい時 - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話 を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。 症状 下記条件を満たす時に、LocationManager.requestLocationUpdates すると &hellip;">
+  <meta name="description" content="Activity のテストなら ActivityInstrumentationTestCase2 、 Service なら ServiceTestCase を使うべきなんでしょうけど、Android って事あるごとに Context が必要なので、 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/">
+  <link rel="canonical" href="http://amay077.github.com/blog/2013/01/19/gets-context-on-android-junit/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -67,7 +67,7 @@
   
   <header>
     
-      <h1 class="entry-title">HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</h1>
+      <h1 class="entry-title">Android の jUnit テストで Context が欲しい時</h1>
     
     
       <p class="meta">
@@ -83,49 +83,37 @@
   
 
 
-<time datetime="2013-02-19T00:41:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+<time datetime="2013-01-19T00:44:00+09:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p><a href="mixi%20Engineers'%20Blog%20http://alpha.mixi.co.jp/2013/11572/">Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話</a> を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。</p>
+<div class="entry-content"><p>Activity のテストなら <code>ActivityInstrumentationTestCase2</code> 、 Service なら <code>ServiceTestCase</code> を使うべきなんでしょうけど、Android って事あるごとに Context が必要なので、ただのクラスライブラリのテストでも必要なことがシバシバ。</p>
 
-<h2>症状</h2>
+<figure class='code'><figcaption><span>HogeTest.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">HogeTest</span> <span class="kd">extends</span> <span class="n">InstrumentationTestCase</span> <span class="o">{</span>
+</span><span class='line'>  <span class="cm">/** ApplicationContext を取得します */</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Context</span> <span class="nf">getApplicationContext</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="k">this</span><span class="o">.</span><span class="na">getInstrumentation</span><span class="o">().</span><span class="na">getTargetContext</span><span class="o">().</span><span class="na">getApplicationContext</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
 
-<p>下記条件を満たす時に、LocationManager.requestLocationUpdates すると、最新の位置が取得されず、<strong>前回測位した位置</strong> が返される。</p>
 
-<p>時刻は更新されてたか、、、あーどうだったかな。</p>
-
-<h2>条件</h2>
-
-<ul>
-<li>NETWORK_PROVIDER で位置を取得した場合（GPS じゃない）</li>
-<li>WiFi が無効の場合（つまり携帯電話の基地局のみを使った測位の場合）</li>
-<li>スリープ中な場合</li>
-<li>HTC J である(IS03, Nexus S では発生してない。 HTC J Butterfly はわからない)</li>
-</ul>
-
-
-<h2>こんな事してたら見つけた</h2>
-
-<p>早い話が HexRinger なんですが、このアプリは、AlarmManager で一定時間毎に WiFi/基地局から位置を取得しています。デバッグで移動中のログを取ってたら、「この時間帯、電車で寝てたのになんか位置変わってないんだけどｗ」となりました。</p>
-
-<h2>対策</h2>
-
-<p>WakeLock する。ただし PARTIAL_WAKE_LOCK だとダメで、画面も起こしてやらないとダメだった。
-SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪やん。</p>
-
-<h2>いろいろ試した事とか推測</h2>
+<h2>参考</h2>
 
 <ul>
-<li>測位前に通信させればいけるか？と思ったけどダメだった。</li>
-<li>そもそも「最寄りの基地局情報」がスリープ状態だと更新されないんじゃないか説。</li>
+<li>[androidの単体テスト(AndroidTestCase) - Androidのド肝] (http://blog.haw.co.jp/android/?p=471) - クラス図がとても役に立ちました</li>
+<li><a href="http://stackoverflow.com/questions/5544205/accessing-application-context-from-testsuite-in-setup-before-calling-getactivi">android - Accessing application context from TestSuite in Setup() before calling getActivity() - Stack Overflow</a></li>
 </ul>
 
-
-<p>設置場所が山奥過ぎてこの地雷を踏む人はそうはいないと思いますが、「HTC J だけど問題ないよ？」「Butterfly でもダメだったわー」とかの情報あったらコメントください。 m(<em> </em>)m</p>
 </div>
 
 
@@ -148,12 +136,12 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
   
 
 
-<time datetime="2013-02-19T00:41:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+<time datetime="2013-01-19T00:44:00+09:00" pubdate data-updated="true">Jan 19<span>th</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/android/'>Android</a>
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/junit/'>jUnit</a>
   
 </span>
 
@@ -162,7 +150,7 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/" data-via="" data-counturl="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2013/01/19/gets-context-on-android-junit/" data-via="" data-counturl="http://amay077.github.com/blog/2013/01/19/gets-context-on-android-junit/" >Tweet</a>
   
   
   
@@ -171,8 +159,8 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/02/19/osm-on-googlemapv2/" title="Previous Post: Google Maps Android API v2 で OpenStreetMap を表示する">&laquo; Google Maps Android API v2 で OpenStreetMap を表示する</a>
       
+        <a class="basic-alignment right" href="/blog/2013/02/19/osm-on-googlemapv2/" title="Next Post: Google Maps Android API v2 で OpenStreetMap を表示する">Google Maps Android API v2 で OpenStreetMap を表示する &raquo;</a>
       
     </p>
   </footer>
