@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.com/blog/categories/android/atom.xml" rel="self"/>
+  <link href="http://amay077.github.com/"/>
+  <updated>2013-02-19T00:23:30+09:00</updated>
+  <id>http://amay077.github.com/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2/"/>
+    <updated>2013-02-19T00:18:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2</id>
+    <content type="html"><![CDATA[<p>この記事は <a href="http://atnd.org/events/34052">FOSS4G Advent Calendar 2012</a> の 12/26 の記事です。</p>
+
+<p>ベクトル地図が扱える新しい Google Maps Android API v2 については、<a href="http://qiita.com/items/7ad0244c0fb4b431e090">Google Map Android API v2 の v1 からの変更点メモ</a> で書きました。</p>
+
+<p>ここでは、v2 で新しく追加された <code>TileOverlay</code> を使って、OpenStreetMap を重ねてみます。</p>
+
+<h2>UrlTileProvider を使って OpenStreetMap を表示する</h2>
+
+<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。</p>
+
+<h3>サンプルのコード</h3>
+
+<p>```
+/<em>* This returns moon tiles. </em>/
+private static final String MOON_MAP_URL_FORMAT =</p>
+
+<pre><code>    "http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw/%d/%d/%d.jpg";
+</code></pre>
+
+<p>private GoogleMap mMap;</p>
+
+<p>private void setUpMap() {</p>
+
+<pre><code>mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+
+TileProvider tileProvider = new UrlTileProvider(256, 256) {
+    @Override
+    public synchronized URL getTileUrl(int x, int y, int zoom) {
+        // The moon tile coordinate system is reversed.  This is not normal.
+        int reversedY = (1 &lt;&lt; zoom) - y - 1;
+       String s = String.format(Locale.US, MOON_MAP_URL_FORMAT, zoom, x, reversedY);
+        URL url = null;
+        try {
+            url = new URL(s);
+        } catch (MalformedURLException e) {
+            throw new AssertionError(e);
+        }
+        return url;
+    }
+};
+mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+</code></pre>
+
+<p>}
+```</p>
+]]></content>
+  </entry>
+  
+</feed>

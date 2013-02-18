@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T00:17:01+09:00</updated>
+  <updated>2013-02-19T00:23:30+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,5 +12,78 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2/"/>
+    <updated>2013-02-19T00:18:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2</id>
+    <content type="html"><![CDATA[<p>この記事は <a href="http://atnd.org/events/34052">FOSS4G Advent Calendar 2012</a> の 12/26 の記事です。</p>
+
+<p>ベクトル地図が扱える新しい Google Maps Android API v2 については、<a href="http://qiita.com/items/7ad0244c0fb4b431e090">Google Map Android API v2 の v1 からの変更点メモ</a> で書きました。</p>
+
+<p>ここでは、v2 で新しく追加された <code>TileOverlay</code> を使って、OpenStreetMap を重ねてみます。</p>
+
+<h2>UrlTileProvider を使って OpenStreetMap を表示する</h2>
+
+<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。</p>
+
+<h3>サンプルのコード</h3>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>/** This returns moon tiles. */
+</span><span class='line'>private static final String MOON_MAP_URL_FORMAT =
+</span><span class='line'>        "http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw/%d/%d/%d.jpg";
+</span><span class='line'>
+</span><span class='line'>private GoogleMap mMap;
+</span><span class='line'>
+</span><span class='line'>private void setUpMap() {
+</span><span class='line'>    mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+</span><span class='line'>
+</span><span class='line'>    TileProvider tileProvider = new UrlTileProvider(256, 256) {
+</span><span class='line'>        @Override
+</span><span class='line'>        public synchronized URL getTileUrl(int x, int y, int zoom) {
+</span><span class='line'>            // The moon tile coordinate system is reversed.  This is not normal.
+</span><span class='line'>            int reversedY = (1 &lt;&lt; zoom) - y - 1;
+</span><span class='line'>           String s = String.format(Locale.US, MOON_MAP_URL_FORMAT, zoom, x, reversedY);
+</span><span class='line'>            URL url = null;
+</span><span class='line'>            try {
+</span><span class='line'>                url = new URL(s);
+</span><span class='line'>            } catch (MalformedURLException e) {
+</span><span class='line'>                throw new AssertionError(e);
+</span><span class='line'>            }
+</span><span class='line'>            return url;
+</span><span class='line'>        }
+</span><span class='line'>    };
+</span><span class='line'>    mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
 </feed>
