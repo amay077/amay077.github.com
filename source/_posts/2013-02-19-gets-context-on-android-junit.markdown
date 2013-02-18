@@ -7,6 +7,8 @@ categories: [Android, jUnit]
 ---
 Activity のテストなら ``ActivityInstrumentationTestCase2`` 、 Service なら ```ServiceTestCase``` を使うべきなんでしょうけど、Android って事あるごとに Context が必要なので、ただのクラスライブラリのテストでも必要なことがシバシバ。
 
+<!-- more -->
+
 ``` java HogeTest.java
 public class HogeTest extends InstrumentationTestCase {
 	/** ApplicationContext を取得します */

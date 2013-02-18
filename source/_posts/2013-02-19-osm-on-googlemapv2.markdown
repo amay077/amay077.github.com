@@ -15,6 +15,8 @@ categories: [Android, GoogleMapsAPI]
 ## UrlTileProvider を使って OpenStreetMap を表示する
 SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。
 
+<!-- more -->
+
 ### サンプルのコード
 ``` java TileOverlayDemoActivity.java
 /** This returns moon tiles. */

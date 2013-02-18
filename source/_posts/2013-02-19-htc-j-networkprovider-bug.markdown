@@ -12,6 +12,8 @@ categories: [Android]
 
 時刻は更新されてたか、、、あーどうだったかな。
 
+<!-- more -->
+
 ## 条件
 
 * NETWORK_PROVIDER で位置を取得した場合（GPS じゃない）
