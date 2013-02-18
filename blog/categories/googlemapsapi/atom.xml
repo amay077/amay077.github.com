@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.com/blog/categories/googlemapsapi/atom.xml" rel="self"/>
+  <link href="http://amay077.github.com/"/>
+  <updated>2013-02-19T00:31:30+09:00</updated>
+  <id>http://amay077.github.com/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2/"/>
+    <updated>2013-02-19T00:18:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2</id>
+    <content type="html"><![CDATA[<p>この記事は <a href="http://atnd.org/events/34052">FOSS4G Advent Calendar 2012</a> の 12/26 の記事です。</p>
+
+<p>ベクトル地図が扱える新しい Google Maps Android API v2 については、<a href="http://qiita.com/items/7ad0244c0fb4b431e090">Google Map Android API v2 の v1 からの変更点メモ</a> で書きました。</p>
+
+<p>ここでは、v2 で新しく追加された <code>TileOverlay</code> を使って、OpenStreetMap を重ねてみます。</p>
+
+<h2>UrlTileProvider を使って OpenStreetMap を表示する</h2>
+
+<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。</p>
+
+<h3>サンプルのコード</h3>
+
+<p>``` java TileOverlayDemoActivity.java
+/<em>* This returns moon tiles. </em>/
+private static final String MOON_MAP_URL_FORMAT =</p>
+
+<pre><code>    "http://mw1.google.com/mw-planetary/lunar/lunarmaps_v1/clem_bw/%d/%d/%d.jpg";
+</code></pre>
+
+<p>private GoogleMap mMap;</p>
+
+<p>private void setUpMap() {</p>
+
+<pre><code>mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+
+TileProvider tileProvider = new UrlTileProvider(256, 256) {
+    @Override
+    public synchronized URL getTileUrl(int x, int y, int zoom) {
+        // The moon tile coordinate system is reversed.  This is not normal.
+        int reversedY = (1 &lt;&lt; zoom) - y - 1;
+       String s = String.format(Locale.US, MOON_MAP_URL_FORMAT, zoom, x, reversedY);
+        URL url = null;
+        try {
+            url = new URL(s);
+        } catch (MalformedURLException e) {
+            throw new AssertionError(e);
+        }
+        return url;
+    }
+};
+mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+</code></pre>
+
+<p>}
+```
+修正前のコードは、Google Moon のタイル画像を使用しています。</p>
+
+<p>これを OpenStreetMap を使用するように改造します。</p>
+
+<p>``` java OsmTileOverlayDemoActivity.java
+/<em>* This returns moon tiles. </em>/
+private static final String OSM_MAP_URL_FORMAT =</p>
+
+<pre><code>    "http://tile.openstreetmap.org/%d/%d/%d.png";
+</code></pre>
+
+<p>private GoogleMap mMap;</p>
+
+<p>private void setUpMap() {</p>
+
+<pre><code>mMap.setMapType(GoogleMap.MAP_TYPE_NONE);
+
+TileProvider tileProvider = new UrlTileProvider(256, 256) {
+    @Override
+    public synchronized URL getTileUrl(int x, int y, int zoom) {
+        String s = String.format(Locale.US, OSM_MAP_URL_FORMAT, zoom, x, y);
+        URL url = null;
+        try {
+            url = new URL(s);
+        } catch (MalformedURLException e) {
+            throw new AssertionError(e);
+        }
+        return url;
+    }
+};
+mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>できました。うーん、簡単すぎる。
+URL は OpenStreetMap のものを使います。y軸の値は、Google Moon では逆順となっていたのを正順のまま使用するだけです。</p>
+
+<p>こんな感じで表示できます。
+<img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osm.png" alt="OpenStreetMap on Google Map API" />
+移動、拡大・縮小だけでなく、API v2 の恩恵で、回転やチルトもできるのが嬉しいですね。</p>
+
+<h2>TileOverlay を透過させる</h2>
+
+<p>さて、ベース地図を Google から他のものに差し替えてしまうならこれまでの使い方で十分でしょう。しかし Google のベクトル3Dグリグリ地図をベース地図として使いたいとは誰しもが思うことでしょう。</p>
+
+<p>ここでは、Google地図の上に TileOverlay を透過で表示することにチャレンジしてみます。
+ケースとしては、雨雲レーダーのメッシュや、統計メッシュなどを重ね合わせる事が考えられます。</p>
+
+<p>さて、API v2 のもう一つの新機能 GroundOverlay には <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/GroundOverlay#setTransparency(float">setTransparentcy</a> というズバリなメソッドがあり、それを使えば一発です。</p>
+
+<p>しかし、TileOverlay とその関連クラスには、透過に関するメソッドは見当たりません。
+そこで TileProvider でダウンロードされた画像データを直接弄って、透過にします。</p>
+
+<p>TileProvider は文字通り <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile">Tile</a> を Provide します。そしてこの Tile はタイル画像データそのものです。</p>
+
+<p><a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile#data">Tile.data</a> の説明には次のように記述があります。</p>
+
+<blockquote><p>A byte array containing the image data. The image will be created from this data by calling <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/null#decodeByteArray(byte[],%20int,%20int">decodeByteArray(byte[], int, int)</a>).</p></blockquote>
+
+<p>つまりこのプロパティの中身を透過させてあげれば良さげ、という事になります。</p>
+
+<p>上記のコードで使用した UrlTileProvider の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/UrlTileProvider#getTile(int,%20int,%20int">getTile</a> を override して…と思ったら、
+＿人人人人人人人人人＿
+＞　突然の final！　＜
+￣<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>Y<sup>￣</sup></sup></sup></sup></sup></sup></sup></sup>
+という事で override できません。</p>
+
+<p>仕方ががないので、独自の TileProvider を別途用意して、UrlTileProvider を内包する形で <code>TransparencyUrlTileProvider</code> というクラスを実装します。</p>
+
+<p>```java TransparencyUrlTileProvider.java
+public class TransparencyUrlTileProvider implements TileProvider {</p>
+
+<pre><code>private static final String OSM_MAP_URL_FORMAT = "http://tile.openstreetmap.org/%d/%d/%d.png";
+
+private int _transparency; // 透過率(0〜255)
+private UrlTileProvider _osmTileProv; // 内包する TileProvider
+
+public TransparencyUrlTileProvider(int width, int height, int transparency) {
+    _transparency = transparency;
+
+    _osmTileProv = new UrlTileProvider(width, height) {
+        @Override
+        public URL getTileUrl(int x, int y, int zoom) {
+            String s = String.format(Locale.US, OSM_MAP_URL_FORMAT, zoom, x, y);
+            URL url = null;
+            try {
+                url = new URL(s);
+            } catch (MalformedURLException e) {
+                throw new AssertionError(e);
+            }
+            return url;
+        }
+    };
+}
+
+@Override
+public Tile getTile(int x, int y, int zoom) {
+    Tile tile = _osmTileProv.getTile(x, y, zoom);
+
+    // TODO ここで Tile の透過処理を行う
+
+    return tile;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>使う側は、こんな感じになります。</p>
+
+<p>``` java OsmTileOverlayDemoActivity.java
+private GoogleMap mMap;</p>
+
+<p>private void setUpMap() {</p>
+
+<pre><code>// mMap.setMapType(GoogleMap.MAP_TYPE_NONE); ベース地図は消さない
+
+mMap.addTileOverlay(
+    new TileOverlayOptions()
+    .tileProvider(
+        new TransparencyUrlTileProvider(256, 256, 100)));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ここまでで改造前と同じく OpenStreetMap が「非透過で」表示されるのは確認できます。</p>
+
+<p>次にいよいよ Bitmap の透過処理です。
+まず、Tile から Bitmap を抜き出します。API リファレンスによると、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile#data">Tile.data</a> というメンバがあるハズが…見つかりません。代わりに <code>Tile.bM</code> という byte[] なメンバがあります。こいつで間違いないでしょう。</p>
+
+<p>Tile.bM の byte[] から Bitmap インスタンスを生成します。</p>
+
+<pre><code>Bitmap bitmap = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
+</code></pre>
+
+<p>次に透過処理ですが、Android ではちょっと面倒なようです。
+以下のサイトを参考にさせて頂いて、関数を作成しました。</p>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/hypercrab/20110730/1312038162">Android: Bitmap の背景を透明にする - 入隠者通信 ～病を嗜む～</a></li>
+</ul>
+
+
+<p>```java makeTransparentBmp.java
+private static Bitmap makeTransparentBmp(final Bitmap bmp, int transparency) {</p>
+
+<pre><code> int width = bmp.getWidth(); 
+ int height = bmp.getHeight(); 
+ int[] pixels = new int[width * height]; 
+
+ Bitmap bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888 );
+ bmp.getPixels(pixels, 0, width, 0, 0, width, height); 
+ for (int y = 0; y &lt; height; y++) { 
+   for (int x = 0; x &lt; width; x++) { 
+     int pixel = pixels[x + y * width];
+     pixels[x + y * width] = Color.argb(transparency, 
+             Color.red(pixel), Color.green(pixel), Color.blue(pixel)); 
+   } 
+ } 
+ bitmap.eraseColor(Color.argb(0, 0, 0, 0)); 
+ bitmap.setPixels(pixels, 0, width, 0, 0, width, height); 
+
+ return bitmap;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>では TODO の所に組み込みます。</p>
+
+<p>```java TransparencyUrlTileProvider.java
+public class TransparencyUrlTileProvider implements TileProvider {</p>
+
+<pre><code>&lt;前略&gt;
+
+@Override
+public Tile getTile(int x, int y, int zoom) {
+    Tile tile = _osmTileProv.getTile(x, y, zoom);
+
+    // Tile の透過処理を行う
+   Bitmap bmp = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
+   Bitmap transparentBmp = makeTransparentBmp(bmp, _transparency);
+
+   // Tile を作り直す
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    transparentBmp.compress(CompressFormat.PNG, 100, bos);
+    Tile tranparentTile = new Tile(tile.width, tile.height, bos.toByteArray());
+
+    return tranparentTile;
+}
+
+&lt;以下略&gt;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osmwithg.png" alt="OpenStreetMap with Google Map API" /></p>
+
+<p>これは、GoogleMap の衛星写真の上に OpenStreetMap を透過して重ねた例です（分かりづらい</p>
+
+<h2>まとめ</h2>
+
+<p>このように Google Maps Android API v2 では、TileProvider を使って、タイル地図画像を簡単に表示させることができます。</p>
+
+<p>Google Maps Javascript API や、MapKit でも他のタイル地図画像を利用することはできましたが、それらよりもより簡単に使えます。ハックというよりも API が公式にサポートしている、という感じです。</p>
+
+<p>これまで Android には、Javascript の OpenLayers や、 iOS の route-me のような、地図タイルデータソースを扱える地図SDKはありませんでした（いや OsmDroid くらいか）</p>
+
+<p>それを Google Maps Android API v2 がサポートしたのですから使わない手はありません。地図SDK としては一番高性能で事実上標準なのですから。</p>
+
+<p>これに、OpenStreetMap や電子国土地図、衛星画像などの背景地図や、統計データメッシュや、アメダスなどの主題図的なタイル地図が重ねられるといろいろできそうだなあ、という感じです。
+(Yahoo! さんの<a href="http://weather.yahoo.co.jp/weather/zoomradar/">雨雲レーダー</a> のタイル画像もこっそり試してみて「こりゃ面白い」と思ったので公式に提供して欲しいですｗ)</p>
+
+<p>私にはタイル地図データを作る知識は無いので、タイル地図のポータルみたいなものがあるといいなあと思います。 <a href="https://www.facebook.com/chitaikyo">地図タイル工法協会</a> さんよろしくおねがいします。</p>
+
+<p>というわけで、Android で地図使いたいなら(今のところ) Google Maps API v2 一択！ 他社さんもガンバレ！</p>
+
+<p>※あれ？このネタどこが FOSS4G だ？ま、いっか。</p>
+]]></content>
+  </entry>
+  
+</feed>
