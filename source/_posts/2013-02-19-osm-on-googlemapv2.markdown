@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Google Maps Android API v2 で OpenStreetMap を表示する"
-date: 2013-02-19 00:18
+date: 2012-12-26 00:18
 comments: true
 categories: [Android, GoogleMapsAPI]
 ---
@@ -81,7 +81,9 @@ private void setUpMap() {
 URL は OpenStreetMap のものを使います。y軸の値は、Google Moon では逆順となっていたのを正順のまま使用するだけです。
 
 こんな感じで表示できます。
+
 ![OpenStreetMap on Google Map API](https://dl.dropbox.com/u/264530/qiita/advent2012_osm.png)
+
 移動、拡大・縮小だけでなく、API v2 の恩恵で、回転やチルトもできるのが嬉しいですね。
 
 ## TileOverlay を透過させる
