@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T00:58:16+09:00</updated>
+  <updated>2013-02-19T18:19:59+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
-    <link href="http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2/"/>
-    <updated>2013-02-19T00:18:00+09:00</updated>
-    <id>http://amay077.github.com/blog/2013/02/19/osm-on-googlemapv2</id>
+    <link href="http://amay077.github.com/blog/2012/12/26/osm-on-googlemapv2/"/>
+    <updated>2012-12-26T00:18:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/12/26/osm-on-googlemapv2</id>
     <content type="html"><![CDATA[<p>この記事は <a href="http://atnd.org/events/34052">FOSS4G Advent Calendar 2012</a> の 12/26 の記事です。</p>
 
 <p>ベクトル地図が扱える新しい Google Maps Android API v2 については、<a href="http://qiita.com/items/7ad0244c0fb4b431e090">Google Map Android API v2 の v1 からの変更点メモ</a> で書きました。</p>
@@ -105,9 +105,11 @@ mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider));
 <p>できました。うーん、簡単すぎる。
 URL は OpenStreetMap のものを使います。y軸の値は、Google Moon では逆順となっていたのを正順のまま使用するだけです。</p>
 
-<p>こんな感じで表示できます。
-<img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osm.png" alt="OpenStreetMap on Google Map API" />
-移動、拡大・縮小だけでなく、API v2 の恩恵で、回転やチルトもできるのが嬉しいですね。</p>
+<p>こんな感じで表示できます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/advent2012_osm.png" alt="OpenStreetMap on Google Map API" /></p>
+
+<p>移動、拡大・縮小だけでなく、API v2 の恩恵で、回転やチルトもできるのが嬉しいですね。</p>
 
 <h2>TileOverlay を透過させる</h2>
 
@@ -290,6 +292,270 @@ public Tile getTile(int x, int y, int zoom) {
 <p>というわけで、Android で地図使いたいなら(今のところ) Google Maps API v2 一択！ 他社さんもガンバレ！</p>
 
 <p>※あれ？このネタどこが FOSS4G だ？ま、いっか。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 の図形の描画順(zIndex)を探る]]></title>
+    <link href="http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex/"/>
+    <updated>2012-12-25T17:48:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex</id>
+    <content type="html"><![CDATA[<p>Google Maps Android API v1 では Overlay をレイヤのように使うことで図形群の前後関係をコントロールできましたが、v2 では <code>Polyline</code> や <code>Polygon</code> クラスに <code>zIndex</code> が導入されました。</p>
+
+<p>いくつかの図形を重ねて描画し、zIndex が与える影響を調べてみました。</p>
+
+<!-- more -->
+
+
+<h2>zIndex なし の場合</h2>
+
+<p>まず zIndex を指定しない場合。</p>
+
+<ol>
+<li>マーカー</li>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+</ol>
+
+
+<p>の順で <code>GoogleMap</code> に追加しています。</p>
+
+<p>```java NoZindex.java
+final LatLng TOKYO = new LatLng(35.691, 139.693);
+final LatLng NAGOYA = new LatLng(35.1805, 136.9073);
+final LatLng TOYOHASHI = new LatLng(34.770, 137.391);
+final LatLng MATSUMOTO = new LatLng(36.239, 137.969);
+final LatLng SHIZUOKA = new LatLng(34.99, 138.39);
+final LatLng MAEBASHI = new LatLng(36.38, 139.04);</p>
+
+<p>// マーカー
+mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(new LatLng(35.47, 138.71))
+.title("富士山"));
+</code></pre>
+
+<p>// ライン
+mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, NAGOYA)
+.width(40)
+.color(Color.BLUE));
+</code></pre>
+
+<p>mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, NAGOYA)
+.width(10)
+.color(Color.RED));
+</code></pre>
+
+<p>// ポリゴン
+mMap.addPolygon(new PolygonOptions()</p>
+
+<pre><code>.add(TOKYO, MATSUMOTO, TOYOHASHI)
+.fillColor(Color.CYAN));
+</code></pre>
+
+<p>mMap.addPolygon(new PolygonOptions()</p>
+
+<pre><code>.add(TOKYO, MAEBASHI, SHIZUOKA)
+.fillColor(Color.GREEN));
+</code></pre>
+
+<p>```</p>
+
+<p>結果、こうなりました。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_off.png" alt="noZindex" /></p>
+
+<p>前後関係を見ると、奥から</p>
+
+<ol>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>マーカー</li>
+</ol>
+
+
+<p>となりました。描画順＝追加した順、であれば、マーカーや線は、ポリゴンによって覆い隠されてしまうのですが、そうなりませんでした。
+図形によって前後関係が決められていて、
+奥から ポリゴン → ライン → マーカー となるようです。
+ちなみに、zindex を指定しない時の既定値は <code>0</code> です。</p>
+
+<h2>zIndex を設定してみる</h2>
+
+<p>次に zIndex を次のように設定してみます。</p>
+
+<p>```java WithZindex.java
+// マーカー
+mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(new LatLng(35.47, 138.71))
+.title("富士山"));
+</code></pre>
+
+<p>// ライン
+mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, NAGOYA)
+.width(40)
+.color(Color.BLUE)
+.zIndex(1));
+</code></pre>
+
+<p>mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, NAGOYA)
+.width(10)
+.color(Color.RED)
+.zIndex(2));
+</code></pre>
+
+<p>// ポリゴン
+mMap.addPolygon(new PolygonOptions()</p>
+
+<pre><code>.add(TOKYO, MATSUMOTO, TOYOHASHI)
+.fillColor(Color.CYAN)
+.zIndex(3));
+</code></pre>
+
+<p>mMap.addPolygon(new PolygonOptions()</p>
+
+<pre><code>.add(TOKYO, MAEBASHI, SHIZUOKA)
+.fillColor(Color.GREEN)
+.zIndex(4));
+</code></pre>
+
+<p>```</p>
+
+<p>結果は以下のとおり。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_on.png" alt="noZindex" /></p>
+
+<ol>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+<li>マーカー</li>
+</ol>
+
+
+<p>む、ライン、ポリゴンに関係なく、zIndex で指定した順に奥から描画されているようです。</p>
+
+<h2>Developer Guide の説明</h2>
+
+<p>いつも試してから見る公式ガイドｗ</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/lines#customize_a_polyline">Customize a Polyline - Google Maps Android API v2</a></li>
+</ul>
+
+
+<blockquote><p>Z-index
+The stack order of this Polyline, relative to other overlays (polylines, polygons, ground overlays and tile overlays) in the map. A Polyline with a high z-index is drawn above overlays with lower z-indexes. Two overlays with the same z-index are drawn in an arbitrary order. Set this property with PolylineOptions.zIndex(). You can change this after the Polyline has been added to the map with the Polyline.setZIndex() method.</p></blockquote>
+
+<p>まあ、それっぽいことが書いてあるわｗ
+どうやら <code>GroundOverlay</code> や <code>TileOverlay</code> にも zIndex があり、前後関係をコントロールできるようですね。</p>
+
+<h2>まとめ</h2>
+
+<p>Google Maps Android API v2 の Polyline と Polygon の zIndex はまとめると次のようになります。</p>
+
+<ul>
+<li>指定しない(<code>0</code>)と、追加の順番に関わらず <strong><em>Polyline の方が Polygon よりも手前</em></strong> に描画される。Polyline 同士、Polygon 同士は、追加順に奥から描画される。</li>
+<li>指定した場合、Polyline、Polygon の区別なく、<strong><em>zIndex の順で</em></strong> 奥から描画される。</li>
+<li>マーカーは常に一番手前に描画される。</li>
+</ul>
+
+
+<p>ということで、zIndex をうまく設定すれば、図形群の前後関係を調整・変更することができます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 で大圏コースを表示する]]></title>
+    <link href="http://amay077.github.com/blog/2012/12/24/googlemap-v2-geodesic-line/"/>
+    <updated>2012-12-24T17:51:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/12/24/googlemap-v2-geodesic-line</id>
+    <content type="html"><![CDATA[<p>GoogleMap は<a href="http://ja.wikipedia.org/wiki/%E3%83%A1%E3%83%AB%E3%82%AB%E3%83%88%E3%83%AB%E5%9B%B3%E6%B3%95">メルカトル図法</a>なので、地図上の２点間を結んだ直線は最短距離になりません。(メルカトル図法で正しいのは角度だけ、でしたよね。)</p>
+
+<p>地球上の２点間の最短距離は「<a href="http://ja.wikipedia.org/wiki/%E5%A4%A7%E5%9C%8F%E3%82%B3%E3%83%BC%E3%82%B9">大圏コース</a>」と呼ばれます。</p>
+
+<p>で、Android 版の新しい API を使うと、この大圏コースを簡単に表示することができます。</p>
+
+<!-- more -->
+
+
+<p>こんな感じ、赤がただの直線、青が大圏コースです。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/greatcircle.png" alt="greatcircle" /></p>
+
+<p>やり方は以下のとおりで、<code>geodesic</code> を <code>true</code> にすれば大圏コースになります。</p>
+
+<p>```java GeodesicPolyline.java
+GoogleMap mMap;</p>
+
+<p>final LatLng TOKYO = new LatLng(35.691, 139.693);
+final LatLng HAWAII = new LatLng(19.87, -155.56);</p>
+
+<p>// ただの直線
+mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, HAWAII)
+.width(5)
+.color(Color.RED)
+.geodesic(false));
+</code></pre>
+
+<p>// 大圏コース
+mMap.addPolyline(new PolylineOptions()</p>
+
+<pre><code>.add(TOKYO, HAWAII)
+.width(5)
+.color(Color.BLUE)
+.geodesic(true));
+</code></pre>
+
+<p>```</p>
+
+<p>Developper Guide に説明があります。</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/lines#geodesic_and_non-geodesic_lines">Polylines and Polygons - Google Maps Android API v2</a></li>
+</ul>
+
+
+<blockquote><p>A Geodesic line is a line that follows the curvature of the earth. In contrast, a non-geodesic line will be drawn using the coordinate system of your screen. By Default, Polyline and Polygon objects will draw non-geodesic lines. You can change any Polyline or Polygon to use geodesic lines by setting the geodesic property to true.</p>
+
+<p>適当訳
+Geodesic なラインとは地球上の曲がった線のことです。non-geodesic ってやつは画面座標系で描いた線で、これがデフォルトです。Polyline や Polygon を geodesic にしたければ geodesic プロパティを true にするとよろし。</p></blockquote>
+
+<p>ちなみにこの「２点間の最短距離」は <a href="http://developer.android.com/reference/android/location/Location.html#distanceBetween(double,%20double,%20double,%20double,%20float[]">Location.distanceBetween</a> メソッドで求められます。</p>
+
+<p>どうやら、Javascript 版にはもともとこの機能があったようで、以下のサイトに例があります。</p>
+
+<ul>
+<li><a href="http://user.numazu-ct.ac.jp/~tsato/tsato/geoweb/googlemaps/great-circle/">Googleマップで大圏コースを表示する</a></li>
+</ul>
+
+
+<p>あと、iOS 版の Google Maps API にもあるみた…あれ、ないや。
+(余談ですが iOS 版の API には Polygon を描く機能もないんですね)</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/ios/lines">Polylines - Google Maps SDK for iOS</a></li>
+</ul>
+
+
+<h2>その他</h2>
+
+<p>つか、Android の GoogleMap さん、思いっきり縮小しても世界が画面内に収まらないので、大圏コースの例が見せにくいわ。</p>
 ]]></content>
   </entry>
   

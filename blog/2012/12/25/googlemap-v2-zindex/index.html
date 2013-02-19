@@ -1,0 +1,422 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google Maps Android API v2 の図形の描画順(zIndex)を探る - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Google Maps Android API v1 では Overlay をレイヤのように使うことで図形群の前後関係をコントロールできましたが、v2 では Polyline や Polygon クラスに zIndex が導入されました。 いくつかの図形を重ねて描画し、zIndex &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Google Maps Android API V2 の図形の描画順(zIndex)を探る</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-25T17:48:00+09:00" pubdate data-updated="true">Dec 25<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Google Maps Android API v1 では Overlay をレイヤのように使うことで図形群の前後関係をコントロールできましたが、v2 では <code>Polyline</code> や <code>Polygon</code> クラスに <code>zIndex</code> が導入されました。</p>
+
+<p>いくつかの図形を重ねて描画し、zIndex が与える影響を調べてみました。</p>
+
+<!-- more -->
+
+
+<h2>zIndex なし の場合</h2>
+
+<p>まず zIndex を指定しない場合。</p>
+
+<ol>
+<li>マーカー</li>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+</ol>
+
+
+<p>の順で <code>GoogleMap</code> に追加しています。</p>
+
+<figure class='code'><figcaption><span>NoZindex.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">TOKYO</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.691</span><span class="o">,</span> <span class="mf">139.693</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">NAGOYA</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.1805</span><span class="o">,</span> <span class="mf">136.9073</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">TOYOHASHI</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">34.770</span><span class="o">,</span> <span class="mf">137.391</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">MATSUMOTO</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">36.239</span><span class="o">,</span> <span class="mf">137.969</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">SHIZUOKA</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">34.99</span><span class="o">,</span> <span class="mf">138.39</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">MAEBASHI</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">36.38</span><span class="o">,</span> <span class="mf">139.04</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// マーカー</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addMarker</span><span class="o">(</span><span class="k">new</span> <span class="n">MarkerOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.47</span><span class="o">,</span> <span class="mf">138.71</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">title</span><span class="o">(</span><span class="s">&quot;富士山&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ライン</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">NAGOYA</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">40</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">BLUE</span><span class="o">));</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">NAGOYA</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">RED</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ポリゴン</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolygon</span><span class="o">(</span><span class="k">new</span> <span class="n">PolygonOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">MATSUMOTO</span><span class="o">,</span> <span class="n">TOYOHASHI</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">fillColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">CYAN</span><span class="o">));</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolygon</span><span class="o">(</span><span class="k">new</span> <span class="n">PolygonOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">MAEBASHI</span><span class="o">,</span> <span class="n">SHIZUOKA</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">fillColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">GREEN</span><span class="o">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>結果、こうなりました。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_off.png" alt="noZindex" /></p>
+
+<p>前後関係を見ると、奥から</p>
+
+<ol>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>マーカー</li>
+</ol>
+
+
+<p>となりました。描画順＝追加した順、であれば、マーカーや線は、ポリゴンによって覆い隠されてしまうのですが、そうなりませんでした。
+図形によって前後関係が決められていて、
+奥から ポリゴン → ライン → マーカー となるようです。
+ちなみに、zindex を指定しない時の既定値は <code>0</code> です。</p>
+
+<h2>zIndex を設定してみる</h2>
+
+<p>次に zIndex を次のように設定してみます。</p>
+
+<figure class='code'><figcaption><span>WithZindex.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// マーカー</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addMarker</span><span class="o">(</span><span class="k">new</span> <span class="n">MarkerOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.47</span><span class="o">,</span> <span class="mf">138.71</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">title</span><span class="o">(</span><span class="s">&quot;富士山&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ライン</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">NAGOYA</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">40</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">BLUE</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">zIndex</span><span class="o">(</span><span class="mi">1</span><span class="o">));</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">NAGOYA</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">10</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">RED</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">zIndex</span><span class="o">(</span><span class="mi">2</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ポリゴン</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolygon</span><span class="o">(</span><span class="k">new</span> <span class="n">PolygonOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">MATSUMOTO</span><span class="o">,</span> <span class="n">TOYOHASHI</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">fillColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">CYAN</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">zIndex</span><span class="o">(</span><span class="mi">3</span><span class="o">));</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolygon</span><span class="o">(</span><span class="k">new</span> <span class="n">PolygonOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">MAEBASHI</span><span class="o">,</span> <span class="n">SHIZUOKA</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">fillColor</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">GREEN</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">zIndex</span><span class="o">(</span><span class="mi">4</span><span class="o">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>結果は以下のとおり。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_on.png" alt="noZindex" /></p>
+
+<ol>
+<li>線(太)</li>
+<li>線(細)</li>
+<li>ポリゴン(青)</li>
+<li>ポリゴン(緑)</li>
+<li>マーカー</li>
+</ol>
+
+
+<p>む、ライン、ポリゴンに関係なく、zIndex で指定した順に奥から描画されているようです。</p>
+
+<h2>Developer Guide の説明</h2>
+
+<p>いつも試してから見る公式ガイドｗ</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/lines#customize_a_polyline">Customize a Polyline - Google Maps Android API v2</a></li>
+</ul>
+
+
+<blockquote><p>Z-index
+The stack order of this Polyline, relative to other overlays (polylines, polygons, ground overlays and tile overlays) in the map. A Polyline with a high z-index is drawn above overlays with lower z-indexes. Two overlays with the same z-index are drawn in an arbitrary order. Set this property with PolylineOptions.zIndex(). You can change this after the Polyline has been added to the map with the Polyline.setZIndex() method.</p></blockquote>
+
+<p>まあ、それっぽいことが書いてあるわｗ
+どうやら <code>GroundOverlay</code> や <code>TileOverlay</code> にも zIndex があり、前後関係をコントロールできるようですね。</p>
+
+<h2>まとめ</h2>
+
+<p>Google Maps Android API v2 の Polyline と Polygon の zIndex はまとめると次のようになります。</p>
+
+<ul>
+<li>指定しない(<code>0</code>)と、追加の順番に関わらず <strong><em>Polyline の方が Polygon よりも手前</em></strong> に描画される。Polyline 同士、Polygon 同士は、追加順に奥から描画される。</li>
+<li>指定した場合、Polyline、Polygon の区別なく、<strong><em>zIndex の順で</em></strong> 奥から描画される。</li>
+<li>マーカーは常に一番手前に描画される。</li>
+</ul>
+
+
+<p>ということで、zIndex をうまく設定すれば、図形群の前後関係を調整・変更することができます。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-25T17:48:00+09:00" pubdate data-updated="true">Dec 25<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex/" data-via="" data-counturl="http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2012/12/24/googlemap-v2-geodesic-line/" title="Previous Post: Google Maps Android API v2 で大圏コースを表示する">&laquo; Google Maps Android API v2 で大圏コースを表示する</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2012/12/26/edittext-ontextchanged/" title="Next Post: Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)">Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/02/19/htc-j-networkprovider-bug/">HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/gets-context-on-android-junit/">Android の jUnit テストで Context が欲しい時</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/26/osm-on-googlemapv2/">Google Maps Android API v2 で OpenStreetMap を表示する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/26/edittext-ontextchanged/">Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/25/googlemap-v2-zindex/">Google Maps Android API v2 の図形の描画順(zIndex)を探る</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
