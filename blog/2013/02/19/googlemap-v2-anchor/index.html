@@ -1,0 +1,279 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google Maps API v2 のマーカーの Anchor を探る - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Google Maps API の Marker には、Anchor というプロパティがあり、緯度経度と、画像のどの位置をマッピングさせるかを設定する事ができます。 Marker の既定の画像は、よく見るピンみたいなやつですが、既定の Anchor は、0.5f/1.0f になっています。設定値は &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Google Maps API V2 のマーカーの Anchor を探る</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-19T23:10:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Google Maps API の Marker には、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/MarkerOptions#anchor(float,%20float">Anchor</a> というプロパティがあり、緯度経度と、画像のどの位置をマッピングさせるかを設定する事ができます。</p>
+
+<!-- more -->
+
+
+<p>Marker の既定の画像は、よく見るピンみたいなやつですが、既定の Anchor は、0.5f/1.0f になっています。設定値は、画像に対する「x軸の割合」と「y軸の割合」で、言わんとすることは、「緯度経度の位置を画像の、横方向はちょうど真ん中、縦方向は最下部に合わせる」という事です。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor.png" alt="Marker.anchor の設定値" /></p>
+
+<p>以下のように、設定値を変更すると、それぞれマーカーの表示位置が変わります。(Android SDK に同梱される Google Maps API v2 のサンプルをベースにしています)</p>
+
+<figure class='code'><figcaption><span>anchor_center_bottom.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mAdelaide</span> <span class="o">=</span> <span class="n">mMap</span><span class="o">.</span><span class="na">addMarker</span><span class="o">(</span><span class="k">new</span> <span class="n">MarkerOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">ADELAIDE</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">title</span><span class="o">(</span><span class="s">&quot;Adelaide&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">snippet</span><span class="o">(</span><span class="s">&quot;Population: 1,213,000&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">anchor</span><span class="o">(</span><span class="mf">0.5f</span><span class="o">,</span> <span class="mf">1.0f</span><span class="o">));</span> <span class="c1">// 既定値と同じ</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>anchor_left_top.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mAdelaide</span> <span class="o">=</span> <span class="n">mMap</span><span class="o">.</span><span class="na">addMarker</span><span class="o">(</span><span class="k">new</span> <span class="n">MarkerOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">ADELAIDE</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">title</span><span class="o">(</span><span class="s">&quot;Adelaide&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">snippet</span><span class="o">(</span><span class="s">&quot;Population: 1,213,000&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">anchor</span><span class="o">(</span><span class="mf">0.0f</span><span class="o">,</span> <span class="mf">0.0f</span><span class="o">));</span> <span class="c1">// 左上</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span>anchor_right_middle.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">mAdelaide</span> <span class="o">=</span> <span class="n">mMap</span><span class="o">.</span><span class="na">addMarker</span><span class="o">(</span><span class="k">new</span> <span class="n">MarkerOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">position</span><span class="o">(</span><span class="n">ADELAIDE</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">title</span><span class="o">(</span><span class="s">&quot;Adelaide&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">snippet</span><span class="o">(</span><span class="s">&quot;Population: 1,213,000&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">anchor</span><span class="o">(</span><span class="mf">1.0f</span><span class="o">,</span> <span class="mf">0.5f</span><span class="o">));</span> <span class="c1">// 右中</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor_sample.png" alt="Marker.anchor examples" /></p>
+
+<h2>v1 ではどうだったっけ？</h2>
+
+<p>Google Maps API v1 では、<a href="https://developers.google.com/maps/documentation/android/v1/reference/">ItemizedOverlay</a> の <code>boundCenter</code> と <code>boundCenterBottom</code> に相当する機能ですね。こちらはメソッド名の通り、「中央/中心」と「中央/下部」しか対応してなかったので、より柔軟になったと言えます。</p>
+
+<h2>ハマりどころ</h2>
+
+<ul>
+<li>最初、anchor はピクセル指定だ、と勝手に勘違いして、画像のサイズを取得してゴニョゴニョやってたのは内緒。</li>
+<li>0.0〜1.0 の範囲であることを忘れて、0〜100 の値を設定すると、<strong>「マーカーが全部消えます」</strong></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-19T23:10:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor/" data-via="" data-counturl="http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor/" >Tweet</a>
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/02/19/htc-j-networkprovider-bug/" title="Previous Post: HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？">&laquo; HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/02/19/googlemap-v2-anchor/">Google Maps API v2 のマーカーの Anchor を探る</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/02/19/htc-j-networkprovider-bug/">HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/01/19/gets-context-on-android-junit/">Android の jUnit テストで Context が欲しい時</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/26/osm-on-googlemapv2/">Google Maps Android API v2 で OpenStreetMap を表示する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2012/12/26/edittext-ontextchanged/">Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

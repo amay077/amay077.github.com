@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T18:19:59+09:00</updated>
+  <updated>2013-02-19T23:15:50+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,69 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps API v2 のマーカーの Anchor を探る]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor/"/>
+    <updated>2013-02-19T23:10:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor</id>
+    <content type="html"><![CDATA[<p>Google Maps API の Marker には、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/MarkerOptions#anchor(float,%20float">Anchor</a> というプロパティがあり、緯度経度と、画像のどの位置をマッピングさせるかを設定する事ができます。</p>
+
+<!-- more -->
+
+
+<p>Marker の既定の画像は、よく見るピンみたいなやつですが、既定の Anchor は、0.5f/1.0f になっています。設定値は、画像に対する「x軸の割合」と「y軸の割合」で、言わんとすることは、「緯度経度の位置を画像の、横方向はちょうど真ん中、縦方向は最下部に合わせる」という事です。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor.png" alt="Marker.anchor の設定値" /></p>
+
+<p>以下のように、設定値を変更すると、それぞれマーカーの表示位置が変わります。(Android SDK に同梱される Google Maps API v2 のサンプルをベースにしています)</p>
+
+<p>```java anchor_center_bottom.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(0.5f, 1.0f)); // 既定値と同じ
+</code></pre>
+
+<p><code>
+</code>java anchor_left_top.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(0.0f, 0.0f)); // 左上
+</code></pre>
+
+<p><code>
+</code>java anchor_right_middle.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(1.0f, 0.5f)); // 右中
+</code></pre>
+
+<p>```</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor_sample.png" alt="Marker.anchor examples" /></p>
+
+<h2>v1 ではどうだったっけ？</h2>
+
+<p>Google Maps API v1 では、<a href="https://developers.google.com/maps/documentation/android/v1/reference/">ItemizedOverlay</a> の <code>boundCenter</code> と <code>boundCenterBottom</code> に相当する機能ですね。こちらはメソッド名の通り、「中央/中心」と「中央/下部」しか対応してなかったので、より柔軟になったと言えます。</p>
+
+<h2>ハマりどころ</h2>
+
+<ul>
+<li>最初、anchor はピクセル指定だ、と勝手に勘違いして、画像のサイズを取得してゴニョゴニョやってたのは内緒。</li>
+<li>0.0〜1.0 の範囲であることを忘れて、0〜100 の値を設定すると、<strong>「マーカーが全部消えます」</strong></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？]]></title>
@@ -460,189 +523,6 @@ public void afterTextChanged(Editable s) {
 <p>とりあえず手持ちの ATOK では修正前と同じように動作しているようです。</p>
 
 <p>IME 側で「未確定文字は SPAN_COMPOSING を必ず設定する」ものかどうかは分かりませんが、個人的には UnderlineSpan を使った手法よりもすっきりしました、というお話でした。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google Maps Android API v2 の図形の描画順(zIndex)を探る]]></title>
-    <link href="http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex/"/>
-    <updated>2012-12-25T17:48:00+09:00</updated>
-    <id>http://amay077.github.com/blog/2012/12/25/googlemap-v2-zindex</id>
-    <content type="html"><![CDATA[<p>Google Maps Android API v1 では Overlay をレイヤのように使うことで図形群の前後関係をコントロールできましたが、v2 では <code>Polyline</code> や <code>Polygon</code> クラスに <code>zIndex</code> が導入されました。</p>
-
-<p>いくつかの図形を重ねて描画し、zIndex が与える影響を調べてみました。</p>
-
-<!-- more -->
-
-
-<h2>zIndex なし の場合</h2>
-
-<p>まず zIndex を指定しない場合。</p>
-
-<ol>
-<li>マーカー</li>
-<li>線(太)</li>
-<li>線(細)</li>
-<li>ポリゴン(青)</li>
-<li>ポリゴン(緑)</li>
-</ol>
-
-
-<p>の順で <code>GoogleMap</code> に追加しています。</p>
-
-<p>```java NoZindex.java
-final LatLng TOKYO = new LatLng(35.691, 139.693);
-final LatLng NAGOYA = new LatLng(35.1805, 136.9073);
-final LatLng TOYOHASHI = new LatLng(34.770, 137.391);
-final LatLng MATSUMOTO = new LatLng(36.239, 137.969);
-final LatLng SHIZUOKA = new LatLng(34.99, 138.39);
-final LatLng MAEBASHI = new LatLng(36.38, 139.04);</p>
-
-<p>// マーカー
-mMap.addMarker(new MarkerOptions()</p>
-
-<pre><code>.position(new LatLng(35.47, 138.71))
-.title("富士山"));
-</code></pre>
-
-<p>// ライン
-mMap.addPolyline(new PolylineOptions()</p>
-
-<pre><code>.add(TOKYO, NAGOYA)
-.width(40)
-.color(Color.BLUE));
-</code></pre>
-
-<p>mMap.addPolyline(new PolylineOptions()</p>
-
-<pre><code>.add(TOKYO, NAGOYA)
-.width(10)
-.color(Color.RED));
-</code></pre>
-
-<p>// ポリゴン
-mMap.addPolygon(new PolygonOptions()</p>
-
-<pre><code>.add(TOKYO, MATSUMOTO, TOYOHASHI)
-.fillColor(Color.CYAN));
-</code></pre>
-
-<p>mMap.addPolygon(new PolygonOptions()</p>
-
-<pre><code>.add(TOKYO, MAEBASHI, SHIZUOKA)
-.fillColor(Color.GREEN));
-</code></pre>
-
-<p>```</p>
-
-<p>結果、こうなりました。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_off.png" alt="noZindex" /></p>
-
-<p>前後関係を見ると、奥から</p>
-
-<ol>
-<li>ポリゴン(青)</li>
-<li>ポリゴン(緑)</li>
-<li>線(太)</li>
-<li>線(細)</li>
-<li>マーカー</li>
-</ol>
-
-
-<p>となりました。描画順＝追加した順、であれば、マーカーや線は、ポリゴンによって覆い隠されてしまうのですが、そうなりませんでした。
-図形によって前後関係が決められていて、
-奥から ポリゴン → ライン → マーカー となるようです。
-ちなみに、zindex を指定しない時の既定値は <code>0</code> です。</p>
-
-<h2>zIndex を設定してみる</h2>
-
-<p>次に zIndex を次のように設定してみます。</p>
-
-<p>```java WithZindex.java
-// マーカー
-mMap.addMarker(new MarkerOptions()</p>
-
-<pre><code>.position(new LatLng(35.47, 138.71))
-.title("富士山"));
-</code></pre>
-
-<p>// ライン
-mMap.addPolyline(new PolylineOptions()</p>
-
-<pre><code>.add(TOKYO, NAGOYA)
-.width(40)
-.color(Color.BLUE)
-.zIndex(1));
-</code></pre>
-
-<p>mMap.addPolyline(new PolylineOptions()</p>
-
-<pre><code>.add(TOKYO, NAGOYA)
-.width(10)
-.color(Color.RED)
-.zIndex(2));
-</code></pre>
-
-<p>// ポリゴン
-mMap.addPolygon(new PolygonOptions()</p>
-
-<pre><code>.add(TOKYO, MATSUMOTO, TOYOHASHI)
-.fillColor(Color.CYAN)
-.zIndex(3));
-</code></pre>
-
-<p>mMap.addPolygon(new PolygonOptions()</p>
-
-<pre><code>.add(TOKYO, MAEBASHI, SHIZUOKA)
-.fillColor(Color.GREEN)
-.zIndex(4));
-</code></pre>
-
-<p>```</p>
-
-<p>結果は以下のとおり。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/zindex_on.png" alt="noZindex" /></p>
-
-<ol>
-<li>線(太)</li>
-<li>線(細)</li>
-<li>ポリゴン(青)</li>
-<li>ポリゴン(緑)</li>
-<li>マーカー</li>
-</ol>
-
-
-<p>む、ライン、ポリゴンに関係なく、zIndex で指定した順に奥から描画されているようです。</p>
-
-<h2>Developer Guide の説明</h2>
-
-<p>いつも試してから見る公式ガイドｗ</p>
-
-<ul>
-<li><a href="https://developers.google.com/maps/documentation/android/lines#customize_a_polyline">Customize a Polyline - Google Maps Android API v2</a></li>
-</ul>
-
-
-<blockquote><p>Z-index
-The stack order of this Polyline, relative to other overlays (polylines, polygons, ground overlays and tile overlays) in the map. A Polyline with a high z-index is drawn above overlays with lower z-indexes. Two overlays with the same z-index are drawn in an arbitrary order. Set this property with PolylineOptions.zIndex(). You can change this after the Polyline has been added to the map with the Polyline.setZIndex() method.</p></blockquote>
-
-<p>まあ、それっぽいことが書いてあるわｗ
-どうやら <code>GroundOverlay</code> や <code>TileOverlay</code> にも zIndex があり、前後関係をコントロールできるようですね。</p>
-
-<h2>まとめ</h2>
-
-<p>Google Maps Android API v2 の Polyline と Polygon の zIndex はまとめると次のようになります。</p>
-
-<ul>
-<li>指定しない(<code>0</code>)と、追加の順番に関わらず <strong><em>Polyline の方が Polygon よりも手前</em></strong> に描画される。Polyline 同士、Polygon 同士は、追加順に奥から描画される。</li>
-<li>指定した場合、Polyline、Polygon の区別なく、<strong><em>zIndex の順で</em></strong> 奥から描画される。</li>
-<li>マーカーは常に一番手前に描画される。</li>
-</ul>
-
-
-<p>ということで、zIndex をうまく設定すれば、図形群の前後関係を調整・変更することができます。</p>
 ]]></content>
   </entry>
   

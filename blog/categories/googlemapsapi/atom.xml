@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T18:19:59+09:00</updated>
+  <updated>2013-02-19T23:15:50+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,69 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps API v2 のマーカーの Anchor を探る]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor/"/>
+    <updated>2013-02-19T23:10:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/19/googlemap-v2-anchor</id>
+    <content type="html"><![CDATA[<p>Google Maps API の Marker には、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/MarkerOptions#anchor(float,%20float">Anchor</a> というプロパティがあり、緯度経度と、画像のどの位置をマッピングさせるかを設定する事ができます。</p>
+
+<!-- more -->
+
+
+<p>Marker の既定の画像は、よく見るピンみたいなやつですが、既定の Anchor は、0.5f/1.0f になっています。設定値は、画像に対する「x軸の割合」と「y軸の割合」で、言わんとすることは、「緯度経度の位置を画像の、横方向はちょうど真ん中、縦方向は最下部に合わせる」という事です。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor.png" alt="Marker.anchor の設定値" /></p>
+
+<p>以下のように、設定値を変更すると、それぞれマーカーの表示位置が変わります。(Android SDK に同梱される Google Maps API v2 のサンプルをベースにしています)</p>
+
+<p>```java anchor_center_bottom.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(0.5f, 1.0f)); // 既定値と同じ
+</code></pre>
+
+<p><code>
+</code>java anchor_left_top.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(0.0f, 0.0f)); // 左上
+</code></pre>
+
+<p><code>
+</code>java anchor_right_middle.java
+mAdelaide = mMap.addMarker(new MarkerOptions()</p>
+
+<pre><code>.position(ADELAIDE)
+.title("Adelaide")
+.snippet("Population: 1,213,000")
+.anchor(1.0f, 0.5f)); // 右中
+</code></pre>
+
+<p>```</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/marker_anchor_sample.png" alt="Marker.anchor examples" /></p>
+
+<h2>v1 ではどうだったっけ？</h2>
+
+<p>Google Maps API v1 では、<a href="https://developers.google.com/maps/documentation/android/v1/reference/">ItemizedOverlay</a> の <code>boundCenter</code> と <code>boundCenterBottom</code> に相当する機能ですね。こちらはメソッド名の通り、「中央/中心」と「中央/下部」しか対応してなかったので、より柔軟になったと言えます。</p>
+
+<h2>ハマりどころ</h2>
+
+<ul>
+<li>最初、anchor はピクセル指定だ、と勝手に勘違いして、画像のサイズを取得してゴニョゴニョやってたのは内緒。</li>
+<li>0.0〜1.0 の範囲であることを忘れて、0〜100 の値を設定すると、<strong>「マーカーが全部消えます」</strong></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Google Maps Android API v2 で OpenStreetMap を表示する]]></title>
