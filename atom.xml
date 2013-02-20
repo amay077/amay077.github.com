@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-19T23:15:50+09:00</updated>
+  <updated>2013-02-20T19:08:58+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -990,6 +990,206 @@ Geodesic なラインとは地球上の曲がった線のことです。non-geod
 <h2>その他</h2>
 
 <p>つか、Android の GoogleMap さん、思いっきり縮小しても世界が画面内に収まらないので、大圏コースの例が見せにくいわ。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた]]></title>
+    <link href="http://amay077.github.com/blog/2012/12/20/asynctest-on-junit/"/>
+    <updated>2012-12-20T19:07:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/12/20/asynctest-on-junit</id>
+    <content type="html"><![CDATA[<p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
+ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
+
+<p>まあ CountDownLatch で待ってるだけなんですけども。</p>
+
+<p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
+
+<figure class='code'><figcaption><span>FutureResult.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * success または error が呼ばれるまで get() で待ってる Future みたいなクラス</span>
+</span><span class='line'><span class="cm"> * </span>
+</span><span class='line'><span class="cm"> * @author @amay077</span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">FutureResult</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">TIMEOUT</span> <span class="o">=</span> <span class="mi">10</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">TimeUnit</span> <span class="n">TIMEOUT_UNIT</span> <span class="o">=</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">_latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">T</span> <span class="n">_value</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">Exception</span> <span class="n">_error</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">FutureResultException</span> <span class="kd">extends</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="kd">public</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">Exception</span> <span class="n">detailException</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="kd">super</span><span class="o">(</span><span class="n">detailException</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="cm">/**</span>
+</span><span class='line'><span class="cm">  * 非同期処理が成功したら呼ぶメソッド</span>
+</span><span class='line'><span class="cm">  */</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">success</span><span class="o">(</span><span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/**</span>
+</span><span class='line'><span class="cm">  * 非同期処理が失敗したら呼ぶメソッド</span>
+</span><span class='line'><span class="cm">  */</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">error</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">_error</span> <span class="o">=</span> <span class="n">ex</span><span class="o">;</span>
+</span><span class='line'>      <span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="cm">/**</span>
+</span><span class='line'><span class="cm">  * 非同期処理が終わるまで待って結果を返す。</span>
+</span><span class='line'><span class="cm">  * エラーだったら例外を投げる。</span>
+</span><span class='line'><span class="cm">  */</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">T</span> <span class="nf">get</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">if</span> <span class="o">(!</span><span class="n">_latch</span><span class="o">.</span><span class="na">await</span><span class="o">(</span><span class="n">TIMEOUT</span><span class="o">,</span> <span class="n">TIMEOUT_UNIT</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>              <span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="k">new</span> <span class="n">TimeoutException</span><span class="o">());</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_error</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">throw</span> <span class="n">_error</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="k">return</span> <span class="n">_value</span><span class="o">;</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
+使い方はこんな感じ。</p>
+
+<figure class='code'><figcaption><span>AsyncMethodTest.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testAsyncMethod</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">final</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;();</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// 非同期なメソッドを実行</span>
+</span><span class='line'>  <span class="n">hoge</span><span class="o">.</span><span class="na">asyncMethod</span><span class="o">(</span><span class="k">new</span> <span class="n">OnReceiveListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="nd">@Override</span>
+</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Integer</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// 正そうな値を受信しtら success を呼ぶ</span>
+</span><span class='line'>          <span class="n">result</span><span class="o">.</span><span class="na">success</span><span class="o">(</span><span class="n">data</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="nd">@Override</span>
+</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onError</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// エラーを受信した場合は error を呼ぶ</span>
+</span><span class='line'>          <span class="n">result</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">});</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// 検証</span>
+</span><span class='line'>  <span class="k">try</span> <span class="o">{</span>
+</span><span class='line'>      <span class="c1">// get で success か error かタイムアウトするまで待ってる。</span>
+</span><span class='line'>      <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">fail</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考</h2>
+
+<p>なんて記事を書いたあとにもっかいググってみたらこんなライブラリがあるようで。詳細はまだ見てない。</p>
+
+<ul>
+<li><a href="http://code.google.com/p/awaitility/">Awaitility</a> - Awaitility is a small Java-based DSL for synchronizing asynchronous operations. It makes it easy to test asynchronous code. - Google Project Hosting</li>
+</ul>
+
 ]]></content>
   </entry>
   
