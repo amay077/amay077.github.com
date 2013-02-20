@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-20T19:08:58+09:00</updated>
+  <updated>2013-02-20T19:11:46+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -619,6 +619,193 @@ Geodesic なラインとは地球上の曲がった線のことです。non-geod
 <h2>その他</h2>
 
 <p>つか、Android の GoogleMap さん、思いっきり縮小しても世界が画面内に収まらないので、大圏コースの例が見せにくいわ。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Android API v2 の v1 からの変更点メモ]]></title>
+    <link href="http://amay077.github.com/blog/2012/12/20/googlemap-andro-api-v2-changes/"/>
+    <updated>2012-12-20T16:10:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/12/20/googlemap-andro-api-v2-changes</id>
+    <content type="html"><![CDATA[<p><a href="http://www.atmarkit.co.jp/ait/articles/1212/04/news110.html">Android の Map API が刷新</a>され、</p>
+
+<ul>
+<li>ベクトル地図！</li>
+<li>回転、視点変更</li>
+<li>屋内、地下街マップの表示</li>
+</ul>
+
+
+<p>が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。</p>
+
+<p>v2 になって導入手順が大幅に変わりましたが、 <a href="https://twitter.com/adamrocker">@adamrocker</a> さんが早速解説して下さっています。</p>
+
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+
+
+<p>ここでは、Google Map Android API v1 からの変更点を中心に紹介してみます。</p>
+
+<h2>互換性</h2>
+
+<p><strong><em>あ・り・ま・せ・ん、以上！</em></strong></p>
+
+<p>Fragment 化、3D対応などにより、API の設計思想そのものが変わった様で、既存のコードをそのまま流用できることはないでしょう。
+前の MapView に似せた <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> というクラスがありますが、クラス名が同じだけでメンバは全然別物です。</p>
+
+<h2>じゃあ、v1 のあの機能は v2 でどうやんの？</h2>
+
+<h3>移動、拡大・縮小など</h3>
+
+<p><img src="http://f.cl.ly/items/2d3M3T1v3W3C0H102d3L/gmap2_basic.png" alt="BasicMap" /></p>
+
+<p>v1 では <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/MapController.html">MapController</a> の animateTo とか setZoom で行なっていましたが、そもそも v2 には MapController クラスがなくなっています。</p>
+
+<p>v2 では <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap">GoogleMap</a> クラスの animateCamera() や moveCamera() で移動、拡大・縮小を行います。
+これらに加えて、角度(bearing)、視点(tilt) も設定します。animateCamera は Google Earth みたいなアニメーションが定義できてカッコいいですよ。</p>
+
+<p>ちなみに、無段階ズームになった影響で、Zoom の値が int から float になっています。値が示す地図縮尺は変化ないようです。v1 の Zoom=15 と v2 の Zoom=15.0f は同じ意味です。</p>
+
+<h4>参考</h4>
+
+<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の該当箇所を添えておきます。</p>
+
+<ul>
+<li>CameraDemoActivity.java</li>
+</ul>
+
+
+<h3>ズームボタンとかの表示ON/OFF</h3>
+
+<p><img src="http://cl.ly/image/40220F3I163f/gmap2_uisettings.png" alt="UISettings" /></p>
+
+<p>v1 では MapView の setBuiltInZoomControls でズームボタンの表示ON/OFF ができました。
+v2 では、GoogleMap から <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#getUiSettings(">UISettings</a> を取得して設定します。
+v2 では、ズームボタンの他に、コンパスが増えているのでそれらの表示制御と、各種ジェスチャ(スクロール、回転、チルト)の有効/無効 が設定できます。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>UiSettingsDemoActivity.java</li>
+</ul>
+
+
+<h3>マーカー表示</h3>
+
+<p><img src="http://cl.ly/image/2a0b2C073d1f/gmap2_markers.png" alt="Markers" />
+API の使い方で一番大きく変わったのはこの辺りかと思います。</p>
+
+<p>v1 では、MapView に <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/ItemizedOverlay.html">ItemizedOverlay</a> を add して、OverlayItem(＝マーカー)を登録して…って感じでしたが、全滅です。</p>
+
+<p>v2 でのマーカー表示は <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addMarker(com.google.android.gms.maps.model.MarkerOptions">GoogleMap.addMarker</a> を使います。
+Overlay の概念が事実上なくなって、GoogleMap クラスから Marker オブジェクトを生成するようになりました。</p>
+
+<p>マーカーのグループ管理ができなくなってちょっと不便に感じます。(v1 では、ローソンとファミマのマーカーを管理するのに、lawsonOverlay と famimaOverlay を用意しておけば良かった)</p>
+
+<p>v2 のメリットは、マーカーがドラッグをサポートするようになったのと、情報ウィンドウ(ふきだし)が標準搭載されたことです。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>MarkerDemoActivity.java</li>
+</ul>
+
+
+<h3>図形(ラインとかポリゴンとか)描画</h3>
+
+<p><img src="http://cl.ly/image/0c3i2E1z3V1r/gmap2_polygons.png" alt="Polygons" />
+これも大きく作り替えないといけないところです。</p>
+
+<p>v1 では、Overlay の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Overlay.html#draw(android.graphics.Canvas,%20com.google.android.maps.MapView,%20boolean">draw</a> を override して、Canvas の drawLine などの描画メソッドを呼び出す感じでした。</p>
+
+<p>v2 では、Overlay がありませんし、Canvas を直接さわれる口がありません。
+ではどうするかというと、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon">Polygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polyline">Polyline</a> というクラスが用意されています。</p>
+
+<p>GoogleMap クラスの <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolygon(com.google.android.gms.maps.model.PolygonOptions">addPolygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolyline(com.google.android.gms.maps.model.PolylineOptions">addPolyline</a> メソッドで追加します。Marker と同じく Overlay の概念はありません。</p>
+
+<p>また add した Polygon や Polyline は、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon.html#remove(">remove</a> するか <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#clear(">GoogleMap.clear</a> するまで地図上に登録されています。</p>
+
+<p>v2 になって、描画処理は重くなったなあという印象です。
+v1 の感覚で図形を add しまくると、すごくもっさりします。画面に表示すべきものだけ、さらに非同期でパラパラと図形が描画されていくような処理を実装しないとストレスフルな感じになりそうです。</p>
+
+<h4>"表示している領域" の取得方法</h4>
+
+<p>v1 では、getMapCenter , getLatitudeSpan, getLongitudeSpan でなんとなく取得できました。
+v2 では、GoogleMap.getProjection で得られる <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/Projection">Projection</a> クラスの getVisibleRegion から取得できます。</p>
+
+<p>注意点は、回転している時とチルトしている時、いずれも "表示している範囲を包括する矩形" が得られるようですが、特にチルトしている時は奥行き分が領域に含まれますので、視点を倒せば倒すほど遠くが見える(領域が広がる)ことになります。画面に表示しているものだけ図形を描画する時など、奥行きはある程度のしきい値を持たないと範囲が広くなりすぎです。</p>
+
+<h4>ハマった所</h4>
+
+<p>Polygon は当然塗りつぶしができるわけですが、これポリゴンの座標群が「時計回り」でないと塗りつぶされません。地理情報システムの業界では、"ポリゴンの外周は時計回り、穴は反時計回り" という常識があるのですが、それに習ったものと思われます。この原因にたどり着くまで、始点と終点が一致してないのかな、少数の切り捨てで一致してないのかとか、小一時間悩みました。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>PolygonDemoActivity.java</li>
+<li>PolylineDemoActivity.java</li>
+</ul>
+
+
+<h3>MapView とは一体？</h3>
+
+<p>冒頭で紹介した <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> ですが、地図の表示はできたものの、その後、位置を移動しようと</p>
+
+<pre><code>GoogleMap gMap = ((MapView) findViewById(R.id.map)).getMap();
+gMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(35, 130)));
+</code></pre>
+
+<p>というコードを実行した所、 <code>java.lang.NullPointerException: CameraUpdateFactory is not initialized</code> が発生してしまいました。え？どうやって移動するの？</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>RawMapViewDemoActivity.java</li>
+</ul>
+
+
+<h2>増えた機能</h2>
+
+<p>v1 感覚だと使うのに苦労しそうな v2 ですが、冒頭で紹介した機能以外に追加されてる機能もあります。</p>
+
+<h3>情報ウィンドウ(ふきだし)</h3>
+
+<p>これこれ、マーカーをタップすると表示される「ふきだし」。
+v1 には無かったので、自作か外部ライブラリ使いしか無かったんですよね。
+サンプル MarkerDemoActivity.java で使い方が紹介されてます。</p>
+
+<h2>タイルオーバーレイとグラウンドオーバーレイ</h2>
+
+<p>GIS'er 感涙の両機能。
+タイルオーバーレイは、他のタイル地図サービスをオーバーレイできる、ってことですね。OpenStreetMap とか。iOS の <a href="http://qiita.com/items/8d89eeea614ce4293514">route-me</a> みたいなことができると期待してます。だれかハックを！
+<img src="http://f.cl.ly/items/470S1b1B3a1F3F3z093i/gmap2_tileoverlay.png" alt="TileOverlay" /></p>
+
+<p>グラウンドオーバーレイは、画像ファイルに位置情報を与えてやると、それが地面に張り付いたように表示されるというものです。
+<img src="http://f.cl.ly/items/470s2M3g0w3Z2H423B3t/gmap2_groudoverlay.png" alt="GroundOverlay" /></p>
+
+<p>タイルオーバーレイのサンプルは TileOverlayDemoActivity.java 、グラウンドオーバーレイのサンプルは GroundOverlayDemoActivity.java です。</p>
+
+<h2>雑感</h2>
+
+<p>Google Map Android API v2 をざっと使ってみての感想です。</p>
+
+<p>v1 と互換性がなくなり、使い方がガラっと変わったのはある程度想定していました。2次元と3次元の溝は深いです。</p>
+
+<p>Android と関係ないですが、iOS の MapKit も同じようなことになるのではないかと思っています。(地図アプリは 3D に対応しましたが MapKit は 2D のまま。3D用のMapKit は "まったく別のもの" として提供されるのではないかと。)</p>
+
+<p>導入の仕方が難しくなっちゃったなー、と。
+なぜ Google API Console で管理するのはよいとしても、ライブラリプロジェクトを参照しないといけないのか、とか。
+(実は Fragment 初めて使いました…)</p>
+
+<p>あと、Google Play Service や API Console との結びつきが強くなり、利用状況がモニタリングできる環境が整いつつあります。こりゃ課金も現実味を帯びてきたなあ、と。</p>
+
+<p>そんなわけで、導入がちょいと面倒だったり、v1 と互換性まったくないですけど、なにしろ Googleマップアプリのあの地図レンダリングと機能がアプリに組み込めるのは嬉しい限りです。新たに地図アプリ作るなら使わない手はないですね！</p>
+
+<p>まだ使いこなしてはいないので、順次 Post していきたいと思います。
+最後に拙作の Android アプリ「HexRinger」の Map API v2 対応試作版をステマして終わります。</p>
+
+<p><img src="http://cl.ly/image/1n0f1e0c1r3C/gmap2_hexringer.png" alt="HexRinger" /></p>
 ]]></content>
   </entry>
   
