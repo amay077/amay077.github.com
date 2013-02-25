@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？ - Experiments Never Fail</title>
+  <title>SublimeText2 で Shift-jis を使う - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話 を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。 症状 下記条件を満たす時に、LocationManager.requestLocationUpdates すると &hellip;">
+  <meta name="description" content="SublimeText2 は大変便利なテキストエディタですが、shift-jis に対応していないのが玉にキズでした。 そんな時、@umibose さんのツイートが！ Sublime Text 2でSJISもいける！https://t.co/XxCrfPd0 M.Hayakawaさん (@ &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/">
+  <link rel="canonical" href="http://amay077.github.com/blog/2012/10/20/how-to-use-shiftjis-on-sublimetext2/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <script src="/javascripts/modernizr-2.0.js"></script>
@@ -67,7 +67,7 @@
   
   <header>
     
-      <h1 class="entry-title">HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</h1>
+      <h1 class="entry-title">SublimeText2 で Shift-jis を使う</h1>
     
     
       <p class="meta">
@@ -83,52 +83,62 @@
   
 
 
-<time datetime="2013-02-19T00:41:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+<time datetime="2012-10-20T19:19:00+09:00" pubdate data-updated="true">Oct 20<span>th</span>, 2012</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p><a href="mixi%20Engineers'%20Blog%20http://alpha.mixi.co.jp/2013/11572/">Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話</a> を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。</p>
-
-<h2>症状</h2>
-
-<p>下記条件を満たす時に、LocationManager.requestLocationUpdates すると、最新の位置が取得されず、<strong>前回測位した位置</strong> が返される。</p>
-
-<p>時刻は更新されてたか、、、あーどうだったかな。</p>
+<div class="entry-content"><p>SublimeText2 は大変便利なテキストエディタですが、shift-jis に対応していないのが玉にキズでした。</p>
 
 <!-- more -->
 
 
-<h2>条件</h2>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/shiftjis.png" alt="mojibake" /></p>
 
-<ul>
-<li>NETWORK_PROVIDER で位置を取得した場合（GPS じゃない）</li>
-<li>WiFi が無効の場合（つまり携帯電話の基地局のみを使った測位の場合）</li>
-<li>スリープ中な場合</li>
-<li>HTC J である(IS03, Nexus S では発生してない。 HTC J Butterfly はわからない)</li>
-</ul>
+<p>そんな時、@umibose さんのツイートが！</p>
 
+<blockquote><p>Sublime Text 2でSJISもいける！https://t.co/XxCrfPd0</p>
 
-<h2>こんな事してたら見つけた</h2>
+<p>M.Hayakawaさん (@umibose) <a href="https://twitter.com/umibose/status/256247651710951424">10月 11, 2012</a></p></blockquote>
 
-<p>早い話が HexRinger なんですが、このアプリは、AlarmManager で一定時間毎に WiFi/基地局から位置を取得しています。デバッグで移動中のログを取ってたら、「この時間帯、電車で寝てたのになんか位置変わってないんだけどｗ」となりました。</p>
+<p>ふむ、ConvertToUTF8 というものできるのか。というわけで早速試してみました。</p>
 
-<h2>対策</h2>
+<p>以下手順。</p>
 
-<p>WakeLock する。ただし PARTIAL_WAKE_LOCK だとダメで、画面も起こしてやらないとダメだった。
-SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪やん。</p>
+<h2>1. Sublime Package Control の導入</h2>
 
-<h2>いろいろ試した事とか推測</h2>
+<p><a href="http://wbond.net/sublime_packages/package_control/installation">Installation – Sublime Package Control – a Sublime Text 2 Package Manager by wbond</a> の手順。</p>
 
-<ul>
-<li>測位前に通信させればいけるか？と思ったけどダメだった。</li>
-<li>そもそも「最寄りの基地局情報」がスリープ状態だと更新されないんじゃないか説。</li>
-</ul>
+<p>まず、SublimeText2 にパッケージコントロールシステムを導入します。(既に入っていればスキップ)</p>
 
+<p>SublimeText2 を起動し、 <code>shift + ctrl + @</code> (ctrl+`) を押すと、画面下部にコンソールが表示されます。(Win版のショートカット知りません)</p>
 
-<p>設置場所が山奥過ぎてこの地雷を踏む人はそうはいないと思いますが、「HTC J だけど問題ないよ？」「Butterfly でもダメだったわー」とかの情報あったらコメントください。 m(<em> </em>)m</p>
+<p>ここに、上記リンクにある import〜 の一文を貼り付けて Enter！</p>
+
+<p>なんだかインストールが終わった感じなら Sublime を再起動します。</p>
+
+<h2>2. ConvertToUTF8 の導入</h2>
+
+<p><a href="https://github.com/seanliang/ConvertToUTF8">ConvertToUTF8 - Github</a> の手順。</p>
+
+<p><code>shift + command + p</code>(Win版はry) を押すと、Command Palette が開くので、そこで <code>Package Control: Install Package</code> を選択。（ある程度入力するとサジェストされます）</p>
+
+<p>次に出てくるポップアップ(画面名分からん)で <code>ConvertToUTF8</code> を選択。</p>
+
+<p>インストールが終わったら Sublime を再起動すれば…</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/choise_charcode.png" alt="choice" /></p>
+
+<p>お、なんか文字コード選択が出た（でない場合もある？）
+そして…
+<img src="https://dl.dropbox.com/u/264530/qiita/shiftjis_correct.png" alt="choice" /></p>
+
+<p>おっしゃー！
+これであとは日本語入力時の挙動が直ってくれたら最強エディタですね。</p>
+
+<p><a href="https://twitter.com/umibose">@umibose</a> さん、ありがとうございます！</p>
 </div>
 
 
@@ -151,12 +161,12 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
   
 
 
-<time datetime="2013-02-19T00:41:00+09:00" pubdate data-updated="true">Feb 19<span>th</span>, 2013</time>
+<time datetime="2012-10-20T19:19:00+09:00" pubdate data-updated="true">Oct 20<span>th</span>, 2012</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/android/'>Android</a>
+    <a class='category' href='/blog/categories/sublimetext2/'>SublimeText2</a>
   
 </span>
 
@@ -165,7 +175,7 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
     
       <div class="sharing">
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/" data-via="" data-counturl="http://amay077.github.com/blog/2013/02/19/htc-j-networkprovider-bug/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.com/blog/2012/10/20/how-to-use-shiftjis-on-sublimetext2/" data-via="" data-counturl="http://amay077.github.com/blog/2012/10/20/how-to-use-shiftjis-on-sublimetext2/" >Tweet</a>
   
   
   
@@ -174,10 +184,10 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/01/19/gets-context-on-android-junit/" title="Previous Post: Android の jUnit テストで Context が欲しい時">&laquo; Android の jUnit テストで Context が欲しい時</a>
+        <a class="basic-alignment left" href="/blog/2012/10/20/helloworld-of-haskell/" title="Previous Post: Mac に Homebrew で Haskell 入れて HelloWorld">&laquo; Mac に Homebrew で Haskell 入れて HelloWorld</a>
       
       
-        <a class="basic-alignment right" href="/blog/2013/02/19/googlemap-v2-anchor/" title="Next Post: Google Maps API v2 のマーカーの Anchor を探る">Google Maps API v2 のマーカーの Anchor を探る &raquo;</a>
+        <a class="basic-alignment right" href="/blog/2012/11/20/how-to-install-jade-on-express/" title="Next Post: Express で ejs のつもりなのに jade が入っちゃう時">Express で ejs のつもりなのに jade が入っちゃう時 &raquo;</a>
       
     </p>
   </footer>

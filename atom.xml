@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.com/atom.xml" rel="self"/>
   <link href="http://amay077.github.com/"/>
-  <updated>2013-02-20T19:11:46+09:00</updated>
+  <updated>2013-02-25T19:42:13+09:00</updated>
   <id>http://amay077.github.com/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,271 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[jetty で静的コンテンツを有効にして起動するまで]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/25/static-contents-on-jetty/"/>
+    <updated>2013-02-25T19:33:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/25/static-contents-on-jetty</id>
+    <content type="html"><![CDATA[<p>jetty で静的コンテンツを有効にして起動するまで</p>
+
+<p>index.html とかホストしたいだけなんですけど、意外に苦労したのでメモ。</p>
+
+<!-- more -->
+
+
+<h2>jetty のダウンロード</h2>
+
+<p><a href="http://download.eclipse.org/jetty/">Jetty Ecripse Downloads</a> から stable-8 をダウンロード。(9 がまだ RC だったおので、念のため)</p>
+
+<h2>適当なディレクトリに展開</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>~/dev/sdks/jetty-8.1.9</span></code></pre></td></tr></table></div></figure>
+
+
+<p>にしてみました。</p>
+
+<h2>とりあえず起動してみる</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cd ~/dev/sdks/jetty-8.1.9
+</span><span class='line'>$ java -jar start.jar</span></code></pre></td></tr></table></div></figure>
+
+
+<p>http://localhost:8080 にアクセス。</p>
+
+<p>動いた、ふむふむ。</p>
+
+<h2>普通の HTML とかをぶっこむディレクトリを作る</h2>
+
+<p>&#8216;htdocs&#8217; にしました。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ cd ~/dev/sdks/jetty-8.1.9
+</span><span class='line'>$ mkdir htdocs</span></code></pre></td></tr></table></div></figure>
+
+
+<p>適当な HTML を htdocs に入れる。</p>
+
+<figure class='code'><figcaption><span>~/dev/sdks/jetty-8.1.9/htdocs/index.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">&quot;ja&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;body&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;H1&gt;</span>Hello World!<span class="nt">&lt;/H1&gt;</span>
+</span><span class='line'><span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>jetty の設定ファイルで、静的コンテンツを有効にする Handler とかいうやつを設定する</h2>
+
+<p><code>etc/jetty.xml</code> をコピーして、<code>etc/jetty_static.xml</code> とか適当な名前にする。</p>
+
+<p>handler の設定のところに ResourceHandler のブロックを入れる</p>
+
+<figure class='code'><figcaption><span>jetty_static.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot;?&gt;</span>
+</span><span class='line'><span class="cp">&lt;!DOCTYPE Configure PUBLIC &quot;-//Jetty//Configure//EN&quot; &quot;http://www.eclipse.org/jetty/configure.dtd&quot;&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c">&lt;!-- =============================================================== --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Configure the Jetty Server                                      --&gt;</span>
+</span><span class='line'><span class="c">&lt;!--                                                                 --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Documentation of this file format can be found at:              --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- http://wiki.eclipse.org/Jetty/Reference/jetty.xml_syntax        --&gt;</span>
+</span><span class='line'><span class="c">&lt;!--                                                                 --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- Additional configuration files are available in $JETTY_HOME/etc --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- and can be mixed in.  For example:                              --&gt;</span>
+</span><span class='line'><span class="c">&lt;!--   java -jar start.jar etc/jetty-ssl.xml                         --&gt;</span>
+</span><span class='line'><span class="c">&lt;!--                                                                 --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- See start.ini file for the default configuraton files           --&gt;</span>
+</span><span class='line'><span class="c">&lt;!-- =============================================================== --&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;Configure</span> <span class="na">id=</span><span class="s">&quot;Server&quot;</span> <span class="na">class=</span><span class="s">&quot;org.eclipse.jetty.server.Server&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- Server Thread Pool                                          --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;ThreadPool&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="c">&lt;!-- Default queued blocking threadpool --&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;New</span> <span class="na">class=</span><span class="s">&quot;org.eclipse.jetty.util.thread.QueuedThreadPool&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;minThreads&quot;</span><span class="nt">&gt;</span>10<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;maxThreads&quot;</span><span class="nt">&gt;</span>200<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;detailedDump&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/New&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- Set connectors                                              --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;Call</span> <span class="na">name=</span><span class="s">&quot;addConnector&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;Arg&gt;</span>
+</span><span class='line'>          <span class="nt">&lt;New</span> <span class="na">class=</span><span class="s">&quot;org.eclipse.jetty.server.nio.SelectChannelConnector&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;host&quot;</span><span class="nt">&gt;&lt;Property</span> <span class="na">name=</span><span class="s">&quot;jetty.host&quot;</span> <span class="nt">/&gt;&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;port&quot;</span><span class="nt">&gt;&lt;Property</span> <span class="na">name=</span><span class="s">&quot;jetty.port&quot;</span> <span class="na">default=</span><span class="s">&quot;8080&quot;</span><span class="nt">/&gt;&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;maxIdleTime&quot;</span><span class="nt">&gt;</span>300000<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;Acceptors&quot;</span><span class="nt">&gt;</span>2<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;statsOn&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;confidentialPort&quot;</span><span class="nt">&gt;</span>8443<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;lowResourcesConnections&quot;</span><span class="nt">&gt;</span>20000<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;lowResourcesMaxIdleTime&quot;</span><span class="nt">&gt;</span>5000<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>          <span class="nt">&lt;/New&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/Arg&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/Call&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- Set handler Collection Structure                            --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;handler&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;New</span> <span class="na">id=</span><span class="s">&quot;Handlers&quot;</span> <span class="na">class=</span><span class="s">&quot;org.eclipse.jetty.server.handler.HandlerCollection&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;handlers&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>         <span class="nt">&lt;Array</span> <span class="na">type=</span><span class="s">&quot;org.eclipse.jetty.server.Handler&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>           <span class="c">&lt;!-- ここから --&gt;</span>
+</span><span class='line'>           <span class="nt">&lt;Item&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;New</span> <span class="na">class=</span><span class="s">&quot;org.eclipse.jetty.server.handler.ResourceHandler&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>             <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;resourceBase&quot;</span><span class="nt">&gt;&lt;Property</span> <span class="na">name=</span><span class="s">&quot;files.base&quot;</span> <span class="na">default=</span><span class="s">&quot;./htdocs&quot;</span><span class="nt">/&gt;&lt;/Set&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/New&gt;</span>
+</span><span class='line'>           <span class="nt">&lt;/Item&gt;</span>
+</span><span class='line'>           <span class="c">&lt;!-- ここまで --&gt;</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="c">&lt;!-- よくわからないのでコメントアウトしてみた</span>
+</span><span class='line'><span class="c">           &lt;Item&gt;</span>
+</span><span class='line'><span class="c">             &lt;New id=&quot;Contexts&quot; class=&quot;org.eclipse.jetty.server.handler.ContextHandlerCollection&quot;/&gt;</span>
+</span><span class='line'><span class="c">           &lt;/Item&gt;</span>
+</span><span class='line'><span class="c">           &lt;Item&gt;</span>
+</span><span class='line'><span class="c">             &lt;New id=&quot;DefaultHandler&quot; class=&quot;org.eclipse.jetty.server.handler.DefaultHandler&quot;/&gt;</span>
+</span><span class='line'><span class="c">           &lt;/Item&gt; --&gt;</span>
+</span><span class='line'>         <span class="nt">&lt;/Array&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;/New&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- extra options                                               --&gt;</span>
+</span><span class='line'>    <span class="c">&lt;!-- =========================================================== --&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;stopAtShutdown&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;sendServerVersion&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;sendDateHeader&quot;</span><span class="nt">&gt;</span>true<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;gracefulShutdown&quot;</span><span class="nt">&gt;</span>1000<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;dumpAfterStart&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Set</span> <span class="na">name=</span><span class="s">&quot;dumpBeforeStop&quot;</span><span class="nt">&gt;</span>false<span class="nt">&lt;/Set&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/Configure&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>設定ファイルを指定して起動してみる</h2>
+
+<figure class='code'><figcaption><span>jetty_static.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>$ cd ~/dev/sdks/jetty-8.1.9
+</span><span class='line'>$ java -jar start.jar --ini etc/jetty_static.xml
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&#8211;ini は不要な気もするのだけど、付けないとエラーになっちゃった。</p>
+
+<p>これで、 http://localhost:8080 にアクセスすると、さっきつくった Hello World が表示されるはず。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Google Maps API v2 のマーカーの Anchor を探る]]></title>
@@ -179,12 +444,12 @@ SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪や�
 
 <p>ここでは、v2 で新しく追加された <code>TileOverlay</code> を使って、OpenStreetMap を重ねてみます。</p>
 
+<!-- more -->
+
+
 <h2>UrlTileProvider を使って OpenStreetMap を表示する</h2>
 
 <p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。</p>
-
-<!-- more -->
-
 
 <h3>サンプルのコード</h3>
 
@@ -1001,6 +1266,9 @@ Geodesic なラインとは地球上の曲がった線のことです。non-geod
     <content type="html"><![CDATA[<p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
 ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
 
+<!-- more -->
+
+
 <p>まあ CountDownLatch で待ってるだけなんですけども。</p>
 
 <p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
@@ -1209,6 +1477,9 @@ Geodesic なラインとは地球上の曲がった線のことです。non-geod
 
 <p>が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。</p>
 
+<!-- more -->
+
+
 <p>v2 になって導入手順が大幅に変わりましたが、 <a href="https://twitter.com/adamrocker">@adamrocker</a> さんが早速解説して下さっています。</p>
 
 <ul>
@@ -1377,6 +1648,376 @@ v1 には無かったので、自作か外部ライブラリ使いしか無か�
 最後に拙作の Android アプリ「HexRinger」の Map API v2 対応試作版をステマして終わります。</p>
 
 <p><img src="http://cl.ly/image/1n0f1e0c1r3C/gmap2_hexringer.png" alt="HexRinger" /></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mac mini(late 2012)に Windows7(32bit)をインストールしたメモ]]></title>
+    <link href="http://amay077.github.com/blog/2012/11/20/win7-on-macmini/"/>
+    <updated>2012-11-20T19:12:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/11/20/win7-on-macmini</id>
+    <content type="html"><![CDATA[<p>Windows8(32bit) でもいけます。</p>
+
+<!-- more -->
+
+
+<ol>
+<li>Mountain Lion の Bootcampアシスタントで Windows7_32bit のディスク入れて続行しようとすると「対応してません」とエラーが出る</li>
+<li>とりあえず「サポートソフトウェア」はUSBメモリに取得しておく</li>
+<li>Bootcampアシスタントはあきらめ「ディスクユーティリティ」でパーティションを作る</li>
+<li>再起動→起動時に option(ALT)キー押しっぱなし→windows のディスクを選択</li>
+<li>Windows7_32bit をインストール</li>
+<li>インストール後、デバイスマネージャ見ると黄色がいっぱい。ネットもつながらない</li>
+<li>サポートソフトウェアは64bit用だが、中には兼用のものもあるので、入れられるものは入れておく</li>
+<li>Broadcom からイーサネットコントローラのドライバをダウンロードしてインストール</li>
+<li>ネットがつながった、これで勝つる。</li>
+</ol>
+
+
+<p>※他に古い Mac mini があるなら、そこから Bootcamp でサポートソフトウェアをダウンロードしておくと、32bit のドライバが使える
+※けどどーしても Bluetooth ドライバが見つからない。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps API Key の取得で「入力されたフィンガープリントは無効です。」が出るようになった件]]></title>
+    <link href="http://amay077.github.com/blog/2012/11/20/fingerprint-error-on-googlemap-api-v1/"/>
+    <updated>2012-11-20T18:14:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/11/20/fingerprint-error-on-googlemap-api-v1</id>
+    <content type="html"><![CDATA[<p>Android で Googleマップを利用する際に必ず通る道である Google Map API Key の取得。
+久しぶりに行ったら、少しハマったのでメモ。</p>
+
+<!-- more -->
+
+
+<p>手順は、</p>
+
+<p><a href="http://wikiwiki.jp/android/?Maps%20API%20Key%A4%CE%BC%E8%C6%C0">Maps API Keyの取得 - Android Wiki</a></p>
+
+<p>など、たくさん出てくるが、この通りやっても <strong>「入力されたフィンガープリントは無効です。」</strong> とエラーになってしまう。</p>
+
+<p>「いやいやご冗談を。」と、よぉ〜く見直したら、</p>
+
+<h2>keytool の結果が MD5 じゃなくて SHA1 になってるッ！！！</h2>
+
+<p>という話。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$  keytool -list -keystore ~/.android/debug.keystore </span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>キーストアのパスワードを入力してください:</p>
+
+<p><strong><strong><strong><strong><strong><strong><strong><strong><em>  WARNING WARNING WARNING  </em></strong></strong></strong></strong></strong></strong></strong></strong>
+<em>キーストアに保存された情報の整合性は</em>
+<em>検証されていません。整合性を検証するには</em>
+<em>キーストアのパスワードを入力する必要があります。</em>
+<strong><strong><strong><strong><strong><strong><strong><strong><em>  WARNING WARNING WARNING  </em></strong></strong></strong></strong></strong></strong></strong></strong></p>
+
+<p>キーストアのタイプ: JKS
+キーストア・プロバイダ: SUN</p>
+
+<p>キーストアには1エントリが含まれます</p>
+
+<p>androiddebugkey,2011/10/05, PrivateKeyEntry,
+証明書のフィンガプリント(SHA1): xx:xx:xx:xx:xx:xx:xx:…</p></blockquote>
+
+<p>上のリンク先のコメントにチラッと説明があった。
+どうやら Java7 を導入すると SHA1 に替わってしまうらしい。</p>
+
+<p>-v を足して実行すると、MD5 も表示されるので、そこからコピーして解決。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$  keytool -list -keystore ~/.android/debug.keystore -v</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>キーストアのパスワードを入力してください:</p>
+
+<p><strong><strong><strong><strong><strong><strong><strong><strong><em>  WARNING WARNING WARNING  </em></strong></strong></strong></strong></strong></strong></strong></strong>
+<em>キーストアに保存された情報の整合性は</em>
+<em>検証されていません。整合性を検証するには</em>
+<em>キーストアのパスワードを入力する必要があります。</em>
+<strong><strong><strong><strong><strong><strong><strong><strong><em>  WARNING WARNING WARNING  </em></strong></strong></strong></strong></strong></strong></strong></strong></p>
+
+<p>キーストアのタイプ: JKS
+キーストア・プロバイダ: SUN</p>
+
+<p>キーストアには1エントリが含まれます</p>
+
+<p>別名: androiddebugkey
+作成日: 2011/10/05
+エントリ・タイプ: PrivateKeyEntry
+証明書チェーンの長さ: 1
+証明書[1]:
+所有者: CN=Android Debug, O=Android, C=US
+発行者: CN=Android Debug, O=Android, C=US
+シリアル番号: 4e8bdcd5
+有効期間の開始日: Wed Oct 05 13:28:05 JST 2011終了日: Fri Sep 27 13:28:05 JST 2041
+証明書のフィンガプリント:</p>
+
+<pre><code> MD5:  xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…
+ SHA1: xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…
+ SHA256: xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…
+ 署名アルゴリズム名: SHA1withRSA
+ バージョン: 3
+</code></pre></blockquote>
+
+<p>気づかねぇよ、こんなもん（←やつあたり</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Express で ejs のつもりなのに jade が入っちゃう時]]></title>
+    <link href="http://amay077.github.com/blog/2012/11/20/how-to-install-jade-on-express/"/>
+    <updated>2012-11-20T15:17:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/11/20/how-to-install-jade-on-express</id>
+    <content type="html"><![CDATA[<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ express -t ejs myapp</span></code></pre></td></tr></table></div></figure>
+
+
+<p>で ejs を入れたつもりが、<code>views/index.jade</code> とかが入っちゃう。</p>
+
+<!-- more -->
+
+
+
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ express -tejs myapp
+</span><span class='line'>            ^スペース空けない</span></code></pre></td></tr></table></div></figure>
+
+
+<p>と、正しく ejs が使われる。</p>
+
+<p>なんなのよこれ。express が rc だから？</p>
+
+<h2>0:51追記</h2>
+
+<p>あーっ、ヘルプ見たら <code>express -e myapp</code> が正しいのね。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>$ express -h</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p> Usage: express [options]</p>
+
+<p> Options:</p>
+
+<p>   -h, &#8211;help          output usage information
+   -V, &#8211;version       output the version number
+   -s, &#8211;sessions      add session support
+   -e, &#8211;ejs           add ejs engine support (defaults to jade)
+   -J, &#8211;jshtml        add jshtml engine support (defaults to jade)
+   -H, &#8211;hogan         add hogan.js engine support
+   -c, &#8211;css <engine>  add stylesheet <engine> support (less|stylus) (defaults to plain css)
+   -f, &#8211;force         force on non-empty directory</p></blockquote>
+
+<h2>環境</h2>
+
+<ul>
+<li>Mac OS X 10.8.2</li>
+<li>node v0.9.2</li>
+<li>express 3.0.0rc5</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[SublimeText2 で Shift-jis を使う]]></title>
+    <link href="http://amay077.github.com/blog/2012/10/20/how-to-use-shiftjis-on-sublimetext2/"/>
+    <updated>2012-10-20T19:19:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/10/20/how-to-use-shiftjis-on-sublimetext2</id>
+    <content type="html"><![CDATA[<p>SublimeText2 は大変便利なテキストエディタですが、shift-jis に対応していないのが玉にキズでした。</p>
+
+<!-- more -->
+
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/shiftjis.png" alt="mojibake" /></p>
+
+<p>そんな時、@umibose さんのツイートが！</p>
+
+<blockquote><p>Sublime Text 2でSJISもいける！https://t.co/XxCrfPd0</p>
+
+<p>M.Hayakawaさん (@umibose) <a href="https://twitter.com/umibose/status/256247651710951424">10月 11, 2012</a></p></blockquote>
+
+<p>ふむ、ConvertToUTF8 というものできるのか。というわけで早速試してみました。</p>
+
+<p>以下手順。</p>
+
+<h2>1. Sublime Package Control の導入</h2>
+
+<p><a href="http://wbond.net/sublime_packages/package_control/installation">Installation – Sublime Package Control – a Sublime Text 2 Package Manager by wbond</a> の手順。</p>
+
+<p>まず、SublimeText2 にパッケージコントロールシステムを導入します。(既に入っていればスキップ)</p>
+
+<p>SublimeText2 を起動し、 <code>shift + ctrl + @</code> (ctrl+`) を押すと、画面下部にコンソールが表示されます。(Win版のショートカット知りません)</p>
+
+<p>ここに、上記リンクにある import〜 の一文を貼り付けて Enter！</p>
+
+<p>なんだかインストールが終わった感じなら Sublime を再起動します。</p>
+
+<h2>2. ConvertToUTF8 の導入</h2>
+
+<p><a href="https://github.com/seanliang/ConvertToUTF8">ConvertToUTF8 - Github</a> の手順。</p>
+
+<p><code>shift + command + p</code>(Win版はry) を押すと、Command Palette が開くので、そこで <code>Package Control: Install Package</code> を選択。（ある程度入力するとサジェストされます）</p>
+
+<p>次に出てくるポップアップ(画面名分からん)で <code>ConvertToUTF8</code> を選択。</p>
+
+<p>インストールが終わったら Sublime を再起動すれば…</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/choise_charcode.png" alt="choice" /></p>
+
+<p>お、なんか文字コード選択が出た（でない場合もある？）
+そして…
+<img src="https://dl.dropbox.com/u/264530/qiita/shiftjis_correct.png" alt="choice" /></p>
+
+<p>おっしゃー！
+これであとは日本語入力時の挙動が直ってくれたら最強エディタですね。</p>
+
+<p><a href="https://twitter.com/umibose">@umibose</a> さん、ありがとうございます！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mac に Homebrew で Haskell 入れて HelloWorld]]></title>
+    <link href="http://amay077.github.com/blog/2012/10/20/helloworld-of-haskell/"/>
+    <updated>2012-10-20T14:22:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2012/10/20/helloworld-of-haskell</id>
+    <content type="html"><![CDATA[<p>OS は Mountain Lion、Homebrew は入ってる前提で。</p>
+
+<!-- more -->
+
+
+<h2>インストール</h2>
+
+<p>「処理系」の GHC と、開発用プラットフォームをインストールする。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install ghc</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>==> Downloading http://www.haskell.org/ghc/dist/7.4.2/ghc-7.4.2-x86_64-apple-darwin.tar.bz2</p>
+
+<h6>################################################################## 100.0%</h6>
+
+<p>==> ./configure &#8211;prefix=/usr/local/Cellar/ghc/7.4.2
+==> make install
+==> Caveats
+This brew is for GHC only; you might also be interested in haskell-platform.
+==> Summary
+/usr/local/Cellar/ghc/7.4.2: 6209 files, 842M, built in 18.9 minutes</p></blockquote>
+
+<p>20分弱かかった。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>brew install haskell-platform</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>==> Downloading http://lambda.haskell.org/platform/download/2012.2.0.0/haskell-platform-2012</p>
+
+<h6>################################################################## 100.0%</h6>
+
+<p>==> ./configure &#8211;prefix=/usr/local/Cellar/haskell-platform/2012.2.0.0 &#8211;enable-unsupported-
+==> EXTRA_CONFIGURE_OPTS=&#8221;&#8211;libdir=/usr/local/Cellar/haskell-platform/2012.2.0.0/lib/ghc&#8221; ma
+==> Caveats
+Run <code>cabal update</code> to initialize the package list.</p>
+
+<p>If you are replacing a previous version of haskell-platform, you may want
+to unregister packages belonging to the old version. You can find broken
+packages using:
+  ghc-pkg check &#8211;simple-output
+You can uninstall them using:
+  ghc-pkg check &#8211;simple-output | xargs -n 1 ghc-pkg unregister &#8211;force
+==> Summary
+/usr/local/Cellar/haskell-platform/2012.2.0.0: 869 files, 174M, built in 13.4 minutes</p></blockquote>
+
+<p>全部で３０分ほど。途中「ほんとに動いてんの？」って状態になったが焦らず放っておいたら終わってた。</p>
+
+<h2>対話式インタプリタを起動する</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>ghci</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>GHCi, version 7.4.2: http://www.haskell.org/ghc/  :? for help
+Loading package ghc-prim &#8230; linking &#8230; done.
+Loading package integer-gmp &#8230; linking &#8230; done.
+Loading package base &#8230; linking &#8230; done.
+Prelude></p></blockquote>
+
+<h2>ハロワ</h2>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>Prelude&gt; putStrLn "Hello, World"</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>Hello, World</p></blockquote>
+
+<h2>GHCi の終了</h2>
+
+<p>意外と分からなかった。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>:quit</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>Leaving GHCi.</p></blockquote>
+
+<h2>【未解決】runhaskell で「lexical error (UTF-8 decoding error)」エラー</h2>
+
+<p><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a> にあった REPL じゃなくてソースをビルドして実行する方法でエラーが。</p>
+
+<figure class='code'><figcaption><span>Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='hs'><span class='line'><span class="nf">main</span> <span class="ow">=</span> <span class="kr">do</span> <span class="n">putStrLn</span> <span class="s">&quot;What is 2 + 2?&quot;</span>
+</span><span class='line'>          <span class="n">x</span> <span class="ow">&lt;-</span> <span class="n">readLn</span>
+</span><span class='line'>          <span class="kr">if</span> <span class="n">x</span> <span class="o">==</span> <span class="mi">4</span>
+</span><span class='line'>              <span class="kr">then</span> <span class="n">putStrLn</span> <span class="s">&quot;You&#39;re right!&quot;</span>
+</span><span class='line'>              <span class="kr">else</span> <span class="n">putStrLn</span> <span class="s">&quot;You&#39;re wrong!&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>を Test.hs で保存して、</p>
+
+<figure class='code'><figcaption><span>Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='hs'><span class='line'><span class="nf">ghc</span> <span class="c1">--make Test.hs</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>を実行して、Test, Test.hi, Test.o ファイルが生成される。
+で、</p>
+
+<figure class='code'><figcaption><span>Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='hs'><span class='line'><span class="nf">runhaskell</span> <span class="kt">Test</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>とすると</p>
+
+<blockquote><p>Test:1:1: lexical error (UTF-8 decoding error)</p></blockquote>
+
+<p>というエラーが。よく分からないからとりあえず、</p>
+
+<figure class='code'><figcaption><span>Test.hs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='hs'><span class='line'><span class="nf">runghc</span> <span class="kt">Test</span><span class="o">.</span><span class="n">hs</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>で満足してる。まだ入り口にも立ってない気分。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a></li>
+<li><a href="http://d.hatena.ne.jp/hide_o_55/20110427/1303914801">Haskell再入門 1日目(環境構築) - WebService::Blog->new( user => ’hide_o_55’ )</a></li>
+</ul>
+
 ]]></content>
   </entry>
   

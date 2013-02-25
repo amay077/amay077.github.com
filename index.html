@@ -9,7 +9,7 @@
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="Google Maps API の Marker には、Anchor というプロパティがあり、緯度経度と、画像のどの位置をマッピングさせるかを設定する事ができます。 ">
+  <meta name="description" content="jetty で静的コンテンツを有効にして起動するまで index.html とかホストしたいだけなんですけど、意外に苦労したのでメモ。 ">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -64,6 +64,49 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/02/25/static-contents-on-jetty/">Jetty で静的コンテンツを有効にして起動するまで</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-02-25T19:33:00+09:00" pubdate data-updated="true">Feb 25<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>jetty で静的コンテンツを有効にして起動するまで</p>
+
+<p>index.html とかホストしたいだけなんですけど、意外に苦労したのでメモ。</p>
+
+</div>
+  
+  
+    <footer>
+      <a rel="full-article" href="/blog/2013/02/25/static-contents-on-jetty/">Read on &rarr;</a>
+    </footer>
+  
+
+
+    </article>
   
   
     <article>
@@ -227,10 +270,6 @@
 <p>ベクトル地図が扱える新しい Google Maps Android API v2 については、<a href="http://qiita.com/items/7ad0244c0fb4b431e090">Google Map Android API v2 の v1 からの変更点メモ</a> で書きました。</p>
 
 <p>ここでは、v2 で新しく追加された <code>TileOverlay</code> を使って、OpenStreetMap を重ねてみます。</p>
-
-<h2>UrlTileProvider を使って OpenStreetMap を表示する</h2>
-
-<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。</p>
 
 </div>
   
@@ -403,197 +442,12 @@
   <div class="entry-content"><p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
 ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
 
-<p>まあ CountDownLatch で待ってるだけなんですけども。</p>
-
-<p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
-
-<figure class='code'><figcaption><span>FutureResult.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/**</span>
-</span><span class='line'><span class="cm"> * success または error が呼ばれるまで get() で待ってる Future みたいなクラス</span>
-</span><span class='line'><span class="cm"> * </span>
-</span><span class='line'><span class="cm"> * @author @amay077</span>
-</span><span class='line'><span class="cm"> */</span>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">FutureResult</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">TIMEOUT</span> <span class="o">=</span> <span class="mi">10</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">TimeUnit</span> <span class="n">TIMEOUT_UNIT</span> <span class="o">=</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">_latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">T</span> <span class="n">_value</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">Exception</span> <span class="n">_error</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">FutureResultException</span> <span class="kd">extends</span> <span class="n">Exception</span> <span class="o">{</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="kd">public</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">Exception</span> <span class="n">detailException</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="kd">super</span><span class="o">(</span><span class="n">detailException</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="cm">/**</span>
-</span><span class='line'><span class="cm">  * 非同期処理が成功したら呼ぶメソッド</span>
-</span><span class='line'><span class="cm">  */</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">success</span><span class="o">(</span><span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="cm">/**</span>
-</span><span class='line'><span class="cm">  * 非同期処理が失敗したら呼ぶメソッド</span>
-</span><span class='line'><span class="cm">  */</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">error</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">_error</span> <span class="o">=</span> <span class="n">ex</span><span class="o">;</span>
-</span><span class='line'>      <span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="cm">/**</span>
-</span><span class='line'><span class="cm">  * 非同期処理が終わるまで待って結果を返す。</span>
-</span><span class='line'><span class="cm">  * エラーだったら例外を投げる。</span>
-</span><span class='line'><span class="cm">  */</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="n">T</span> <span class="nf">get</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">try</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">if</span> <span class="o">(!</span><span class="n">_latch</span><span class="o">.</span><span class="na">await</span><span class="o">(</span><span class="n">TIMEOUT</span><span class="o">,</span> <span class="n">TIMEOUT_UNIT</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>              <span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="k">new</span> <span class="n">TimeoutException</span><span class="o">());</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_error</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">throw</span> <span class="n">_error</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="k">return</span> <span class="n">_value</span><span class="o">;</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
-使い方はこんな感じ。</p>
-
-<figure class='code'><figcaption><span>AsyncMethodTest.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testAsyncMethod</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>  <span class="kd">final</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;();</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="c1">// 非同期なメソッドを実行</span>
-</span><span class='line'>  <span class="n">hoge</span><span class="o">.</span><span class="na">asyncMethod</span><span class="o">(</span><span class="k">new</span> <span class="n">OnReceiveListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="nd">@Override</span>
-</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Integer</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="c1">// 正そうな値を受信しtら success を呼ぶ</span>
-</span><span class='line'>          <span class="n">result</span><span class="o">.</span><span class="na">success</span><span class="o">(</span><span class="n">data</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="nd">@Override</span>
-</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onError</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="c1">// エラーを受信した場合は error を呼ぶ</span>
-</span><span class='line'>          <span class="n">result</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">});</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="c1">// 検証</span>
-</span><span class='line'>  <span class="k">try</span> <span class="o">{</span>
-</span><span class='line'>      <span class="c1">// get で success か error かタイムアウトするまで待ってる。</span>
-</span><span class='line'>      <span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
-</span><span class='line'>  <span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">fail</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>参考</h2>
-
-<p>なんて記事を書いたあとにもっかいググってみたらこんなライブラリがあるようで。詳細はまだ見てない。</p>
-
-<ul>
-<li><a href="http://code.google.com/p/awaitility/">Awaitility</a> - Awaitility is a small Java-based DSL for synchronizing asynchronous operations. It makes it easy to test asynchronous code. - Google Project Hosting</li>
-</ul>
-
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/20/asynctest-on-junit/">Read on &rarr;</a>
+    </footer>
   
 
 
@@ -638,182 +492,20 @@
 
 <p>が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。</p>
 
-<p>v2 になって導入手順が大幅に変わりましたが、 <a href="https://twitter.com/adamrocker">@adamrocker</a> さんが早速解説して下さっています。</p>
-
-<ul>
-<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
-</ul>
-
-
-<p>ここでは、Google Map Android API v1 からの変更点を中心に紹介してみます。</p>
-
-<h2>互換性</h2>
-
-<p><strong><em>あ・り・ま・せ・ん、以上！</em></strong></p>
-
-<p>Fragment 化、3D対応などにより、API の設計思想そのものが変わった様で、既存のコードをそのまま流用できることはないでしょう。
-前の MapView に似せた <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> というクラスがありますが、クラス名が同じだけでメンバは全然別物です。</p>
-
-<h2>じゃあ、v1 のあの機能は v2 でどうやんの？</h2>
-
-<h3>移動、拡大・縮小など</h3>
-
-<p><img src="http://f.cl.ly/items/2d3M3T1v3W3C0H102d3L/gmap2_basic.png" alt="BasicMap" /></p>
-
-<p>v1 では <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/MapController.html">MapController</a> の animateTo とか setZoom で行なっていましたが、そもそも v2 には MapController クラスがなくなっています。</p>
-
-<p>v2 では <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap">GoogleMap</a> クラスの animateCamera() や moveCamera() で移動、拡大・縮小を行います。
-これらに加えて、角度(bearing)、視点(tilt) も設定します。animateCamera は Google Earth みたいなアニメーションが定義できてカッコいいですよ。</p>
-
-<p>ちなみに、無段階ズームになった影響で、Zoom の値が int から float になっています。値が示す地図縮尺は変化ないようです。v1 の Zoom=15 と v2 の Zoom=15.0f は同じ意味です。</p>
-
-<h4>参考</h4>
-
-<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の該当箇所を添えておきます。</p>
-
-<ul>
-<li>CameraDemoActivity.java</li>
-</ul>
-
-
-<h3>ズームボタンとかの表示ON/OFF</h3>
-
-<p><img src="http://cl.ly/image/40220F3I163f/gmap2_uisettings.png" alt="UISettings" /></p>
-
-<p>v1 では MapView の setBuiltInZoomControls でズームボタンの表示ON/OFF ができました。
-v2 では、GoogleMap から <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#getUiSettings(">UISettings</a> を取得して設定します。
-v2 では、ズームボタンの他に、コンパスが増えているのでそれらの表示制御と、各種ジェスチャ(スクロール、回転、チルト)の有効/無効 が設定できます。</p>
-
-<h4>参考</h4>
-
-<ul>
-<li>UiSettingsDemoActivity.java</li>
-</ul>
-
-
-<h3>マーカー表示</h3>
-
-<p><img src="http://cl.ly/image/2a0b2C073d1f/gmap2_markers.png" alt="Markers" />
-API の使い方で一番大きく変わったのはこの辺りかと思います。</p>
-
-<p>v1 では、MapView に <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/ItemizedOverlay.html">ItemizedOverlay</a> を add して、OverlayItem(＝マーカー)を登録して…って感じでしたが、全滅です。</p>
-
-<p>v2 でのマーカー表示は <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addMarker(com.google.android.gms.maps.model.MarkerOptions">GoogleMap.addMarker</a> を使います。
-Overlay の概念が事実上なくなって、GoogleMap クラスから Marker オブジェクトを生成するようになりました。</p>
-
-<p>マーカーのグループ管理ができなくなってちょっと不便に感じます。(v1 では、ローソンとファミマのマーカーを管理するのに、lawsonOverlay と famimaOverlay を用意しておけば良かった)</p>
-
-<p>v2 のメリットは、マーカーがドラッグをサポートするようになったのと、情報ウィンドウ(ふきだし)が標準搭載されたことです。</p>
-
-<h4>参考</h4>
-
-<ul>
-<li>MarkerDemoActivity.java</li>
-</ul>
-
-
-<h3>図形(ラインとかポリゴンとか)描画</h3>
-
-<p><img src="http://cl.ly/image/0c3i2E1z3V1r/gmap2_polygons.png" alt="Polygons" />
-これも大きく作り替えないといけないところです。</p>
-
-<p>v1 では、Overlay の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Overlay.html#draw(android.graphics.Canvas,%20com.google.android.maps.MapView,%20boolean">draw</a> を override して、Canvas の drawLine などの描画メソッドを呼び出す感じでした。</p>
-
-<p>v2 では、Overlay がありませんし、Canvas を直接さわれる口がありません。
-ではどうするかというと、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon">Polygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polyline">Polyline</a> というクラスが用意されています。</p>
-
-<p>GoogleMap クラスの <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolygon(com.google.android.gms.maps.model.PolygonOptions">addPolygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolyline(com.google.android.gms.maps.model.PolylineOptions">addPolyline</a> メソッドで追加します。Marker と同じく Overlay の概念はありません。</p>
-
-<p>また add した Polygon や Polyline は、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon.html#remove(">remove</a> するか <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#clear(">GoogleMap.clear</a> するまで地図上に登録されています。</p>
-
-<p>v2 になって、描画処理は重くなったなあという印象です。
-v1 の感覚で図形を add しまくると、すごくもっさりします。画面に表示すべきものだけ、さらに非同期でパラパラと図形が描画されていくような処理を実装しないとストレスフルな感じになりそうです。</p>
-
-<h4>&#8220;表示している領域&#8221; の取得方法</h4>
-
-<p>v1 では、getMapCenter , getLatitudeSpan, getLongitudeSpan でなんとなく取得できました。
-v2 では、GoogleMap.getProjection で得られる <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/Projection">Projection</a> クラスの getVisibleRegion から取得できます。</p>
-
-<p>注意点は、回転している時とチルトしている時、いずれも &#8220;表示している範囲を包括する矩形&#8221; が得られるようですが、特にチルトしている時は奥行き分が領域に含まれますので、視点を倒せば倒すほど遠くが見える(領域が広がる)ことになります。画面に表示しているものだけ図形を描画する時など、奥行きはある程度のしきい値を持たないと範囲が広くなりすぎです。</p>
-
-<h4>ハマった所</h4>
-
-<p>Polygon は当然塗りつぶしができるわけですが、これポリゴンの座標群が「時計回り」でないと塗りつぶされません。地理情報システムの業界では、&#8221;ポリゴンの外周は時計回り、穴は反時計回り&#8221; という常識があるのですが、それに習ったものと思われます。この原因にたどり着くまで、始点と終点が一致してないのかな、少数の切り捨てで一致してないのかとか、小一時間悩みました。</p>
-
-<h4>参考</h4>
-
-<ul>
-<li>PolygonDemoActivity.java</li>
-<li>PolylineDemoActivity.java</li>
-</ul>
-
-
-<h3>MapView とは一体？</h3>
-
-<p>冒頭で紹介した <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> ですが、地図の表示はできたものの、その後、位置を移動しようと</p>
-
-<pre><code>GoogleMap gMap = ((MapView) findViewById(R.id.map)).getMap();
-gMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(35, 130)));
-</code></pre>
-
-<p>というコードを実行した所、 <code>java.lang.NullPointerException: CameraUpdateFactory is not initialized</code> が発生してしまいました。え？どうやって移動するの？</p>
-
-<h4>参考</h4>
-
-<ul>
-<li>RawMapViewDemoActivity.java</li>
-</ul>
-
-
-<h2>増えた機能</h2>
-
-<p>v1 感覚だと使うのに苦労しそうな v2 ですが、冒頭で紹介した機能以外に追加されてる機能もあります。</p>
-
-<h3>情報ウィンドウ(ふきだし)</h3>
-
-<p>これこれ、マーカーをタップすると表示される「ふきだし」。
-v1 には無かったので、自作か外部ライブラリ使いしか無かったんですよね。
-サンプル MarkerDemoActivity.java で使い方が紹介されてます。</p>
-
-<h2>タイルオーバーレイとグラウンドオーバーレイ</h2>
-
-<p>GIS&#8217;er 感涙の両機能。
-タイルオーバーレイは、他のタイル地図サービスをオーバーレイできる、ってことですね。OpenStreetMap とか。iOS の <a href="http://qiita.com/items/8d89eeea614ce4293514">route-me</a> みたいなことができると期待してます。だれかハックを！
-<img src="http://f.cl.ly/items/470S1b1B3a1F3F3z093i/gmap2_tileoverlay.png" alt="TileOverlay" /></p>
-
-<p>グラウンドオーバーレイは、画像ファイルに位置情報を与えてやると、それが地面に張り付いたように表示されるというものです。
-<img src="http://f.cl.ly/items/470s2M3g0w3Z2H423B3t/gmap2_groudoverlay.png" alt="GroundOverlay" /></p>
-
-<p>タイルオーバーレイのサンプルは TileOverlayDemoActivity.java 、グラウンドオーバーレイのサンプルは GroundOverlayDemoActivity.java です。</p>
-
-<h2>雑感</h2>
-
-<p>Google Map Android API v2 をざっと使ってみての感想です。</p>
-
-<p>v1 と互換性がなくなり、使い方がガラっと変わったのはある程度想定していました。2次元と3次元の溝は深いです。</p>
-
-<p>Android と関係ないですが、iOS の MapKit も同じようなことになるのではないかと思っています。(地図アプリは 3D に対応しましたが MapKit は 2D のまま。3D用のMapKit は &#8220;まったく別のもの&#8221; として提供されるのではないかと。)</p>
-
-<p>導入の仕方が難しくなっちゃったなー、と。
-なぜ Google API Console で管理するのはよいとしても、ライブラリプロジェクトを参照しないといけないのか、とか。
-(実は Fragment 初めて使いました…)</p>
-
-<p>あと、Google Play Service や API Console との結びつきが強くなり、利用状況がモニタリングできる環境が整いつつあります。こりゃ課金も現実味を帯びてきたなあ、と。</p>
-
-<p>そんなわけで、導入がちょいと面倒だったり、v1 と互換性まったくないですけど、なにしろ Googleマップアプリのあの地図レンダリングと機能がアプリに組み込めるのは嬉しい限りです。新たに地図アプリ作るなら使わない手はないですね！</p>
-
-<p>まだ使いこなしてはいないので、順次 Post していきたいと思います。
-最後に拙作の Android アプリ「HexRinger」の Map API v2 対応試作版をステマして終わります。</p>
-
-<p><img src="http://cl.ly/image/1n0f1e0c1r3C/gmap2_hexringer.png" alt="HexRinger" /></p>
 </div>
   
+  
+    <footer>
+      <a rel="full-article" href="/blog/2012/12/20/googlemap-andro-api-v2-changes/">Read on &rarr;</a>
+    </footer>
   
 
 
     </article>
   
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/2/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -824,6 +516,10 @@ v1 には無かったので、自作か外部ライブラリ使いしか無か�
     <section>
   <h1>Recent Posts</h1>
   <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/02/25/static-contents-on-jetty/">jetty で静的コンテンツを有効にして起動するまで</a>
+      </li>
     
       <li class="post">
         <a href="/blog/2013/02/19/googlemap-v2-anchor/">Google Maps API v2 のマーカーの Anchor を探る</a>
@@ -839,10 +535,6 @@ v1 には無かったので、自作か外部ライブラリ使いしか無か�
     
       <li class="post">
         <a href="/blog/2012/12/26/osm-on-googlemapv2/">Google Maps Android API v2 で OpenStreetMap を表示する</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2012/12/26/edittext-ontextchanged/">Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)</a>
       </li>
     
   </ul>
