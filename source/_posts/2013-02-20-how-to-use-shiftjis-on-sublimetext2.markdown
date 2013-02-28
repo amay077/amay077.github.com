@@ -7,6 +7,8 @@ categories: [SublimeText2]
 ---
 SublimeText2 は大変便利なテキストエディタですが、shift-jis に対応していないのが玉にキズでした。
 
+<!-- more -->
+
 ![mojibake](https://dl.dropbox.com/u/264530/qiita/shiftjis.png)
 
 そんな時、@umibose さんのツイートが！

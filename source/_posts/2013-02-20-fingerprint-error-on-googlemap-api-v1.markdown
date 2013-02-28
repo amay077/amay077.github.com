@@ -8,6 +8,8 @@ categories: [Android, GoogleMapsAPI]
 Android で Googleマップを利用する際に必ず通る道である Google Map API Key の取得。
 久しぶりに行ったら、少しハマったのでメモ。
 
+<!-- more -->
+
 手順は、
 
 [Maps API Keyの取得 - Android Wiki](http://wikiwiki.jp/android/?Maps%20API%20Key%A4%CE%BC%E8%C6%C0)

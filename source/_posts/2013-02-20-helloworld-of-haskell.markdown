@@ -7,6 +7,8 @@ categories: [Haskell]
 ---
 OS は Mountain Lion、Homebrew は入ってる前提で。
 
+<!-- more -->
+
 ##インストール
 「処理系」の GHC と、開発用プラットフォームをインストールする。
 

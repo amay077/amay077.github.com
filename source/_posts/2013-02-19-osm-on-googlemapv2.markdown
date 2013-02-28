@@ -12,10 +12,10 @@ categories: [Android, GoogleMapsAPI]
 
 ここでは、v2 で新しく追加された ``TileOverlay`` を使って、OpenStreetMap を重ねてみます。
 
+<!-- more -->
+
 ## UrlTileProvider を使って OpenStreetMap を表示する
 SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の TileOverlayDemoActivity.java を見れば一目瞭然なので、それをベースにします。
-
-<!-- more -->
 
 ### サンプルのコード
 ``` java TileOverlayDemoActivity.java

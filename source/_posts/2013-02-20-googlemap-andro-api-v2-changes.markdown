@@ -13,6 +13,8 @@ categories: [Android, GoogleMapsAPI]
 
 が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。
 
+<!-- more -->
+
 v2 になって導入手順が大幅に変わりましたが、 [@adamrocker](https://twitter.com/adamrocker) さんが早速解説して下さっています。
 
 * [throw Life - Google Maps Android API v2を使ってみた](http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html)

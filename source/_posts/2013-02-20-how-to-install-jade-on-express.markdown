@@ -10,6 +10,8 @@ $ express -t ejs myapp
 ```
 で ejs を入れたつもりが、```views/index.jade``` とかが入っちゃう。
 
+<!-- more -->
+
 ```
 $ express -tejs myapp
             ^スペース空けない

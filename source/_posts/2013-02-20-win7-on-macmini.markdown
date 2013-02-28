@@ -7,6 +7,8 @@ categories: [Mac]
 ---
 Windows8(32bit) でもいけます。
 
+<!-- more -->
+
 1. Mountain Lion の Bootcampアシスタントで Windows7_32bit のディスク入れて続行しようとすると「対応してません」とエラーが出る
 2. とりあえず「サポートソフトウェア」はUSBメモリに取得しておく
 3. Bootcampアシスタントはあきらめ「ディスクユーティリティ」でパーティションを作る
