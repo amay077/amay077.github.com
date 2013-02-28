@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.com/blog/categories/xamarin/atom.xml" rel="self"/>
+  <link href="http://amay077.github.com/"/>
+  <updated>2013-02-28T16:44:08+09:00</updated>
+  <id>http://amay077.github.com/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で作った HelloWorld のソースを眺めてみる]]></title>
+    <link href="http://amay077.github.com/blog/2013/02/28/helloworld-on-xamarin-android/"/>
+    <updated>2013-02-28T00:38:00+09:00</updated>
+    <id>http://amay077.github.com/blog/2013/02/28/helloworld-on-xamarin-android</id>
+    <content type="html"><![CDATA[<p>MonoDroid とか Mono for Android とか呼ばれてた時は、「あーどうせ MonoDevelop と他のモジュールあれこれインストールしなきゃいけないんでしょ？」と腰が重かったのですが、<a href="http://www.forest.impress.co.jp/docs/news/20130221_588816.html">Xamarin 2.0 としてオールインワン化</a>されるとこうも食指が動きますか。</p>
+
+<!-- more -->
+
+
+<p>さっそく Xamarin.Android のプロジェクトを作って、中身をみてみました。</p>
+
+<h2>ダウンロード</h2>
+
+<p><a href="http://xamarin.com/">Xamarin.com</a> から <strong>Download Now</strong> しましたよ。あ、環境は Mac(Lion) です。</p>
+
+<h2>インストール</h2>
+
+<p>dmg 開いてインストーラっぽいのを実行するだけ。Android と iOS の SDK の場所を聞かれましたがデフォのまま続行しました。たぶん Android 開発者はもう SDK あるのでそこを指定しても良いのでしょう。</p>
+
+<h2>起動、プロジェクト作成</h2>
+
+<p>C# - Android - Android Ice Cream Sandwitch Application を選択。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_create_project.png" alt="&quot;create_project&quot;" /></p>
+
+<p>ちなみに VB.NET もありますが、Android用のプロジェクトテンプレがありませんでした。</p>
+
+<h2>プロジェクトの中身はこんな感じ</h2>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_helloworld.png" alt="&quot;project&quot;" /></p>
+
+<p>ソリューションツリー、Visual Studio っぽさと Android っぽさが同居していてなんか不思議な感じです。</p>
+
+<p>「参照」「Properties」「Resource.designer.cs」あたりは Visual Studio っぽいですね。
+一方、「Assets」「drawable」「layout」「values」あたりは Android っぽいですね。
+ちなみに、<code>layout/Main.axml</code> というファイルがあります。一瞬「ザムル(Xaml)？」と見間違えましたが、開いてみるとなんのことはない、ただの Android Layout XML でした(<sup>_<sup>;)</sup></sup></p>
+
+<p>そして <code>MainActivity.cs</code> 、混血ですね。</p>
+
+<p>ソースを見てみましょう。</p>
+
+<p>```c# MainActivity.cs
+using System;</p>
+
+<p>using Android.App;
+using Android.Content;
+using Android.Runtime;
+using Android.Views;
+using Android.Widget;
+using Android.OS;</p>
+
+<p>namespace HelloXamarinAndroid
+{</p>
+
+<pre><code>[Activity (Label = "HelloXamarinAndroid", MainLauncher = true)]
+public class Activity1 : Activity
+{
+    int count = 1;
+
+    protected override void OnCreate(Bundle bundle)
+    {
+        base.OnCreate(bundle);
+
+        // Set our view from the "main" layout resource
+        SetContentView(Resource.Layout.Main);
+
+        // Get our button from the layout resource,
+        // and attach an event to it
+        Button button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
+
+        button.Click += delegate
+        {
+            button.Text = string.Format("{0} clicks!", count++);
+        };
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ソースの中にも Android の要素がたくさん確認できます。</p>
+
+<p><code>[Activity (Label = "HelloXamarinAndroid", MainLauncher = true)]</code>
+これ、本家では AndroidManifest.xml の Intent-Filter に定義する設定ですね。ここに書けちゃうみたいです。</p>
+
+<p><code>public class Activity1 : Activity</code>
+Activity クラスを継承するのも変わりません。</p>
+
+<p><code>protected override void OnCreate(Bundle bundle)</code>
+onCreate を override するのも、その中で setContentView するのも、findViewById するのも本家と変わりません。C# っぽくメソッド名が大文字で始まっているのと、若干メンバ名(R.id が Resource.Id とか)が変わっているくらいです。</p>
+
+<p>そしてボタンクリックらへんの処理、</p>
+
+<p>```c#
+Button button = FindViewById<Button>(Resource.Id.myButton);</p>
+
+<p>button.Click += delegate
+{</p>
+
+<pre><code>button.Text = string.Format("{0} clicks!", count++);
+</code></pre>
+
+<p>};
+```</p>
+
+<p>C# ならではの匿名delegate 使ってます。OnClickListener インターフェースを実装しなければならない本家に比べて短く書けます。
+更に短くするなら以下でしょうか。</p>
+
+<p>```c#
+var button = FindViewById<Button>(Resource.Id.myButton);</p>
+
+<p>button.Click += (sender, e) =></p>
+
+<pre><code>button.Text = string.Format("{0} clicks!", count++);
+</code></pre>
+
+<p>```</p>
+
+<p>まず <code>var</code>。型推論ですよ Variant じゃないですよ。
+そしてイベントハンドラはラムダ式で１行で書けます。いや嬉しい。</p>
+
+<p>あと地味にイベントハンドラが += で複数追加できるのもありがたいと思う時が来るでしょう。</p>
+
+<h2>ビルド、実行</h2>
+
+<p>実行すると、こんなダイアログが出てきます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_device_select.png" alt="&quot;devices&quot;" /></p>
+
+<p>実機もちゃんと認識されます。</p>
+
+<h2>まとめ</h2>
+
+<p>ソースコード見るまで勘違いしてました。クロスプラットフォームをうたっているから HelloWorld くらいなら "Write once, run anywhere" なのかと。</p>
+
+<p>全然違いました。Xamarin.Android は気持ち良いくらいに Android SDK のラッパですし、Xamarin.iOS は iOS SDK のラッパでした。</p>
+
+<p>UI は共通化できませんし、プラットフォーム固有の機能を使うロジックも共通化できません。M-V-VM なら、共通化できるのは M の一部と VM くらい？それも <code>DependencyProperty</code> みたいなのは用意されていないので自作する必要があります。</p>
+
+<p>しかしラッパなだけに元々 Android の開発をしていた人にとっての学習コストは低いです。
+Obj-C やりたくねー、って思ってた人にもちょうど良いかも知れません。</p>
+
+<p>なんといっても、スマホアプリ開発で async/await とか Reactive Extensions とか使えるのかと思うと wktk です(<sup>^)</sup></p>
+
+<p>最後に Xamarin.android も Xamarin Studio も、ここまで完成度が高いとは思ってませんでした。Xamarin さん、Mono さんごめんなさい。(ソースコードエディタで日本語入力ができないのは僕だけでしょうか？)
+なんか C# 楽しいので<a href="https://store.xamarin.com/">買っちゃい</a>そうです、INDEE くらいなら。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://ufcpp.wordpress.com/2013/02/24/xamarin-2-0/">Xamarin 2.0 | ++C++; // 未確認飛行 C ブログ</a></li>
+</ul>
+
+
+<p>Mono ランタイムが同梱されているのですね。上の HelloWorld で 1.2MB くらいでした。</p>
+]]></content>
+  </entry>
+  
+</feed>
