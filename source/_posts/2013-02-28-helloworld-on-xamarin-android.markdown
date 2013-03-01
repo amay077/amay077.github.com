@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.Android で作った HelloWorld のソースを眺めてみる"
 date: 2013-02-28 00:38
 comments: true
-categories: [Android, Xamarin]
+categories: [Android, Xamarin, C#]
 ---
 MonoDroid とか Mono for Android とか呼ばれてた時は、「あーどうせ MonoDevelop と他のモジュールあれこれインストールしなきゃいけないんでしょ？」と腰が重かったのですが、[Xamarin 2.0 としてオールインワン化](http://www.forest.impress.co.jp/docs/news/20130221_588816.html)されるとこうも食指が動きますか。
 

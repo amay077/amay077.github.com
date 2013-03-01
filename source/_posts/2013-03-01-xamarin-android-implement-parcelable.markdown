@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.Android で Percelable の実装にハマる"
 date: 2013-03-01 00:19
 comments: true
-categories: [Xamarin, Android]
+categories: [Xamarin, Android, C#]
 ---
 Xamarin.Android で Parcelable の実装にハマる
 
