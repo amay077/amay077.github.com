@@ -1,12 +1,10 @@
 ---
 layout: post
-title: "Xamarin.Android で Percelable の実装にハマる"
+title: "Xamarin.Android で Parcelable の実装にハマる"
 date: 2013-03-01 00:19
 comments: true
 categories: [Xamarin, Android, C#]
 ---
-Xamarin.Android で Parcelable の実装にハマる
-
 [前回のポスト](http://qiita.com/items/3232064cc8880c809aee)で HelloWorld を見てみましたが、次は Activity をもう一つ作って画面遷移してみます。
 
 <!-- more -->
