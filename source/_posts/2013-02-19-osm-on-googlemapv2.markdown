@@ -3,7 +3,7 @@ layout: post
 title: "Google Maps Android API v2 で OpenStreetMap を表示する"
 date: 2012-12-26 00:18
 comments: true
-categories: [Android, GoogleMapsAPI]
+categories: [Android, GoogleMapsAPI, OpenStreetMap]
 ---
 
 この記事は [FOSS4G Advent Calendar 2012](http://atnd.org/events/34052) の 12/26 の記事です。

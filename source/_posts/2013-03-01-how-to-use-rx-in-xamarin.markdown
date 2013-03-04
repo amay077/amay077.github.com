@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.Android で Reactive Extensions を使う"
 date: 2013-03-01 17:38
 comments: true
-categories: [Xamarin, Android, C#, ReactiveExtenstions]
+categories: [Xamarin, Android, C#, ReactiveExtensions]
 ---
 なんか一気にハードル上がったような。。。
 <!-- more -->
