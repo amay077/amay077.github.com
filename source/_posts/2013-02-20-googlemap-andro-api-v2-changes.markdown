@@ -31,7 +31,7 @@ Fragment 化、3D対応などにより、API の設計思想そのものが変�
 
 ### 移動、拡大・縮小など
 
-![BasicMap](http://f.cl.ly/items/2d3M3T1v3W3C0H102d3L/gmap2_basic.png)
+![BasicMap](https://dl.dropbox.com/u/264530/qiita/gmap2_basic.png)
 
 v1 では [MapController](https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/MapController.html) の animateTo とか setZoom で行なっていましたが、そもそも v2 には MapController クラスがなくなっています。
 
@@ -47,7 +47,7 @@ SDK に同梱されるサンプル /extras/google/google_play_services/samples/m
 
 ### ズームボタンとかの表示ON/OFF
 
-![UISettings](http://cl.ly/image/40220F3I163f/gmap2_uisettings.png)
+![UISettings](https://dl.dropbox.com/u/264530/qiita/gmap2_uisettings.png)
 
 v1 では MapView の setBuiltInZoomControls でズームボタンの表示ON/OFF ができました。
 v2 では、GoogleMap から [UISettings](https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#getUiSettings() を取得して設定します。
@@ -58,7 +58,7 @@ v2 では、ズームボタンの他に、コンパスが増えているので�
 * UiSettingsDemoActivity.java
 
 ### マーカー表示
-![Markers](http://cl.ly/image/2a0b2C073d1f/gmap2_markers.png)
+![Markers](https://dl.dropbox.com/u/264530/qiita/gmap2_markers.png)
 API の使い方で一番大きく変わったのはこの辺りかと思います。
 
 v1 では、MapView に [ItemizedOverlay](https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/ItemizedOverlay.html) を add して、OverlayItem(＝マーカー)を登録して…って感じでしたが、全滅です。
@@ -75,7 +75,7 @@ v2 のメリットは、マーカーがドラッグをサポートするよう�
 * MarkerDemoActivity.java
 
 ### 図形(ラインとかポリゴンとか)描画
-![Polygons](http://cl.ly/image/0c3i2E1z3V1r/gmap2_polygons.png)
+![Polygons](https://dl.dropbox.com/u/264530/qiita/gmap2_polygons.png)
 これも大きく作り替えないといけないところです。
 
 v1 では、Overlay の [draw](https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Overlay.html#draw(android.graphics.Canvas, com.google.android.maps.MapView, boolean) を override して、Canvas の drawLine などの描画メソッドを呼び出す感じでした。
@@ -127,10 +127,10 @@ v1 には無かったので、自作か外部ライブラリ使いしか無か�
 ## タイルオーバーレイとグラウンドオーバーレイ
 GIS'er 感涙の両機能。
 タイルオーバーレイは、他のタイル地図サービスをオーバーレイできる、ってことですね。OpenStreetMap とか。iOS の [route-me](http://qiita.com/items/8d89eeea614ce4293514) みたいなことができると期待してます。だれかハックを！
-![TileOverlay](http://f.cl.ly/items/470S1b1B3a1F3F3z093i/gmap2_tileoverlay.png)
+![TileOverlay](https://dl.dropbox.com/u/264530/qiita/gmap2_tileoverlay.png)
 
 グラウンドオーバーレイは、画像ファイルに位置情報を与えてやると、それが地面に張り付いたように表示されるというものです。
-![GroundOverlay](http://f.cl.ly/items/470s2M3g0w3Z2H423B3t/gmap2_groudoverlay.png)
+![GroundOverlay](https://dl.dropbox.com/u/264530/qiita/gmap2_groudoverlay.png)
 
 タイルオーバーレイのサンプルは TileOverlayDemoActivity.java 、グラウンドオーバーレイのサンプルは GroundOverlayDemoActivity.java です。
 
@@ -152,4 +152,4 @@ Android と関係ないですが、iOS の MapKit も同じようなことにな
 まだ使いこなしてはいないので、順次 Post していきたいと思います。
 最後に拙作の Android アプリ「HexRinger」の Map API v2 対応試作版をステマして終わります。
 
-![HexRinger](http://cl.ly/image/1n0f1e0c1r3C/gmap2_hexringer.png)
+![HexRinger](https://dl.dropbox.com/u/264530/qiita/gmap2_hexringer.png)
