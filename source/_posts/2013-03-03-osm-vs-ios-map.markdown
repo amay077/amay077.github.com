@@ -3,7 +3,7 @@ layout: post
 title: "OpenStreetMap と iOS6 の地図を比べてみました"
 date: 2012-10-03 21:08
 comments: true
-categories: [OpenStreetMap, iOS6]
+categories: [OpenStreetMap, iOS]
 ---
 ####9.20追記:OpenStreetMap≒MapQuest な事など加筆修正しました
 
