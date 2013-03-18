@@ -12,6 +12,32 @@ Xamarin Blog で "[Alpha版だけど async/await 使えるようになったよ�
 ## Alpha版をインストール
 Xamarin Studio のシステムメニュー → アップデートをチェック で、 "Update channel" で **Alpha** を選ぶとインストールできます。もちろん、アルファ版なので自己責任で。
 
+インストール後の、Xamarin と各SDK のバージョンはこう↓なってました。
+
+>Xamarin Studio
+>Version 4.0.2 (build 18)
+>Installation UUID: xxxxxx
+>Runtime:
+>	Mono 3.0.7 (master/514fcd7)
+>	GTK 2.24.16
+>	GTK# (2.12.0.0)
+>	Package version: 300070000
+>
+>Apple Developer Tools
+>Xcode 4.6 (2066)
+>Build 4H127
+>
+>Xamarin.Mac
+>Xamarin.Mac: Not Installed
+>
+>Xamarin.Android
+>Version: 4.7.0 (Trial Edition)
+>Android SDK: /Users/hrnv/dev/sdks/android-sdk-macosx
+>
+>Xamarin.iOS
+>Version: 6.3.0.255 (Trial Edition)
+>Hash: ba05545
+
 ## 同期処理だと…
 
 「ボタンを押すと **超時間のかかる処理** を実行して、結果を表示する」というケースで試してみます。
