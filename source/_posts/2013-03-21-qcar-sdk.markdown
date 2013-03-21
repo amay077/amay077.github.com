@@ -1,0 +1,43 @@
+---
+layout: post
+title: "QCAR SDK で複数のオブジェクトを認識する"
+date: 2010-12-6 11:01
+comments: true
+categories: [Android, AR, QCAR]
+---
+[QCAR SDK の Developper Guide](https://ar.qualcomm.com/qdevnet/developer_guide) の Tips and tricks → Detecting and tracking simultaneous Image Targets を見ると、この SDK では複数のオブジェクトを認識することができるそう。
+<!--more-->
+
+## Detecting and Tracking Image Targets Simultaneously
+
+!["1"](https://dl.dropbox.com/u/264530/qiita/qcar_1.png)
+
+> The QCAR SDK is also capable of simultaneous tracking of up to 5 Image Targets - as shown in the screenshot on top of this page. This feature can be enabled by providing hints to the QCAR SDK. The Image Targets sample allows you to switch on this feature by uncommenting the highlighted two lines in the native source ImageTargets.cpp:
+>
+> via [ar.qualcomm.com](https://ar.qualcomm.com/qdevnet/developer_guide/369)
+
+説明を読むと、５つのオブジェクトまで同時に認識できるそうです。
+
+複数の認識を有効にするには、コードで SDK にヒントを設定する必要があって、サンプル 「ImageTarget」では、ImageTargets.cpp （つまり NDK の方）を以下のように修正すればよいとのこと。
+
+```c
+JNIEXPORT void JNICALL
+Java_com_qualcomm_QCARSamples_ImageTargets_ImageTargets_onQCARInitializedNative
+    (JNIEnv *, jobject)
+{
+    // Comment in to enable tracking of up to 2 targets simultaneously and
+    // split the work over multiple frames:
+    QCAR::setHint(QCAR::HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, 2);
+    QCAR::setHint(QCAR::HINT_IMAGE_TARGET_MULTI_FRAME_ENABLED, 1);
+}
+```
+ 
+ためしにやってみました。
+
+３つの画像を認識するようにしてみましたよ。
+
+!["2"](https://dl.dropbox.com/u/264530/qiita/qcar_2.png)
+
+おぉ～、なんかスゲー。
+
+なんかスゴいライブラリな気がして来ましたよ、この QCAR SDK 。
