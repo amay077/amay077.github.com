@@ -3,7 +3,7 @@ layout: post
 title: "さよなら BackBlaze、ようこそ Bitcasa"
 date: 2013-03-18 14:40
 comments: true
-categories: [Backup, Mac]
+categories: [Backup, Mac, Bitcasa]
 ---
 1年くらい前から、PC のバックアップに、BackBlaze を使ってました。
 [SourceNext](http://www.sourcenext.com/product/pc/sys/pc_sys_000789/) のじゃなくて本家サイトからの購入で。

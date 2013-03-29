@@ -3,7 +3,7 @@ layout: post
 title: "Bitcasa を使っていて「おや？」と思ったこと"
 date: 2013-03-25 16:39
 comments: true
-categories: [Backup]
+categories: [Backup, Bitcasa]
 ---
 BackBlaze から Bitcasa に乗り換えて半月ほど。
 今は NAS やら先に Glacier に上げておいたデータをせこせこ Bitcasa にアップロードしているところです。
