@@ -11,6 +11,9 @@ BackBlaze から Bitcasa に乗り換えて半月ほど。
 主に Bitcasa の Mac版を使ってて、気になる挙動を挙げてみます。
 **※主観を多分に含みます**
 
+### 2013.4.12 追記
+コマンドでキャッシュをクリアするとだいぶ安定するようになりました！ → [Bitcasa(Mac)が不安定になったらこのコマンドを叩け](http://amay077.github.io/blog/2013/04/12/bitcasa-clear-cache/)
+
 ## 使ってる Bitcasa ソフトウェアのバージョンとか
 * 1.03 (Build 1041)
 * ProductName:	Mac OS X
