@@ -171,6 +171,14 @@ private void setUpMap() {
 次にいよいよ Bitmap の透過処理です。
 まず、Tile から Bitmap を抜き出します。API リファレンスによると、[Tile.data](https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Tile#data) というメンバがあるハズが…見つかりません。代わりに ``Tile.bM`` という byte[] なメンバがあります。こいつで間違いないでしょう。
 
+### 2013.4.22 追記
+
+Tile.data が見つからないのは、どうやらバグのようです。間違えて Proguard で難読化されてしまったようです。
+
+* [Issue 5082 - gmaps-api-issues - Bug: Public field "data" in Tile wrongly obfuscated - Google Maps API bug reports and feature requests](https://code.google.com/p/gmaps-api-issues/issues/detail?id=5082)
+
+### 2013.4.22 追記終わり
+
 Tile.bM の byte[] から Bitmap インスタンスを生成します。
 
     Bitmap bitmap = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
