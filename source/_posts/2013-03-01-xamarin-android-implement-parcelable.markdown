@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "Xamarin.Android で Parcelable の実装にハマる"
+title: "Xamarin.Android で画面遷移時にデータを渡す"
 date: 2013-03-01 00:19
 comments: true
 categories: [Xamarin, Android, C#]
