@@ -5,7 +5,7 @@ date: 2013-03-01 00:19
 comments: true
 categories: [Xamarin, Android, C#]
 ---
-[前回のポスト](http://qiita.com/items/3232064cc8880c809aee)で HelloWorld を見てみましたが、次は Activity をもう一つ作って画面遷移してみます。
+[前回のポスト](http://amay077.github.io/blog/2013/02/28/helloworld-on-xamarin-android/)で HelloWorld を見てみましたが、次は Activity をもう一つ作って画面遷移してみます。
 
 <!-- more -->
 
