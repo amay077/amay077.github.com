@@ -48,3 +48,9 @@ Java では ``new CircleOptions().center(…).storokeColor(…).`` と書いて�
 面白いのは「真円は保たれている事」ですね。逆台形っぽい曲線になるかと思ったのですが。
 
 円をポリゴナイズした多角形と重ねてみると違いが分かるかもしれません。
+
+### 2013.5.8追記:大きな円を描いて調べてみました
+
+大きな円を描いてみたら、ちゃんと geodesic な(北へいけばいくほど距離が長くなる)形状になりました。
+
+![image2](https://dl.dropboxusercontent.com/u/264530/qiita/circle-on-google-maps-sdk2.png)
