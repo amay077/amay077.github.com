@@ -17,7 +17,7 @@ Keynote から一夜明け、Android SDK を r22 に更新しました。
 <blockquote class="twitter-tweet" lang="ja"><p>状況・ライブラリプロジェクトを使用・r22 でビルドが死んだ対策・SDK Build-tools を入れた（antは復旧）・&lt;classpathentry combineaccessrules="false" kind="src" path="/hoge"/&gt; 追加</p>&mdash; dmpさん (@dmp) <a href="https://twitter.com/dmp/status/334839819781955586">2013年5月16日</a></blockquote>
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-に加えて、[Eclipse の ADT Plugin](http://developer.android.com/sdk/installing/installing-adt.html) を更新することで解決できました。(私の場合、``<classpathentry〜`` は行わなくても大丈夫でした。)
+に加えて、[Eclipse の ADT Plugin](http://developer.android.com/sdk/installing/installing-adt.html) を更新することで解決できました。(私の場合、``<classpathentry〜`` は行わなくても大丈夫でした。［勝手に追加されてました］)
 
 ## 2.Xamarin.Android のエラー
 
