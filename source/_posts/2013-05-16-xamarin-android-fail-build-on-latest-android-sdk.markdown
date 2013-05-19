@@ -7,6 +7,14 @@ categories: [Xamarin, Android]
 ---
 [Google I/O 2013](https://developers.google.com/events/io/) で[いろいろ発表](http://japanese.engadget.com/2013/05/15/google-i-o-2013/)があったので、試してみたくなるのがエンジニアってもんでしょう。
 <!--more-->
+
+## 2013.5.19 追記
+Xamarin.Android の 4.6.6 で Android SDK r22 に対応したので、この記事は無意味になりました。
+
+![image5](https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk5.png)
+
+アップデート後、r22 でも無事ビルドできるようになりました。
+
 ## 1.Eclipse のエラー
 
 Keynote から一夜明け、Android SDK を r22 に更新しました。
