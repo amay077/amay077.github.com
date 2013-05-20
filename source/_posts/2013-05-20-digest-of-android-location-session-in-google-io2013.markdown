@@ -73,7 +73,7 @@ Intro を早々に飛ばして、ここから各機能の詳細説明。
 
 [LocationClient](http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html) というのが増えてるので、それを使います。
 
-``connect`` した後は、``LocationListener`` が使えます。
+``connect`` した後は、``LocationListener`` が使えます。(注:``android.location.LocationListener`` ではなく新しい ``com.google.android.gms.location.LocationListener`` でした)
 
 ![21](https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_021.png)
 
