@@ -374,6 +374,18 @@ on_foot ってのが「歩いてる」ってやつですね。
 結果は、在来線ではなんとか vehicle と認識されましたが、新幹線では認識できませんでした。
 恐らく、新幹線は揺れが少なすぎるのだと思います。優秀ですね、日本の新幹線。
 
+### 2013.5.27 追記 位置情報を許可すると精度が上がる？
+
+[@sos_jp](https://twitter.com/sos_jp) さんの記事、
+
+* [Google Play servicesの新機能 - Activity Recognition - sos の 作業メモ](http://sos.hatenablog.jp/entry/2013/05/19/162122)
+
+によりますと、
+
+> 位置情報があるとより正確な判定になるようです
+
+とのことなので、もしかしたら FINE(+COURSE)_LOCATION とか付けとくと新幹線でも vechicle と認識デキるかもしれません。いずれ試してみます。
+
 ## まとめ
 
 公式のコンプリートな Getting Started は
