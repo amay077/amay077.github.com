@@ -3,7 +3,7 @@ layout: post
 title: "Javascript 製のチャート描画ライブラリのメモ"
 date: 2013-07-17 19:39
 comments: true
-categories: [javascript]
+categories: [javascript, HTML5]
 ---
 Javascript 製のチャート描画ライブラリをいくつか調べたので備忘録として残しておく。
 <!--more-->
@@ -50,3 +50,9 @@ amCharts というプロダクトで、リアルタイムなチャートが実�
 ## その他
 
 やりたいことは株価チャートに近いのでそっち方面で探すとたくさんありそうだけど、株価に特化しちゃってて機能過多＆使いづらい感。
+
+## 参考
+
+タイムリーにも同じようなまとめをしてくださってる方が居たのでメモ
+
+* [グラフ描画に良さげなJavaScriptライブラリ - Qiita](http://qiita.com/hurutoriya/items/727296839a2ec638fdc4)
