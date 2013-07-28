@@ -15,7 +15,7 @@ categories: [Xamarin, iOS]
 
 ## サンプルコード
 
-```cs:GesturesSample_ViewDidLoad.cs
+```c# GesturesSample_ViewDidLoad.cs
 // Tap gesture
 this.View.AddGestureRecognizer(new UITapGestureRecognizer(tap => 
 {
