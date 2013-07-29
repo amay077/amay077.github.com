@@ -1,0 +1,396 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google Maps Android API v2 で大圏コースを表示する - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="GoogleMap はメルカトル図法なので、地図上の２点間を結んだ直線は最短距離になりません。(メルカトル図法で正しいのは角度だけ、でしたよね。) 地球上の２点間の最短距離は「大圏コース」と呼ばれます。 で、Android 版の新しい API を使うと、この大圏コースを簡単に表示することができます &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2012/12/24/googlemap-v2-geodesic-line/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Google Maps Android API V2 で大圏コースを表示する</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-24T17:51:00+09:00" pubdate data-updated="true">Dec 24<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>GoogleMap は<a href="http://ja.wikipedia.org/wiki/%E3%83%A1%E3%83%AB%E3%82%AB%E3%83%88%E3%83%AB%E5%9B%B3%E6%B3%95">メルカトル図法</a>なので、地図上の２点間を結んだ直線は最短距離になりません。(メルカトル図法で正しいのは角度だけ、でしたよね。)</p>
+
+<p>地球上の２点間の最短距離は「<a href="http://ja.wikipedia.org/wiki/%E5%A4%A7%E5%9C%8F%E3%82%B3%E3%83%BC%E3%82%B9">大圏コース</a>」と呼ばれます。</p>
+
+<p>で、Android 版の新しい API を使うと、この大圏コースを簡単に表示することができます。</p>
+
+<!-- more -->
+
+
+<p>こんな感じ、赤がただの直線、青が大圏コースです。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/greatcircle.png" alt="greatcircle" /></p>
+
+<p>やり方は以下のとおりで、<code>geodesic</code> を <code>true</code> にすれば大圏コースになります。</p>
+
+<figure class='code'><figcaption><span>GeodesicPolyline.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">GoogleMap</span> <span class="n">mMap</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">TOKYO</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.691</span><span class="o">,</span> <span class="mf">139.693</span><span class="o">);</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">LatLng</span> <span class="n">HAWAII</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">19.87</span><span class="o">,</span> <span class="o">-</span><span class="mf">155.56</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ただの直線</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">HAWAII</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">5</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">RED</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">geodesic</span><span class="o">(</span><span class="kc">false</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 大圏コース</span>
+</span><span class='line'><span class="n">mMap</span><span class="o">.</span><span class="na">addPolyline</span><span class="o">(</span><span class="k">new</span> <span class="n">PolylineOptions</span><span class="o">()</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">TOKYO</span><span class="o">,</span> <span class="n">HAWAII</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">width</span><span class="o">(</span><span class="mi">5</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">color</span><span class="o">(</span><span class="n">Color</span><span class="o">.</span><span class="na">BLUE</span><span class="o">)</span>
+</span><span class='line'>    <span class="o">.</span><span class="na">geodesic</span><span class="o">(</span><span class="kc">true</span><span class="o">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Developper Guide に説明があります。</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/lines#geodesic_and_non-geodesic_lines">Polylines and Polygons - Google Maps Android API v2</a></li>
+</ul>
+
+
+<blockquote><p>A Geodesic line is a line that follows the curvature of the earth. In contrast, a non-geodesic line will be drawn using the coordinate system of your screen. By Default, Polyline and Polygon objects will draw non-geodesic lines. You can change any Polyline or Polygon to use geodesic lines by setting the geodesic property to true.</p>
+
+<p>適当訳
+Geodesic なラインとは地球上の曲がった線のことです。non-geodesic ってやつは画面座標系で描いた線で、これがデフォルトです。Polyline や Polygon を geodesic にしたければ geodesic プロパティを true にするとよろし。</p></blockquote>
+
+<p>ちなみにこの「２点間の最短距離」は <a href="http://developer.android.com/reference/android/location/Location.html#distanceBetween(double,%20double,%20double,%20double,%20float[]">Location.distanceBetween</a> メソッドで求められます。</p>
+
+<p>どうやら、Javascript 版にはもともとこの機能があったようで、以下のサイトに例があります。</p>
+
+<ul>
+<li><a href="http://user.numazu-ct.ac.jp/~tsato/tsato/geoweb/googlemaps/great-circle/">Googleマップで大圏コースを表示する</a></li>
+</ul>
+
+
+<p>あと、iOS 版の Google Maps API にもあるみた…あれ、ないや。
+(余談ですが iOS 版の API には Polygon を描く機能もないんですね)</p>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/ios/lines">Polylines - Google Maps SDK for iOS</a></li>
+</ul>
+
+
+<h2>その他</h2>
+
+<p>つか、Android の GoogleMap さん、思いっきり縮小しても世界が画面内に収まらないので、大圏コースの例が見せにくいわ。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-24T17:51:00+09:00" pubdate data-updated="true">Dec 24<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2012/12/24/googlemap-v2-geodesic-line/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2012/12/24/googlemap-v2-geodesic-line/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2012/12/24/googlemap-v2-geodesic-line/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2012/12/20/asynctest-on-junit/" title="Previous Post: jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた">&laquo; jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2012/12/25/googlemap-v2-zindex/" title="Next Post: Google Maps Android API v2 の図形の描画順(zIndex)を探る">Google Maps Android API v2 の図形の描画順(zIndex)を探る &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

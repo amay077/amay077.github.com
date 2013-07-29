@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Service が Foreground で動いているか確認する]]></title>
+    <link href="http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground/"/>
+    <updated>2013-06-14T18:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground</id>
+    <content type="html"><![CDATA[<p>Android で「死ににくいサービス」を作るには <a href="http://developer.android.com/reference/android/app/Service.html#startForeground(int,%20android.app.Notification">Service.startForegound</a> を呼び出す必要がありますが、動いてるサービスがちゃんと「Foregound になってるか？」は以下のようにして確認できます。(Notification 表示が強制されるから通知バー見ればいいじゃん、と言われればそうなんですけど、ちゃんとしたエビデンスっぽいのが欲しくて)</p>
+
+<!--more-->
+
+
+<h2>手順</h2>
+
+<p><code>sh
+adb shell dumpsys activity s &lt;サービス名&gt;
+</code></p>
+
+<p>&lt;サービス名> はサービスの完全名称を入れます。AndroidManifest.xml の <code>&lt;service android:name=</code> で定義したやつ。</p>
+
+<p>実行すると以下のように出力されます。</p>
+
+<blockquote><p>ACTIVITY MANAGER SERVICES (dumpsys activity services)
+  User 0 active services:
+  * ServiceRecord{41b2dd18 u0 com.amay077.android.gpsfaker/.service.GpsSignalService}</p>
+
+<pre><code>intent={cmp=com.amay077.android.gpsfaker/.service.GpsSignalService}
+packageName=com.amay077.android.gpsfaker
+processName=com.amay077.android.gpsfaker
+baseDir=/data/app/com.amay077.android.gpsfaker-1.apk
+dataDir=/data/data/com.amay077.android.gpsfaker
+app=ProcessRecord{416e19e8 3209:com.amay077.android.gpsfaker/u0a10072}
+isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 contentView=com.amay077.android.
+</code></pre>
+
+<p>(以下省略)</p></blockquote>
+
+<p><code>isForegound=true</code> と表示されているので、確かに「このサービスはフォアグラウンドだ」と分かります。サービス側で <code>startForeground</code> を呼び出さなかった場合は、この項目は表れません。</p>
+
+<p><code>dumpsys</code> 今までコマンドめんどいと思ってあまり使ってませんでしたすいませんでした(汗</p>
+
+<h2>参考</h2>
+
+<p>大変参考になりました。</p>
+
+<ul>
+<li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WakeLock の状態を確認する]]></title>
+    <link href="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/"/>
+    <updated>2013-06-13T20:58:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/06/13/view-wakelock-status</id>
+    <content type="html"><![CDATA[<p>どのアプリが WakeLock を取得しているかを見る方法。</p>
+
+<!--more-->
+
+
+<p><code>sh
+adb shell dumpsys power
+</code></p>
+
+<p>を実行して、ずらっと出力される中から "Wake Locks:" を探す。
+出力されるのはこんな感じの情報。</p>
+
+<blockquote><p>POWER MANAGER (dumpsys power)</p>
+
+<p>Power Manager State:
+ mDirty=0x0
+ (中略)</p>
+
+<p>Settings and Configuration:
+ mDreamsSupportedConfig=true
+ (中略)</p>
+
+<p>Screen off timeout: 30000 ms
+Screen dim duration: 6000 ms</p>
+
+<p>Wake Locks: size=1
+ SCREEN_BRIGHT_WAKE_LOCK        'WindowManager' ON_AFTER_RELEASE (uid=1000, pid=389, ws={WorkSource: uids=[10070]})</p>
+
+<p>(以下省略)</p></blockquote>
+
+<p>"Wake Locks: size=1" となっており、
+'WindowManager' という TAG で <code>SCREEN_BRIGHT_WAKE_LOCK</code> が取得されているのが分かる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Fused Location Provider を近くのショッピングセンターで評価してみた]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider/"/>
+    <updated>2013-05-30T21:31:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider</id>
+    <content type="html"><![CDATA[<p>Android に新しく搭載された Fused Location Provider、これは GPS/WiFi/センサーを統合的に使ってその時ベストな位置を取得できるというもので、<a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Google I/O のデモ</a> が衝撃的だったので、自分でも試してみました。</p>
+
+<!--more-->
+
+
+<h2>検証環境とか</h2>
+
+<ul>
+<li>場所 : イオン豊橋南店（ええ田舎ですが何か？</li>
+<li>日時 : 2013/05/30 17:30頃</li>
+<li>天候 : 小雨（曇天だったので GPS は捕まえにくかったかも）</li>
+<li>端末 : au HTC J(!蝶) OS は 4.0.4</li>
+<li>GPS も WiFi も ON</li>
+<li>Android SDK Tools : rev.21.1</li>
+<li>Google Play service : rev.7</li>
+<li>FusedProvider の Priority : PRIORITY_HIGH_ACCURACY</li>
+<li>位置取得間隔 : 5秒</li>
+<li>姿勢 : スマホを常に左手で掲げて、見ながら歩きました。</li>
+</ul>
+
+
+<h2>その1:駐車場〜1F〜駐車場</h2>
+
+<p>駐車場に車を停めて、歩いて店内に入場、店内をなるべくゆっくり直線的にぐるっと徘徊して、退店、駐車場を歩いて戻って来ました。</p>
+
+<p>緑が実際の経路、青が Fused Provider の経路です。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;output=embed"></iframe>
+
+
+<br /><small><a href="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;source=embed" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店1F)</a> を表示</small>
+
+
+<h2>その2:駐車場〜1F〜2F〜ぐるっと〜1F〜駐車場</h2>
+
+<p>もう一度。
+今度は入店してすぐエスカレータで2Fへ。2Fフロアをぐるっと回ってからエスカレータで1Fへ降りて駐車場へ戻って来ました。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517&amp;output=embed"></iframe>
+
+
+<br /><small>大きな地図で <a href="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店2F)</a> を表示</small>
+
+
+<h2>結果をみて</h2>
+
+<p>うーん、かいかぶり過ぎたか Fused Provider。</p>
+
+<p>確かに GPS と WiFi をシームレスに扱ってくれているようですが、期待していた屋内での測位結果はちょっと残念でした。</p>
+
+<p>I/O のセッションの中では、WiFi+Sensor を使ってると言っていたので、WiFi-AP の電波強度と加速度センサーの振れ具合で自律測位してくれるのかなあと思ったのですが、あまり自律測位が機能してないように見えます。</p>
+
+<h3>Accuracy は？</h3>
+
+<p>屋外だとだいたい 10m前後、屋内でも 20〜40m くらいの精度でした。
+上図の幅が約200mですが、実際の位置よりもっと離れている感じがします。</p>
+
+<p>Fused Provider を使うと、妙に Accuracy が小さい(精度の良い)値が得られるのですが、実際の位置がその精度が示す円の中にも入らないこともあり、それなら高い確率で実際の位置を包括する（精度の悪い）WiFi or 基地局測位 の方が有用では？とも思えました。</p>
+
+<p>また、施設内に WiFi-AP が何個あったとかの細かい調査はしていません（たぶん５〜６個）が、都会の繁華街とか地下街の方が圧倒的に多いと思うので、また違った結果が出るものと思います。</p>
+
+<h3>GPS の動きは？</h3>
+
+<p>今回は <code>PRIORITY_HIGH_ACCURACY</code> を使いました。これは GPS を使います。(<code>PRIORITY_BALANCED_POWER_ACCURACY</code> は GPS を使いません［が、 <code>ACCESS_FINE_LOCATION</code> を付けないと精度が数kmレベルになります。］)</p>
+
+<p>記録中の GPS アイコンの動きは、点滅 → 数秒後消える → また点滅 → GPSを捕捉したらつきっぱなし という感じで、屋外に移動すると GPS を捕まえる、屋内では度々トライするが捕まえられないのですぐ消える。という動きをしてました。</p>
+
+<h3>状態認識は貢献してるのか？</h3>
+
+<p>自律測位に状態認識(Activity Recognition)がもし使われているなら、持ちながらよりも、ポケットに入れっぱで歩いた方に最適化されてたかも知れないなあと思ったり。</p>
+
+<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">ActivityRecognitionClient を試した</a> 時も、持ちながらよりも尻ポケに入れたまま歩いた方が認識されやすい気がしました。気だけですが。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Fused Provider に期待しすぎないでください</li>
+<li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
+<li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager/"/>
+    <updated>2013-05-28T19:25:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager</id>
+    <content type="html"><![CDATA[<p>サポートパッケージに<code>LocalBroadcastManager</code> というクラスがあるのを今頃知りまして。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html">LocalBroadcastManager | Android Developers</a></li>
+</ul>
+
+
+<p>ブロードキャストは使い方を誤るとデータを(アプリの)外部に流出させる可能性があるわけですが(<a href="http://www.jssec.org/report/securecoding.html">Android アプリのセキュア設計・セキュアコーディングガイド</a> 参照)、このクラスを使うと「他のアプリにデータを漏らさない」「意図しないブロードキャストを受信しない」「効率がよい」だそうです。</p>
+
+<h2>いつ使うんですか？</h2>
+
+<p>たとえば GPS を使うアプリで、GPS の受信は <code>IntentService</code> にやらせて、受信した位置を地図に表示するために、IntentService からブロードキャスト投げて、<code>Activity</code> に仕掛けたレシーバで受信する、なんてケースでしょうか。(いやそれは IntentService じゃなくて普通のサービスで aidl 使ってやれよ、とかいろいろあるわけですが。ん？PendingIntent でサービスを起動する方法だと、クライアントから bind するタイミングが無いからダメかな？)</p>
+
+<h2>使い方</h2>
+
+<p>stackoverflow に良い使い方が載ってました</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/8875292">android - how to use LocalBroadcastManager? - Stack Overflow</a></li>
+</ul>
+
+
+<h2>使ってみた</h2>
+
+<p>状態認識の結果も秘匿情報でしょう、ということで<a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">以前</a>作った <code>ActivityRecognitionClient</code> のサンプルを修正してみました。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/androidactivityrecognizingsample/commit/a041b300d3e9fdfe6227c05c3f21fb1e3876bbad">amay077/androidactivityrecognizingsample · GitHub</a></li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<ul>
+<li>ブロードキャストする時は、まず LocalBroadcastManager を使ってみよう。</li>
+<li>stackoverflow の回答へのダイレクトリンクとか、github の changeset へのダイレクトリンク便利すぎる！</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Fused Location Provider(など)を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin/"/>
+    <updated>2013-05-27T21:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin</id>
+    <content type="html"><![CDATA[<p>Xamarin.Android は <a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Java ライブラリから C# のラッパを生成する機能</a> がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。</p>
+
+<!--more-->
+
+
+<h2>monodroid-samples をベースに</h2>
+
+<p>Xamarin.Android のサンプル集 <a href="https://github.com/xamarin/monodroid-samples">monodroid-samples</a> に、既に Google Map v2 を使うサンプルがあり、これが Google Play Service を使っているので、これを参考にします。</p>
+
+<p>これね → <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> 、使い方は、</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>をどうぞ。</p>
+
+<h2>Binding の設定をいじる</h2>
+
+<p>Android SDK の Google Play Service をアップデートしても、Xamarin 側ですぐに <code>LocationClient</code> などが使えるわけではないです。
+プロジェクト GooglePlayServices で、ラップする package などを設定しているため。</p>
+
+<p>その設定は <code>Transform/Metadata.xml</code> にあるので、これを以下のように設定します。</p>
+
+<p>```xml Metadata.xml
+<metadata></p>
+
+<pre><code>&lt;remove-node path="/api/package[@name='com.google.android.gms.maps']/class[@name='GoogleMapOptionsCreator']" /&gt;
+&lt;remove-node path="/api/package[@name!='com.google.android.gms.maps' 
+    and @name != 'com.google.android.gms.maps.model' 
+    and @name != 'com.google.android.gms.common'
+    and @name != 'com.google.android.gms.location']" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.maps.model']/class[contains (@name, 'Creator')]" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.location']/class[contains (@name, 'Creator')]" /&gt;
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps']" name="managedName"&gt;Android.Gms.Maps&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']" name="managedName"&gt;Android.Gms.Maps.Model&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.common']" name="managedName"&gt;Android.Gms.Common&lt;/attr&gt;  
+&lt;attr path="/api/package[@name='com.google.android.gms.location']" name="managedName"&gt;Android.Gms.Location&lt;/attr&gt;  
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='position']" name="managedName"&gt;SetPosition&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='snippet']" name="managedName"&gt;SetSnippet&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='title']" name="managedName"&gt;SetTitle&lt;/attr&gt;
+</code></pre>
+
+<p></metadata>
+```</p>
+
+<p><code>com.google.android.gms.location</code> を各所に追加しています。変更前は <a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/GooglePlayServices/Transforms/Metadata.xml">こちら</a> 。</p>
+
+<p>これだけで OK。(がここにたどり着くまでに半日くらいかかったorz)</p>
+
+<h2>使う</h2>
+
+<p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
+]]></content>
+  </entry>
+  
+</feed>

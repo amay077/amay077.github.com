@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Mac で Windows の仮想マシンを使って IE のテスト環境を構築する - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Microsoft の modern.IE というサイトで、Webサイトの IE対応を支援するサービスをいくつか提供していますが、その中に、「IEx 入りの仮想マシンの提供」が行われています。 Virtual PC, Hyper-V, VirtualBox, VMware Fusion, &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Mac で Windows の仮想マシンを使って IE のテスト環境を構築する</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-21T15:00:00+09:00" pubdate data-updated="true">Jul 21<span>st</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Microsoft の <a href="http://www.modern.ie/ja">modern.IE</a> というサイトで、Webサイトの IE対応を支援するサービスをいくつか提供していますが、その中に、「IEx 入りの仮想マシンの提供」が行われています。</p>
+
+<!--more-->
+
+
+<p>Virtual PC, Hyper-V, VirtualBox, VMware Fusion, Parallels などの主要な仮想環境用のイメージを配布しています。</p>
+
+<p>ただし、仮想マシンの期限が 90days です。また OS の言語設定が英語です。</p>
+
+<p>90days を過ぎるとまた再構築しなければならないので、日本語環境で使用するための初期設定をメモっておきます。</p>
+
+<h2>仮想マシンをダウンロードする</h2>
+
+<p>http://www.modern.ie/ja/virtualization-tools#downloads</p>
+
+<p>から、ホストPC の OS と仮想マシンの形式を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive01.png" alt="img1" /></p>
+
+<p>次に、テストしたい IE と OS のバージョンの組み合わせから、目的の仮想マシンをダウンロードします。Mac の場合は &#8220;Grab them all with cURL&#8221; の内容を Terminal にコピペして、一括ダウンロードができます。</p>
+
+<p>私は、ホストが Mac、目的は IE10+Win7 をダウンロードしました。</p>
+
+<p>ダウンロードすると、 IE10.Win7.For.MacVMware.part01.sfx 〜 IE10.Win7.For.MacVMware.part04.rar というファイルができているので、これを結合するために、Terminal で、以下のコマンドを実行します。(上のサイトの 「手順」 に書いてある内容です)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>chmod +x IE10.Win7.For.MacVMware.part01.sfx
+</span><span class='line'>./IE10.Win7.For.MacVMware.part01.sfx
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>コマンドの処理が終わると <code>IE10.Win7.For.MacVMware.vmwarevm</code>(9.75GB) ができています。これが仮想マシンのイメージファイルです。</p>
+
+<h2>仮想マシンを起動する</h2>
+
+<p>ファイルを直接実行するなり、仮想マシンのマネージャ使うなりして、仮想マシンを起動します。</p>
+
+<p>途中、「仮想マシンのアップグレードが必要です」と言われたので「はい」と答えました。
+「この仮想マシンは移動またはコピーされた可能性があります。よく分からない場合は、[コピーしました] を選択してください。」と言われたので、よくわからないので「コピーしました」と答えました。</p>
+
+<p>起動するとこんな画面になります。
+ネットワークドライバなどがインストールされて、ホストPC とブリッジ接続でインターネットにもつながります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive02.png" alt="img1" /></p>
+
+<h2>日本語キーボードを設定する</h2>
+
+<p>まず、キーボードが英語なので、日本語キーボードを導入します。
+デバイスマネージャを開きます。
+スタートメニュー → 検索ボックスに <code>devmgmt.msc</code> を打ち込むのが（説明上）手っ取り早いです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive03.png" alt="img1" /></p>
+
+<p>Keyboards - Standard PS/2 Keyboard を右クリックして Properties を表示し、Driver タブから [Update Driver] ボタンを押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive04.png" alt="img1" /></p>
+
+<p>&#8220;Browse my computer …&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive05.png" alt="img1" /></p>
+
+<p>&#8220;Let me pick from…&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive06.png" alt="img1" /></p>
+
+<p>Show compatible hardware のチェックを <strong>外し</strong> ます。
+次に (Standard keyborads) から &#8220;Japanese PS/2 Keyboard (106/109 Key Ctrl + Eisuu)&#8221; を選択して Next を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive07.png" alt="img1" /></p>
+
+<p>ウィザードの手順に従ってインストール完了後、仮想マシンを一旦再起動します。</p>
+
+<p><strong>再起動後、この時点でもまだキーボード配列は英語のままです。</strong></p>
+
+<p>次にシステムの言語設定を Japanese にします。</p>
+
+<p>コントロールパネル から &#8220;Change display language&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive08.png" alt="img1" /></p>
+
+<p>&#8220;Administrative&#8221; タブから &#8220;Change system locale&#8221; を押し、&#8221;Japanese&#8221; を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive09.png" alt="img1" /></p>
+
+<p>その後、また再起動します。</p>
+
+<p>再起動後、タスクトレイに [EN] という言語選択のアイコンが表れるので、[JP] にすると日本語キーボードになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive11.png" alt="img1" /></p>
+
+<p>いちいち切り替えるのは面倒なので、デフォルトを Japanese にしておきます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive12.png" alt="img1" /></p>
+
+<p>ついでに、時刻や通過表示も Japanese にします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive13.png" alt="img1" /></p>
+
+<p>忘れていました。タイムゾーンの変更もしておきます。
+コントロールパネル の &#8220;Change the time zone&#8221; から、[Osaka, Sapporo, Kyoto] を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive14.png" alt="img1" /></p>
+
+<h2>表示を日本語にする</h2>
+
+<p>この Windows 7 は Enterprise Edition らしいので、</p>
+
+<ul>
+<li><a href="http://support.microsoft.com/kb/972813/ja">Windows 7 Ultimate または Windows 7 Enterprise を搭載しているコンピューターに提供される Windows 7 の言語パック</a></li>
+</ul>
+
+
+<p>にある方法で日本語の言語パックを導入できるかなーと思ったんですが、Windows Update で言語パックの選択が表れず、うまくいきませんでした。</p>
+
+<p>どうしても日本語表示がいい！という方は、公式な方法ではないようですが、こちらの方法で日本語化できるようです。(おすすめはしないのでリンク貼りません、自己責任で。)</p>
+
+<p>ttp://nagabuchi.jugem.jp/?eid=443</p>
+
+<h2>Windows Update とかウイルス対策とか</h2>
+
+<p>テスト環境と言えど、最低限のセキュリティ対策は行なっておきましょう。
+Windows Update を行なって最新の状態に、ウイルス対策は <a href="http://windows.microsoft.com/ja-jp/windows/security-essentials-download">Microsoft Security Essentials</a> をインストールします。</p>
+
+<p>これで最低限の環境設定ができました。
+ではまた３ヶ月後にお会いしましょう。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-21T15:00:00+09:00" pubdate data-updated="true">Jul 21<span>st</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/html5/'>HTML5</a>, <a class='category' href='/blog/categories/ie/'>IE</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/07/17/list-of-chart-library-for-javascript/" title="Previous Post: Javascript 製のチャート描画ライブラリのメモ">&laquo; Javascript 製のチャート描画ライブラリのメモ</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/07/22/using-pcl-on-xamarin-studio/" title="Next Post: Xamarin Studio で MvvmCross を使うための準備">Xamarin Studio で MvvmCross を使うための準備 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

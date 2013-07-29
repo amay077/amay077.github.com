@@ -1,0 +1,386 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Android で Proguard を使う(ADT17以降) - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="割とハマったのでメモ。 Proguard.cfg を使う方法はもう古い Androidに統合されたProGuardに関する改善点(ADT17) - Android(アンドロイド)情報-ブリリアントサービス
+更新日-2012/03/25 にあるように、ADT17 以降では、既定の難読化設定は SDK &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/03/19/android-using-proguard/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Android で Proguard を使う(ADT17以降)</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-19T21:45:00+09:00" pubdate data-updated="true">Mar 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>割とハマったのでメモ。</p>
+
+<!--more-->
+
+
+<h2>Proguard.cfg を使う方法はもう古い</h2>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/bs-android/20120325/1332662384">Androidに統合されたProGuardに関する改善点(ADT17) - Android(アンドロイド)情報-ブリリアントサービス</a>
+更新日-2012/03/25</li>
+</ul>
+
+
+<p>にあるように、ADT17 以降では、既定の難読化設定は SDK のディレクトリにありそれを参照するようになっている。
+プロジェクト固有の設定は proguard-project.txt に書くように既定で準備されている。</p>
+
+<p>Android proguard でググって出てくる情報は、大抵は Proguard.cfg として説明されているので、その情報は断片的には使えるだろうが、古い情報として注意して参照したほうがよい。</p>
+
+<h2>-libraryjars について</h2>
+
+<p>外部ライブラリを使っている(/libs に jar を入れてる)場合、それらを -libraryjars xxx.jar と列挙しなければならないと <strong>思っていた</strong> が不要らしい。</p>
+
+<p>-libraryjars に列挙したら最初の一つしか library jar として認識してくれなくて「なにこれ？」と思ってググったら、</p>
+
+<ul>
+<li>[Using ProGuard with Android - StackOverflow]
+(http://stackoverflow.com/questions/11246842/using-proguard-with-android/11249755#11249755) 回答日-2012/06/28</li>
+</ul>
+
+
+<blockquote><p>1) ProGuard manual > Troubleshooting > Note: duplicate definition of program/library class</p>
+
+<p>The Android Ant/Eclipse builds already specify -injars/-libraryjars for you. If you specify them again in your configuration, ProGuard notes that they are duplicated. So don&#8217;t specify -injars/-libraryjars.</p></blockquote>
+
+<p>libs配下は既定で定義済だから proguard-project.txt の方で再定義しなくてよいらしい。</p>
+
+<h2>-dontwarn とか -dontnote とか</h2>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/rudi/20110205/1296914415">Proguardでcan&#8217;t find referenced class - そこはかとなく書くよ。</a></li>
+</ul>
+
+
+<p>「ほんとかなぁ」に同意。warning潰すのがデファクトなツールで良いの？</p>
+
+<h3>(私が)未解決な問題</h3>
+
+<p>とあるメソッドの引数 <code>Hoge&lt;Piyo&gt; arg</code>  から、 <code>Class#getGenericInterfaces()</code> で <code>Piyo</code> を取得していたのだけど、Proguard かけたら、 <code>Hoge&lt;Piyo&gt;</code> が <code>Hoge</code> だけになって取れなくなってしまった。</p>
+
+<p>Java のイレイジャ云々か？とも思ったけど、メソッドの引数ならいけるはずだし…</p>
+
+<ul>
+<li><a href="http://blogs.wankuma.com/nagise/archive/2008/10/13/158708.aspx">イレイジャではジェネリクスの何が消えるのか</a></li>
+</ul>
+
+
+<p>StackOverflow さんによると、</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/14449289/789062">Google Drive API doesn&#8217;t play well with ProGuard (NPE)</a></li>
+</ul>
+
+
+<p><code>-keepattributes *Annotation*</code> をつけるといいよ的な事が書いてあるんだけど、うまくいかなかった。</p>
+
+<h2>雑感</h2>
+
+<p>情報が新旧錯綜してる発展途上なツールを苦労して使って、設定も実装に依存するし(自動化できない)、運用時もデバッグしづらいし、この難読化って作業、コスパどうなんすかね？ 所詮 Webサービスのフロントエンドである Java プログラムに、そこまで難読化にこだわることはないんじゃないかなーという私見です。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/Superdry/20110121/1295641171">ProGuardで-keepオプションのメモ - superdry memorandum :-D</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-19T21:45:00+09:00" pubdate data-updated="true">Mar 19<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/proguard/'>Proguard</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/03/19/android-using-proguard/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/03/19/android-using-proguard/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/03/19/android-using-proguard/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/03/18/xamarin-alpha-async-await-preview/" title="Previous Post: Xamarin の Alpha版で async/await を試す">&laquo; Xamarin の Alpha版で async/await を試す</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/03/25/bitcasa-tips-1/" title="Next Post: Bitcasa を使っていて「おや？」と思ったこと">Bitcasa を使っていて「おや？」と思ったこと &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/googlemapsapi/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Fused Location Provider を近くのショッピングセンターで評価してみた]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider/"/>
+    <updated>2013-05-30T21:31:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider</id>
+    <content type="html"><![CDATA[<p>Android に新しく搭載された Fused Location Provider、これは GPS/WiFi/センサーを統合的に使ってその時ベストな位置を取得できるというもので、<a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Google I/O のデモ</a> が衝撃的だったので、自分でも試してみました。</p>
+
+<!--more-->
+
+
+<h2>検証環境とか</h2>
+
+<ul>
+<li>場所 : イオン豊橋南店（ええ田舎ですが何か？</li>
+<li>日時 : 2013/05/30 17:30頃</li>
+<li>天候 : 小雨（曇天だったので GPS は捕まえにくかったかも）</li>
+<li>端末 : au HTC J(!蝶) OS は 4.0.4</li>
+<li>GPS も WiFi も ON</li>
+<li>Android SDK Tools : rev.21.1</li>
+<li>Google Play service : rev.7</li>
+<li>FusedProvider の Priority : PRIORITY_HIGH_ACCURACY</li>
+<li>位置取得間隔 : 5秒</li>
+<li>姿勢 : スマホを常に左手で掲げて、見ながら歩きました。</li>
+</ul>
+
+
+<h2>その1:駐車場〜1F〜駐車場</h2>
+
+<p>駐車場に車を停めて、歩いて店内に入場、店内をなるべくゆっくり直線的にぐるっと徘徊して、退店、駐車場を歩いて戻って来ました。</p>
+
+<p>緑が実際の経路、青が Fused Provider の経路です。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;output=embed"></iframe>
+
+
+<br /><small><a href="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;source=embed" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店1F)</a> を表示</small>
+
+
+<h2>その2:駐車場〜1F〜2F〜ぐるっと〜1F〜駐車場</h2>
+
+<p>もう一度。
+今度は入店してすぐエスカレータで2Fへ。2Fフロアをぐるっと回ってからエスカレータで1Fへ降りて駐車場へ戻って来ました。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517&amp;output=embed"></iframe>
+
+
+<br /><small>大きな地図で <a href="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店2F)</a> を表示</small>
+
+
+<h2>結果をみて</h2>
+
+<p>うーん、かいかぶり過ぎたか Fused Provider。</p>
+
+<p>確かに GPS と WiFi をシームレスに扱ってくれているようですが、期待していた屋内での測位結果はちょっと残念でした。</p>
+
+<p>I/O のセッションの中では、WiFi+Sensor を使ってると言っていたので、WiFi-AP の電波強度と加速度センサーの振れ具合で自律測位してくれるのかなあと思ったのですが、あまり自律測位が機能してないように見えます。</p>
+
+<h3>Accuracy は？</h3>
+
+<p>屋外だとだいたい 10m前後、屋内でも 20〜40m くらいの精度でした。
+上図の幅が約200mですが、実際の位置よりもっと離れている感じがします。</p>
+
+<p>Fused Provider を使うと、妙に Accuracy が小さい(精度の良い)値が得られるのですが、実際の位置がその精度が示す円の中にも入らないこともあり、それなら高い確率で実際の位置を包括する（精度の悪い）WiFi or 基地局測位 の方が有用では？とも思えました。</p>
+
+<p>また、施設内に WiFi-AP が何個あったとかの細かい調査はしていません（たぶん５〜６個）が、都会の繁華街とか地下街の方が圧倒的に多いと思うので、また違った結果が出るものと思います。</p>
+
+<h3>GPS の動きは？</h3>
+
+<p>今回は <code>PRIORITY_HIGH_ACCURACY</code> を使いました。これは GPS を使います。(<code>PRIORITY_BALANCED_POWER_ACCURACY</code> は GPS を使いません［が、 <code>ACCESS_FINE_LOCATION</code> を付けないと精度が数kmレベルになります。］)</p>
+
+<p>記録中の GPS アイコンの動きは、点滅 → 数秒後消える → また点滅 → GPSを捕捉したらつきっぱなし という感じで、屋外に移動すると GPS を捕まえる、屋内では度々トライするが捕まえられないのですぐ消える。という動きをしてました。</p>
+
+<h3>状態認識は貢献してるのか？</h3>
+
+<p>自律測位に状態認識(Activity Recognition)がもし使われているなら、持ちながらよりも、ポケットに入れっぱで歩いた方に最適化されてたかも知れないなあと思ったり。</p>
+
+<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">ActivityRecognitionClient を試した</a> 時も、持ちながらよりも尻ポケに入れたまま歩いた方が認識されやすい気がしました。気だけですが。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Fused Provider に期待しすぎないでください</li>
+<li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
+<li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Fused Location Provider(など)を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin/"/>
+    <updated>2013-05-27T21:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin</id>
+    <content type="html"><![CDATA[<p>Xamarin.Android は <a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Java ライブラリから C# のラッパを生成する機能</a> がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。</p>
+
+<!--more-->
+
+
+<h2>monodroid-samples をベースに</h2>
+
+<p>Xamarin.Android のサンプル集 <a href="https://github.com/xamarin/monodroid-samples">monodroid-samples</a> に、既に Google Map v2 を使うサンプルがあり、これが Google Play Service を使っているので、これを参考にします。</p>
+
+<p>これね → <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> 、使い方は、</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>をどうぞ。</p>
+
+<h2>Binding の設定をいじる</h2>
+
+<p>Android SDK の Google Play Service をアップデートしても、Xamarin 側ですぐに <code>LocationClient</code> などが使えるわけではないです。
+プロジェクト GooglePlayServices で、ラップする package などを設定しているため。</p>
+
+<p>その設定は <code>Transform/Metadata.xml</code> にあるので、これを以下のように設定します。</p>
+
+<p>```xml Metadata.xml
+<metadata></p>
+
+<pre><code>&lt;remove-node path="/api/package[@name='com.google.android.gms.maps']/class[@name='GoogleMapOptionsCreator']" /&gt;
+&lt;remove-node path="/api/package[@name!='com.google.android.gms.maps' 
+    and @name != 'com.google.android.gms.maps.model' 
+    and @name != 'com.google.android.gms.common'
+    and @name != 'com.google.android.gms.location']" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.maps.model']/class[contains (@name, 'Creator')]" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.location']/class[contains (@name, 'Creator')]" /&gt;
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps']" name="managedName"&gt;Android.Gms.Maps&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']" name="managedName"&gt;Android.Gms.Maps.Model&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.common']" name="managedName"&gt;Android.Gms.Common&lt;/attr&gt;  
+&lt;attr path="/api/package[@name='com.google.android.gms.location']" name="managedName"&gt;Android.Gms.Location&lt;/attr&gt;  
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='position']" name="managedName"&gt;SetPosition&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='snippet']" name="managedName"&gt;SetSnippet&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='title']" name="managedName"&gt;SetTitle&lt;/attr&gt;
+</code></pre>
+
+<p></metadata>
+```</p>
+
+<p><code>com.google.android.gms.location</code> を各所に追加しています。変更前は <a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/GooglePlayServices/Transforms/Metadata.xml">こちら</a> 。</p>
+
+<p>これだけで OK。(がここにたどり着くまでに半日くらいかかったorz)</p>
+
+<h2>使う</h2>
+
+<p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google I/O 2013 で発表された Fused Location Provider を使ってみる]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider/"/>
+    <updated>2013-05-23T20:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider</id>
+    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。</p>
+
+<!--more-->
+
+
+<h2>Fused Location Provider とは？</h2>
+
+<p>GPS と WiFi とセンサー(加速度など) を組み合わせて、その状況に応じた最適な方法で位置を取得出来ます。今までよりも低消費電力で、精度のよい位置情報を。</p>
+
+<p>実際どんな感じかは、Google I/O 2013 のセッション動画にある <a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a> を見てください。</p>
+
+<p>次から使い方です。</p>
+
+<h2>1. SDK の Google Play Services を更新する</h2>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
+
+<p>Activity Recognition と同じく Google Play services として提供されているので、SDK Manager でライブラリを更新します。</p>
+
+<h2>2. Eclipse でプロジェクトを作る</h2>
+
+<p>Android Studio は使ってません(まだよくわからないので)
+Eclipse で、いつもどおりに Android のプロジェクトを作ります。
+Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
+名前はここでは FusedLocationProviderSample とします。</p>
+
+<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
+
+<p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
+
+<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
+
+<p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
+
+<p>次から FusedLocationProviderSample の実装です。</p>
+
+<h2>4. AndroidManifest.xml の編集</h2>
+
+<p>Fused Location Provider を使うのには今まで通り、<code>ACCESS_FINE_LOCATION</code> と <code>ACCESS_COARSE_LOCATION</code> を設定します。</p>
+
+<p>LocationClient は、指定した PERMISSION に応じてよしなに動いてくれるそうです。</p>
+
+<p>```xml AndroidManifest.xml
+&lt;?xml version="1.0" encoding="utf-8"?>
+&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"</p>
+
+<pre><code>package="com.example.fusedlocationprovidersample"
+android:versionCode="1"
+android:versionName="1.0" &gt;
+
+&lt;uses-sdk
+    android:minSdkVersion="8"
+    android:targetSdkVersion="17" /&gt;
+&lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/&gt;
+&lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/&gt;
+
+&lt;application
+    android:allowBackup="true"
+    android:icon="@drawable/ic_launcher"
+    android:label="@string/app_name"
+    android:theme="@style/AppTheme" &gt;
+    &lt;activity
+        android:name="com.example.fusedlocationprovidersample.MainActivity"
+        android:screenOrientation="portrait"
+        android:label="@string/app_name" &gt;
+        &lt;intent-filter&gt;
+            &lt;action android:name="android.intent.action.MAIN" /&gt;
+
+            &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+        &lt;/intent-filter&gt;
+    &lt;/activity&gt;
+&lt;/application&gt;
+</code></pre>
+
+<p></manifest>
+```</p>
+
+<h2>5. Fused Location Provider を使う</h2>
+
+<p>ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの <code>LocationProvider</code> が(も)使えるので、画面一つだけのシンプルなコードです。</p>
+
+<p>FusedLocationProvider を使うには、<a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> クラスを使います。</p>
+
+<p>大雑把な流れは:</p>
+
+<ol>
+<li>インスタンスを生成する
+connect を呼ぶ -> ConnectionCallbacks.onConnected がコールバックされる</li>
+<li><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html">LocationRequest</a> を指定して、requestLocationUpdates を呼ぶ。 -> LocationListener.onLocationChanged が呼ばれる</li>
+</ol>
+
+
+<p>です。connect を呼んで onConnected を待つのと、位置取得条件が <code>LocationRequest</code> クラスになった以外は <code>LocationManager</code> と同じです。</p>
+
+<p>では、全コードです。</p>
+
+<p>```java MainActivity.java
+package com.example.fusedlocationprovidersample;</p>
+
+<p>import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.LocationClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import android.location.Location;
+import android.os.Bundle;
+import android.text.format.DateFormat;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
+import android.app.Activity;</p>
+
+<p>public class MainActivity extends Activity {</p>
+
+<pre><code>// FusedLocationProvider 用の Client
+private LocationClient _locationClient;
+private TextView _textResult;
+
+// 以前と変わらない LocationListener
+private final LocationListener _locationListener = new LocationListener() {
+
+    @Override
+    public void onLocationChanged(final Location location) {
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                String text = _textResult.getText().toString();
+                text = DateFormat.format("hh:mm:ss.sss", location.getTime()) + " - " 
+                        + location.getLatitude() + "/" +
+                        + location.getLongitude() + "/" +
+                        + location.getAccuracy() + 
+                        "\n" + text;
+
+                _textResult.setText(text);
+            }
+        });
+    }
+};
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+
+    _textResult = (TextView)findViewById(R.id.text_result);
+
+    final Button buttonLocate = (Button)findViewById(R.id.button_locate);
+    buttonLocate.setOnClickListener(new OnClickListener() {
+        private boolean _isStarted = false;
+
+        @Override
+        public void onClick(View v) {
+            if (!_isStarted) {
+                startLocate();
+                buttonLocate.setText("Stop");
+            } else {
+                stopLocate();
+                buttonLocate.setText("Start");
+            }
+
+            _isStarted = !_isStarted;
+        }
+    });
+}
+
+@Override
+protected void onDestroy() {
+    stopLocate();
+    super.onDestroy();
+}
+
+private void startLocate() {
+    _locationClient = new LocationClient(this, new ConnectionCallbacks() {
+
+        @Override
+        public void onConnected(Bundle bundle) {
+            // 2. 位置の取得開始！
+            LocationRequest request = LocationRequest.create()
+            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
+            .setInterval(5000); // 5秒おき
+            _locationClient.requestLocationUpdates(request, _locationListener);
+        }
+
+        @Override
+        public void onDisconnected() {
+            _locationClient = null;
+        }
+
+    }, new OnConnectionFailedListener() {
+        @Override
+        public void onConnectionFailed(ConnectionResult result) {
+        }
+    });
+
+    // 1. 位置取得サービスに接続！
+    _locationClient.connect();
+}
+
+private void stopLocate() {
+    if (_locationClient == null || !_locationClient.isConnected()) {
+        return;
+    }
+
+    _locationClient.removeLocationUpdates(_locationListener);
+    _locationClient.disconnect();
+    // ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>6. 動くのか！？</h2>
+
+<p>HTC J(not蝶) で動かしてみました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_fused_location_provider1.png" alt="image3" /></p>
+
+<p>室内での結果ですが、最初 27m の精度だったのが、放っておくとどんどん精度が上がって行きました。が、地図に重ねてみないと実際合ってるのかよくわかりませんね。</p>
+
+<p>そのうち、地図に載せて検証してみたいです。</p>
+
+<h2>Permission と Priority と精度の話</h2>
+
+<p>Permission と Priority の組み合わせで、位置の精度がどう変わるか、少し調べました。</p>
+
+<h3>FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
+
+<p>GPS と WiFi と センサーフル活用。GPS が捕捉できなくても数十ｍの位置精度が概ね出るようです。</p>
+
+<h3>COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
+
+<p>使えない。FINE_LOCATION が必要ってエラーになりました。</p>
+
+<h3>COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY</h3>
+
+<p>位置の精度が数km程度になりました。WiFi測位(従来の NETWORK_PROVIDER)よりも悪いです。うーんこれは期待はずれだなあ。</p>
+
+<p>結局、例えば屋内測位でしか使わないからGPS要らねって FINE_LOCATION を外すと、かえって精度が落ちるという事になります。(GPS使いませんPERMISSIONが欲しいな。。。)</p>
+
+<h2>おまけ</h2>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
+</ul>
+
+
+<p>によると、Google Maps Android API v2 の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean">setMyLocationEnabled(true)</a> でも FusedLocationProvider が使われるようになったとのことです。</p>
+
+<h2>まとめ</h2>
+
+<p>公式のコンプリートな Getting Started は</p>
+
+<ul>
+<li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location | Android Developers</a></li>
+</ul>
+
+
+<p>にありますので、こちらを読まれた方が確実です。</p>
+
+<p>ここで作ったサンプルは、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
+</ul>
+
+
+<p>に置いておきます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google I/O 2013 の Android Location セッションまとめ]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/20/digest-of-android-location-session-in-google-io2013/"/>
+    <updated>2013-05-20T15:13:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/20/digest-of-android-location-session-in-google-io2013</id>
+    <content type="html"><![CDATA[<p>これは、<a href="http://www.youtube.com/watch?v=URcVZybzMUI">Google I/O 2013 - Beyond the Blue Dot: New Features in Android Location - YouTube</a> から主要な部分を切り出して勝手な解説を加えたものです。</p>
+
+<!--more-->
+
+
+<h2>時間がない人のために</h2>
+
+<p>このセッションは、Android に追加された「Fused Location Provider」「Geofencing」「Activity Recognition」に関するお話です。</p>
+
+<p>これらの３つのデモだけ見れば、だいたい「すげー」ってなるかと。</p>
+
+<ul>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a></p></li>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=1195s">Geofencing のデモ</a></p></li>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=1661s">Activity Recognition のデモ</a></p></li>
+</ul>
+
+
+<p>で、これらの機能は Google Play services として提供されるので、新しい端末を待たなくても<strong>今日から使えます</strong>よ、と。</p>
+
+<h2>はじめに</h2>
+
+<p>タイトルは「Beyond the Blue Dot」、Blue Dot とは…デモを観たら分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_001.png" alt="&quot;1&quot;" /></p>
+
+<p>Intro&amp;Closing 担当の Waleed さん(右)と、Deep Dive してくれる Jaikumar さん(左)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_002.png" alt="2" /></p>
+
+<p>基本として、各種測位技術の比較表を。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_008.png" alt="8" /></p>
+
+<h2>Fused Location Provider</h2>
+
+<p>Intro を早々に飛ばして、ここから各機能の詳細説明。</p>
+
+<p>まず、現在の Location 周りの構成図。これが…</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_009.png" alt="9" /></p>
+
+<p>こうなる。今までのレイヤの上に Google Play-services として構成される。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_017.png" alt="17" /></p>
+
+<p>さあてお待ちかねのデモ。</p>
+
+<p>まずは、実際の経路(緑) vs GPS(黄色)</p>
+
+<p>画像だけだと若干分かりづらいけど、屋内はすっ飛ばされてる。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_018.png" alt="18" /></p>
+
+<p>次、緑 vs WiFi測位(赤)</p>
+
+<p>もう、カックカクなのであります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_019.png" alt="19" /></p>
+
+<p>そして、緑 vs Fused Location Provider(青 the Blue Dot)</p>
+
+<p>屋外は GPS によるスムースな軌跡、屋内は WiFi＋センサーによる自律測位で十分に滑らか。入出、退出時の切り替えも自動で行われる。(拍手！)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_020.png" alt="20" /></p>
+
+<p>使い方。</p>
+
+<p><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> というのが増えてるので、それを使います。</p>
+
+<p><code>connect</code> した後は、<code>LocationListener</code> が使えます。(注:<code>android.location.LocationListener</code> ではなく新しい <code>com.google.android.gms.location.LocationListener</code> でした)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_021.png" alt="21" /></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_022.png" alt="22" /></p>
+
+<p><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html#setPriority(int">setPriority</a> で電池消費と精度をコントロールできるとのこと。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_024.png" alt="24" /></p>
+
+<h2>Geofencing</h2>
+
+<p>次のトピック、ジオフェンシング。</p>
+
+<p>さっそくデモから。</p>
+
+<p>ジオフェンスが２つ仕掛けてあって、自車がフェンス内に入ると色が変わるというもの。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_026.png" alt="26" /></p>
+
+<p>使い方。</p>
+
+<p>同じく <code>LocationClient</code> から。
+結果は IntentService で受け取ります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_028.png" alt="28" /></p>
+
+<p>そして嬉しいのがコレ。</p>
+
+<p>消費電力が今までの 1/3 になってるとのことです。
+実は、ジオフェンシングの機能自体は <a href="http://developer.android.com/reference/android/location/LocationManager.html#addProximityAlert(double,%20double,%20float,%20long,%20android.app.PendingIntent">addProximityAlert</a> という形で既存だったのです(存在は知ってたが使ったこと無い)。</p>
+
+<p>ユーザーの大雑把な場所や、現在の状態(歩いてるのか留まっているのか)やら、ハードウェアに直接処理させているので実現できた、とか言ってるみたいです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_030.png" alt="30" /></p>
+
+<h2>Activity Recognition</h2>
+
+<p>最後のトピック、行動(状態)認識。</p>
+
+<p>乗り物、徒歩、留まってる、自転車 を判別できます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_032.png" alt="32" /></p>
+
+<p>これはライブデモ。
+自転車と認識されているのは…</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_040.png" alt="40" /></p>
+
+<p>…マークさんの実演でしたー。(会場ここが一番盛り上がってた)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_041.png" alt="41" /></p>
+
+<p>そして使い方、
+<a href="http://developer.android.com/reference/com/google/android/gms/location/ActivityRecognitionClient.html">ActivityRecognitionClient</a> というのを使います。
+これは早速使ってみたのでこちらもご参考に。</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる - Experiments Never Fail</a></li>
+</ul>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_043.png" alt="43" /></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_044.png" alt="44" /></p>
+
+<h2>まとめ</h2>
+
+<p>Waleed さんに戻ってまとめなど。</p>
+
+<p>Google Play-services で提供してるから、使うなら？「今でしょ！」(言ってません)。
+これからも、消費電力・精度・使える場所(?) を改良していくぜい、とのこと。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_049.png" alt="49" /></p>
+
+<p>どうもありがとうございました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_050.png" alt="50" /></p>
+
+<h2>雑感</h2>
+
+<p>Fused Location Provider(GPS+WiFi+自律測位)は、カーナビ(GPS+自律測位)では普通に行われているものの、あちらは道路の上という縛りがあるのに対し、こちらはフリーダムな移動を処理しなければならないのですが、実用レベルの API を、誰でも使える形で提供してくる Google さん怖すぎ。</p>
+
+<p>国内でも大学とかベンチャーが頑張って屋内測位とか行動認識技術開発してるので、ぜひがんばってください。</p>
+
+<p>「なぜ Google Play-services で提供するのか？」に:</p>
+
+<ul>
+<li>既存デバイスにも対応できる</li>
+<li>短いサイクルでリリースできる</li>
+</ul>
+
+
+<p>などのメリットを説明していましたが、その後ツイッターで、</p>
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>@<a href="https://twitter.com/amay077">amay077</a> おおー、参考になりました。ありがとうございます。ところで、これGooglePlayクラスのしただったのね。業務用のタブレットやスマホだとGooglePlay使えないから、ちょっと残念。</p>&mdash; new hirofumi hayashiさん (@picaosgeo) <a href="https://twitter.com/picaosgeo/status/335587102043549696">2013年5月18日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>というやりとりをして気づきました。Google Play-services って「(オープンソースとしての)Android」じゃないのねーと(まあこれほどの技術の内部を公開なんて普通に考えてもありえない話ですが)。</p>
+
+<p><strong>「Google Play-services が使えない端末では利用できない」</strong> というのは割と盲点になりそうです(Kindle もダメだよね、たぶん。しかしエミュレータですら使えないのは何とかして欲しい)。</p>
+
+<p><a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20130321/464924/">Chrome との統合がうわさされる Android</a> ですが、Android の名を冠していない Google Play-services が充実していくのは、その流れなのかも知れませんね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコンポーネントを更新する方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio/"/>
+    <updated>2013-05-08T20:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>分かりにくかったのでメモ。</p>
+
+<!--more-->
+
+
+<p><a href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/">以前</a>使ってみた <a href="http://components.xamarin.com/view/googlemapsios/">Google Maps Component</a>、「Polygon や Circle がないなー、対応してないのかなー」と思って <a href="http://componentsapi.xamarin.com/?link=T%3aGoogle.Maps.Circle">API Doc</a> 見たら存在してたので、いつの間にかバージョンアップしてたらしい、確かに手持ちのバージョンは「1.1.2」、Webサイトの方は「1.2.2」になってた。</p>
+
+<h2>Component を更新する</h2>
+
+<p>じゃあ更新するか、と思って Xamarin Studio で入り口を探すものの見つからない。
+結局、メニュー -> Get More Components から、Google Maps を検索しなおしたら、ボタンが「Update」になってたので、押したら更新された。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio1.png" alt="image1" /></p>
+
+<h2>Component に付属のサンプルが増えてた</h2>
+
+<p>更新後、Samples を見てみたら、、、お、 <strong>iOS Advanced Sample</strong> というのが増えてる！きっとアドバンスドなサンプルなのでしょうな（試せよ</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio2.png" alt="image1" /></p>
+
+<h2>Component を更新したら API の互換性が無くなってた</h2>
+
+<p>更新後、意気揚々と以前作ったサンプルをビルドしてみたらビルドエラーが。
+どうやら <code>MapView.AddMarker</code> や <code>MarkerOption</code> が無くなって、<code>Marker</code> に MapView を設定するように変更されたらしい。(以下は、さっきのアドバンスドなサンプルからの抜粋)</p>
+
+<p>```c# PartOfMarkersViewController.cs
+public override void ViewDidLoad ()
+{</p>
+
+<pre><code>base.ViewDidLoad ();
+
+var camera = CameraPosition.FromCamera (-37.81969, 144.966085, 4);
+var mapView = MapView.FromCamera (RectangleF.Empty, camera);
+
+var sydneyMarker = new Marker () {
+    Title = "Sydney",
+    Snippet = "Population: 4,605,992",
+    Position = new CLLocationCoordinate2D (-33.8683, 151.2086),
+    Map = mapView
+};
+
+var melbourneMarker = new Marker () {
+    Title = "Melbourne",
+    Snippet = "Population: 4,169,103",
+    Position = new CLLocationCoordinate2D (-37.81969, 144.966085),
+    Map = mapView
+};
+
+// Set the marker in Sydney to be selected
+mapView.SelectedMarker = sydneyMarker;
+
+View = mapView;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これは、元の Google Maps SDK for iOS が根源なのか、Google Maps の Xamarin Component がそうしたのか知りませんが、ReleaseNotes とかないのかな？うっかり更新すると怖いな。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Component の Update は、 Get More Components から</li>
+<li>むやみに Update すると互換性なくなってるかもなのでバックアップというかバージョン管理ちゃんとしよう</li>
+<li>つまり Xamarin Components に ReleaseNotes 欲しいです</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

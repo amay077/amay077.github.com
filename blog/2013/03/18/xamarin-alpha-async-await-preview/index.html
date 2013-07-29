@@ -1,0 +1,587 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin の Alpha版で async/await を試す - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Xamarin Blog で &#8221;Alpha版だけど async/await 使えるようになったよー&#8221; との事だったのでさっそく試してみました。 以前から、&#8220;Good news – we plan to release full support for async &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Xamarin の Alpha版で Async/await を試す</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-18T20:42:00+09:00" pubdate data-updated="true">Mar 18<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Xamarin Blog で &#8221;<a href="http://blog.xamarin.com/brave-new-async-mobile-world/">Alpha版だけど async/await 使えるようになったよー</a>&#8221; との事だったのでさっそく試してみました。</p>
+
+<!--more-->
+
+
+<p>以前から、<a href="http://xamarin.uservoice.com/forums/144858-xamarin-suggestions/suggestions/2697497-async-await-support">&#8220;Good news – we plan to release full support for async/await in all our products in April of 2013.&#8221;</a> と言われていたので予定どおりですかね。</p>
+
+<h2>Alpha版をインストール</h2>
+
+<p>Xamarin Studio のシステムメニュー → アップデートをチェック で、 &#8220;Update channel&#8221; で <strong>Alpha</strong> を選ぶとインストールできます。もちろん、アルファ版なので自己責任で。</p>
+
+<p>インストール後の、Xamarin と各SDK のバージョンはこう↓なってました。</p>
+
+<blockquote><p>Xamarin Studio
+Version 4.0.2 (build 18)
+Installation UUID: xxxxxx
+Runtime:
+  Mono 3.0.7 (master/514fcd7)
+  GTK 2.24.16
+  GTK# (2.12.0.0)
+  Package version: 300070000</p>
+
+<p>Apple Developer Tools
+Xcode 4.6 (2066)
+Build 4H127</p>
+
+<p>Xamarin.Mac
+Xamarin.Mac: Not Installed</p>
+
+<p>Xamarin.Android
+Version: 4.7.0 (Trial Edition)
+Android SDK: /Users/hrnv/dev/sdks/android-sdk-macosx</p>
+
+<p>Xamarin.iOS
+Version: 6.3.0.255 (Trial Edition)
+Hash: ba05545</p></blockquote>
+
+<h2>同期処理だと…</h2>
+
+<p>「ボタンを押すと <strong>超時間のかかる処理</strong> を実行して、結果を表示する」というケースで試してみます。</p>
+
+<p>まず何も考えず同期処理で書くと、、、</p>
+
+<figure class='code'><figcaption><span>sync.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// ボタンが押されたよ</span>
+</span><span class='line'><span class="k">private</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 超時間のかかる計算</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">HeavyCalc</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;result:{0}&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する</span>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 超時間のかかる計算</span>
+</span><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">HeavyCalc</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">System</span><span class="p">.</span><span class="n">Threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">.</span><span class="n">Sleep</span><span class="p">(</span><span class="m">10000</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="m">5</span><span class="p">;</span> <span class="c1">// 超時間をかけて 5 を計算したつもり</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>こんな感じ。
+動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_anr.png" alt="&quot;anr&quot;" /></p>
+
+<p>あえなくフリーズ＆ANR、当然です。</p>
+
+<h2>async/await 化</h2>
+
+<p>async/await については、ググればたくさん情報が出てきますが、探した中でもっとも簡単とおもわれる例を紹介します。</p>
+
+<ul>
+<li><a href="http://kimux.net/?p=902">[C#]async/awaitの使い方メモ、その１。 | Kimux.Net</a></li>
+</ul>
+
+
+<p>さて、先ほどのプログラムを、async/await 構文を使って非同期化してみます。</p>
+
+<figure class='code'><figcaption><span>async.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// ボタンが押されたよ</span>
+</span><span class='line'><span class="k">private</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 超時間のかかる計算</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="n">HeavyCalcAsync</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// ここから下は UIスレッド で実行される</span>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;result:{0}&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する</span>
+</span><span class='line'>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 超時間のかかる計算</span>
+</span><span class='line'><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">HeavyCalc</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">System</span><span class="p">.</span><span class="n">Threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">.</span><span class="n">Sleep</span><span class="p">(</span><span class="m">10000</span><span class="p">);</span>
+</span><span class='line'>    <span class="k">return</span> <span class="m">5</span><span class="p">;</span> <span class="c1">// 超時間をかけて 5 を計算したつもり</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// HeavyCalc をラップして非同期で実行</span>
+</span><span class='line'><span class="k">private</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">HeavyCalcAsync</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">HeavyCalc</span><span class="p">());</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>変更点を、ソースの下の方から。
+まず、<code>HeavyCalc</code> をラップして、 <code>HeavyCalcAsync</code> という関数を作りました。<code>Task</code> クラスを使って非同期で <code>HeavyCalc</code> を実行する処理です。async/await のルールに従って <code>Task</code> クラスを返値にします。メソッド名のおしりに &#8220;Async&#8221; を付けるのもルールです。</p>
+
+<p>次に、 <code>button1_Click</code> です。メソッドの定義に <code>async</code> キーワードを付けます。このメソッドが非同期である事を示すと共に、メソッド内に <code>await</code> キーワードが含まれる事を意味します。メソッド内に <code>await</code> が無いとエラーになります。(Xamarin Studio でもちゃんとエラーにしてくれました)</p>
+
+<p>最後に、「超時間のかかる計算」の呼び出し。<code>HeavyCalc</code> の代わりに <code>HeavyCalcAsync</code> を <code>await</code> 付きで記述します。</p>
+
+<p>これで終わり。
+「button1_click は、非同期で HeavyCalcAsync を実行し、その終了を待って、その後続処理を <strong>UIスレッド</strong> で続行する」という意味になりました。</p>
+
+<p>動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_asyc.png" alt="&quot;async&quot;" /></p>
+
+<p>ANR でませんし、ちゃんと計算後に画面が更新されます。</p>
+
+<h2>AsyncTask で書くと…</h2>
+
+<p>Android で非同期処理と言えば <code>AsyncTask</code> がよく紹介されてますので、一応、それを使うとどうなるのか書いてみます。</p>
+
+<p>まず、AsyncTask を拡張して、HeavyCalc をバックグラウンドで実行する <code>HeavyCalcTask</code> を用意します。
+<code>OnPreExecute</code> と <code>OnPostExecute</code> でボタンを無効/有効 にしています。</p>
+
+<figure class='code'><figcaption><span>HeavyCalcTask.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// HeavyCalc を非同期で実行する AsyncTask</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">HeavyCalcTask</span> <span class="p">:</span> <span class="n">Android</span><span class="p">.</span><span class="n">OS</span><span class="p">.</span><span class="n">AsyncTask</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">private</span> <span class="k">readonly</span> <span class="n">Button</span> <span class="n">button</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">HeavyCalcTask</span><span class="p">(</span><span class="n">Button</span> <span class="n">button</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">button</span> <span class="p">=</span> <span class="n">button</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cp">#region implemented abstract members of AsyncTask</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnPreExecute</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span> <span class="n">DoInBackground</span><span class="p">(</span><span class="k">params</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">[]</span> <span class="n">@params</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="c1">// 超時間のかかる計算</span>
+</span><span class='line'>        <span class="k">return</span> <span class="nf">HeavyCalc</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnPostExecute</span><span class="p">(</span><span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span> <span class="n">result</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;result:{0}&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する</span>
+</span><span class='line'>        <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>    <span class="cp">#endregion</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>使う方は、まあ普通に。</p>
+
+<figure class='code'><figcaption><span>asynctask_execute.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// ボタンが押されたよ</span>
+</span><span class='line'><span class="k">private</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">asyncTask</span> <span class="p">=</span> <span class="k">new</span> <span class="n">HeavyCalcTask</span><span class="p">(</span><span class="n">button</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">asyncTask</span><span class="p">.</span><span class="n">Execute</span><span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>クラスを作らなきゃいけないし、AsyncTask の仕方ないところですけど、View に対する処理とロジックが同じクラスに同居しちゃうし、複数の非同期処理を逐次実行できないし、とあまり良い所が見えません。</p>
+
+<p>そもそも Xamarin.iOS などとクロスプラットフォームを考えるならプラットフォーム固有の機能の利用は最小限に留めたいので、Xamarin.Android で AsyncTask を使う意味は「ない」でしょう。
+(Xamarin.iOS でも async/await は使えるそうです。)</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>知らない人がコード見ると「これ await してたら ANR 起こりますよね？」とか「これ HeavyCalcAsync が非同期だから、次の行がすぐ実行されちゃいますよね？」とか言われそうｗ</li>
+<li>諸君らが愛してくれた <code>AsyncTask</code> は死んだ</li>
+<li>async/await が使えるようになるまでは <code>Task.Factory.StartNew</code> で。</li>
+</ul>
+
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://blog.xamarin.com/brave-new-async-mobile-world/">Xamarin previews C# async on iOS and Android | Xamarin Blog</a></li>
+<li><a href="http://kimux.net/?p=902">[C#]async/awaitの使い方メモ、その１。 | Kimux.Net</a></li>
+<li><a href="http://xin9le.net/archives/tag/async-await/page/2">async/await : xin9le note</a></li>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/chushin/masterasync_01/masterasync_01_01.html">.NET開発における非同期処理の基礎と歴史 － ＠IT</a></li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-18T20:42:00+09:00" pubdate data-updated="true">Mar 18<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/03/18/backbraze-vs-pogoplug-vs-bitcasa/" title="Previous Post: さよなら BackBlaze、ようこそ Bitcasa">&laquo; さよなら BackBlaze、ようこそ Bitcasa</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/03/19/android-using-proguard/" title="Next Post: Android で Proguard を使う(ADT17以降)">Android で Proguard を使う(ADT17以降) &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

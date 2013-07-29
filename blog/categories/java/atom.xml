@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Java | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/java/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた]]></title>
+    <link href="http://amay077.github.io/blog/2012/12/20/asynctest-on-junit/"/>
+    <updated>2012-12-20T19:07:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/12/20/asynctest-on-junit</id>
+    <content type="html"><![CDATA[<p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
+ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
+
+<!-- more -->
+
+
+<p>まあ CountDownLatch で待ってるだけなんですけども。</p>
+
+<p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
+
+<p>```java FutureResult.java
+/<em>*
+ * success または error が呼ばれるまで get() で待ってる Future みたいなクラス
+ *
+ * @author @amay077
+ </em>/
+public class FutureResult<T> {</p>
+
+<pre><code>private final int TIMEOUT = 10;
+private final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
+
+private final CountDownLatch _latch = new CountDownLatch(1);
+private T _value;
+private Exception _error;
+
+public static class FutureResultException extends Exception {
+    private static final long serialVersionUID = 1L;
+
+    public FutureResultException(Exception detailException) {
+        super(detailException);
+    }
+}
+
+/**
+ * 非同期処理が成功したら呼ぶメソッド
+ */
+public synchronized void success(T value) {
+    _value = value;
+    _latch.countDown();
+}
+
+/**
+ * 非同期処理が失敗したら呼ぶメソッド
+ */
+public synchronized void error(Exception ex) {
+    _error = ex;
+    _latch.countDown();
+}
+
+/**
+ * 非同期処理が終わるまで待って結果を返す。
+ * エラーだったら例外を投げる。
+ */
+public T get() throws Exception {
+    try {
+        if (!_latch.await(TIMEOUT, TIMEOUT_UNIT)) {
+            throw new FutureResultException(new TimeoutException());
+        }
+    } catch (Exception ex) {
+        throw new FutureResultException(ex);
+    }
+
+    if (_error != null) {
+        throw _error;
+    }
+
+    return _value;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
+使い方はこんな感じ。</p>
+
+<p>```java AsyncMethodTest.java
+public void testAsyncMethod() {</p>
+
+<pre><code>final FutureResult&lt;Integer&gt; result = new FutureResult&lt;Integer&gt;();
+
+// 非同期なメソッドを実行
+hoge.asyncMethod(new OnReceiveListener() {
+    @Override
+    public void onReceive(Integer data) {
+        // 正そうな値を受信しtら success を呼ぶ
+        result.success(data);
+    }
+
+    @Override
+    public void onError(Exception ex) {
+        // エラーを受信した場合は error を呼ぶ
+        result.error(ex);
+    }
+});
+
+// 検証
+try {
+    // get で success か error かタイムアウトするまで待ってる。
+    Assert.assertEquals(0, result.get()); 
+} catch (Exception e) {
+    fail(e.getMessage());
+}
+</code></pre>
+
+<p>}</p>
+
+<p>```</p>
+
+<h2>参考</h2>
+
+<p>なんて記事を書いたあとにもっかいググってみたらこんなライブラリがあるようで。詳細はまだ見てない。</p>
+
+<ul>
+<li><a href="http://code.google.com/p/awaitility/">Awaitility</a> - Awaitility is a small Java-based DSL for synchronizing asynchronous operations. It makes it easy to test asynchronous code. - Google Project Hosting</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[.NET の MVVM + Messenger パターンにあこがれて、Java で Messenger クラスを自作してみた]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/mvvm-on-android/"/>
+    <updated>2012-10-03T23:02:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/mvvm-on-android</id>
+    <content type="html"><![CDATA[<p>MVVM + Messenger パターンとは、</p>
+
+<ul>
+<li><a href="http://tnakamura.hatenablog.com/entry/20110218/mvvm_messenger">いまさら聞けない「MVVM + Messenger パターン」超入門 - present</a></li>
+</ul>
+
+
+<p>らへんを参照。</p>
+
+<!-- more -->
+
+
+<p>勉強がてら、Android(Java) で、Messenger を実装してみようとした。
+要は、View 側で regist された Action<Message> を溜めておき、ViewModel 側から send(new Message()) した時に invoke させればいいんでしょ？と。</p>
+
+<p>とりあえずこんな感じになると思われる。</p>
+
+<p>```java common_interfaces
+public interface Message {
+}</p>
+
+<p>public interface Action1<T> {</p>
+
+<pre><code>public void invoke(T arg);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>```java Messenger.java
+public final class Messenger {</p>
+
+<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
+        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
+
+public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
+    String nameOfT = /* TODO action から T を取得 */
+    _actions.put(nameOfT, action);
+}
+
+public void send(Message message) {
+    /* TODO message の型をキーにして _actions から取り出して invoke */
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これの実装中、いくつか問題にハマった。</p>
+
+<h2>問題1:X&lt;T> の T が取れない</h2>
+
+<p>Action<Message> を溜める時に、Message をキーにして Map に入れておけばいいでしょ、と思ったのだが、できない。
+<code>Action&lt;T&gt;</code> の <code>T</code> が取り出せない。</p>
+
+<p>よく調べてみると</p>
+
+<ul>
+<li><a href="http://www.ne.jp/asahi/hishidama/home/tech/java/generics.html#erasure">Java総称型メモ(Hishidama's Java Generics Memo)</a></li>
+<li><a href="http://blogs.wankuma.com/nagise/archive/2008/10/13/158708.aspx">イレイジャではジェネリクスの何が消えるのか</a></li>
+</ul>
+
+
+<p>だそうです。ふむーなるほど、実行時には T は消えてしまっていると。</p>
+
+<p>しかしいろいろ試していたら、こんな方法で文字列としては取り出すことができました。</p>
+
+<p>```java Messenger.java
+public final class Messenger {</p>
+
+<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
+        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
+
+public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
+    // action が使ってる Generics な型を取り出す(という意味？)。
+    // action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
+    Type[] types = action.getClass().getGenericInterfaces();
+    // 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
+    // ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
+    String typeString = types[0].toString();
+
+    // &lt; &gt; 内だけ取り出す        
+    int start = typeString.indexOf("&lt;");
+    int end = typeString.lastIndexOf("&gt;");
+    String nameOfT = typeString.subSequence(start + 1, end).toString();
+
+    _actions.put(nameOfT, action);
+}
+
+public void send(Message message) {
+    /* TODO message の型をキーにして _actions から取り出して invoke */
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>問題2:&lt;? extend T> or &lt;? super T> ?</h2>
+
+<p>次の問題、今度は send の方。
+<code>_actions.get(nameOfMessage)</code> で取り出した <code>Action1&lt;? extend Message&gt;</code> は、invoke メソッドの型が <code>null</code> になってて、使えませんでした。
+なので仕方なく、Generics パラメータなしの <code>Action1</code> で受けることに。</p>
+
+<p>```java Messenger.java
+public final class Messenger {</p>
+
+<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
+        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
+
+public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
+    // action が使ってる Generics な型を取り出す(という意味？)。
+    // action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
+    Type[] types = action.getClass().getGenericInterfaces();
+    // 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
+    // ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
+    String typeString = types[0].toString();
+
+    // &lt; &gt; 内だけ取り出す        
+    int start = typeString.indexOf("&lt;");
+    int end = typeString.lastIndexOf("&gt;");
+    String nameOfT = typeString.subSequence(start + 1, end).toString();
+
+    _actions.put(nameOfT, action);
+}
+
+@SuppressWarnings("unchecked")
+public void send(Message message) {
+    final String messengerTypeName = message.getClass().getName();
+
+    if (!_actions.containsKey(messengerTypeName)) {
+        return;
+    }
+
+    // Action1&lt;? extends Message&gt; だと、invoke の型が null になってしまう。
+    // が、_actions は追加/取得を兼ねているので Action1&lt;? super Message&gt; にすることもできず…      
+    // 仕方なく Generics 未使用で。
+    @SuppressWarnings("rawtypes")
+    Action1 action = _actions.get(messengerTypeName);
+    action.invoke(message);
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>とりあえず動くけど、なんかスッキリしない。。。</p>
+
+<h2>ここまで実装しておいて…</h2>
+
+<ul>
+<li><a href="http://gushwell.ldblog.jp/archives/52146816.html">MVVM：Messengerを理解するために自作してみた(2):Gushwell's C# Dev Notes</a></li>
+</ul>
+
+
+<p>を発見。
+あれ、Map じゃなくて List でしたか。1回の Send で複数の Callback が走るのね。ま、いいや Android で使うだけだし。
+.NET はいいなあ <code>typeof(T)</code> が使えて。</p>
+
+<h2>使い方</h2>
+
+<p>だいたいこんな感じで使える。</p>
+
+<p>```java usage
+/<em>* ダイアログを表示させるメッセージ </em>/
+public class DialogMessage implements Message {</p>
+
+<pre><code>public String message;
+public Action1&lt;Boolean&gt; callback; 
+
+public DialogMessage(String message, Action1&lt;Boolean&gt; callback) {
+    this.message = message;
+    this.callback = callback;
+}
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* View側 </em>/
+public class MyActivity extends Activity {</p>
+
+<pre><code>private MyViewModel _vm = new MyViewModel();
+
+@Override
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_my);
+
+    // Messenger に Message に対応する Action を登録する。
+    Messenger messenger = _vm.getMessenger();
+    messenger.register(new Action1&lt;DialogMessage&gt;() {
+        @Override
+        public void invoke(DialogMessage dlgMsg) {
+            boolean isOk = showDialog(dlgMsg.message); // ホントは非同期なのでもう少し複雑
+            if (isOk) {
+                finish();
+            }
+            dlgMsg.callback.invoke(isOk); // VM に結果を通知する
+        }
+    });
+}
+
+// 終了ボタンが押されたら Finish コマンドを実行。
+public void exitButton_Click(View view) {
+    _vm.commandExit.execute();
+}
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* ViewModel ※ Command インターフェースの定義とかは省略 </em>/
+public class MyViewModel {</p>
+
+<pre><code>private final Messenger _messenger = new Messenger();
+
+public Messenger getMessenger() {
+    return _messenger;
+}
+
+public final Command commandExit = new Command() {
+    @Override
+    public void execute() {
+        // ダイアログを表示する Message を送る
+        _messenger.send(new DialogMessage("終了します", new Action1&lt;Boolean&gt;() {
+            @Override
+            public void invoke(Boolean pushOk) {
+                // ダイアログの表示結果を受ける
+                Log.d(TAG, "Pushed button is OK? -&gt; " + pushOk);
+            }
+        }));
+    }
+};
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>その他</h2>
+
+<ul>
+<li>.NET の Messenger はなぜ Singleton なんだろう？VM と View の関係が 1:n だから？</li>
+<li>Messenger に否定的な見解もあるようで。確かに「View の変化は ViewModel の状態変化でのみ行われるべき」という主張にも一理ある。 → <a href="http://torokonbu.blogspot.com/2011/12/mvvmmvvm-dialog-behavior.html">トロこんぶ: MVVMでメッセンジャーを使わずにダイアログを表示する(MVVM Dialog Behaviorライブラリ提供)</a></li>
+<li>ちょっと Trigger まで頭回ってません → <a href="http://ugaya40.net/wpf/mvvm_viewmodel_to_vew.html">MVVMパターンでViewModelからViewを操作したい - the sea of fertility</a></li>
+<li>register/send を持ってる Messenger を View と ViewModel が使うのはちょっと違和感。View には register だけ、ViewModel には send のみを公開する interface を公開すべきかな。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Cold を Hot にできる。そう、Publish ならね。]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot/"/>
+    <updated>2012-10-03T19:13:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot</id>
+    <content type="html"><![CDATA[<p>Rx いいよ Rx とか言っておきながら、いままで Cold と Hot の違いについて、ちゃんとわかってませんでしたスイマセン。</p>
+
+<!--more-->
+
+
+<p>そのため、</p>
+
+<ul>
+<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
+<li><a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a></li>
+</ul>
+
+
+<p>で作ったサンプルプログラム、盛大にバグってましたorz</p>
+
+<h2>Cold な Observable と Hot な Observable</h2>
+
+<p>音楽プレーヤ iPod に例えると自分なりにしっくり来ました。
+Observable が iPod で、Observer は聴く人。
+なんとこの iPod はイヤホンジャックがたくさんあります。
+そしてさらにこの iPod はイヤホンを接続するだけで再生が始まり、抜くと停止します。</p>
+
+<p>Cold な iPod では、聴く人がイヤホンを接続すると、音楽が最初から再生されます。
+次の人がイヤホンを接続すると、また音楽が最初から再生されます。(最初の人は、再生されなおすわけじゃないよ。)</p>
+
+<p>Hot な iPod では、最初に聴く人がイヤホンを接続すると、音楽が再生され始めます。
+次の人が、イヤホンを接続すると、その人は途中から聴くことになります。一つのストリーミング放送をみんなで聴くみたいな。
+最後の人がイヤホンを外すと、再生が止まります(この辺はストリーミングと微妙に感覚が異なる、ストリーミングって、聴いてる人が居ようが居まいが流され続けるってイメージだから)。</p>
+
+<h2>何が問題か</h2>
+
+<p>以上を踏まえた上で、<a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a> で作ったプログラムのどこが問題だったかというと。</p>
+
+<p>位置を聞くために接続をすると、その都度、<code>locMan.requestLocationUpdates</code> が呼ばれているという事です。上記の音楽プレーヤで例えると、<code>player.start()</code> です。</p>
+
+<p>位置情報の取得は、ホントに無限ストリーミングなので、一見問題無さげに見えますが、２つリスナを登録するのは頂けません。(中には複数のリスナを登録できない API もあるでしょう、ありました。それで気づいたんです。)</p>
+
+<p>これは最初の register でのみ <code>locMan.requestLocationUpdates</code> が実行され、2番目以降の register では、observer.next だけが呼ばれるようにしないといけません。
+そのためには、register した複数の observer を保持・管理する必要があります。うげー。</p>
+
+<h2>そこで Publish ですよ。</h2>
+
+<p>.publish() を Observable のおしりにくっつけます。はい、これだけ。本当に。簡単すぎて「いいの？」って思っちゃうくらい。</p>
+
+<p>``java getCurrectLocationAsHotObservable.java
+/<em>*
+ * 位置を取得し続ける(Hot)
+ </em>/
+public static ObservableBuilder<Location> getCurrentLocationAsHotObservable(</p>
+
+<pre><code>final Context context, final String provider) {
+return ObservableBuilder.from(
+    getCurrentlocationAsObservable(context, provider)
+    ).publish(); // Cold → Hot へ変換！
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これだけで、複数の人が位置を聴きに来ても、<code>locMan.requestLocationUpdates</code> が呼ばれるのは１回だけである、Hot な Observable になります。Rx すげえよ Rx！</p>
+
+<p>reactive4java のソースを読んだところ、前述の「複数の observer を保持・管理して、最初だけリスナ登録して、誰もいなくなったらリスナ解除する」みたいな面倒なことを publish の中(正確には observeOn)で行なってくれているようです。</p>
+
+<p>ますます Reactive Extensions が好きになりましたよ。</p>
+
+<h2>.NET の Reactive Extensions と reactive4java の違い</h2>
+
+<p>.NET の Reactive Extenstions では、Publish は、<code>IConnectableObservable&lt;T&gt;</code> を返すそうです。そして <code>Subscribe</code> しただけでは再生は開始されず、<code>Connect</code> した時に再生されるのだ、とも。</p>
+
+<p>一方、<a href="http://reactive4java.googlecode.com/svn/trunk/Reactive4Java/docs/javadoc/index.html">reactive4java</a> では、<code>publish</code> は、普通の <code>Observable&lt;T&gt;</code> を返します。Observable には register(.NET の Subscribe に相当)しかないので、これを呼び出した時に再生が開始されます。</p>
+
+<p>特に reactive4java の挙動で困っていませんが、今後のバージョンアップで .NET 側に合わせられるかも知れません。
+ConnecableObservable という interface は既に用意されていますが、使われていないようです。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://xin9le.net/archives/104">Rx入門 (14) – Cold to Hot変換 : xin9le note</a></li>
+<li><a href="http://d.hatena.ne.jp/okazuki/20120212/1329059831">Reactive Extensions再入門 その３６「ColdからHotへ！Publishメソッドと参照カウンタ？RefCountメソッド」 - かずきのBlog@Hatena</a></li>
+<li><a href="http://neue.cc/2010/06/24_263.html">neue cc - Reactive Extensions for .NET (Rx) メソッド探訪第7回:IEnumerable vs IObservable</a></li>
+</ul>
+
+
+<p>Rx の神々のみなさんが懇切丁寧に解説してくださってるのに、失敗しないと気づかない自分のバカバカ！</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[reactive4java で位置を取得し続ける]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java/"/>
+    <updated>2012-10-03T15:21:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/items/07762776102dbc84b1c7">前回</a>に続き、 reactive4java ネタ。
+調子に乗って Android で位置を取得し続けるのを reactive4java を使ってやってみた。</p>
+
+<!--more-->
+
+
+<p>```java LocationFunctions.java
+/<em>*
+ * 位置を取得し続ける(finish は呼ばれない)
+ </em>/
+public static Observable<Location> getCurrentLocationAsObservable(</p>
+
+<pre><code>    final Context context, final String provider) {
+return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt;, Closeable&gt;() {
+    private volatile boolean _stop = false;
+
+    @Override
+    public Closeable invoke(final Observer&lt;? super Location&gt; observer) {
+        final LocationManager locMan = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
+
+        final LocationListener listener = new LocationListener() {
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) { }
+
+            @Override
+            public void onProviderEnabled(String provider) { }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+                observer.error(
+                    new InvalidParameterException("LocationProvider disabled."));
+            }
+
+            @Override
+            public void onLocationChanged(Location location) {
+                if (_stop) {
+                    return;
+                }
+
+                // 発火
+                observer.next(location);
+            }
+        };
+
+        // 位置取得開始
+        locMan.requestLocationUpdates(provider, 0, 0, listener, Looper.getMainLooper());
+
+        return new Closeable() {
+            @Override
+            public void close() throws IOException {
+                if (_stop) {
+                    return;
+                }
+                _stop = true;
+                locMan.removeUpdates(listener);
+                observer.finish();
+            }
+        };
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<p>使い方は、方位の時とほとんど同じ。パラメータが Float から Location に代わっただけ。</p>
+
+<p><code>_stop</code> フラグは、Listener を unregister しても溜まってるデータは流しちゃうんじゃないか、という事で用意した。
+方位のやつは AtomicBoolean を使ったけどこっちは volatile でやってる。確かどっかで 'AtomicBoolean の方が確実に Atomic' って言ってた気がするけど、そもそもそんなに神経質になるところじゃないか。</p>
+
+<p>Observable にすることで、「ｎ秒間位置を取得して貯めて、その中で一番精度の良いものを通す」みたいなことも簡単にできる。</p>
+
+<p>Android の場合、購読開始時に registerXXXListener、Close で unregisterXXXEventListener てのがひとつのパターン。
+たぶん BroadcastReceiver にも適用できる。</p>
+
+<p>XXXListener も BroadcastReceiver も Observable でラップしちゃえば、その後は同じように扱えるので便利♪</p>
+
+<h2>追記 9.27</h2>
+
+<p>実はこのプログラム、Cold でしたー。というわけで、Hot についての記事を書きました。
+* <a href="http://qiita.com/items/3a7bda9d0fdcb9248800">Cold を Hot にできる。そう、Publish ならね。 - Qiita</a></p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
+<li><a href="http://stackoverflow.com/questions/3786825/java-volatile-boolean-vs-atomicboolean">Java: volatile boolean vs AtomicBoolean - Stack Overflow</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android の static 変数はヤバい]]></title>
+    <link href="http://amay077.github.io/blog/2011/01/21/android-static/"/>
+    <updated>2011-01-21T07:36:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2011/01/21/android-static</id>
+    <content type="html"><![CDATA[<p>今まで Windows アプリケーションしか作ったことのない人（私のような）が、Android アプリケーションをつくりはじめて戸惑うところの一つに、Activity のライフサイクルがあります。今回これ関連で、 見事に static 変数でハマりましたので、メモしておきます。</p>
+
+<!--more-->
+
+
+<p>Android Developper では、Activity のライフサイクルは以下の図で説明されています。</p>
+
+<p><img src="http://developer.android.com/images/activity_lifecycle.png" alt="&quot;image1&quot;" /></p>
+
+<p>この図の説明は、<a href="http://www.android-group.jp/index.php?cmd=read&amp;page=%CA%D9%B6%AF%B2%F1%2FAndroid%20SDK%20WG%20%C2%E81%B2%F3%20%A5%BB%A5%C3%A5%B7%A5%E7%A5%F3%A1%CA2008.10.25%A1%CB&amp;word=activity#iee83184">日本Androidの会のページ</a> などで解説されているので、ここでは割愛しますが、ポイントなのは、</p>
+
+<p>アプリケーションを終了（onDestroy）しても、プロセスは死んでいない。
+という事です。static 変数でハマったと書きましたが、static 変数はプロセス毎に保持されるものですが、Windows アプリケーションでは、アプリケーションを終了して再起動すれば、static 変数も初期化されます。</p>
+
+<p>Android アプリケーションでも普通そうだろう、と思うのが人情です。</p>
+
+<p>で、上のライフサイクルです。この図では、アプリケーションを終了してもプロセスが終了するとは書かれていません。他のアプリケーションによってメモリが必要になった時だけ、プロセスが殺される、とあります。これはつまり、Android アプリケーションでは、起動→終了→再起動しても、（ほとんどの場合）static 変数は初期化されない、という事になります。</p>
+
+<p>ホントにそうでしょうか？サンプルを作ってためしてみました。</p>
+
+<h3>static 変数の生存を確認するサンプル</h3>
+
+<p><div><script src='https://gist.github.com/789458.js'></script>
+<noscript><pre><code></code></pre></noscript></div>
+</p>
+
+<p>static 変数を用意し、LogCat に出力した後、1加算するだけです。上記のコードを実行すると、LogCat にカウンタ値が出力されます。↓こんな感じで。</p>
+
+<blockquote><p>01-21 18:16:54.937: DEBUG/MainActivity(2869): static member:0</p></blockquote>
+
+<p>さて、これを「戻る」で終了し、再び起動してみます。</p>
+
+<blockquote><p>01-21 18:17:43.443: DEBUG/MainActivity(2869): static member:1</p></blockquote>
+
+<p>カウンタが加算されている事が分かります。なんども終了→起動を繰り返すとどんどん加算されていきます。</p>
+
+<blockquote><p>01-21 18:17:43.443: DEBUG/MainActivity(2869): static member:2
+01-21 18:17:45.112: DEBUG/MainActivity(2869): static member:3
+01-21 18:17:48.876: DEBUG/MainActivity(2869): static member:4</p></blockquote>
+
+<p>このようにアプリケーションを終了しても static 変数は（プロセスは）生存していることが分かりました。</p>
+
+<p>次に破棄された事を確認してみます。他のアプリでメモリが必要になった時～というのは再現させにくいので、タスク管理ソフトを使います。</p>
+
+<p>自分は、<a href="http://jp.androlib.com/android.application.nextapp-systempanel-iFtq.aspx">SystemPanel Lite</a> を使いました。このソフトで作成したアプリケーションを選択してタスクを終了させた後、再度アプリケーションを起動してみます。すると、</p>
+
+<blockquote><p>01-21 18:17:50.223: DEBUG/MainActivity(2869): static member:0</p></blockquote>
+
+<p>出力結果はこのようになり、タスクが終了させられたので、カウンタも 0 に戻った事が確認できます。</p>
+
+<p>このように、Android アプリケーション開発では、static 変数は要注意です。</p>
+
+<p>各Activity から共有できるからと多用すると、特に状態を格納するなどで使うと不具合の元になりそうです。</p>
+
+<p>※だれか Activity じゃなくて ”アプリケーション" が終了するタイミングを補足する方法、教えてください</p>
+]]></content>
+  </entry>
+  
+</feed>

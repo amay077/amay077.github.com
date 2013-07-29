@@ -1,0 +1,412 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google Maps SDK for iOS を Xamarin.iOS で使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Googleマップの iOS版とともに公開された iOS用のMaps SDK ですが、Xamarin.iOS でも使うことができます。(ちなみに Android用の Google Maps API v2 を Xamarin.Android で使う方法は以前書きました。) Xamarin &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Google Maps SDK for iOS を Xamarin.iOS で使う</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-22T22:13:00+09:00" pubdate data-updated="true">Apr 22<span>nd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Googleマップの iOS版とともに公開された <a href="https://developers.google.com/maps/documentation/ios/">iOS用のMaps SDK</a> ですが、Xamarin.iOS でも使うことができます。(ちなみに Android用の Google Maps API v2 を Xamarin.Android で使う方法は<a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">以前</a>書きました。)</p>
+
+<!--more-->
+
+
+<p><a href="http://components.xamarin.com/">Xamarin Component Store</a> にて Free で(ラッパー)ライブラリが公開されているので、それを使います。</p>
+
+<p>コンポーネントをダウンロードすると、中にサンプルプロジェクトが含まれているのでそれを動かしてみます。</p>
+
+<h2>適当な Xamarin.iOS プロジェクトを作る</h2>
+
+<p>メニュー -> ファイル -> 新規 -> ソリューション -> C# -> iOS -> iPhone -> Single View Application を選択。ソリューションはなんでもいいです。どうせ後で捨てるので。テキトーに <code>HogeApp</code> とでもしましょうか。</p>
+
+<h2>プロジェクトに Google Maps コンポーネントを追加する</h2>
+
+<p>メニュー -> プロジェクト -> Get More Components を選択します。</p>
+
+<p><strong>Google Maps</strong> を探しだして [Add to App] します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_1.png" alt="image1" /></p>
+
+<p>しばらくすると、左側のビューの Components の中に &#8220;Google Maps&#8221; が作成されるので、それをダブルクリックして開きます。</p>
+
+<p>右に表示されるコンテンツのタブから「Samples」を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_2.png" alt="image2" /></p>
+
+<p>さらに &#8220;iOS Sample&#8221; の「Open Sample」を押します。
+すると、左側のビューに「GoogleMapsSample」プロジェクトが追加されます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_3.png" alt="image3" /></p>
+
+<p>この時点で HogeApp は意味がなくなってしまいましたが、ディスクから削除すると GoogleMapsSample も一緒に消えてしまうので、無視しておきます。GoogleMapsSample がどこにあるかは、上図のように「親フォルダを開く」すると Finder で確認できます。</p>
+
+<p>以降はこの GoogleMapsSample プロジェクトを使います。</p>
+
+<h2>APIキーを取得する</h2>
+
+<p>ここからは、Component -> GoogleMaps をダブルクリックすると表示される「Getting Started」の「The Google Maps API Key」に沿っていきます。</p>
+
+<h4>1. Create an API project in the <a href="https://code.google.com/apis/console">Google API Console</a></h4>
+
+<p>ブラウザで Google API Console へ移動して、左上のドロップダウンから「Create…」にてプロジェクトを作成します。既に存在しているなら、それを使ってもいいです。</p>
+
+<h4>2. Select the Services pane in your API project, and enable the Google Maps SDK for iOS. This displays the Google Maps Terms of Service.</h4>
+
+<p>左側のメニュー「Services」の中にある「Google Maps SDK for iOS」を ON にします。利用規約にも同意しましょう。</p>
+
+<h4>3. Select the API Access pane in the console, and click Create new iOS key.</h4>
+
+<p>左側のメニュー「API Access」を開き、ページの一番下に表示される「Create new iOS key」ボタンを押します。</p>
+
+<h4>4. Enter one or more bundle identifiers as listed in your application&#8217;s .plist file, such as com.example.myapp.</h4>
+
+<p>入力欄に「com.example.myapp」とタイプします。本来はちゃんとした「あなたのアプリの固有ID」を入れるのでしょうが、当方 iOS 開発は詳しくないのでここでは例のままにします。</p>
+
+<h4>5. Click Create.</h4>
+
+<p>「Create」を押します。</p>
+
+<h4>6. In the API Access page, locate the section Key for iOS apps (with bundle identifiers) and note or copy the 40-character *API key.</h4>
+
+<p>すると、<strong>Key for iOS apps</strong> に 作成されたAPIキーが表示されるはずです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_4.png" alt="image4" /></p>
+
+<p>この API key をコピーしておいて、Xamarin Studio に戻ります。</p>
+
+<h2>Info.plist を開いて、Identifier を設定します</h2>
+
+<p>Google API Console で設定した Identifier と一致させる必要があるので「com.example.myapp」を設定します。(普通は先にアプリの Identifier を決めてから API key を取得するのでしょうが)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_5.png" alt="image5" /></p>
+
+<h2>AppDelegate.cs を開いて、API key を設定する</h2>
+
+<p>コピーしておいた API key を、下図の位置に貼り付けます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_6.png" alt="image6" /></p>
+
+<h2>動かす！</h2>
+
+<p>以上で準備完了です。
+実行してみましょう。Android版の Google Maps API v2 は、エミュレータでは実行できませんが、iOS版は、シミュレータでも実行できます。</p>
+
+<p>ばばーん！</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_7.png" alt="image7" /></p>
+
+<p>あれ？ズームコントロールとか表示されないのね。</p>
+
+<p>とりあえず動く所までできたので、今日はこの辺で。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Google Maps SDK for iOS も Xamarin で普通に使える！</li>
+<li>Xamarin さん、Component に含まれるサンプルの「よりよい取り出し方」教えてください</li>
+<li><code>CLLocationCoordinate2D</code> とか長ェよ、ただの <code>LatLng</code> だろ</li>
+<li>というように Google Maps Android API v2 とは設計思想は同じですが、インターフェースが違う(CLLocationCoordinate2D は CoreLocation のクラスですね)ので共通にはなりません。SDK が提供する機能にも差異があります。(さすがに Android > iOS です)</li>
+</ul>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-22T22:13:00+09:00" pubdate data-updated="true">Apr 22<span>nd</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/04/16/deep-dive-android-binding/" title="Previous Post: Android-Binding の Binding の実装を深掘りしてみる">&laquo; Android-Binding の Binding の実装を深掘りしてみる</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/04/26/using-isolatedstorage-in-xamarin/" title="Next Post: Xamarin.Android/iOS で IsolatedStorage を使う">Xamarin.Android/iOS で IsolatedStorage を使う &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

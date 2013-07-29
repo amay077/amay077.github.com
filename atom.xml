@@ -1,0 +1,2731 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio で複数のソリューションを開く方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/open-multi-solution-in-xamarin-studio/"/>
+    <updated>2013-07-28T13:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/open-multi-solution-in-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>わかりにくいのでメモっておく。</p>
+
+<!--more-->
+
+
+<h3>1. ソリューションをひとつ開く</h3>
+
+<h3>2. ２つ目のソリューションを開く</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/open_multi_solution_in_xamarin_studio_01.png" alt="img1" /> この時、「現在のワークスペースを閉じる」のチェックを <strong>外す</strong></p>
+
+<h3>3. すると２つ目のソリューションが追加されてます。</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/open_multi_solution_in_xamarin_studio_02.png" alt="img1" /></p>
+
+<p>ソリューションを新規作成する時には行えないようです。
+分かりにくいよママン。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Pull up to Close を実装してみる、Xamarin.iOS で]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:51:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。</p>
+
+<p>この操作性がなかなか使いやすかったので、自分でも実装してみました。</p>
+
+<!--more-->
+
+
+<h2>デモ</h2>
+
+<p>こんな感じ。
+WebView なんですが、一番下までスクロールして、さらに上に引っ張ると &#8220;Pull up to Close&#8221; → &#8220;Release to Close&#8221; とラベルが変わり、そこで離すとコールバックします。</p>
+
+<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
+
+
+<h2>実装してみたコード</h2>
+
+<p><a href="http://xamarin.com/">Xamarin.iOS</a> ですから、C# です。</p>
+
+<p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
+
+<figure class='code'><figcaption><span>PullUpToCloseSampleViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">PullUpToCloseSampleViewController</span> <span class="p">:</span> <span class="n">UIViewController</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">PullUpToCloseSampleViewController</span><span class="p">()</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="s">&quot;PullUpToCloseSampleViewController&quot;</span><span class="p">,</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// WebView が持ってる ScrollView、よく使うので変数化しておく</span>
+</span><span class='line'>        <span class="c1">// webView は Interface Builder で UIWebView を Outlet にしたもの。</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">scrollView</span> <span class="p">=</span> <span class="n">webView</span><span class="p">.</span><span class="n">ScrollView</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</span>
+</span><span class='line'>        <span class="n">scrollView</span><span class="p">.</span><span class="n">Subviews</span><span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span> <span class="k">is</span> <span class="n">UIImageView</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">Hidden</span> <span class="p">=</span> <span class="k">true</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 上に引っ張った時に見える背景とラベル</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">bounceBackground</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UIView</span><span class="p">(</span>
+</span><span class='line'>            <span class="k">new</span> <span class="nf">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="m">0f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">bounceBackground</span><span class="p">.</span><span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">UIColor</span><span class="p">.</span><span class="n">LightGray</span><span class="p">;</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">bounceLabel</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UILabel</span><span class="p">(</span>
+</span><span class='line'>            <span class="k">new</span> <span class="nf">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">-</span> <span class="m">30f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="m">30f</span><span class="p">));</span>
+</span><span class='line'>        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Pull up to Close&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">TextAlignment</span> <span class="p">=</span> <span class="n">UITextAlignment</span><span class="p">.</span><span class="n">Center</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">UIColor</span><span class="p">.</span><span class="n">Clear</span><span class="p">;</span>
+</span><span class='line'>        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Opaque</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 背景とラベルを WebView の一番奥に追加する</span>
+</span><span class='line'>        <span class="n">webView</span><span class="p">.</span><span class="n">InsertSubview</span><span class="p">(</span><span class="n">bounceLabel</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">webView</span><span class="p">.</span><span class="n">InsertSubview</span><span class="p">(</span><span class="n">bounceBackground</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 適当な URL を読み込み</span>
+</span><span class='line'>        <span class="n">webView</span><span class="p">.</span><span class="n">LoadRequest</span><span class="p">(</span><span class="n">NSUrlRequest</span><span class="p">.</span><span class="n">FromUrl</span><span class="p">(</span><span class="k">new</span> <span class="n">NSUrl</span><span class="p">(</span><span class="s">&quot;http://yahoo.co.jp/&quot;</span><span class="p">)));</span>
+</span><span class='line'>      
+</span><span class='line'>        <span class="c1">// 閉じるのに必要な分だけ上に引っ張ったら true になる</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">canClose</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// ドラッグ開始時にフラグOFF(一応)</span>
+</span><span class='line'>        <span class="n">scrollView</span><span class="p">.</span><span class="n">DraggingStarted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">canClose</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ</span>
+</span><span class='line'>        <span class="n">scrollView</span><span class="p">.</span><span class="n">DraggingEnded</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">canClose</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">OnCloseByPullUp</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// スクロールした時にいろいろやる</span>
+</span><span class='line'>        <span class="n">scrollView</span><span class="p">.</span><span class="n">Scrolled</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">labelFrame</span> <span class="p">=</span> <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Frame</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// コンテンツの一番下まで表示してさらに引っ張ったサイズ</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">offsetY</span> <span class="p">=</span> <span class="p">(</span><span class="n">scrollView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">+</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">ContentOffset</span><span class="p">.</span><span class="n">Y</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">-</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">ContentSize</span><span class="p">.</span><span class="n">Height</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 50px 上に引っ張ったら閉じるものとする</span>
+</span><span class='line'>            <span class="n">canClose</span> <span class="p">=</span> <span class="n">offsetY</span> <span class="p">&gt;</span> <span class="m">50f</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">canClose</span> <span class="p">?</span> <span class="s">&quot;Release to Close&quot;</span> <span class="p">:</span> <span class="s">&quot;Pull up to Close&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// ラベルがいつまでも移動しないように</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">offsetY</span> <span class="p">&gt;</span> <span class="n">labelFrame</span><span class="p">.</span><span class="n">Height</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">offsetY</span> <span class="p">=</span> <span class="n">labelFrame</span><span class="p">.</span><span class="n">Height</span><span class="p">;</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// ラベルがドラッグと共に下からせり出してくるように</span>
+</span><span class='line'>            <span class="n">labelFrame</span><span class="p">.</span><span class="n">Y</span> <span class="p">=</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">-</span> <span class="n">offsetY</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Frame</span> <span class="p">=</span> <span class="n">labelFrame</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// &quot;Release to Close&quot; で離すと呼ばれる</span>
+</span><span class='line'>    <span class="k">void</span> <span class="nf">OnCloseByPullUp</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UIAlertView</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;Close this view&quot;</span><span class="p">,</span>  <span class="k">null</span><span class="p">,</span> <span class="s">&quot;Close&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">v</span><span class="p">.</span><span class="n">Show</span> <span class="p">();</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>やってる事</h2>
+
+<ol>
+<li>ScrollView の「引っ張った時に見える場所（= Bounce というらしい）」の影を消す。 via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</li>
+<li>背景と、ラベルを WebView 内の一番奥に挿入する（引っ張った時にのみ見えるように）</li>
+<li>あとはイベントハンドラでの処理。スクロール中に、「最下部で引っ張り中」だったら &#8220;Pull up to Close&#8221; ラベルをアニメーションさせながら表示する。50px 以上引っ張ってたら &#8220;Release to Close&#8221; にラベルを変える。「閉じられるよ」フラグも ON にしとく。</li>
+<li>ドラッグ終了イベントで、「閉じられるよ」フラグが立ってたら、コールバックする。</li>
+</ol>
+
+
+<h2>今後</h2>
+
+<p>もうちょっとライブラリっぽくしたいですね。あと引っ張り中にアイコンとか表示させたい。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でジェスチャを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p><a href="http://xamarin.com/">Xamarin.iOS</a> でも <code>UIGestureRecognizer</code> が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。</p>
+
+<!--more-->
+
+
+<p>本日の Obj-C の先生はこちら。</p>
+
+<ul>
+<li><a href="http://labs.techfirm.co.jp/ipad/cho/466">Gesture Recognizers 〜簡単にタッチ操作を検知 | iPad Techfirm Lab </a></li>
+</ul>
+
+
+<p>このサンプルを Xamarin.iOS に移植してみます。</p>
+
+<h2>サンプルコード</h2>
+
+<figure class='code'><figcaption><span>GesturesSample_ViewDidLoad.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// Tap gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UITapGestureRecognizer</span><span class="p">(</span><span class="n">tap</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Double Tap.&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">NumberOfTapsRequired</span> <span class="p">=</span> <span class="m">2</span> <span class="c1">// Double tap </span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Drag(Pan) gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UIPanGestureRecognizer</span><span class="p">(</span><span class="n">pan</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">p</span> <span class="p">=</span> <span class="n">pan</span><span class="p">.</span><span class="n">TranslationInView</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">);</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="n">pan</span><span class="p">.</span><span class="n">VelocityInView</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Pan. transration:{0}, velocity:{1}&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+</span><span class='line'><span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Pinch gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UIPinchGestureRecognizer</span><span class="p">(</span><span class="n">pin</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">scale</span> <span class="p">=</span> <span class="n">pin</span><span class="p">.</span><span class="n">Scale</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="n">pin</span><span class="p">.</span><span class="n">Velocity</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Pinch. scale:{0}, velocity:{1}&quot;</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+</span><span class='line'><span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Swipe gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UISwipeGestureRecognizer</span><span class="p">(</span><span class="n">sw</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Swipe.&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Rotate gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UIRotationGestureRecognizer</span><span class="p">(</span><span class="n">ro</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">rotation</span> <span class="p">=</span> <span class="n">ro</span><span class="p">.</span><span class="n">Rotation</span><span class="p">;</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="n">ro</span><span class="p">.</span><span class="n">Velocity</span><span class="p">;</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Rotate. rotation:{0}, velocity:{1}&quot;</span><span class="p">,</span> <span class="n">rotation</span><span class="p">,</span> <span class="n">v</span><span class="p">);</span>
+</span><span class='line'><span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// Long press gesture</span>
+</span><span class='line'><span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddGestureRecognizer</span><span class="p">(</span><span class="k">new</span> <span class="n">UILongPressGestureRecognizer</span><span class="p">(</span><span class="n">lp</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Long press.&quot;</span><span class="p">);</span>
+</span><span class='line'><span class="p">}));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ViewController 全体のソースは <a href="https://gist.github.com/amay077/6094422">コチラ</a></p>
+
+<p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
+
+<p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[オンラインでサクッとスライド作ってシェアできる Slides が便利だった件]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/24/slides-is-very-useful/"/>
+    <updated>2013-07-24T19:18:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/24/slides-is-very-useful</id>
+    <content type="html"><![CDATA[<p>先日の <a href="http://connpass.com/event/2847/">日本Androidの会浜松支部　第27回ミーティング -AndroidとHTML5-</a> で HTML5 中心の話題にも関わらず Xamarin の LT をした訳ですが、むりやりこじつけるために、HTML5 でプレゼンスライドを作りました。</p>
+
+<!--more-->
+
+
+<p>この手のもので最も有名なのが <a href="http://lab.hakim.se/reveal-js/">reveal.js</a> というライブラリですが、環境準備が面倒だったので、HTML5 で作れてオンラインでシェアできるものを探してたどり着いたのが Slides(slid.es) でした。</p>
+
+<ul>
+<li>[Slides - The easiest way to create and share beautiful presentations.] (http://slid.es/)</li>
+</ul>
+
+
+<p>使い方は簡単で、Google か Facebook のアカウントでサインインでき、無料で使えます。</p>
+
+<p>実はこれ reveal.js を使ったサービスで、機能もほぼ相違ないのですが、PDF へのエクスポートやデザインテーマは有償の Pro 版でないと使えなくなっています。reveal.js を直接使えば、エクスポートや Markdown 対応もできるので、まあ SaaS としての戦略でしょうか。</p>
+
+<p>reveal.js はライブラリなのでコンテンツは自力で HTML or Markdown で書く必要がありますが、Slides にはリッチエディタが付いているので、簡単に資料を書くことができます。</p>
+
+<p>凝った演出はできませんが、 LT くらいの資料なら十分実用できます。そのままシェアできますし。(逆に Private にするには Pro 版が必要)</p>
+
+<p>というわけで reveal.js 使いたいけどいろいろ面倒そう、という人は Slides を試されると良いかと思います。</p>
+
+<p>最後に、その時発表した Xamarin の LT 資料を貼って終わります。
+Xamarin もどうぞよろしくおねがいします。</p>
+
+<iframe src="http://slid.es/amay/intro_of_xamarin/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコードテンプレートを使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio/"/>
+    <updated>2013-07-24T17:48:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>Visual Studio や Eclipse とか、IDE ならだいたい備えているコードテンプレート、呼び名はそれぞれ違いますが、<code>for</code> ってタイプすると <code>for (object o : items) {  }</code> 的なコードのひな形を生成してくれる機能の事です。</p>
+
+<!--more-->
+
+
+<p>Xamarin Studio にも当然ありまして、その使い方を説明します。</p>
+
+<h2>きっかけ</h2>
+
+<p>MvvmCross っていうフレームワークの Tutorial 動画で Visual Studio を使っているんですが、その中で多用されてるので、真似してみたくなりました。</p>
+
+<p>例えばこれ</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=_DHDMNB_IeY&amp;list=PLR6WI6W1JdeYSXLbm58jwAKYT7RQR31-W&amp;feature=player_detailpage&amp;t=178">N=0 : A first MvvmCross Application (N+1 days of MvvmCross) | N+1 days of MvvmCross</a></li>
+</ul>
+
+
+<h2>手順</h2>
+
+<h3>1. Xamarin Studio の Preference を開く</h3>
+
+<p>システムメニュー → Preference → テキストエディタ → コード テンプレート です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_01.png" alt="img1" /></p>
+
+<h3>2. コードテンプレートを作成する</h3>
+
+<p>追加 で &#8220;新しいテンプレート&#8221; の画面を開き、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_02.png" alt="img2" /></p>
+
+<p>のように設定します。</p>
+
+<ul>
+<li>ショートカット : pmvx</li>
+<li>グループ : C#</li>
+<li>説明 : 適当に</li>
+<li>Mime : text/x-csharp</li>
+<li>[展開されるテンプレート] にチェックを入れる</li>
+</ul>
+
+
+<p>テンプレート テキスト は以下の通り</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">private</span> <span class="err">$</span><span class="n">type</span><span class="err">$</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span><span class="p">;</span>
+</span><span class='line'><span class="k">public</span> <span class="err">$</span><span class="n">type</span><span class="err">$</span> <span class="err">$</span><span class="n">Property</span><span class="err">$</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>  <span class="k">set</span> <span class="p">{</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="n">RaisePropertyChanged</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="err">$</span><span class="n">Property</span><span class="err">$</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>$type$</code>, <code>$property$</code>, <code>$Property$</code> という3つの変数を使っています。画面右端にあるドロップダウンで、各変数が選択できるので、それぞれ Default で既定値を設定します。</p>
+
+<p>ここでは、以下のようにしました。</p>
+
+<ul>
+<li>type : object</li>
+<li>property : _property</li>
+<li>Property : MyProperty</li>
+</ul>
+
+
+<p>OK を押して保存します。</p>
+
+<h3>3.  使ってみる</h3>
+
+<p>コードエディタで <code>pmvx</code> とタイプすると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_03.png" alt="img2" /></p>
+
+<p>となり、タブを2回ほど押すと、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_04.png" alt="img2" /></p>
+
+<p>と、テンプレートコードが挿入されます。
+あとは、ハイライトされている部分を変更すると、テンプレート内も連動して変更されます。</p>
+
+<p>これでコード入力が楽になりました。</p>
+
+<p>コードテンプレートのインポート／エクスポートや、Visual Studio との互換性なども調べてみたいですね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio で MvvmCross を使うための準備]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio/"/>
+    <updated>2013-07-22T20:46:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>クロスプラットフォーム MVVM フレームワーク「<a href="https://github.com/slodge/MvvmCross">MvvmCross</a>」を Mac の Xamarin Studio で使うための準備についてです。</p>
+
+<!--more-->
+
+
+<p>基本は、</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">monotouch - Getting PCL, Mvvmcross, Nuget and Xamarin Studio to play &#8220;nice&#8221; on Mac - Stack Overflow</a></li>
+</ul>
+
+
+<p>のトレース。主には PCL と Nuget が正しく動くようにする手順です。</p>
+
+<h2>前提条件</h2>
+
+<p>必要な(というか試した)環境は以下の通り。
+（Xamarin の PCL サポートがまだ「進行中」なので、将来的には変わる可能性大）</p>
+
+<ul>
+<li>Xamarin Studio Version 4.0.10 (beta)</li>
+<li>Xamarin.Android Version: 4.8.0 (beta)</li>
+<li>Xamarin.iOS Version: 6.3.8.11 (beta)</li>
+<li>Xamarin Studio Add-in NuGet Package Management Version 0.5</li>
+<li>Mac OS X 10.8.4</li>
+</ul>
+
+
+<h2>手順</h2>
+
+<h3>Xamarin Studio</h3>
+
+<ol>
+<li>Mac に Xamarin Studio を入れて、Beta チャンネルに切り替えて更新。</li>
+<li>アドインマネージャから NuGet Package Management をインストール。</li>
+</ol>
+
+
+<h3>.NETPortable DLLs を Win機からコピってくる</h3>
+
+<p>Win機の <code>C:¥Program Files (x86)¥Reference Assemblies¥MicrosoftFramework.NETPortable</code> を、Mac の <code>/Library/Frameworks/Mono.framework/External/xbuild-frameworks/.NETPortable/</code> へコピー。</p>
+
+<p>Win機がない場合は、<a href="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/">これ</a> などで Win仮想環境を作り、<a href="http://www.microsoft.com/visualstudio/jpn/downloads">Visual Studio Ultimate 2012 90日間試用版</a> を入れるとよい(Express 版は上記DLLsがないのでNG)。</p>
+
+<h3>Nuget にパッチをあててビルド</h3>
+
+<p><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">ここ</a> の <strong>Patch to Nuget.Core.dll:</strong> にあるテキストを適当なファイルに保存(ここでは <code>patch.diff</code> とする)して、以下のコマンドを実行。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>git clone https://git01.codeplex.com/nuget
+</span><span class='line'><span class="nb">cd </span>nuget
+</span><span class='line'>git checkout -b 2.6 origin/2.6
+</span><span class='line'>
+</span><span class='line'>patch -p1 &lt; patch.diff
+</span><span class='line'>
+</span><span class='line'><span class="nb">cd </span>src/Core
+</span><span class='line'>xbuild
+</span><span class='line'>
+</span><span class='line'>cp bin/Debug/NuGet.Core.dll  ~/Library/Application<span class="se">\ </span>Support/XamarinStudio-4.0/LocalInstall/Addins/MonoDevelop.PackageManagement.0.5/NuGet.Core.dll
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>以上で、環境準備は終わり。</p>
+
+<h2>試す</h2>
+
+<ol>
+<li>Xamarin Studio で Portable Class Library を作成する</li>
+<li>プロジェクト設定を見ると Xamarin.Android、Xamarin.iOS などがあるが、これらを<strong>チェックしてOKしても適用されてない</strong> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio01.png" alt="img1" /></li>
+<li>Nuget Manager から mvvmcorss で検索して &#8220;MvvmCross - Hot Tuna  Starter Pack&#8221; を Add してもエラーになる。<img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio02.png" alt="img1" /></li>
+</ol>
+
+
+<p>うーん、ダメか？</p>
+
+<h2>プロジェクトファイルをちょっと修正する</h2>
+
+<p>ポータブルクラスライブラリのプロジェクトファイル(xxx.csproj) をテキストエディタで開き、<code>&lt;TargetFrameworkProfile&gt;</code> の値を <code>Profile104</code> に書き換える。(修正前は Profile1 になってた。なぜ Profile104 かと言えば、Visual Studio で作った PCL プロジェクトのプロファイルが 104 だったから、という程度の理解レベル)</p>
+
+<figure class='code'><figcaption><span>xxx.csproj</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;Project</span> <span class="na">DefaultTargets=</span><span class="s">&quot;Build&quot;</span> <span class="na">ToolsVersion=</span><span class="s">&quot;4.0&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/developer/msbuild/2003&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;PropertyGroup&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Configuration</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Configuration)&#39; == &#39;&#39; &quot;</span><span class="nt">&gt;</span>Debug<span class="nt">&lt;/Configuration&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Platform</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Platform)&#39; == &#39;&#39; &quot;</span><span class="nt">&gt;</span>AnyCPU<span class="nt">&lt;/Platform&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;ProductVersion&gt;</span>10.0.0<span class="nt">&lt;/ProductVersion&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;SchemaVersion&gt;</span>2.0<span class="nt">&lt;/SchemaVersion&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;ProjectGuid&gt;</span>{50D8E04F-FDE0-4A65-B388-5698BEFE8DC5}<span class="nt">&lt;/ProjectGuid&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;ProjectTypeGuids&gt;</span>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}<span class="nt">&lt;/ProjectTypeGuids&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;OutputType&gt;</span>Library<span class="nt">&lt;/OutputType&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;RootNamespace&gt;</span>Portable2<span class="nt">&lt;/RootNamespace&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;AssemblyName&gt;</span>Portable2<span class="nt">&lt;/AssemblyName&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;TargetFrameworkProfile&gt;</span>Profile104<span class="nt">&lt;/TargetFrameworkProfile&gt;</span>    <span class="nt">&lt;--Here</span><span class="err">!!!!!</span>
+</span><span class='line'>    <span class="err">&lt;TargetFrameworkVersion</span><span class="nt">&gt;</span>v4.0<span class="nt">&lt;/TargetFrameworkVersion&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/PropertyGroup&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;PropertyGroup</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Configuration)|$(Platform)&#39; == &#39;Debug|AnyCPU&#39; &quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;DebugSymbols&gt;</span>true<span class="nt">&lt;/DebugSymbols&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>再度試す</h2>
+
+<p>もう一度プロジェクトを開いて Nuget から &#8220;MvvmCross - Hot Tuna  Starter Pack&#8221; を Add すると、成功する。プロジェクトツリーを見ると必要なDLLやソースコードが配置されている。</p>
+
+<p>これで Xamarin Studio でも PCL が使えそう。
+MvvmCross の Tutorial - <a href="http://mvvmcross.wordpress.com/">MvvmCross N+1 Table of Context</a> を試せます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Mac で Windows の仮想マシンを使って IE のテスト環境を構築する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/"/>
+    <updated>2013-07-21T15:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive</id>
+    <content type="html"><![CDATA[<p>Microsoft の <a href="http://www.modern.ie/ja">modern.IE</a> というサイトで、Webサイトの IE対応を支援するサービスをいくつか提供していますが、その中に、「IEx 入りの仮想マシンの提供」が行われています。</p>
+
+<!--more-->
+
+
+<p>Virtual PC, Hyper-V, VirtualBox, VMware Fusion, Parallels などの主要な仮想環境用のイメージを配布しています。</p>
+
+<p>ただし、仮想マシンの期限が 90days です。また OS の言語設定が英語です。</p>
+
+<p>90days を過ぎるとまた再構築しなければならないので、日本語環境で使用するための初期設定をメモっておきます。</p>
+
+<h2>仮想マシンをダウンロードする</h2>
+
+<p>http://www.modern.ie/ja/virtualization-tools#downloads</p>
+
+<p>から、ホストPC の OS と仮想マシンの形式を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive01.png" alt="img1" /></p>
+
+<p>次に、テストしたい IE と OS のバージョンの組み合わせから、目的の仮想マシンをダウンロードします。Mac の場合は &#8220;Grab them all with cURL&#8221; の内容を Terminal にコピペして、一括ダウンロードができます。</p>
+
+<p>私は、ホストが Mac、目的は IE10+Win7 をダウンロードしました。</p>
+
+<p>ダウンロードすると、 IE10.Win7.For.MacVMware.part01.sfx 〜 IE10.Win7.For.MacVMware.part04.rar というファイルができているので、これを結合するために、Terminal で、以下のコマンドを実行します。(上のサイトの 「手順」 に書いてある内容です)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>chmod +x IE10.Win7.For.MacVMware.part01.sfx
+</span><span class='line'>./IE10.Win7.For.MacVMware.part01.sfx
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>コマンドの処理が終わると <code>IE10.Win7.For.MacVMware.vmwarevm</code>(9.75GB) ができています。これが仮想マシンのイメージファイルです。</p>
+
+<h2>仮想マシンを起動する</h2>
+
+<p>ファイルを直接実行するなり、仮想マシンのマネージャ使うなりして、仮想マシンを起動します。</p>
+
+<p>途中、「仮想マシンのアップグレードが必要です」と言われたので「はい」と答えました。
+「この仮想マシンは移動またはコピーされた可能性があります。よく分からない場合は、[コピーしました] を選択してください。」と言われたので、よくわからないので「コピーしました」と答えました。</p>
+
+<p>起動するとこんな画面になります。
+ネットワークドライバなどがインストールされて、ホストPC とブリッジ接続でインターネットにもつながります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive02.png" alt="img1" /></p>
+
+<h2>日本語キーボードを設定する</h2>
+
+<p>まず、キーボードが英語なので、日本語キーボードを導入します。
+デバイスマネージャを開きます。
+スタートメニュー → 検索ボックスに <code>devmgmt.msc</code> を打ち込むのが（説明上）手っ取り早いです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive03.png" alt="img1" /></p>
+
+<p>Keyboards - Standard PS/2 Keyboard を右クリックして Properties を表示し、Driver タブから [Update Driver] ボタンを押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive04.png" alt="img1" /></p>
+
+<p>&#8220;Browse my computer …&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive05.png" alt="img1" /></p>
+
+<p>&#8220;Let me pick from…&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive06.png" alt="img1" /></p>
+
+<p>Show compatible hardware のチェックを <strong>外し</strong> ます。
+次に (Standard keyborads) から &#8220;Japanese PS/2 Keyboard (106/109 Key Ctrl + Eisuu)&#8221; を選択して Next を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive07.png" alt="img1" /></p>
+
+<p>ウィザードの手順に従ってインストール完了後、仮想マシンを一旦再起動します。</p>
+
+<p><strong>再起動後、この時点でもまだキーボード配列は英語のままです。</strong></p>
+
+<p>次にシステムの言語設定を Japanese にします。</p>
+
+<p>コントロールパネル から &#8220;Change display language&#8221; を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive08.png" alt="img1" /></p>
+
+<p>&#8220;Administrative&#8221; タブから &#8220;Change system locale&#8221; を押し、&#8221;Japanese&#8221; を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive09.png" alt="img1" /></p>
+
+<p>その後、また再起動します。</p>
+
+<p>再起動後、タスクトレイに [EN] という言語選択のアイコンが表れるので、[JP] にすると日本語キーボードになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive11.png" alt="img1" /></p>
+
+<p>いちいち切り替えるのは面倒なので、デフォルトを Japanese にしておきます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive12.png" alt="img1" /></p>
+
+<p>ついでに、時刻や通過表示も Japanese にします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive13.png" alt="img1" /></p>
+
+<p>忘れていました。タイムゾーンの変更もしておきます。
+コントロールパネル の &#8220;Change the time zone&#8221; から、[Osaka, Sapporo, Kyoto] を選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/how_to_use_ie_testdrive14.png" alt="img1" /></p>
+
+<h2>表示を日本語にする</h2>
+
+<p>この Windows 7 は Enterprise Edition らしいので、</p>
+
+<ul>
+<li><a href="http://support.microsoft.com/kb/972813/ja">Windows 7 Ultimate または Windows 7 Enterprise を搭載しているコンピューターに提供される Windows 7 の言語パック</a></li>
+</ul>
+
+
+<p>にある方法で日本語の言語パックを導入できるかなーと思ったんですが、Windows Update で言語パックの選択が表れず、うまくいきませんでした。</p>
+
+<p>どうしても日本語表示がいい！という方は、公式な方法ではないようですが、こちらの方法で日本語化できるようです。(おすすめはしないのでリンク貼りません、自己責任で。)</p>
+
+<p>ttp://nagabuchi.jugem.jp/?eid=443</p>
+
+<h2>Windows Update とかウイルス対策とか</h2>
+
+<p>テスト環境と言えど、最低限のセキュリティ対策は行なっておきましょう。
+Windows Update を行なって最新の状態に、ウイルス対策は <a href="http://windows.microsoft.com/ja-jp/windows/security-essentials-download">Microsoft Security Essentials</a> をインストールします。</p>
+
+<p>これで最低限の環境設定ができました。
+ではまた３ヶ月後にお会いしましょう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Javascript 製のチャート描画ライブラリのメモ]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/17/list-of-chart-library-for-javascript/"/>
+    <updated>2013-07-17T19:39:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/17/list-of-chart-library-for-javascript</id>
+    <content type="html"><![CDATA[<p>Javascript 製のチャート描画ライブラリをいくつか調べたので備忘録として残しておく。</p>
+
+<!--more-->
+
+
+<p>やりたいのは、ストリーミングで次々やってくるデータをリアルタイムに表示する事。しかも順方向だけじゃなくて過去方向にも戻りたい。</p>
+
+<h2>smoothiecharts</h2>
+
+<p>http://smoothiecharts.org/</p>
+
+<p>シンプルで、使うのも簡単。が、逆再生ができるのかよく分からなかったので保留。</p>
+
+<h2>Cubism.js</h2>
+
+<p>http://square.github.io/cubism/</p>
+
+<p>言わずと知れたビジュアライゼーションライブラリ <a href="http://d3js.org/">D3</a> のプラグイン。
+なんか見た目がクール。
+あまり突っ込んで調べてないので、要件を満たすかは不明。
+ちなみにモバイル決済の Square によるオープンソースプロジェクト。
+D3 自体でもいろいろなチャート描画ができるが、なんか勝手に Fat なイメージを持ってる。</p>
+
+<h2>Flot</h2>
+
+<p>http://www.flotcharts.org/</p>
+
+<p>こちらは jQuery のプラグイン。</p>
+
+<p>使い方が簡単で、配列を描画させてるだけだったので、配列操作で逆再生にも対応できそう。</p>
+
+<h2>Google Chart</h2>
+
+<p>https://developers.google.com/chart</p>
+
+<p>大御所。
+なんか &#8220;Connect to your data in realtime&#8221; って謡ってるので、できそうな感じもするが試してない。これも高機能であるが故にレスポンス大丈夫かなあと勝手に思っている。</p>
+
+<h2>amCharts</h2>
+
+<p>https://amcharts.zendesk.com/entries/22592917-Creating-charts-with-real-time-data</p>
+
+<p>amCharts というプロダクトで、リアルタイムなチャートが実現できる模様。参考程度に。</p>
+
+<h2>その他</h2>
+
+<p>やりたいことは株価チャートに近いのでそっち方面で探すとたくさんありそうだけど、株価に特化しちゃってて機能過多＆使いづらい感。</p>
+
+<h2>参考</h2>
+
+<p>タイムリーにも同じようなまとめをしてくださってる方が居たのでメモ</p>
+
+<ul>
+<li><a href="http://qiita.com/hurutoriya/items/727296839a2ec638fdc4">グラフ描画に良さげなJavaScriptライブラリ - Qiita</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Service が Foreground で動いているか確認する]]></title>
+    <link href="http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground/"/>
+    <updated>2013-06-14T18:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground</id>
+    <content type="html"><![CDATA[<p>Android で「死ににくいサービス」を作るには <a href="http://developer.android.com/reference/android/app/Service.html#startForeground(int,%20android.app.Notification">Service.startForegound</a> を呼び出す必要がありますが、動いてるサービスがちゃんと「Foregound になってるか？」は以下のようにして確認できます。(Notification 表示が強制されるから通知バー見ればいいじゃん、と言われればそうなんですけど、ちゃんとしたエビデンスっぽいのが欲しくて)</p>
+
+<!--more-->
+
+
+<h2>手順</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>adb shell dumpsys activity s &lt;サービス名&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>&lt;サービス名> はサービスの完全名称を入れます。AndroidManifest.xml の <code>&lt;service android:name=</code> で定義したやつ。</p>
+
+<p>実行すると以下のように出力されます。</p>
+
+<blockquote><p>ACTIVITY MANAGER SERVICES (dumpsys activity services)
+  User 0 active services:
+  * ServiceRecord{41b2dd18 u0 com.amay077.android.gpsfaker/.service.GpsSignalService}</p>
+
+<pre><code>intent={cmp=com.amay077.android.gpsfaker/.service.GpsSignalService}
+packageName=com.amay077.android.gpsfaker
+processName=com.amay077.android.gpsfaker
+baseDir=/data/app/com.amay077.android.gpsfaker-1.apk
+dataDir=/data/data/com.amay077.android.gpsfaker
+app=ProcessRecord{416e19e8 3209:com.amay077.android.gpsfaker/u0a10072}
+isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 contentView=com.amay077.android.
+</code></pre>
+
+<p>(以下省略)</p></blockquote>
+
+<p><code>isForegound=true</code> と表示されているので、確かに「このサービスはフォアグラウンドだ」と分かります。サービス側で <code>startForeground</code> を呼び出さなかった場合は、この項目は表れません。</p>
+
+<p><code>dumpsys</code> 今までコマンドめんどいと思ってあまり使ってませんでしたすいませんでした(汗</p>
+
+<h2>参考</h2>
+
+<p>大変参考になりました。</p>
+
+<ul>
+<li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[WakeLock の状態を確認する]]></title>
+    <link href="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/"/>
+    <updated>2013-06-13T20:58:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/06/13/view-wakelock-status</id>
+    <content type="html"><![CDATA[<p>どのアプリが WakeLock を取得しているかを見る方法。</p>
+
+<!--more-->
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>adb shell dumpsys power
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>を実行して、ずらっと出力される中から &#8220;Wake Locks:&#8221; を探す。
+出力されるのはこんな感じの情報。</p>
+
+<blockquote><p>POWER MANAGER (dumpsys power)</p>
+
+<p>Power Manager State:
+ mDirty=0x0
+ (中略)</p>
+
+<p>Settings and Configuration:
+ mDreamsSupportedConfig=true
+ (中略)</p>
+
+<p>Screen off timeout: 30000 ms
+Screen dim duration: 6000 ms</p>
+
+<p>Wake Locks: size=1
+ SCREEN_BRIGHT_WAKE_LOCK        &#8216;WindowManager&#8217; ON_AFTER_RELEASE (uid=1000, pid=389, ws={WorkSource: uids=[10070]})</p>
+
+<p>(以下省略)</p></blockquote>
+
+<p>&#8220;Wake Locks: size=1&#8221; となっており、
+&#8216;WindowManager&#8217; という TAG で <code>SCREEN_BRIGHT_WAKE_LOCK</code> が取得されているのが分かる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Fused Location Provider を近くのショッピングセンターで評価してみた]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider/"/>
+    <updated>2013-05-30T21:31:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider</id>
+    <content type="html"><![CDATA[<p>Android に新しく搭載された Fused Location Provider、これは GPS/WiFi/センサーを統合的に使ってその時ベストな位置を取得できるというもので、<a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Google I/O のデモ</a> が衝撃的だったので、自分でも試してみました。</p>
+
+<!--more-->
+
+
+<h2>検証環境とか</h2>
+
+<ul>
+<li>場所 : イオン豊橋南店（ええ田舎ですが何か？</li>
+<li>日時 : 2013/05/30 17:30頃</li>
+<li>天候 : 小雨（曇天だったので GPS は捕まえにくかったかも）</li>
+<li>端末 : au HTC J(!蝶) OS は 4.0.4</li>
+<li>GPS も WiFi も ON</li>
+<li>Android SDK Tools : rev.21.1</li>
+<li>Google Play service : rev.7</li>
+<li>FusedProvider の Priority : PRIORITY_HIGH_ACCURACY</li>
+<li>位置取得間隔 : 5秒</li>
+<li>姿勢 : スマホを常に左手で掲げて、見ながら歩きました。</li>
+</ul>
+
+
+<h2>その1:駐車場〜1F〜駐車場</h2>
+
+<p>駐車場に車を停めて、歩いて店内に入場、店内をなるべくゆっくり直線的にぐるっと徘徊して、退店、駐車場を歩いて戻って来ました。</p>
+
+<p>緑が実際の経路、青が Fused Provider の経路です。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;output=embed"></iframe>
+
+
+<br /><small><a href="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;source=embed" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店1F)</a> を表示</small>
+
+
+<h2>その2:駐車場〜1F〜2F〜ぐるっと〜1F〜駐車場</h2>
+
+<p>もう一度。
+今度は入店してすぐエスカレータで2Fへ。2Fフロアをぐるっと回ってからエスカレータで1Fへ降りて駐車場へ戻って来ました。</p>
+
+<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517&amp;output=embed"></iframe>
+
+
+<br /><small>大きな地図で <a href="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店2F)</a> を表示</small>
+
+
+<h2>結果をみて</h2>
+
+<p>うーん、かいかぶり過ぎたか Fused Provider。</p>
+
+<p>確かに GPS と WiFi をシームレスに扱ってくれているようですが、期待していた屋内での測位結果はちょっと残念でした。</p>
+
+<p>I/O のセッションの中では、WiFi+Sensor を使ってると言っていたので、WiFi-AP の電波強度と加速度センサーの振れ具合で自律測位してくれるのかなあと思ったのですが、あまり自律測位が機能してないように見えます。</p>
+
+<h3>Accuracy は？</h3>
+
+<p>屋外だとだいたい 10m前後、屋内でも 20〜40m くらいの精度でした。
+上図の幅が約200mですが、実際の位置よりもっと離れている感じがします。</p>
+
+<p>Fused Provider を使うと、妙に Accuracy が小さい(精度の良い)値が得られるのですが、実際の位置がその精度が示す円の中にも入らないこともあり、それなら高い確率で実際の位置を包括する（精度の悪い）WiFi or 基地局測位 の方が有用では？とも思えました。</p>
+
+<p>また、施設内に WiFi-AP が何個あったとかの細かい調査はしていません（たぶん５〜６個）が、都会の繁華街とか地下街の方が圧倒的に多いと思うので、また違った結果が出るものと思います。</p>
+
+<h3>GPS の動きは？</h3>
+
+<p>今回は <code>PRIORITY_HIGH_ACCURACY</code> を使いました。これは GPS を使います。(<code>PRIORITY_BALANCED_POWER_ACCURACY</code> は GPS を使いません［が、 <code>ACCESS_FINE_LOCATION</code> を付けないと精度が数kmレベルになります。］)</p>
+
+<p>記録中の GPS アイコンの動きは、点滅 → 数秒後消える → また点滅 → GPSを捕捉したらつきっぱなし という感じで、屋外に移動すると GPS を捕まえる、屋内では度々トライするが捕まえられないのですぐ消える。という動きをしてました。</p>
+
+<h3>状態認識は貢献してるのか？</h3>
+
+<p>自律測位に状態認識(Activity Recognition)がもし使われているなら、持ちながらよりも、ポケットに入れっぱで歩いた方に最適化されてたかも知れないなあと思ったり。</p>
+
+<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">ActivityRecognitionClient を試した</a> 時も、持ちながらよりも尻ポケに入れたまま歩いた方が認識されやすい気がしました。気だけですが。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Fused Provider に期待しすぎないでください</li>
+<li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
+<li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager/"/>
+    <updated>2013-05-28T19:25:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager</id>
+    <content type="html"><![CDATA[<p>サポートパッケージに<code>LocalBroadcastManager</code> というクラスがあるのを今頃知りまして。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html">LocalBroadcastManager | Android Developers</a></li>
+</ul>
+
+
+<p>ブロードキャストは使い方を誤るとデータを(アプリの)外部に流出させる可能性があるわけですが(<a href="http://www.jssec.org/report/securecoding.html">Android アプリのセキュア設計・セキュアコーディングガイド</a> 参照)、このクラスを使うと「他のアプリにデータを漏らさない」「意図しないブロードキャストを受信しない」「効率がよい」だそうです。</p>
+
+<h2>いつ使うんですか？</h2>
+
+<p>たとえば GPS を使うアプリで、GPS の受信は <code>IntentService</code> にやらせて、受信した位置を地図に表示するために、IntentService からブロードキャスト投げて、<code>Activity</code> に仕掛けたレシーバで受信する、なんてケースでしょうか。(いやそれは IntentService じゃなくて普通のサービスで aidl 使ってやれよ、とかいろいろあるわけですが。ん？PendingIntent でサービスを起動する方法だと、クライアントから bind するタイミングが無いからダメかな？)</p>
+
+<h2>使い方</h2>
+
+<p>stackoverflow に良い使い方が載ってました</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/8875292">android - how to use LocalBroadcastManager? - Stack Overflow</a></li>
+</ul>
+
+
+<h2>使ってみた</h2>
+
+<p>状態認識の結果も秘匿情報でしょう、ということで<a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">以前</a>作った <code>ActivityRecognitionClient</code> のサンプルを修正してみました。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/androidactivityrecognizingsample/commit/a041b300d3e9fdfe6227c05c3f21fb1e3876bbad">amay077/androidactivityrecognizingsample · GitHub</a></li>
+</ul>
+
+
+<h2>まとめ</h2>
+
+<ul>
+<li>ブロードキャストする時は、まず LocalBroadcastManager を使ってみよう。</li>
+<li>stackoverflow の回答へのダイレクトリンクとか、github の changeset へのダイレクトリンク便利すぎる！</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Fused Location Provider(など)を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin/"/>
+    <updated>2013-05-27T21:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin</id>
+    <content type="html"><![CDATA[<p>Xamarin.Android は <a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Java ライブラリから C# のラッパを生成する機能</a> がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。</p>
+
+<!--more-->
+
+
+<h2>monodroid-samples をベースに</h2>
+
+<p>Xamarin.Android のサンプル集 <a href="https://github.com/xamarin/monodroid-samples">monodroid-samples</a> に、既に Google Map v2 を使うサンプルがあり、これが Google Play Service を使っているので、これを参考にします。</p>
+
+<p>これね → <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> 、使い方は、</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>をどうぞ。</p>
+
+<h2>Binding の設定をいじる</h2>
+
+<p>Android SDK の Google Play Service をアップデートしても、Xamarin 側ですぐに <code>LocationClient</code> などが使えるわけではないです。
+プロジェクト GooglePlayServices で、ラップする package などを設定しているため。</p>
+
+<p>その設定は <code>Transform/Metadata.xml</code> にあるので、これを以下のように設定します。</p>
+
+<figure class='code'><figcaption><span>Metadata.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;metadata&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;remove-node</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps&#39;]/class[@name=&#39;GoogleMapOptionsCreator&#39;]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;remove-node</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name!=&#39;com.google.android.gms.maps&#39; </span>
+</span><span class='line'><span class="s">      and @name != &#39;com.google.android.gms.maps.model&#39; </span>
+</span><span class='line'><span class="s">      and @name != &#39;com.google.android.gms.common&#39;</span>
+</span><span class='line'><span class="s">      and @name != &#39;com.google.android.gms.location&#39;]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;remove-node</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps.model&#39;]/class[contains (@name, &#39;Creator&#39;)]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;remove-node</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.location&#39;]/class[contains (@name, &#39;Creator&#39;)]&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>Android.Gms.Maps<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps.model&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>Android.Gms.Maps.Model<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.common&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>Android.Gms.Common<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.location&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>Android.Gms.Location<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  
+</span><span class='line'>      <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps.model&#39;]/class[@name=&#39;MarkerOptions&#39;]/method[@name=&#39;position&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>SetPosition<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps.model&#39;]/class[@name=&#39;MarkerOptions&#39;]/method[@name=&#39;snippet&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>SetSnippet<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;attr</span> <span class="na">path=</span><span class="s">&quot;/api/package[@name=&#39;com.google.android.gms.maps.model&#39;]/class[@name=&#39;MarkerOptions&#39;]/method[@name=&#39;title&#39;]&quot;</span> <span class="na">name=</span><span class="s">&quot;managedName&quot;</span><span class="nt">&gt;</span>SetTitle<span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'><span class="nt">&lt;/metadata&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>com.google.android.gms.location</code> を各所に追加しています。変更前は <a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/GooglePlayServices/Transforms/Metadata.xml">こちら</a> 。</p>
+
+<p>これだけで OK。(がここにたどり着くまでに半日くらいかかったorz)</p>
+
+<h2>使う</h2>
+
+<p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google I/O 2013 で発表された Fused Location Provider を使ってみる]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider/"/>
+    <updated>2013-05-23T20:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider</id>
+    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。</p>
+
+<!--more-->
+
+
+<h2>Fused Location Provider とは？</h2>
+
+<p>GPS と WiFi とセンサー(加速度など) を組み合わせて、その状況に応じた最適な方法で位置を取得出来ます。今までよりも低消費電力で、精度のよい位置情報を。</p>
+
+<p>実際どんな感じかは、Google I/O 2013 のセッション動画にある <a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a> を見てください。</p>
+
+<p>次から使い方です。</p>
+
+<h2>1. SDK の Google Play Services を更新する</h2>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
+
+<p>Activity Recognition と同じく Google Play services として提供されているので、SDK Manager でライブラリを更新します。</p>
+
+<h2>2. Eclipse でプロジェクトを作る</h2>
+
+<p>Android Studio は使ってません(まだよくわからないので)
+Eclipse で、いつもどおりに Android のプロジェクトを作ります。
+Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
+名前はここでは FusedLocationProviderSample とします。</p>
+
+<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
+
+<p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
+
+<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
+
+<p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
+
+<p>次から FusedLocationProviderSample の実装です。</p>
+
+<h2>4. AndroidManifest.xml の編集</h2>
+
+<p>Fused Location Provider を使うのには今まで通り、<code>ACCESS_FINE_LOCATION</code> と <code>ACCESS_COARSE_LOCATION</code> を設定します。</p>
+
+<p>LocationClient は、指定した PERMISSION に応じてよしなに動いてくれるそうです。</p>
+
+<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.example.fusedlocationprovidersample&quot;</span>
+</span><span class='line'>    <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
+</span><span class='line'>    <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;uses-sdk</span>
+</span><span class='line'>        <span class="na">android:minSdkVersion=</span><span class="s">&quot;8&quot;</span>
+</span><span class='line'>        <span class="na">android:targetSdkVersion=</span><span class="s">&quot;17&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_FINE_LOCATION&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_COARSE_LOCATION&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;application</span>
+</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
+</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;activity</span>
+</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;com.example.fusedlocationprovidersample.MainActivity&quot;</span>
+</span><span class='line'>            <span class="na">android:screenOrientation=</span><span class="s">&quot;portrait&quot;</span>
+</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>5. Fused Location Provider を使う</h2>
+
+<p>ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの <code>LocationProvider</code> が(も)使えるので、画面一つだけのシンプルなコードです。</p>
+
+<p>FusedLocationProvider を使うには、<a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> クラスを使います。</p>
+
+<p>大雑把な流れは:</p>
+
+<ol>
+<li>インスタンスを生成する
+connect を呼ぶ -> ConnectionCallbacks.onConnected がコールバックされる</li>
+<li><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html">LocationRequest</a> を指定して、requestLocationUpdates を呼ぶ。 -> LocationListener.onLocationChanged が呼ばれる</li>
+</ol>
+
+
+<p>です。connect を呼んで onConnected を待つのと、位置取得条件が <code>LocationRequest</code> クラスになった以外は <code>LocationManager</code> と同じです。</p>
+
+<p>では、全コードです。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">fusedlocationprovidersample</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.ConnectionResult</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationClient</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationListener</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationRequest</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.location.Location</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.os.Bundle</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View.OnClickListener</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.Button</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.TextView</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.Activity</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// FusedLocationProvider 用の Client</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">LocationClient</span> <span class="n">_locationClient</span><span class="o">;</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="o">;</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// 以前と変わらない LocationListener</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">LocationListener</span> <span class="n">_locationListener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocationListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="nd">@Override</span>
+</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onLocationChanged</span><span class="o">(</span><span class="kd">final</span> <span class="n">Location</span> <span class="n">location</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>              <span class="nd">@Override</span>
+</span><span class='line'>              <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">_textResult</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">text</span> <span class="o">=</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">location</span><span class="o">.</span><span class="na">getTime</span><span class="o">())</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span>
+</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getLatitude</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span>
+</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getLongitude</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span>
+</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getAccuracy</span><span class="o">()</span> <span class="o">+</span>
+</span><span class='line'>                          <span class="s">&quot;\n&quot;</span> <span class="o">+</span> <span class="n">text</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>                  <span class="n">_textResult</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">text</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>          <span class="o">});</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">};</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">_textResult</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text_result</span><span class="o">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="kd">final</span> <span class="n">Button</span> <span class="n">buttonLocate</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">button_locate</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>          <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">_isStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="k">if</span> <span class="o">(!</span><span class="n">_isStarted</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">startLocate</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Stop&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">stopLocate</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Start&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              
+</span><span class='line'>              <span class="n">_isStarted</span> <span class="o">=</span> <span class="o">!</span><span class="n">_isStarted</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">});</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">stopLocate</span><span class="o">();</span>
+</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">startLocate</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">_locationClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocationClient</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">ConnectionCallbacks</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnected</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="c1">// 2. 位置の取得開始！</span>
+</span><span class='line'>              <span class="n">LocationRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="n">LocationRequest</span><span class="o">.</span><span class="na">create</span><span class="o">()</span>
+</span><span class='line'>              <span class="o">.</span><span class="na">setPriority</span><span class="o">(</span><span class="n">LocationRequest</span><span class="o">.</span><span class="na">PRIORITY_HIGH_ACCURACY</span><span class="o">)</span>
+</span><span class='line'>              <span class="o">.</span><span class="na">setInterval</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span> <span class="c1">// 5秒おき</span>
+</span><span class='line'>              <span class="n">_locationClient</span><span class="o">.</span><span class="na">requestLocationUpdates</span><span class="o">(</span><span class="n">request</span><span class="o">,</span> <span class="n">_locationListener</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDisconnected</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>              <span class="n">_locationClient</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="o">},</span> <span class="k">new</span> <span class="n">OnConnectionFailedListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnectionFailed</span><span class="o">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// 1. 位置取得サービスに接続！</span>
+</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">stopLocate</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_locationClient</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">_locationClient</span><span class="o">.</span><span class="na">isConnected</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">removeLocationUpdates</span><span class="o">(</span><span class="n">_locationListener</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">disconnect</span><span class="o">();</span>
+</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>6. 動くのか！？</h2>
+
+<p>HTC J(not蝶) で動かしてみました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_fused_location_provider1.png" alt="image3" /></p>
+
+<p>室内での結果ですが、最初 27m の精度だったのが、放っておくとどんどん精度が上がって行きました。が、地図に重ねてみないと実際合ってるのかよくわかりませんね。</p>
+
+<p>そのうち、地図に載せて検証してみたいです。</p>
+
+<h2>Permission と Priority と精度の話</h2>
+
+<p>Permission と Priority の組み合わせで、位置の精度がどう変わるか、少し調べました。</p>
+
+<h3>FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
+
+<p>GPS と WiFi と センサーフル活用。GPS が捕捉できなくても数十ｍの位置精度が概ね出るようです。</p>
+
+<h3>COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
+
+<p>使えない。FINE_LOCATION が必要ってエラーになりました。</p>
+
+<h3>COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY</h3>
+
+<p>位置の精度が数km程度になりました。WiFi測位(従来の NETWORK_PROVIDER)よりも悪いです。うーんこれは期待はずれだなあ。</p>
+
+<p>結局、例えば屋内測位でしか使わないからGPS要らねって FINE_LOCATION を外すと、かえって精度が落ちるという事になります。(GPS使いませんPERMISSIONが欲しいな。。。)</p>
+
+<h2>おまけ</h2>
+
+<ul>
+<li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
+</ul>
+
+
+<p>によると、Google Maps Android API v2 の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean">setMyLocationEnabled(true)</a> でも FusedLocationProvider が使われるようになったとのことです。</p>
+
+<h2>まとめ</h2>
+
+<p>公式のコンプリートな Getting Started は</p>
+
+<ul>
+<li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location | Android Developers</a></li>
+</ul>
+
+
+<p>にありますので、こちらを読まれた方が確実です。</p>
+
+<p>ここで作ったサンプルは、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
+</ul>
+
+
+<p>に置いておきます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google I/O 2013 の Android Location セッションまとめ]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/20/digest-of-android-location-session-in-google-io2013/"/>
+    <updated>2013-05-20T15:13:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/20/digest-of-android-location-session-in-google-io2013</id>
+    <content type="html"><![CDATA[<p>これは、<a href="http://www.youtube.com/watch?v=URcVZybzMUI">Google I/O 2013 - Beyond the Blue Dot: New Features in Android Location - YouTube</a> から主要な部分を切り出して勝手な解説を加えたものです。</p>
+
+<!--more-->
+
+
+<h2>時間がない人のために</h2>
+
+<p>このセッションは、Android に追加された「Fused Location Provider」「Geofencing」「Activity Recognition」に関するお話です。</p>
+
+<p>これらの３つのデモだけ見れば、だいたい「すげー」ってなるかと。</p>
+
+<ul>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a></p></li>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=1195s">Geofencing のデモ</a></p></li>
+<li><p><a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=1661s">Activity Recognition のデモ</a></p></li>
+</ul>
+
+
+<p>で、これらの機能は Google Play services として提供されるので、新しい端末を待たなくても<strong>今日から使えます</strong>よ、と。</p>
+
+<h2>はじめに</h2>
+
+<p>タイトルは「Beyond the Blue Dot」、Blue Dot とは…デモを観たら分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_001.png" alt="&quot;1&quot;" /></p>
+
+<p>Intro&amp;Closing 担当の Waleed さん(右)と、Deep Dive してくれる Jaikumar さん(左)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_002.png" alt="2" /></p>
+
+<p>基本として、各種測位技術の比較表を。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_008.png" alt="8" /></p>
+
+<h2>Fused Location Provider</h2>
+
+<p>Intro を早々に飛ばして、ここから各機能の詳細説明。</p>
+
+<p>まず、現在の Location 周りの構成図。これが…</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_009.png" alt="9" /></p>
+
+<p>こうなる。今までのレイヤの上に Google Play-services として構成される。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_017.png" alt="17" /></p>
+
+<p>さあてお待ちかねのデモ。</p>
+
+<p>まずは、実際の経路(緑) vs GPS(黄色)</p>
+
+<p>画像だけだと若干分かりづらいけど、屋内はすっ飛ばされてる。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_018.png" alt="18" /></p>
+
+<p>次、緑 vs WiFi測位(赤)</p>
+
+<p>もう、カックカクなのであります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_019.png" alt="19" /></p>
+
+<p>そして、緑 vs Fused Location Provider(青 the Blue Dot)</p>
+
+<p>屋外は GPS によるスムースな軌跡、屋内は WiFi＋センサーによる自律測位で十分に滑らか。入出、退出時の切り替えも自動で行われる。(拍手！)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_020.png" alt="20" /></p>
+
+<p>使い方。</p>
+
+<p><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> というのが増えてるので、それを使います。</p>
+
+<p><code>connect</code> した後は、<code>LocationListener</code> が使えます。(注:<code>android.location.LocationListener</code> ではなく新しい <code>com.google.android.gms.location.LocationListener</code> でした)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_021.png" alt="21" /></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_022.png" alt="22" /></p>
+
+<p><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html#setPriority(int">setPriority</a> で電池消費と精度をコントロールできるとのこと。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_024.png" alt="24" /></p>
+
+<h2>Geofencing</h2>
+
+<p>次のトピック、ジオフェンシング。</p>
+
+<p>さっそくデモから。</p>
+
+<p>ジオフェンスが２つ仕掛けてあって、自車がフェンス内に入ると色が変わるというもの。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_026.png" alt="26" /></p>
+
+<p>使い方。</p>
+
+<p>同じく <code>LocationClient</code> から。
+結果は IntentService で受け取ります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_028.png" alt="28" /></p>
+
+<p>そして嬉しいのがコレ。</p>
+
+<p>消費電力が今までの 1/3 になってるとのことです。
+実は、ジオフェンシングの機能自体は <a href="http://developer.android.com/reference/android/location/LocationManager.html#addProximityAlert(double,%20double,%20float,%20long,%20android.app.PendingIntent">addProximityAlert</a> という形で既存だったのです(存在は知ってたが使ったこと無い)。</p>
+
+<p>ユーザーの大雑把な場所や、現在の状態(歩いてるのか留まっているのか)やら、ハードウェアに直接処理させているので実現できた、とか言ってるみたいです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_030.png" alt="30" /></p>
+
+<h2>Activity Recognition</h2>
+
+<p>最後のトピック、行動(状態)認識。</p>
+
+<p>乗り物、徒歩、留まってる、自転車 を判別できます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_032.png" alt="32" /></p>
+
+<p>これはライブデモ。
+自転車と認識されているのは…</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_040.png" alt="40" /></p>
+
+<p>…マークさんの実演でしたー。(会場ここが一番盛り上がってた)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_041.png" alt="41" /></p>
+
+<p>そして使い方、
+<a href="http://developer.android.com/reference/com/google/android/gms/location/ActivityRecognitionClient.html">ActivityRecognitionClient</a> というのを使います。
+これは早速使ってみたのでこちらもご参考に。</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる - Experiments Never Fail</a></li>
+</ul>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_043.png" alt="43" /></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_044.png" alt="44" /></p>
+
+<h2>まとめ</h2>
+
+<p>Waleed さんに戻ってまとめなど。</p>
+
+<p>Google Play-services で提供してるから、使うなら？「今でしょ！」(言ってません)。
+これからも、消費電力・精度・使える場所(?) を改良していくぜい、とのこと。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_049.png" alt="49" /></p>
+
+<p>どうもありがとうございました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/google_io_android_location_050.png" alt="50" /></p>
+
+<h2>雑感</h2>
+
+<p>Fused Location Provider(GPS+WiFi+自律測位)は、カーナビ(GPS+自律測位)では普通に行われているものの、あちらは道路の上という縛りがあるのに対し、こちらはフリーダムな移動を処理しなければならないのですが、実用レベルの API を、誰でも使える形で提供してくる Google さん怖すぎ。</p>
+
+<p>国内でも大学とかベンチャーが頑張って屋内測位とか行動認識技術開発してるので、ぜひがんばってください。</p>
+
+<p>「なぜ Google Play-services で提供するのか？」に:</p>
+
+<ul>
+<li>既存デバイスにも対応できる</li>
+<li>短いサイクルでリリースできる</li>
+</ul>
+
+
+<p>などのメリットを説明していましたが、その後ツイッターで、</p>
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>@<a href="https://twitter.com/amay077">amay077</a> おおー、参考になりました。ありがとうございます。ところで、これGooglePlayクラスのしただったのね。業務用のタブレットやスマホだとGooglePlay使えないから、ちょっと残念。</p>&mdash; new hirofumi hayashiさん (@picaosgeo) <a href="https://twitter.com/picaosgeo/status/335587102043549696">2013年5月18日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>というやりとりをして気づきました。Google Play-services って「(オープンソースとしての)Android」じゃないのねーと(まあこれほどの技術の内部を公開なんて普通に考えてもありえない話ですが)。</p>
+
+<p><strong>「Google Play-services が使えない端末では利用できない」</strong> というのは割と盲点になりそうです(Kindle もダメだよね、たぶん。しかしエミュレータですら使えないのは何とかして欲しい)。</p>
+
+<p><a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20130321/464924/">Chrome との統合がうわさされる Android</a> ですが、Android の名を冠していない Google Play-services が充実していくのは、その流れなのかも知れませんね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/"/>
+    <updated>2013-05-18T11:37:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition</id>
+    <content type="html"><![CDATA[<p><a href="http://www.gizmodo.jp/2013/05/android_52.html">Google I/O で発表</a>された Android の行動認識(動作認識)機能ですが、これは <a href="http://developer.android.com/google/play-services/index.html">Google Play Services</a> で提供されているので、新しい API Ver でなくても(Froyo でも！)使えます、すばらしい！</p>
+
+<p>というわけで、早速使ってみました。</p>
+
+<!--more-->
+
+
+<h2>1. SDK の Google Play Services を更新する</h2>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
+
+<p>SDK Manager で、Google Play service を最新に更新します。
+私は勢いで Android SDK Tools なども最新にしてしまいましたが、これが必要だったかは定かでないです。また SDK Tools を更新したら Eclipse のプラグインも更新する必要がありました。</p>
+
+<h2>2. Eclipse でプロジェクトを作る</h2>
+
+<p>Android Studio は使ってません(まだよくわからないので)
+Eclipse で、いつもどおりに Android のプロジェクトを作ります。
+Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
+名前はここでは <code>ActivityRecognizingSample</code> とします。</p>
+
+<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
+
+<p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
+
+<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
+
+<p>コピーしたら、ActivityRecognizingSample で、 google-play-services_lib をライブラリ参照します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
+
+<p>次から ActivityRecognizingSample の実装です。</p>
+
+<h2>4. IntentService クラスの用意</h2>
+
+<p>行動認識結果は IntentService で受け取ります。そのためのクラス <code>ReceiveRecognitionIntentService</code> を作成します。</p>
+
+<figure class='code'><figcaption><span>ReceiveRecognitionIntentService.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
+</span><span class='line'>      <span class="kd">super</span><span class="o">(</span><span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// まだ未実装</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>5. AndroidManifest.xml の編集</h2>
+
+<p>行動認識を使うための権限 <code>com.google.android.gms.permission.ACTIVITY_RECOGNITION</code> をマニフェストに追加します。
+あと、ReceiveRecognitionIntentService も忘れずに追加しておきます。
+細かいところでは、MainActivity の画面の向きを縦（Portrait）に固定しておきます。試している時に画面の向きが変わると面倒なので。</p>
+
+<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.example.activityrecognizingsample&quot;</span>
+</span><span class='line'>    <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
+</span><span class='line'>    <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;uses-sdk</span>
+</span><span class='line'>        <span class="na">android:minSdkVersion=</span><span class="s">&quot;8&quot;</span>
+</span><span class='line'>        <span class="na">android:targetSdkVersion=</span><span class="s">&quot;17&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;com.google.android.gms.permission.ACTIVITY_RECOGNITION&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;application</span>
+</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
+</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;activity</span>
+</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.MainActivity&quot;</span>
+</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+</span><span class='line'>            <span class="na">android:screenOrientation=</span><span class="s">&quot;portrait&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;service</span>
+</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.ReceiveRecognitionIntentService&quot;</span>
+</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+</span><span class='line'>          <span class="na">android:exported=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>6. 行動認識クラス(ActivityRecognitionClient)を使う</h2>
+
+<p>ここから、一気に行きます。</p>
+
+<p>行動認識には <a href="http://developer.android.com/reference/com/google/android/gms/location/ActivityRecognitionClient.html"><code>ActivityRecognitionClient</code></a> を使います。</p>
+
+<p>大雑把な使い方は、</p>
+
+<ol>
+<li>インスタンスを生成する</li>
+<li><code>connect</code> を呼ぶ -> <code>ConnectionCallbacks.onConnected</code> がコールバックされる</li>
+<li><code>requestActivityUpdates</code> に <code>ReceiveRecognitionIntentService</code> を仕掛けて、呼ぶ。 -> <code>ReceiveRecognitionIntentService.onHandleIntent</code> が呼ばれる</li>
+<li><code>onHandleIntent</code> で <code>ActivityRecognitionResult</code> にて結果を取得する</li>
+</ol>
+
+
+<p>です。</p>
+
+<p>その後、認識結果を画面に表示するために、</p>
+
+<ol>
+<li>予め、<code>MainActivity</code> に <code>BroadcastReceiver</code> を仕掛けておく</li>
+<li><code>ReceiveRecognitionIntentService.onHandleIntent</code> で取得した認識結果を、Broadcast する。</li>
+</ol>
+
+
+<p>とします。</p>
+
+<p>では全コードをどうぞ。</p>
+
+<figure class='code'><figcaption><span>MainActivity.jara</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+<span class='line-number'>148</span>
+<span class='line-number'>149</span>
+<span class='line-number'>150</span>
+<span class='line-number'>151</span>
+<span class='line-number'>152</span>
+<span class='line-number'>153</span>
+<span class='line-number'>154</span>
+<span class='line-number'>155</span>
+<span class='line-number'>156</span>
+<span class='line-number'>157</span>
+<span class='line-number'>158</span>
+<span class='line-number'>159</span>
+<span class='line-number'>160</span>
+<span class='line-number'>161</span>
+<span class='line-number'>162</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.ConnectionResult</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.ActivityRecognitionClient</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.DetectedActivity</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.os.Bundle</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.Activity</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.PendingIntent</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.BroadcastReceiver</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Context</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Intent</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.IntentFilter</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.Menu</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View.OnClickListener</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.Button</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.TextView</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">ActivityRecognitionClient</span> <span class="n">_recClient</span><span class="o">;</span> <span class="c1">// 行動認識のメインクラス</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="o">;</span> <span class="c1">// 認識結果を表示するところ</span>
+</span><span class='line'>  
+</span><span class='line'>  <span class="c1">// 認識結果は PendingIntent で通知してくれる</span>
+</span><span class='line'>  <span class="c1">//  PendingIntent に、Service を起動する Intent を仕込んでおいて、</span>
+</span><span class='line'>  <span class="c1">//  認識結果の取得はそっちで行う。 &gt; ReceiveRecognitionIntentService.java</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">PendingIntent</span> <span class="n">_receiveRecognitionIntent</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// ReceiveRecognitionIntentService で取得した認識結果は、Broadcast で通知されるので、</span>
+</span><span class='line'>    <span class="c1">// それを受け取る Receiver 。ここで画面に認識結果を表示する。</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">BroadcastReceiver</span> <span class="n">_receiveFromIntentService</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BroadcastReceiver</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="nd">@Override</span>
+</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="kd">final</span> <span class="kt">int</span> <span class="n">activityType</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getIntExtra</span><span class="o">(</span><span class="s">&quot;activity_type&quot;</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>          <span class="kd">final</span> <span class="kt">int</span> <span class="n">confidence</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getIntExtra</span><span class="o">(</span><span class="s">&quot;confidence&quot;</span><span class="o">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">);</span>
+</span><span class='line'>          <span class="kd">final</span> <span class="kt">long</span> <span class="n">time</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getLongExtra</span><span class="o">(</span><span class="s">&quot;time&quot;</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>              <span class="nd">@Override</span>
+</span><span class='line'>              <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">_textResult</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">text</span> <span class="o">=</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">time</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span>
+</span><span class='line'>                          <span class="o">+</span> <span class="n">getNameFromType</span><span class="o">(</span><span class="n">activityType</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;(&quot;</span> <span class="o">+</span>
+</span><span class='line'>                          <span class="o">+</span> <span class="n">confidence</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span> <span class="o">+</span> <span class="s">&quot;\n&quot;</span> <span class="o">+</span> <span class="n">text</span><span class="o">;</span>
+</span><span class='line'>                  
+</span><span class='line'>                  <span class="n">_textResult</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">text</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>          <span class="o">});</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// http://developer.android.com/training/location/activity-recognition.html</span>
+</span><span class='line'>      <span class="c1">// からパクってきた関数</span>
+</span><span class='line'>       <span class="cm">/**</span>
+</span><span class='line'><span class="cm">      * Map detected activity types to strings</span>
+</span><span class='line'><span class="cm">      *@param activityType The detected activity type</span>
+</span><span class='line'><span class="cm">      *@return A user-readable name for the type</span>
+</span><span class='line'><span class="cm">      */</span>
+</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="nf">getNameFromType</span><span class="o">(</span><span class="kt">int</span> <span class="n">activityType</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">switch</span><span class="o">(</span><span class="n">activityType</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">IN_VEHICLE</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;in_vehicle&quot;</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">ON_BICYCLE</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;on_bicycle&quot;</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">ON_FOOT</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;on_foot&quot;</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">STILL</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;still&quot;</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">UNKNOWN</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;unknown&quot;</span><span class="o">;</span>
+</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">TILTING</span><span class="o">:</span>
+</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;tilting&quot;</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;unknown - &quot;</span> <span class="o">+</span> <span class="n">activityType</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>  <span class="o">};</span>
+</span><span class='line'>  
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">_textResult</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text_results</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// IntentService から Broadcast される認識結果を受け取るための Receiver を登録しておく</span>
+</span><span class='line'>        <span class="n">registerReceiver</span><span class="o">(</span><span class="n">_receiveFromIntentService</span><span class="o">,</span> <span class="k">new</span> <span class="n">IntentFilter</span><span class="o">(</span><span class="s">&quot;receive_recognition&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">Button</span> <span class="n">buttonStart</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">button_start</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">buttonStart</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>          <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">_isStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              
+</span><span class='line'>              <span class="k">if</span> <span class="o">(!</span><span class="n">_isStarted</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">startReckoning</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">buttonStart</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Stop&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">stopReckoning</span><span class="o">();</span>
+</span><span class='line'>                  <span class="n">buttonStart</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Start&quot;</span><span class="o">);</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>              
+</span><span class='line'>              <span class="n">_isStarted</span> <span class="o">=</span> <span class="o">!</span><span class="n">_isStarted</span><span class="o">;</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">});</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">stopReckoning</span><span class="o">();</span>
+</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
+</span><span class='line'>      <span class="n">unregisterReceiver</span><span class="o">(</span><span class="n">_receiveFromIntentService</span><span class="o">);</span>
+</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">startReckoning</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="n">_recClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ActivityRecognitionClient</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">ConnectionCallbacks</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>          
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnected</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="n">Intent</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span>
+</span><span class='line'>                      <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">ReceiveRecognitionIntentService</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</span><span class='line'>              <span class="n">_receiveRecognitionIntent</span> <span class="o">=</span> <span class="n">PendingIntent</span><span class="o">.</span><span class="na">getService</span><span class="o">(</span>
+</span><span class='line'>                      <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">intent</span><span class="o">,</span>
+</span><span class='line'>                      <span class="n">PendingIntent</span><span class="o">.</span><span class="na">FLAG_UPDATE_CURRENT</span><span class="o">);</span>
+</span><span class='line'>              
+</span><span class='line'>              <span class="c1">// 2. 行動認識開始！</span>
+</span><span class='line'>              <span class="c1">//  1秒間隔で認識間隔を通知。</span>
+</span><span class='line'>              <span class="c1">//  認識したら ReceiveRecognitionIntentService が呼び出されるようにしている。</span>
+</span><span class='line'>              <span class="n">_recClient</span><span class="o">.</span><span class="na">requestActivityUpdates</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">_receiveRecognitionIntent</span><span class="o">);</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDisconnected</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>              <span class="n">_recClient</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// NOTE disconnect してもここにこないよ？</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="o">},</span> <span class="k">new</span> <span class="n">OnConnectionFailedListener</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>          <span class="nd">@Override</span>
+</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnectionFailed</span><span class="o">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>              <span class="c1">// 接続でエラーが発生したらここにくるらしい</span>
+</span><span class='line'>          <span class="o">}</span>
+</span><span class='line'>      <span class="o">});</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// 1. 行動認識サービスに接続！</span>
+</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">stopReckoning</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_recClient</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">_recClient</span><span class="o">.</span><span class="na">isConnected</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">removeActivityUpdates</span><span class="o">(</span><span class="n">_receiveRecognitionIntent</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">disconnect</span><span class="o">();</span>
+</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>ReceiveRecognitionIntentService.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.ActivityRecognitionResult</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.DetectedActivity</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Intent</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
+</span><span class='line'><span class="kn">import</span> <span class="nn">android.util.Log</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**</span>
+</span><span class='line'><span class="cm"> * 行動認識結果を取得するための IntentService </span>
+</span><span class='line'><span class="cm"> * </span>
+</span><span class='line'><span class="cm"> * ActivityRecognitionClient.requestActivityUpdates に仕込んでおくと</span>
+</span><span class='line'><span class="cm"> * 認識結果を受信する度にこれが呼ばれる。</span>
+</span><span class='line'><span class="cm"> * </span>
+</span><span class='line'><span class="cm"> */</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
+</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
+</span><span class='line'>      <span class="kd">super</span><span class="o">(</span><span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="o">(!</span><span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">hasResult</span><span class="o">(</span><span class="n">intent</span><span class="o">))</span> <span class="o">{</span>
+</span><span class='line'>          <span class="c1">// 行動認識結果持ってないよ</span>
+</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="c1">// 認識結果を取得する</span>
+</span><span class='line'>      <span class="n">ActivityRecognitionResult</span> <span class="n">result</span> <span class="o">=</span>
+</span><span class='line'>              <span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">extractResult</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">DetectedActivity</span> <span class="n">mostProbableActivity</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMostProbableActivity</span><span class="o">();</span>
+</span><span class='line'>      <span class="kt">int</span> <span class="n">activityType</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getType</span><span class="o">();</span>
+</span><span class='line'>      <span class="kt">int</span> <span class="n">confidence</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getConfidence</span><span class="o">();</span>
+</span><span class='line'>      
+</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;Receive recognition.&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; activityType - &quot;</span> <span class="o">+</span> <span class="n">activityType</span><span class="o">);</span> <span class="c1">// 行動タイプ</span>
+</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; confidence - &quot;</span> <span class="o">+</span> <span class="n">confidence</span><span class="o">);</span> <span class="c1">// 確実性（精度みたいな）</span>
+</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; time - &quot;</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">()));</span> <span class="c1">// 時間</span>
+</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; elapsedTime - &quot;</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getElapsedRealtimeMillis</span><span class="o">()));</span> <span class="c1">// よく分からん</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="c1">// 画面に結果を表示するために、Broadcast で通知。</span>
+</span><span class='line'>      <span class="c1">//  MainActivity にしかけた BroadcastReceiver で受信する。</span>
+</span><span class='line'>      <span class="n">Intent</span> <span class="n">notifyIntent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="s">&quot;receive_recognition&quot;</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">setPackage</span><span class="o">(</span><span class="n">getPackageName</span><span class="o">());</span>
+</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;activity_type&quot;</span><span class="o">,</span> <span class="n">activityType</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;confidence&quot;</span><span class="o">,</span> <span class="n">confidence</span><span class="o">);</span>
+</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;time&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">());</span>
+</span><span class='line'>      <span class="n">sendBroadcast</span><span class="o">(</span><span class="n">notifyIntent</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>7. 動くのか！？</h2>
+
+<p>HTC J(not蝶) で動かしてみました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition3.jpg" alt="image3" /></p>
+
+<p>on_foot ってのが「歩いてる」ってやつですね。
+感覚としてはズボンの尻ポケに入れて、5mくらいは歩かないと認識されない感じ。結構 unknown が多いですね。</p>
+
+<p>クルマは、ダッシュボードに放置して運転してみたもの。開始から１分経たずに認識できています。</p>
+
+<p>自転車は、最初クルマと誤認したものの、その後認識しました。</p>
+
+<p>ここでは教科書通りの使い方をしましたが、なかなか感動します。</p>
+
+<h3>2013.5.21追記 電車だとどうなる？</h3>
+
+<p>東京に出張する機会があったので、新幹線と在来線でも試してみました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition4.png" alt="image4" /></p>
+
+<p>新幹線は窓側の席だったので、窓の机に端末を放置していました。
+在来線は座ることができなかったので、立った状態で端末は尻ポケ、カベに持たれてなるべく動かないようにしていました。</p>
+
+<p>結果は、在来線ではなんとか vehicle と認識されましたが、新幹線では認識できませんでした。
+恐らく、新幹線は揺れが少なすぎるのだと思います。優秀ですね、日本の新幹線。</p>
+
+<h3>2013.5.27 追記 位置情報を許可すると精度が上がる？</h3>
+
+<p><a href="https://twitter.com/sos_jp">@sos_jp</a> さんの記事、</p>
+
+<ul>
+<li><a href="http://sos.hatenablog.jp/entry/2013/05/19/162122">Google Play servicesの新機能 - Activity Recognition - sos の 作業メモ</a></li>
+</ul>
+
+
+<p>によりますと、</p>
+
+<blockquote><p>位置情報があるとより正確な判定になるようです</p></blockquote>
+
+<p>とのことなので、もしかしたら FINE(+COURSE)_LOCATION とか付けとくと新幹線でも vechicle と認識デキるかもしれません。いずれ試してみます。</p>
+
+<h2>まとめ</h2>
+
+<p>公式のコンプリートな Getting Started は</p>
+
+<ul>
+<li><a href="http://developer.android.com/training/location/activity-recognition.html">Recognizing the User&#8217;s Current Activity | Android Developers</a></li>
+</ul>
+
+
+<p>にありますので、こちらを読まれた方が確実です。</p>
+
+<p>ここで作ったサンプルは、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/androidactivityrecognizingsample">amay077/androidactivityrecognizingsample · GitHub</a></li>
+</ul>
+
+
+<p>に置いておきます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android SDK を最新の r22 にしたら、Xamarin.Android でビルドできなくなった件]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/16/xamarin-android-fail-build-on-latest-android-sdk/"/>
+    <updated>2013-05-16T17:15:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/16/xamarin-android-fail-build-on-latest-android-sdk</id>
+    <content type="html"><![CDATA[<p><a href="https://developers.google.com/events/io/">Google I/O 2013</a> で<a href="http://japanese.engadget.com/2013/05/15/google-i-o-2013/">いろいろ発表</a>があったので、試してみたくなるのがエンジニアってもんでしょう。</p>
+
+<!--more-->
+
+
+<h2>2013.5.19 追記</h2>
+
+<p>Xamarin.Android の 4.6.6 で Android SDK r22 に対応したので、この記事は無意味になりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk5.png" alt="image5" /></p>
+
+<p>アップデート後、r22 でも無事ビルドできるようになりました。</p>
+
+<h2>1.Eclipse のエラー</h2>
+
+<p>Keynote から一夜明け、Android SDK を r22 に更新しました。
+するとまず、昨日までビルドできていた Java の Android のプロジェクトがビルドできなくなりました。</p>
+
+<p>この症状は、こちらのツイート:</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p>状況・ライブラリプロジェクトを使用・r22 でビルドが死んだ対策・SDK Build-tools を入れた（antは復旧）・&lt;classpathentry combineaccessrules=&#8221;false&#8221; kind=&#8221;src&#8221; path=&#8221;/hoge&#8221;/&gt; 追加</p>&mdash; dmpさん (@dmp) <a href="https://twitter.com/dmp/status/334839819781955586">2013年5月16日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>に加えて、<a href="http://developer.android.com/sdk/installing/installing-adt.html">Eclipse の ADT Plugin</a> を更新することで解決できました。(私の場合、<code>&lt;classpathentry〜</code> は行わなくても大丈夫でした。［勝手に追加されてました］)</p>
+
+<h2>2.Xamarin.Android のエラー</h2>
+
+<p>やれやれと思ったところで、こんなツイートが。</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p>I know you are all eager to try the new stuff but since Google shuffled some binaries in the latest SDK, it breaks Xamarin.Android for now</p>&mdash; Jérémie Lavalさん (@jeremie_laval) <a href="https://twitter.com/jeremie_laval/status/334879715611529217">2013年5月16日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>「Google が SDK の場所を替えたので、Xamarin.Android は今壊れてる(意訳)」とのことです。</p>
+
+<p>マジで？と思って、試してみると確かにビルド時にエラーががが。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk1.png" alt="image1" /></p>
+
+<blockquote><p>Error: Error executing tool &#8216;/…/android-sdk-macosx/platform-tools/aapt&#8217;:</p></blockquote>
+
+<h2>そして回避へ</h2>
+
+<p>先のトラブルで、「SDK Build-tools が新しく追加された」=「今までの場所にはもうない」、つまり、エラーになっているのは aapt(Android のパッケージ作成ツール) が意図した場所に存在しないからでは？と考えられます。</p>
+
+<p>というわけで、 aapt はどこへ行ったのか、Android SDK のフォルダを Finder(エクスプローラ)で覗いてみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk2.png" alt="image2" /></p>
+
+<p>むう、確かに <code>/platform-tools</code> の中には <code>aapt</code> は存在せず、代わりに <code>/build-tools/17.0.0</code> の中にあります。</p>
+
+<p>Xamarin Studio の設定で、aapt の場所を /build-tools に変更できれば良かったのですが、残念ながら見つけられず、仕方ないので <code>/build-tools/17.0.0</code> 配下のファイルとフォルダを、 <code>/platform-tools</code> にコピーしました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk3.png" alt="image3" /></p>
+
+<p>そして Xamarin Studio に戻り、もう一度ビルドを実行、無事ビルドできました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk4.png" alt="image4" /></p>
+
+<p>近いうちに Xamarin さん側で対応してくれると思いますが、それまでのつなぎとして。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio の各部名称覚え書き]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/14/getting-the-most-from-xamarin-studio/"/>
+    <updated>2013-05-14T13:59:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/14/getting-the-most-from-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>正式名称が不明だったが、Evolve2013 の Video で紹介されてたのでそこだけキャプチャしてみた</p>
+
+<!--more-->
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_the_most_from_xamarin_studio.png" alt="image1" /></p>
+
+<p>左サイドバー、<strong>Solution Pad</strong> って言うんだね。</p>
+
+<p>動画はこちら</p>
+
+<ul>
+<li><a href="http://xamarin.com/evolve/2013#session-9v0ezipgkx">”Getting the Most from Xamarin Studio” / Evolve 2013 Conference – Xamarin</a></li>
+</ul>
+
+
+<p>あ、スライドもあった(汗</p>
+
+<ul>
+<li><a href="http://www.slideshare.net/Xamarin/getting-the-most-from-xamarin-studio-michael-hutchinson">Getting the Most from Xamarin Studio - Michael Hutchinson by @xamarinhq on @slideshare</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコンポーネントを更新する方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio/"/>
+    <updated>2013-05-08T20:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>分かりにくかったのでメモ。</p>
+
+<!--more-->
+
+
+<p><a href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/">以前</a>使ってみた <a href="http://components.xamarin.com/view/googlemapsios/">Google Maps Component</a>、「Polygon や Circle がないなー、対応してないのかなー」と思って <a href="http://componentsapi.xamarin.com/?link=T%3aGoogle.Maps.Circle">API Doc</a> 見たら存在してたので、いつの間にかバージョンアップしてたらしい、確かに手持ちのバージョンは「1.1.2」、Webサイトの方は「1.2.2」になってた。</p>
+
+<h2>Component を更新する</h2>
+
+<p>じゃあ更新するか、と思って Xamarin Studio で入り口を探すものの見つからない。
+結局、メニュー -> Get More Components から、Google Maps を検索しなおしたら、ボタンが「Update」になってたので、押したら更新された。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio1.png" alt="image1" /></p>
+
+<h2>Component に付属のサンプルが増えてた</h2>
+
+<p>更新後、Samples を見てみたら、、、お、 <strong>iOS Advanced Sample</strong> というのが増えてる！きっとアドバンスドなサンプルなのでしょうな（試せよ</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio2.png" alt="image1" /></p>
+
+<h2>Component を更新したら API の互換性が無くなってた</h2>
+
+<p>更新後、意気揚々と以前作ったサンプルをビルドしてみたらビルドエラーが。
+どうやら <code>MapView.AddMarker</code> や <code>MarkerOption</code> が無くなって、<code>Marker</code> に MapView を設定するように変更されたらしい。(以下は、さっきのアドバンスドなサンプルからの抜粋)</p>
+
+<figure class='code'><figcaption><span>PartOfMarkersViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span> <span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">var</span> <span class="n">camera</span> <span class="p">=</span> <span class="n">CameraPosition</span><span class="p">.</span><span class="n">FromCamera</span> <span class="p">(-</span><span class="m">37.81969</span><span class="p">,</span> <span class="m">144.966085</span><span class="p">,</span> <span class="m">4</span><span class="p">);</span>
+</span><span class='line'>  <span class="kt">var</span> <span class="n">mapView</span> <span class="p">=</span> <span class="n">MapView</span><span class="p">.</span><span class="n">FromCamera</span> <span class="p">(</span><span class="n">RectangleF</span><span class="p">.</span><span class="n">Empty</span><span class="p">,</span> <span class="n">camera</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">var</span> <span class="n">sydneyMarker</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Marker</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">Title</span> <span class="p">=</span> <span class="s">&quot;Sydney&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">Snippet</span> <span class="p">=</span> <span class="s">&quot;Population: 4,605,992&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">Position</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLLocationCoordinate2D</span> <span class="p">(-</span><span class="m">33.8683</span><span class="p">,</span> <span class="m">151.2086</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">Map</span> <span class="p">=</span> <span class="n">mapView</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kt">var</span> <span class="n">melbourneMarker</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Marker</span> <span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">Title</span> <span class="p">=</span> <span class="s">&quot;Melbourne&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">Snippet</span> <span class="p">=</span> <span class="s">&quot;Population: 4,169,103&quot;</span><span class="p">,</span>
+</span><span class='line'>      <span class="n">Position</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLLocationCoordinate2D</span> <span class="p">(-</span><span class="m">37.81969</span><span class="p">,</span> <span class="m">144.966085</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">Map</span> <span class="p">=</span> <span class="n">mapView</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Set the marker in Sydney to be selected</span>
+</span><span class='line'>  <span class="n">mapView</span><span class="p">.</span><span class="n">SelectedMarker</span> <span class="p">=</span> <span class="n">sydneyMarker</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">View</span> <span class="p">=</span> <span class="n">mapView</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これは、元の Google Maps SDK for iOS が根源なのか、Google Maps の Xamarin Component がそうしたのか知りませんが、ReleaseNotes とかないのかな？うっかり更新すると怖いな。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Component の Update は、 Get More Components から</li>
+<li>むやみに Update すると互換性なくなってるかもなのでバックアップというかバージョン管理ちゃんとしよう</li>
+<li>つまり Xamarin Components に ReleaseNotes 欲しいです</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps SDK(Android/iOS) で円を描く]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk/"/>
+    <updated>2013-05-06T16:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk</id>
+    <content type="html"><![CDATA[<p><a href="https://developers.google.com/maps/documentation/android/">Google Maps Android API v2</a> にいつの間にか <code>Circle</code> が追加されてました。<a href="https://developers.google.com/maps/documentation/ios/?hl=ja">Google Maps SDK for iOS</a> も同様に。</p>
+
+<!--more-->
+
+
+<p>ということで使ってみました。なぜか Xamarin でｗ
+とはいえ、Xamarin.Android の場合、GoogleMaps の jar からラッパーを生成しているので API は Java 版と(ほぼ)同じです。</p>
+
+<p>Xamarin.Android での Google Maps API v2 の使い方は、手前味噌ながら弊ブログをどうぞ。</p>
+
+<ul>
+<li><a href="http://amay077.github.com/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>今回も、<a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2/SimpleMapDemo">monodroid-samples</a> をベースにします。</p>
+
+<p>SampleMapActivity.cs の、<a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/SimpleMapDemo/SampleMapActivity.cs#L88">ここら辺</a> に以下のコードを挿入します。</p>
+
+<figure class='code'><figcaption><span>SampleMapActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="kt">var</span> <span class="n">ICELAND</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="p">(</span><span class="m">64.88</span><span class="p">,</span> <span class="p">-</span><span class="m">18.32</span><span class="p">);</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">LIBREVILLE</span> <span class="p">=</span> <span class="k">new</span> <span class="n">LatLng</span><span class="p">(</span><span class="m">0.401</span><span class="p">,</span> <span class="m">9.459</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">_map</span><span class="p">.</span><span class="n">AddCircle</span><span class="p">(</span><span class="k">new</span> <span class="n">CircleOptions</span><span class="p">()</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeCenter</span><span class="p">(</span><span class="n">ICELAND</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeStrokeColor</span><span class="p">(</span><span class="n">Color</span><span class="p">.</span><span class="n">Blue</span><span class="p">.</span><span class="n">ToArgb</span><span class="p">())</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeStrokeWidth</span><span class="p">(</span><span class="m">5f</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeRadius</span><span class="p">(</span><span class="m">5000000</span><span class="p">));</span> <span class="c1">// 500km</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">_map</span><span class="p">.</span><span class="n">AddCircle</span><span class="p">(</span><span class="k">new</span> <span class="n">CircleOptions</span><span class="p">()</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeCenter</span><span class="p">(</span><span class="n">LIBREVILLE</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeStrokeColor</span><span class="p">(</span><span class="n">Color</span><span class="p">.</span><span class="n">DarkGreen</span><span class="p">.</span><span class="n">ToArgb</span><span class="p">())</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeStrokeWidth</span><span class="p">(</span><span class="m">5f</span><span class="p">)</span>
+</span><span class='line'>               <span class="p">.</span><span class="n">InvokeRadius</span><span class="p">(</span><span class="m">500000</span><span class="p">));</span> <span class="c1">// 500km</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Xamarin.Android と Java で違いは無いと言っておきながら、
+Java では <code>new CircleOptions().center(…).storokeColor(…).</code> と書いていた所が、Xamarin では <code>new CircleOptions().InvokeCenter(…).InvokeStorokeColor(…).</code> になっていますね。<a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Xamarin の Binding a Java Library (.jar)</a> 辺りに情報があるでしょうか。</p>
+
+<p>動かすとこんな感じになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle_on_google_maps_sdk.png" alt="image1" /></p>
+
+<p>北緯65度付近のアイスランドと、赤道付近のリーブルヴィルという所に、どちらも半径500kmの円を追加していますが、Googleマップはメルカトル表示なので、見ての通り北へ行くほど円が大きくなります。</p>
+
+<p>面白いのは「真円は保たれている事」ですね。逆台形っぽい曲線になるかと思ったのですが。</p>
+
+<p>円をポリゴナイズした多角形と重ねてみると違いが分かるかもしれません。</p>
+
+<h3>2013.5.8追記:大きな円を描いて調べてみました</h3>
+
+<p>大きな円を描いてみたら、ちゃんと geodesic な(北へいけばいくほど距離が長くなる)形状になりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle-on-google-maps-sdk2.png" alt="image2" /></p>
+]]></content>
+  </entry>
+  
+</feed>

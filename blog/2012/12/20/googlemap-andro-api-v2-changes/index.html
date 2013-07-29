@@ -1,0 +1,494 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Google Maps Android API v2 の v1 からの変更点メモ - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Android の Map API が刷新され、 ベクトル地図！
+回転、視点変更
+屋内、地下街マップの表示 が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。 v2 になって導入手順が大幅に変わりましたが、 @adamrocker &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2012/12/20/googlemap-andro-api-v2-changes/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Google Maps Android API V2 の V1 からの変更点メモ</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-20T16:10:00+09:00" pubdate data-updated="true">Dec 20<span>th</span>, 2012</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p><a href="http://www.atmarkit.co.jp/ait/articles/1212/04/news110.html">Android の Map API が刷新</a>され、</p>
+
+<ul>
+<li>ベクトル地図！</li>
+<li>回転、視点変更</li>
+<li>屋内、地下街マップの表示</li>
+</ul>
+
+
+<p>が可能になりました。Googleマップアプリの機能が API で提供された感じです。これは感涙。</p>
+
+<!-- more -->
+
+
+<p>v2 になって導入手順が大幅に変わりましたが、 <a href="https://twitter.com/adamrocker">@adamrocker</a> さんが早速解説して下さっています。</p>
+
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+
+
+<p>ここでは、Google Map Android API v1 からの変更点を中心に紹介してみます。</p>
+
+<h2>互換性</h2>
+
+<p><strong><em>あ・り・ま・せ・ん、以上！</em></strong></p>
+
+<p>Fragment 化、3D対応などにより、API の設計思想そのものが変わった様で、既存のコードをそのまま流用できることはないでしょう。
+前の MapView に似せた <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> というクラスがありますが、クラス名が同じだけでメンバは全然別物です。</p>
+
+<h2>じゃあ、v1 のあの機能は v2 でどうやんの？</h2>
+
+<h3>移動、拡大・縮小など</h3>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/gmap2_basic.png" alt="BasicMap" /></p>
+
+<p>v1 では <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/MapController.html">MapController</a> の animateTo とか setZoom で行なっていましたが、そもそも v2 には MapController クラスがなくなっています。</p>
+
+<p>v2 では <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap">GoogleMap</a> クラスの animateCamera() や moveCamera() で移動、拡大・縮小を行います。
+これらに加えて、角度(bearing)、視点(tilt) も設定します。animateCamera は Google Earth みたいなアニメーションが定義できてカッコいいですよ。</p>
+
+<p>ちなみに、無段階ズームになった影響で、Zoom の値が int から float になっています。値が示す地図縮尺は変化ないようです。v1 の Zoom=15 と v2 の Zoom=15.0f は同じ意味です。</p>
+
+<h4>参考</h4>
+
+<p>SDK に同梱されるサンプル /extras/google/google_play_services/samples/maps の該当箇所を添えておきます。</p>
+
+<ul>
+<li>CameraDemoActivity.java</li>
+</ul>
+
+
+<h3>ズームボタンとかの表示ON/OFF</h3>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/gmap2_uisettings.png" alt="UISettings" /></p>
+
+<p>v1 では MapView の setBuiltInZoomControls でズームボタンの表示ON/OFF ができました。
+v2 では、GoogleMap から <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#getUiSettings(">UISettings</a> を取得して設定します。
+v2 では、ズームボタンの他に、コンパスが増えているのでそれらの表示制御と、各種ジェスチャ(スクロール、回転、チルト)の有効/無効 が設定できます。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>UiSettingsDemoActivity.java</li>
+</ul>
+
+
+<h3>マーカー表示</h3>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/gmap2_markers.png" alt="Markers" />
+API の使い方で一番大きく変わったのはこの辺りかと思います。</p>
+
+<p>v1 では、MapView に <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/ItemizedOverlay.html">ItemizedOverlay</a> を add して、OverlayItem(＝マーカー)を登録して…って感じでしたが、全滅です。</p>
+
+<p>v2 でのマーカー表示は <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addMarker(com.google.android.gms.maps.model.MarkerOptions">GoogleMap.addMarker</a> を使います。
+Overlay の概念が事実上なくなって、GoogleMap クラスから Marker オブジェクトを生成するようになりました。</p>
+
+<p>マーカーのグループ管理ができなくなってちょっと不便に感じます。(v1 では、ローソンとファミマのマーカーを管理するのに、lawsonOverlay と famimaOverlay を用意しておけば良かった)</p>
+
+<p>v2 のメリットは、マーカーがドラッグをサポートするようになったのと、情報ウィンドウ(ふきだし)が標準搭載されたことです。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>MarkerDemoActivity.java</li>
+</ul>
+
+
+<h3>図形(ラインとかポリゴンとか)描画</h3>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/gmap2_polygons.png" alt="Polygons" />
+これも大きく作り替えないといけないところです。</p>
+
+<p>v1 では、Overlay の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Overlay.html#draw(android.graphics.Canvas,%20com.google.android.maps.MapView,%20boolean">draw</a> を override して、Canvas の drawLine などの描画メソッドを呼び出す感じでした。</p>
+
+<p>v2 では、Overlay がありませんし、Canvas を直接さわれる口がありません。
+ではどうするかというと、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon">Polygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polyline">Polyline</a> というクラスが用意されています。</p>
+
+<p>GoogleMap クラスの <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolygon(com.google.android.gms.maps.model.PolygonOptions">addPolygon</a> , <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#addPolyline(com.google.android.gms.maps.model.PolylineOptions">addPolyline</a> メソッドで追加します。Marker と同じく Overlay の概念はありません。</p>
+
+<p>また add した Polygon や Polyline は、<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/model/Polygon.html#remove(">remove</a> するか <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap.html#clear(">GoogleMap.clear</a> するまで地図上に登録されています。</p>
+
+<p>v2 になって、描画処理は重くなったなあという印象です。
+v1 の感覚で図形を add しまくると、すごくもっさりします。画面に表示すべきものだけ、さらに非同期でパラパラと図形が描画されていくような処理を実装しないとストレスフルな感じになりそうです。</p>
+
+<h4>&#8220;表示している領域&#8221; の取得方法</h4>
+
+<p>v1 では、getMapCenter , getLatitudeSpan, getLongitudeSpan でなんとなく取得できました。
+v2 では、GoogleMap.getProjection で得られる <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/Projection">Projection</a> クラスの getVisibleRegion から取得できます。</p>
+
+<p>注意点は、回転している時とチルトしている時、いずれも &#8220;表示している範囲を包括する矩形&#8221; が得られるようですが、特にチルトしている時は奥行き分が領域に含まれますので、視点を倒せば倒すほど遠くが見える(領域が広がる)ことになります。画面に表示しているものだけ図形を描画する時など、奥行きはある程度のしきい値を持たないと範囲が広くなりすぎです。</p>
+
+<h4>ハマった所</h4>
+
+<p>Polygon は当然塗りつぶしができるわけですが、これポリゴンの座標群が「時計回り」でないと塗りつぶされません。地理情報システムの業界では、&#8221;ポリゴンの外周は時計回り、穴は反時計回り&#8221; という常識があるのですが、それに習ったものと思われます。この原因にたどり着くまで、始点と終点が一致してないのかな、少数の切り捨てで一致してないのかとか、小一時間悩みました。</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>PolygonDemoActivity.java</li>
+<li>PolylineDemoActivity.java</li>
+</ul>
+
+
+<h3>MapView とは一体？</h3>
+
+<p>冒頭で紹介した <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/MapView">com.google.android.gms.maps.MapView</a> ですが、地図の表示はできたものの、その後、位置を移動しようと</p>
+
+<pre><code>GoogleMap gMap = ((MapView) findViewById(R.id.map)).getMap();
+gMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(35, 130)));
+</code></pre>
+
+<p>というコードを実行した所、 <code>java.lang.NullPointerException: CameraUpdateFactory is not initialized</code> が発生してしまいました。え？どうやって移動するの？</p>
+
+<h4>参考</h4>
+
+<ul>
+<li>RawMapViewDemoActivity.java</li>
+</ul>
+
+
+<h2>増えた機能</h2>
+
+<p>v1 感覚だと使うのに苦労しそうな v2 ですが、冒頭で紹介した機能以外に追加されてる機能もあります。</p>
+
+<h3>情報ウィンドウ(ふきだし)</h3>
+
+<p>これこれ、マーカーをタップすると表示される「ふきだし」。
+v1 には無かったので、自作か外部ライブラリ使いしか無かったんですよね。
+サンプル MarkerDemoActivity.java で使い方が紹介されてます。</p>
+
+<h2>タイルオーバーレイとグラウンドオーバーレイ</h2>
+
+<p>GIS&#8217;er 感涙の両機能。
+タイルオーバーレイは、他のタイル地図サービスをオーバーレイできる、ってことですね。OpenStreetMap とか。iOS の <a href="http://qiita.com/items/8d89eeea614ce4293514">route-me</a> みたいなことができると期待してます。だれかハックを！
+<img src="https://dl.dropbox.com/u/264530/qiita/gmap2_tileoverlay.png" alt="TileOverlay" /></p>
+
+<p>グラウンドオーバーレイは、画像ファイルに位置情報を与えてやると、それが地面に張り付いたように表示されるというものです。
+<img src="https://dl.dropbox.com/u/264530/qiita/gmap2_groudoverlay.png" alt="GroundOverlay" /></p>
+
+<p>タイルオーバーレイのサンプルは TileOverlayDemoActivity.java 、グラウンドオーバーレイのサンプルは GroundOverlayDemoActivity.java です。</p>
+
+<h2>雑感</h2>
+
+<p>Google Map Android API v2 をざっと使ってみての感想です。</p>
+
+<p>v1 と互換性がなくなり、使い方がガラっと変わったのはある程度想定していました。2次元と3次元の溝は深いです。</p>
+
+<p>Android と関係ないですが、iOS の MapKit も同じようなことになるのではないかと思っています。(地図アプリは 3D に対応しましたが MapKit は 2D のまま。3D用のMapKit は &#8220;まったく別のもの&#8221; として提供されるのではないかと。)</p>
+
+<p>導入の仕方が難しくなっちゃったなー、と。
+なぜ Google API Console で管理するのはよいとしても、ライブラリプロジェクトを参照しないといけないのか、とか。
+(実は Fragment 初めて使いました…)</p>
+
+<p>あと、Google Play Service や API Console との結びつきが強くなり、利用状況がモニタリングできる環境が整いつつあります。こりゃ課金も現実味を帯びてきたなあ、と。</p>
+
+<p>そんなわけで、導入がちょいと面倒だったり、v1 と互換性まったくないですけど、なにしろ Googleマップアプリのあの地図レンダリングと機能がアプリに組み込めるのは嬉しい限りです。新たに地図アプリ作るなら使わない手はないですね！</p>
+
+<p>まだ使いこなしてはいないので、順次 Post していきたいと思います。
+最後に拙作の Android アプリ「HexRinger」の Map API v2 対応試作版をステマして終わります。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/gmap2_hexringer.png" alt="HexRinger" /></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2012-12-20T16:10:00+09:00" pubdate data-updated="true">Dec 20<span>th</span>, 2012</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2012/12/20/googlemap-andro-api-v2-changes/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2012/12/20/googlemap-andro-api-v2-changes/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2012/12/20/googlemap-andro-api-v2-changes/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2012/11/20/win7-on-macmini/" title="Previous Post: Mac mini(late 2012)に Windows7(32bit)をインストールしたメモ">&laquo; Mac mini(late 2012)に Windows7(32bit)をインストールしたメモ</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2012/12/20/asynctest-on-junit/" title="Next Post: jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた">jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

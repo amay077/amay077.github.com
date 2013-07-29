@@ -1,0 +1,622 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Pull up to Close を実装してみる、Xamarin.iOS で]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:51:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。</p>
+
+<p>この操作性がなかなか使いやすかったので、自分でも実装してみました。</p>
+
+<!--more-->
+
+
+<h2>デモ</h2>
+
+<p>こんな感じ。
+WebView なんですが、一番下までスクロールして、さらに上に引っ張ると "Pull up to Close" → "Release to Close" とラベルが変わり、そこで離すとコールバックします。</p>
+
+<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
+
+
+<h2>実装してみたコード</h2>
+
+<p><a href="http://xamarin.com/">Xamarin.iOS</a> ですから、C# です。</p>
+
+<p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
+
+<p>```c# PullUpToCloseSampleViewController.cs
+public partial class PullUpToCloseSampleViewController : UIViewController
+{</p>
+
+<pre><code>public PullUpToCloseSampleViewController() : base ("PullUpToCloseSampleViewController", null)
+{
+}
+
+public override void ViewDidLoad()
+{
+    base.ViewDidLoad();
+
+    // WebView が持ってる ScrollView、よく使うので変数化しておく
+    // webView は Interface Builder で UIWebView を Outlet にしたもの。
+    var scrollView = webView.ScrollView;
+
+    // Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
+    scrollView.Subviews.Where(v =&gt; v is UIImageView)
+        .ToList().ForEach(v =&gt; v.Hidden = true);
+
+    // 上に引っ張った時に見える背景とラベル
+    var bounceBackground = new UIView(
+        new RectangleF(0f, 0f, webView.Frame.Width, webView.Frame.Height));
+    bounceBackground.BackgroundColor = UIColor.LightGray;
+    var bounceLabel = new UILabel(
+        new RectangleF(0f, webView.Frame.Height - 30f, webView.Frame.Width, 30f));
+    bounceLabel.Text = "Pull up to Close";
+    bounceLabel.TextAlignment = UITextAlignment.Center;
+    bounceLabel.BackgroundColor = UIColor.Clear;
+    bounceLabel.Opaque = false;
+
+    // 背景とラベルを WebView の一番奥に追加する
+    webView.InsertSubview(bounceLabel, 0);
+    webView.InsertSubview(bounceBackground, 0);
+
+    // 適当な URL を読み込み
+    webView.LoadRequest(NSUrlRequest.FromUrl(new NSUrl("http://yahoo.co.jp/")));
+
+    // 閉じるのに必要な分だけ上に引っ張ったら true になる
+    var canClose = false;
+
+    // ドラッグ開始時にフラグOFF(一応)
+    scrollView.DraggingStarted += (sender, e) =&gt; 
+    {
+        canClose = false;
+    };
+
+    // ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
+    scrollView.DraggingEnded += (sender, e) =&gt; 
+    {
+        if (canClose)
+        {
+            OnCloseByPullUp();
+        }
+    };
+
+    // スクロールした時にいろいろやる
+    scrollView.Scrolled += (sender, e) =&gt; 
+    {
+        var labelFrame = bounceLabel.Frame;
+
+        // コンテンツの一番下まで表示してさらに引っ張ったサイズ
+        var offsetY = (scrollView.Frame.Height + scrollView.ContentOffset.Y) 
+            - scrollView.ContentSize.Height;
+
+        // 50px 上に引っ張ったら閉じるものとする
+        canClose = offsetY &gt; 50f;
+        bounceLabel.Text = canClose ? "Release to Close" : "Pull up to Close";
+
+        // ラベルがいつまでも移動しないように
+        if (offsetY &gt; labelFrame.Height)
+        {
+            offsetY = labelFrame.Height;
+        }
+
+        // ラベルがドラッグと共に下からせり出してくるように
+        labelFrame.Y = scrollView.Frame.Height - offsetY;
+        bounceLabel.Frame = labelFrame;
+    };
+}
+
+// "Release to Close" で離すと呼ばれる
+void OnCloseByPullUp()
+{
+    var v = new UIAlertView("", "Close this view",  null, "Close");
+    v.Show ();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>やってる事</h2>
+
+<ol>
+<li>ScrollView の「引っ張った時に見える場所（= Bounce というらしい）」の影を消す。 via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</li>
+<li>背景と、ラベルを WebView 内の一番奥に挿入する（引っ張った時にのみ見えるように）</li>
+<li>あとはイベントハンドラでの処理。スクロール中に、「最下部で引っ張り中」だったら "Pull up to Close" ラベルをアニメーションさせながら表示する。50px 以上引っ張ってたら "Release to Close" にラベルを変える。「閉じられるよ」フラグも ON にしとく。</li>
+<li>ドラッグ終了イベントで、「閉じられるよ」フラグが立ってたら、コールバックする。</li>
+</ol>
+
+
+<h2>今後</h2>
+
+<p>もうちょっとライブラリっぽくしたいですね。あと引っ張り中にアイコンとか表示させたい。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でジェスチャを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p><a href="http://xamarin.com/">Xamarin.iOS</a> でも <code>UIGestureRecognizer</code> が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。</p>
+
+<!--more-->
+
+
+<p>本日の Obj-C の先生はこちら。</p>
+
+<ul>
+<li><a href="http://labs.techfirm.co.jp/ipad/cho/466">Gesture Recognizers 〜簡単にタッチ操作を検知 | iPad Techfirm Lab </a></li>
+</ul>
+
+
+<p>このサンプルを Xamarin.iOS に移植してみます。</p>
+
+<h2>サンプルコード</h2>
+
+<p>```c# GesturesSample_ViewDidLoad.cs
+// Tap gesture
+this.View.AddGestureRecognizer(new UITapGestureRecognizer(tap =>
+{</p>
+
+<pre><code>Debug.WriteLine("Double Tap.");
+</code></pre>
+
+<p>})
+{</p>
+
+<pre><code>NumberOfTapsRequired = 2 // Double tap 
+</code></pre>
+
+<p>});</p>
+
+<p>// Drag(Pan) gesture
+this.View.AddGestureRecognizer(new UIPanGestureRecognizer(pan =>
+{</p>
+
+<pre><code>var p = pan.TranslationInView(this.View);
+var v = pan.VelocityInView(this.View);
+Debug.WriteLine("Pan. transration:{0}, velocity:{1}", p, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Pinch gesture
+this.View.AddGestureRecognizer(new UIPinchGestureRecognizer(pin =>
+{</p>
+
+<pre><code>var scale = pin.Scale;
+var v = pin.Velocity;
+Debug.WriteLine("Pinch. scale:{0}, velocity:{1}", scale, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Swipe gesture
+this.View.AddGestureRecognizer(new UISwipeGestureRecognizer(sw =>
+{</p>
+
+<pre><code>Debug.WriteLine("Swipe.");
+</code></pre>
+
+<p>}));</p>
+
+<p>// Rotate gesture
+this.View.AddGestureRecognizer(new UIRotationGestureRecognizer(ro =>
+{</p>
+
+<pre><code>var rotation = ro.Rotation;
+var v = ro.Velocity;
+Debug.WriteLine("Rotate. rotation:{0}, velocity:{1}", rotation, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Long press gesture
+this.View.AddGestureRecognizer(new UILongPressGestureRecognizer(lp =>
+{</p>
+
+<pre><code>Debug.WriteLine("Long press.");
+</code></pre>
+
+<p>}));
+```</p>
+
+<p>ViewController 全体のソースは <a href="https://gist.github.com/amay077/6094422">コチラ</a></p>
+
+<p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
+
+<p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコンポーネントを更新する方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio/"/>
+    <updated>2013-05-08T20:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>分かりにくかったのでメモ。</p>
+
+<!--more-->
+
+
+<p><a href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/">以前</a>使ってみた <a href="http://components.xamarin.com/view/googlemapsios/">Google Maps Component</a>、「Polygon や Circle がないなー、対応してないのかなー」と思って <a href="http://componentsapi.xamarin.com/?link=T%3aGoogle.Maps.Circle">API Doc</a> 見たら存在してたので、いつの間にかバージョンアップしてたらしい、確かに手持ちのバージョンは「1.1.2」、Webサイトの方は「1.2.2」になってた。</p>
+
+<h2>Component を更新する</h2>
+
+<p>じゃあ更新するか、と思って Xamarin Studio で入り口を探すものの見つからない。
+結局、メニュー -> Get More Components から、Google Maps を検索しなおしたら、ボタンが「Update」になってたので、押したら更新された。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio1.png" alt="image1" /></p>
+
+<h2>Component に付属のサンプルが増えてた</h2>
+
+<p>更新後、Samples を見てみたら、、、お、 <strong>iOS Advanced Sample</strong> というのが増えてる！きっとアドバンスドなサンプルなのでしょうな（試せよ</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio2.png" alt="image1" /></p>
+
+<h2>Component を更新したら API の互換性が無くなってた</h2>
+
+<p>更新後、意気揚々と以前作ったサンプルをビルドしてみたらビルドエラーが。
+どうやら <code>MapView.AddMarker</code> や <code>MarkerOption</code> が無くなって、<code>Marker</code> に MapView を設定するように変更されたらしい。(以下は、さっきのアドバンスドなサンプルからの抜粋)</p>
+
+<p>```c# PartOfMarkersViewController.cs
+public override void ViewDidLoad ()
+{</p>
+
+<pre><code>base.ViewDidLoad ();
+
+var camera = CameraPosition.FromCamera (-37.81969, 144.966085, 4);
+var mapView = MapView.FromCamera (RectangleF.Empty, camera);
+
+var sydneyMarker = new Marker () {
+    Title = "Sydney",
+    Snippet = "Population: 4,605,992",
+    Position = new CLLocationCoordinate2D (-33.8683, 151.2086),
+    Map = mapView
+};
+
+var melbourneMarker = new Marker () {
+    Title = "Melbourne",
+    Snippet = "Population: 4,169,103",
+    Position = new CLLocationCoordinate2D (-37.81969, 144.966085),
+    Map = mapView
+};
+
+// Set the marker in Sydney to be selected
+mapView.SelectedMarker = sydneyMarker;
+
+View = mapView;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これは、元の Google Maps SDK for iOS が根源なのか、Google Maps の Xamarin Component がそうしたのか知りませんが、ReleaseNotes とかないのかな？うっかり更新すると怖いな。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Component の Update は、 Get More Components から</li>
+<li>むやみに Update すると互換性なくなってるかもなのでバックアップというかバージョン管理ちゃんとしよう</li>
+<li>つまり Xamarin Components に ReleaseNotes 欲しいです</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps SDK(Android/iOS) で円を描く]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk/"/>
+    <updated>2013-05-06T16:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk</id>
+    <content type="html"><![CDATA[<p><a href="https://developers.google.com/maps/documentation/android/">Google Maps Android API v2</a> にいつの間にか <code>Circle</code> が追加されてました。<a href="https://developers.google.com/maps/documentation/ios/?hl=ja">Google Maps SDK for iOS</a> も同様に。</p>
+
+<!--more-->
+
+
+<p>ということで使ってみました。なぜか Xamarin でｗ
+とはいえ、Xamarin.Android の場合、GoogleMaps の jar からラッパーを生成しているので API は Java 版と(ほぼ)同じです。</p>
+
+<p>Xamarin.Android での Google Maps API v2 の使い方は、手前味噌ながら弊ブログをどうぞ。</p>
+
+<ul>
+<li><a href="http://amay077.github.com/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>今回も、<a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2/SimpleMapDemo">monodroid-samples</a> をベースにします。</p>
+
+<p>SampleMapActivity.cs の、<a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/SimpleMapDemo/SampleMapActivity.cs#L88">ここら辺</a> に以下のコードを挿入します。</p>
+
+<p>```c# SampleMapActivity.cs
+var ICELAND = new LatLng(64.88, -18.32);
+var LIBREVILLE = new LatLng(0.401, 9.459);</p>
+
+<p>_map.AddCircle(new CircleOptions()</p>
+
+<pre><code>           .InvokeCenter(ICELAND)
+           .InvokeStrokeColor(Color.Blue.ToArgb())
+           .InvokeStrokeWidth(5f)
+           .InvokeRadius(5000000)); // 500km
+</code></pre>
+
+<p>_map.AddCircle(new CircleOptions()</p>
+
+<pre><code>           .InvokeCenter(LIBREVILLE)
+           .InvokeStrokeColor(Color.DarkGreen.ToArgb())
+           .InvokeStrokeWidth(5f)
+           .InvokeRadius(500000)); // 500km
+</code></pre>
+
+<p>```</p>
+
+<p>Xamarin.Android と Java で違いは無いと言っておきながら、
+Java では <code>new CircleOptions().center(…).storokeColor(…).</code> と書いていた所が、Xamarin では <code>new CircleOptions().InvokeCenter(…).InvokeStorokeColor(…).</code> になっていますね。<a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Xamarin の Binding a Java Library (.jar)</a> 辺りに情報があるでしょうか。</p>
+
+<p>動かすとこんな感じになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle_on_google_maps_sdk.png" alt="image1" /></p>
+
+<p>北緯65度付近のアイスランドと、赤道付近のリーブルヴィルという所に、どちらも半径500kmの円を追加していますが、Googleマップはメルカトル表示なので、見ての通り北へ行くほど円が大きくなります。</p>
+
+<p>面白いのは「真円は保たれている事」ですね。逆台形っぽい曲線になるかと思ったのですが。</p>
+
+<p>円をポリゴナイズした多角形と重ねてみると違いが分かるかもしれません。</p>
+
+<h3>2013.5.8追記:大きな円を描いて調べてみました</h3>
+
+<p>大きな円を描いてみたら、ちゃんと geodesic な(北へいけばいくほど距離が長くなる)形状になりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle-on-google-maps-sdk2.png" alt="image2" /></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android/iOS で IsolatedStorage を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/"/>
+    <updated>2013-04-26T18:04:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin</id>
+    <content type="html"><![CDATA[<p>アプリの設定情報なんかを保存する時、Android では SharedPreference 、iOS では NSUserDefaults を使うわけですが、プラットフォーム毎にコード書くのめんどい！と思って</p>
+
+<!--more-->
+
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; あめい@ざまらーさん (@amay077) <a href="https://twitter.com/amay077/status/326942931028148224">2013年4月24日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>とツイートしたところ、Xamarin の中の人である <a href="https://twitter.com/atsushieno">@atsushieno</a> さんから、</p>
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>IsolatedStorageじゃダメなんでしょうか? RT @<a href="https://twitter.com/amay077">amay077</a>: <a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; Atsushi Enoさん (@atsushieno) <a href="https://twitter.com/atsushieno/status/327355284416757761">2013年4月25日</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>とアドバイスを頂きました。</p>
+
+<p>IsolatedStorage(分離ストレージ) とは、.NET Framework(当然 Mono も)に用意されている、OS のファイルシステムとは切り離されたデータ領域の事で、アプリケーション毎、ユーザー毎など、アクセス権限を細かく設定できるのが特徴です。</p>
+
+<p>そこで気になったのは、Xamarin.Android/iOS で IsolatedStorage を利用した時に、実体はどこに保存されるのか？ということ。</p>
+
+<p>Android では、ストレージの <code>/data/data/&lt;アプリ名&gt;</code> 配下は、そのアプリ専用のデータ領域であり、そのアプリしかアクセス許可が与えられていない他、アプリをアンインストールするとそのデータ領域も削除されます。
+(iOS は詳しくないですが、 userDefaults も同様だろうと思ってます。)</p>
+
+<p>で、調べてみました。</p>
+
+<h2>Xamarin.Android の場合</h2>
+
+<p>Xamarin Studio で、適当な Xamarin.Android プロジェクトを作って、MainActivity の onCreate で、IsolatedStorage にファイルを作成しています。
+IsolatedStorage は、どこまでアクセス許可を与えるかを <a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragescope.aspx"><code>IsolatedStorageScope</code></a> 列挙体 で指定しますが、ここでは、SharedPreference の MODE_PRIVATE に最も近いであろう <code>Application</code> と <code>User</code> を組み合わせた Scope で生成する <code>GetUserStoreForApplication()</code> を使います。</p>
+
+<p>サンプルコードは、</p>
+
+<ul>
+<li><a href="http://ch3cooh.jp/index.php/tips/windowsphone7/system/strage/using-isolated-storage/">分離ストレージ（Isolated Storage）を使ってデータの保存と取得を行う – CH3COOH(酢酸)の実験室</a></li>
+</ul>
+
+
+<p>を参考にさせてもらいました。</p>
+
+<p>```c# MainActivity.cs
+using System;</p>
+
+<p>using Android.App;
+using Android.Content;
+using Android.Runtime;
+using Android.Views;
+using Android.Widget;
+using Android.OS;
+using System.IO.IsolatedStorage;
+using System.IO;</p>
+
+<p>namespace IsolatedStorageTest
+{</p>
+
+<pre><code>[Activity (Label = "IsolatedStorageTest", MainLauncher = true)]
+public class Activity1 : Activity
+{
+    int count = 1;
+
+    protected override void OnCreate(Bundle bundle)
+    {
+        base.OnCreate(bundle);
+
+        // Set our view from the "main" layout resource
+        SetContentView(Resource.Layout.Main);
+
+        var file = IsolatedStorageFile.GetUserStoreForApplication();
+
+        // 分離ストレージにtest.txtというファイルを作成しストリームを開く
+        using (IsolatedStorageFileStream strm = file.CreateFile("test.txt"))
+        using (StreamWriter writer = new StreamWriter(strm))
+        {
+            // データを書き込む
+            writer.Write("Hello!");
+            writer.Write("Storage.");
+        }
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>上記の <code>var file = …</code> の次の行にブレークポイントを設置して、デバッグ実行します。
+ブレークしたら、変数 <code>file</code> をウォッチなどを覗いてみると、Non-public なフィールド <code>directory</code> が「/data/data/&lt;アプリ名>/files/.config/.isolated-storage」
+を示していることが分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin1.png" alt="image1" /></p>
+
+<h2>Xamarin.iOS の場合</h2>
+
+<p>次に Xamarin.iOS でも適当なプロジェクトを作って、<code>ViewDidLoad</code> に IsolatedStorage への書き出しコードを挿入します。</p>
+
+<p>```c# IsolatedStorageiOSTestViewController.cs
+using System;
+using System.Drawing;</p>
+
+<p>using MonoTouch.Foundation;
+using MonoTouch.UIKit;
+using System.IO.IsolatedStorage;
+using System.IO;</p>
+
+<p>namespace IsolatedStorageiOSTest
+{</p>
+
+<pre><code>public partial class IsolatedStorageiOSTestViewController : UIViewController
+{
+    public IsolatedStorageiOSTestViewController() : base ("IsolatedStorageiOSTestViewController", null)
+    {
+    }
+
+    public override void DidReceiveMemoryWarning()
+    {
+        // Releases the view if it doesn't have a superview.
+        base.DidReceiveMemoryWarning();
+
+        // Release any cached data, images, etc that aren't in use.
+    }
+
+    public override void ViewDidLoad()
+    {
+        base.ViewDidLoad();
+
+        var file = IsolatedStorageFile.GetUserStoreForApplication();
+
+        // 分離ストレージにtest.txtというファイルを作成しストリームを開く
+        using (IsolatedStorageFileStream strm = file.CreateFile("test.txt"))
+            using (StreamWriter writer = new StreamWriter(strm))
+        {
+            // データを書き込む
+            writer.Write("Hello!");
+            writer.Write("Storage.");
+        }
+    }
+
+    public override bool ShouldAutorotateToInterfaceOrientation(UIInterfaceOrientation toInterfaceOrientation)
+    {
+        // Return true for supported orientations
+        return (toInterfaceOrientation != UIInterfaceOrientation.PortraitUpsideDown);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>デバッグして、<code>file</code> 変数を覗いてみると、<code>directory</code> が「&lt;省略>/iPhone Simulator/6.1/Applications/&lt;アプリのUUID>/Documents/.config/.isolated-storage」
+を示していることが分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin2.png" alt="image2" /></p>
+
+<p>ということで、IsolatedStorage の保存先は、Android では <code>/data/data/&lt;アプリ名&gt;/</code>、iOS の場合は <code>/&lt;アプリのUUID&gt;/Documents/</code> と、アプリごとの固有の場所になっている事が分かりました。</p>
+
+<h2>セキュリティ上の注意</h2>
+
+<p>Android の <code>/data/data/&lt;アプリ名&gt;</code> はアプリしかアクセスできないディレクトリですが、データ自体が暗号化されるわけではありません。(端末のROOT化や、apkを入手してエミュレータでアプリを実行することで /data/data/ のデータは取り出せます。)</p>
+
+<p>また、iOS の <code>/&lt;アプリUIID&gt;/</code> はセキュアではないようです。(UUIDさえ分かれば他のアプリからもアクセスできるという事？)</p>
+
+<ul>
+<li><a href="http://software-security.sans.org/blog/2011/01/05/using-keychain-to-store-passwords-ios-iphone-ipad">How Not to Store Passwords in iOS</a></li>
+<li><a href="http://stackoverflow.com/questions/1560801/how-to-secure-nsuserdefaults">iphone - How to secure NSUserDefaults? - Stack Overflow</a></li>
+<li><a href="http://iphonedevsdk.com/forum/iphone-sdk-development/28041-nsuserdefaults-secure.html">NSUserDefaults Secure? - iPhone Dev SDK</a></li>
+</ul>
+
+
+<p>秘匿情報の保存には <code>KeyChain</code> を使え、と書いてありますね。</p>
+
+<p>さらに、.NET の IsolatedStorage の説明にも、「暗号化されていないキーやパスワードは保存するな」と書いてあります。</p>
+
+<ul>
+<li><a href="http://msdn.microsoft.com/en-us/library/3ak841sy.aspx">Scenarios for Isolated Storage - MSDN</a></li>
+</ul>
+
+
+<blockquote><p>You <strong>should not use</strong> isolated storage in the following situations:</p>
+
+<ul>
+<li>To store high-value secrets, such as unencrypted keys or passwords, because isolated storage is not protected from highly trusted code, from unmanaged code, or from trusted users of the computer.</li>
+</ul>
+</blockquote>
+
+<p>(つか、<a href="http://msdn.microsoft.com/ja-jp/library/vstudio/3ak841sy.aspx#scenarios_for_isolated_storage">日本語サイト</a>、誤訳ってない？)</p>
+
+<p>ということで、パスワードなどの秘匿情報をどうしても端末に保存する時は、</p>
+
+<ul>
+<li>iOS なら KeyChain を使う</li>
+<li>Android の場合は独自の暗号化を施す(Mono の <code>SecureString</code> とか <code>ProtectedData</code> が使える？)</li>
+</ul>
+
+
+<p>などの対策が必要です。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>IsolatedStorage は、SharedPreference や NSUserDefaults の代わりに、「アプリケーション情報格納領域」として使える
+
+<ul>
+<li>本文に書きませんでしたが、アプリ専用領域なので、アプリをアンインストールするとちゃんと消えます</li>
+</ul>
+</li>
+<li>ただし、パスワードとかの秘匿情報は保存しちゃダメよ</li>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragesettings"><code>IsolatedStorageSettings</code></a> が使えたらもっと便利だったが、 System.Windows.dll が必要なのでムリー</li>
+</ul>
+
+
+<h2>ちょっと気になる</h2>
+
+<ul>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/3ak841sy">分離ストレージ - MSDN</a></li>
+</ul>
+
+
+<p>に、</p>
+
+<blockquote><p>分離ストレージは Windows ストア の apps では使用できません。 代わりに、ローカル データとファイルを格納する Windows ランタイム API に含まれる Windows.Storage の名前空間にアプリケーション データのクラスを使用します。 詳細については、Windows Dev センターの" アプリケーション データ "を参照してください。</p></blockquote>
+
+<p>と書いてある。Windows 8 の Store App だと、IsolatedStorage が使えなくて、代わりに WinRT を使う必要があるらしい。それを考えると、IsolatedStorage を直で使わずに１枚咬ませた方が良さそう。</p>
+]]></content>
+  </entry>
+  
+</feed>

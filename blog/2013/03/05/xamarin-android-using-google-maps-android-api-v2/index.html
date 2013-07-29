@@ -1,0 +1,405 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。 xamarin / monodroid-samples すごく豊富なので、これひと通り動かせば大抵のことはできるようになるんじゃないか。。。 というわけで、この中の &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Xamarin.Android で Google Maps Android API V2 を使う</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-05T23:10:00+09:00" pubdate data-updated="true">Mar 5<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。</p>
+
+<ul>
+<li><a href="https://github.com/xamarin/monodroid-samples">xamarin / monodroid-samples</a></li>
+</ul>
+
+
+<!--more-->
+
+
+<p>すごく豊富なので、これひと通り動かせば大抵のことはできるようになるんじゃないか。。。</p>
+
+<p>というわけで、この中の <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> を動かしてみます。Readme.md に沿って。</p>
+
+<h2>ソースを取得する</h2>
+
+<p>まず monodroid-samples を Clone しときます。</p>
+
+<blockquote><p>$git clone git://github.com/xamarin/monodroid-samples.git</p></blockquote>
+
+<h2>クライアントライブラリをビルドする(Building the Client Library)</h2>
+
+<p>ここでいうクライアントライブラリとは、Android SDK に含まれる <strong>Google Play services</strong> の事です。
+この準備は本家Android開発で Google Maps Android API v2 を使うときに必要なので、これが何者かは、</p>
+
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+
+
+<p>などを参考に。
+SDK で Google Play services が取得できていれば、</p>
+
+<p><code>{※あなたのAndroidSDKディレクトリ}/extras/google/google_play_services/libproject/google-play-services_lib</code> ができているはず。</p>
+
+<p>※Xamarin.Android で使われる Android SDK は、Xamarin Studio のPreferences → SDK Locations → Android で確認できます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_sdk_locations.png" alt="&quot;sdklocations&quot;" /></p>
+
+<p><code>google-play-services_lib</code> へ移動して、Ant 用のビルドファイルを生成します。</p>
+
+<blockquote><p>$cd google-play-services_lib
+$Android update project &#8211;path .
+$ant debug</p></blockquote>
+
+<p>Readme.md では <code>android project update -p .</code> って書いてあるけど上のコマンドじゃないとうまくいかないんですけど？
+あと <code>{あなたのAndroidSDKディレクトリ}/tools</code> にパス通しておかないと android コマンド使えないです。ant も(ry</p>
+
+<p>ant の実行に成功すると /bin の中に classes.jar とかができてるはずです。</p>
+
+<p>次に、Xamarin Studio で <code>MapsAndLocationDemo.sln</code> を開いて、GooglePlayService プロジェクトを展開します。
+すると、`project.properties&#8220; ファイルが赤くなってる(ちゃんと指定した位置に google-play-services_lib をコピってれば赤くなってないかも)ので、これを一度削除して、追加しなおします。リンクファイルとして、ね。</p>
+
+<p>一連の画像貼っときます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_delete_file.png" alt="&quot;red&quot;" />
+<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_exist_file.png" alt="&quot;red&quot;" />
+<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_a_link.png" alt="&quot;red&quot;" /></p>
+
+<h2>Google Maps v2 API Key</h2>
+
+<p>Google Maps v2 API Key の取得も本家と同じですが、
+ディレクトリが、<code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code> なのでそこだけ注意。(←Mac の場合。Win は Readme.md 見て)</p>
+
+<p>該当のディレクトリへ移動して、以下のコマンドで表示されるキーの内、SHA-1 をコピーします。</p>
+
+<blockquote><p>$ keytool -V -list -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android</p></blockquote>
+
+<p>あとは、</p>
+
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+
+
+<p>を参考に、Google API Console から、API key を取得します。
+API Key を取得する際に必要なパッケージ名、取得した API Key を貼り付ける場所は、いずれも MapsAndLocationDemo プロジェクトの AndroidManifest.xml にあるので、先に開いておくとよいでしょう。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_manifest.png" alt="&quot;apikey&quot;" /></p>
+
+<p>API Key を取得したら、<code>com.google.android.maps.v2.API_KEY</code> のところに貼り付けて準備完了です。</p>
+
+<h2>A Note About Google Play Services</h2>
+
+<p>Google Play Services が端末にインストールされてないと動かんよ、つまりエミュレータでは動かんよ。Google Play Services のインストールの仕方など、私の知ったことではない。だそうです。</p>
+
+<h2>動かしてみる</h2>
+
+<p>「実機で」動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_google_maps_api_v2.png" alt="&quot;play&quot;" /></p>
+
+<p>動いてます。(上は Show Map with Overlays を動かしたところ)</p>
+
+<p>今回はここまで。コードの深追いは日を改めて。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-03-05T23:10:00+09:00" pubdate data-updated="true">Mar 5<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/03/04/xamarin-android-send-implicit-intent/" title="Previous Post: Xamarin.Android で暗黙的Intent を発行する">&laquo; Xamarin.Android で暗黙的Intent を発行する</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/03/13/xamarin-studio-code-formatting/" title="Next Post: Xamarin Studio でコード整形を Visual Studio っぽくする">Xamarin Studio でコード整形を Visual Studio っぽくする &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

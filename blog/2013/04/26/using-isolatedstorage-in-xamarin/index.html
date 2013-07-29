@@ -1,0 +1,614 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Android/iOS で IsolatedStorage を使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="アプリの設定情報なんかを保存する時、Android では SharedPreference 、iOS では NSUserDefaults を使うわけですが、プラットフォーム毎にコード書くのめんどい！と思って #Xamarin さん、SharedPref/android と userDefaults &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Xamarin.Android/iOS で IsolatedStorage を使う</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-26T18:04:00+09:00" pubdate data-updated="true">Apr 26<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>アプリの設定情報なんかを保存する時、Android では SharedPreference 、iOS では NSUserDefaults を使うわけですが、プラットフォーム毎にコード書くのめんどい！と思って</p>
+
+<!--more-->
+
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; あめい@ざまらーさん (@amay077) <a href="https://twitter.com/amay077/status/326942931028148224">2013年4月24日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>とツイートしたところ、Xamarin の中の人である <a href="https://twitter.com/atsushieno">@atsushieno</a> さんから、</p>
+
+<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>IsolatedStorageじゃダメなんでしょうか? RT @<a href="https://twitter.com/amay077">amay077</a>: <a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; Atsushi Enoさん (@atsushieno) <a href="https://twitter.com/atsushieno/status/327355284416757761">2013年4月25日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>とアドバイスを頂きました。</p>
+
+<p>IsolatedStorage(分離ストレージ) とは、.NET Framework(当然 Mono も)に用意されている、OS のファイルシステムとは切り離されたデータ領域の事で、アプリケーション毎、ユーザー毎など、アクセス権限を細かく設定できるのが特徴です。</p>
+
+<p>そこで気になったのは、Xamarin.Android/iOS で IsolatedStorage を利用した時に、実体はどこに保存されるのか？ということ。</p>
+
+<p>Android では、ストレージの <code>/data/data/&lt;アプリ名&gt;</code> 配下は、そのアプリ専用のデータ領域であり、そのアプリしかアクセス許可が与えられていない他、アプリをアンインストールするとそのデータ領域も削除されます。
+(iOS は詳しくないですが、 userDefaults も同様だろうと思ってます。)</p>
+
+<p>で、調べてみました。</p>
+
+<h2>Xamarin.Android の場合</h2>
+
+<p>Xamarin Studio で、適当な Xamarin.Android プロジェクトを作って、MainActivity の onCreate で、IsolatedStorage にファイルを作成しています。
+IsolatedStorage は、どこまでアクセス許可を与えるかを <a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragescope.aspx"><code>IsolatedStorageScope</code></a> 列挙体 で指定しますが、ここでは、SharedPreference の MODE_PRIVATE に最も近いであろう <code>Application</code> と <code>User</code> を組み合わせた Scope で生成する <code>GetUserStoreForApplication()</code> を使います。</p>
+
+<p>サンプルコードは、</p>
+
+<ul>
+<li><a href="http://ch3cooh.jp/index.php/tips/windowsphone7/system/strage/using-isolated-storage/">分離ストレージ（Isolated Storage）を使ってデータの保存と取得を行う – CH3COOH(酢酸)の実験室</a></li>
+</ul>
+
+
+<p>を参考にさせてもらいました。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Content</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Runtime</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Views</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Widget</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.OS</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.IO.IsolatedStorage</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.IO</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">IsolatedStorageTest</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [Activity (Label = &quot;IsolatedStorageTest&quot;, MainLauncher = true)]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">Activity1</span> <span class="p">:</span> <span class="n">Activity</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">count</span> <span class="p">=</span> <span class="m">1</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
+</span><span class='line'>            <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">file</span> <span class="p">=</span> <span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 分離ストレージにtest.txtというファイルを作成しストリームを開く</span>
+</span><span class='line'>            <span class="k">using</span> <span class="p">(</span><span class="n">IsolatedStorageFileStream</span> <span class="n">strm</span> <span class="p">=</span> <span class="n">file</span><span class="p">.</span><span class="n">CreateFile</span><span class="p">(</span><span class="s">&quot;test.txt&quot;</span><span class="p">))</span>
+</span><span class='line'>            <span class="k">using</span> <span class="p">(</span><span class="n">StreamWriter</span> <span class="n">writer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StreamWriter</span><span class="p">(</span><span class="n">strm</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="c1">// データを書き込む</span>
+</span><span class='line'>                <span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;Hello!&quot;</span><span class="p">);</span>
+</span><span class='line'>                <span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;Storage.&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上記の <code>var file = …</code> の次の行にブレークポイントを設置して、デバッグ実行します。
+ブレークしたら、変数 <code>file</code> をウォッチなどを覗いてみると、Non-public なフィールド <code>directory</code> が「/data/data/&lt;アプリ名>/files/.config/.isolated-storage」
+を示していることが分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin1.png" alt="image1" /></p>
+
+<h2>Xamarin.iOS の場合</h2>
+
+<p>次に Xamarin.iOS でも適当なプロジェクトを作って、<code>ViewDidLoad</code> に IsolatedStorage への書き出しコードを挿入します。</p>
+
+<figure class='code'><figcaption><span>IsolatedStorageiOSTestViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Drawing</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.IO.IsolatedStorage</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.IO</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">IsolatedStorageiOSTest</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">IsolatedStorageiOSTestViewController</span> <span class="p">:</span> <span class="n">UIViewController</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">IsolatedStorageiOSTestViewController</span><span class="p">()</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="s">&quot;IsolatedStorageiOSTestViewController&quot;</span><span class="p">,</span> <span class="k">null</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">DidReceiveMemoryWarning</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Releases the view if it doesn&#39;t have a superview.</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">DidReceiveMemoryWarning</span><span class="p">();</span>
+</span><span class='line'>          
+</span><span class='line'>            <span class="c1">// Release any cached data, images, etc that aren&#39;t in use.</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>          
+</span><span class='line'>            <span class="kt">var</span> <span class="n">file</span> <span class="p">=</span> <span class="n">IsolatedStorageFile</span><span class="p">.</span><span class="n">GetUserStoreForApplication</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 分離ストレージにtest.txtというファイルを作成しストリームを開く</span>
+</span><span class='line'>            <span class="k">using</span> <span class="p">(</span><span class="n">IsolatedStorageFileStream</span> <span class="n">strm</span> <span class="p">=</span> <span class="n">file</span><span class="p">.</span><span class="n">CreateFile</span><span class="p">(</span><span class="s">&quot;test.txt&quot;</span><span class="p">))</span>
+</span><span class='line'>                <span class="k">using</span> <span class="p">(</span><span class="n">StreamWriter</span> <span class="n">writer</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StreamWriter</span><span class="p">(</span><span class="n">strm</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="c1">// データを書き込む</span>
+</span><span class='line'>                <span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;Hello!&quot;</span><span class="p">);</span>
+</span><span class='line'>                <span class="n">writer</span><span class="p">.</span><span class="n">Write</span><span class="p">(</span><span class="s">&quot;Storage.&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>      
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">ShouldAutorotateToInterfaceOrientation</span><span class="p">(</span><span class="n">UIInterfaceOrientation</span> <span class="n">toInterfaceOrientation</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Return true for supported orientations</span>
+</span><span class='line'>            <span class="k">return</span> <span class="p">(</span><span class="n">toInterfaceOrientation</span> <span class="p">!=</span> <span class="n">UIInterfaceOrientation</span><span class="p">.</span><span class="n">PortraitUpsideDown</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>デバッグして、<code>file</code> 変数を覗いてみると、<code>directory</code> が「&lt;省略>/iPhone Simulator/6.1/Applications/&lt;アプリのUUID>/Documents/.config/.isolated-storage」
+を示していることが分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin2.png" alt="image2" /></p>
+
+<p>ということで、IsolatedStorage の保存先は、Android では <code>/data/data/&lt;アプリ名&gt;/</code>、iOS の場合は <code>/&lt;アプリのUUID&gt;/Documents/</code> と、アプリごとの固有の場所になっている事が分かりました。</p>
+
+<h2>セキュリティ上の注意</h2>
+
+<p>Android の <code>/data/data/&lt;アプリ名&gt;</code> はアプリしかアクセスできないディレクトリですが、データ自体が暗号化されるわけではありません。(端末のROOT化や、apkを入手してエミュレータでアプリを実行することで /data/data/ のデータは取り出せます。)</p>
+
+<p>また、iOS の <code>/&lt;アプリUIID&gt;/</code> はセキュアではないようです。(UUIDさえ分かれば他のアプリからもアクセスできるという事？)</p>
+
+<ul>
+<li><a href="http://software-security.sans.org/blog/2011/01/05/using-keychain-to-store-passwords-ios-iphone-ipad">How Not to Store Passwords in iOS</a></li>
+<li><a href="http://stackoverflow.com/questions/1560801/how-to-secure-nsuserdefaults">iphone - How to secure NSUserDefaults? - Stack Overflow</a></li>
+<li><a href="http://iphonedevsdk.com/forum/iphone-sdk-development/28041-nsuserdefaults-secure.html">NSUserDefaults Secure? - iPhone Dev SDK</a></li>
+</ul>
+
+
+<p>秘匿情報の保存には <code>KeyChain</code> を使え、と書いてありますね。</p>
+
+<p>さらに、.NET の IsolatedStorage の説明にも、「暗号化されていないキーやパスワードは保存するな」と書いてあります。</p>
+
+<ul>
+<li><a href="http://msdn.microsoft.com/en-us/library/3ak841sy.aspx">Scenarios for Isolated Storage - MSDN</a></li>
+</ul>
+
+
+<blockquote><p>You <strong>should not use</strong> isolated storage in the following situations:</p>
+
+<ul>
+<li>To store high-value secrets, such as unencrypted keys or passwords, because isolated storage is not protected from highly trusted code, from unmanaged code, or from trusted users of the computer.</li>
+</ul>
+</blockquote>
+
+<p>(つか、<a href="http://msdn.microsoft.com/ja-jp/library/vstudio/3ak841sy.aspx#scenarios_for_isolated_storage">日本語サイト</a>、誤訳ってない？)</p>
+
+<p>ということで、パスワードなどの秘匿情報をどうしても端末に保存する時は、</p>
+
+<ul>
+<li>iOS なら KeyChain を使う</li>
+<li>Android の場合は独自の暗号化を施す(Mono の <code>SecureString</code> とか <code>ProtectedData</code> が使える？)</li>
+</ul>
+
+
+<p>などの対策が必要です。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>IsolatedStorage は、SharedPreference や NSUserDefaults の代わりに、「アプリケーション情報格納領域」として使える
+
+<ul>
+<li>本文に書きませんでしたが、アプリ専用領域なので、アプリをアンインストールするとちゃんと消えます</li>
+</ul>
+</li>
+<li>ただし、パスワードとかの秘匿情報は保存しちゃダメよ</li>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragesettings"><code>IsolatedStorageSettings</code></a> が使えたらもっと便利だったが、 System.Windows.dll が必要なのでムリー</li>
+</ul>
+
+
+<h2>ちょっと気になる</h2>
+
+<ul>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/3ak841sy">分離ストレージ - MSDN</a></li>
+</ul>
+
+
+<p>に、</p>
+
+<blockquote><p>分離ストレージは Windows ストア の apps では使用できません。 代わりに、ローカル データとファイルを格納する Windows ランタイム API に含まれる Windows.Storage の名前空間にアプリケーション データのクラスを使用します。 詳細については、Windows Dev センターの&#8221; アプリケーション データ &#8220;を参照してください。</p></blockquote>
+
+<p>と書いてある。Windows 8 の Store App だと、IsolatedStorage が使えなくて、代わりに WinRT を使う必要があるらしい。それを考えると、IsolatedStorage を直で使わずに１枚咬ませた方が良さそう。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-04-26T18:04:00+09:00" pubdate data-updated="true">Apr 26<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/" title="Previous Post: Google Maps SDK for iOS を Xamarin.iOS で使う">&laquo; Google Maps SDK for iOS を Xamarin.iOS で使う</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2013/05/06/circle-on-google-maps-sdk/" title="Next Post: Google Maps SDK(Android/iOS) で円を描く">Google Maps SDK(Android/iOS) で円を描く &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

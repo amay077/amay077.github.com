@@ -1,0 +1,396 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>microlog4android で PatternFormatter を使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="前回 から連続ポストですが、 microlog4android の Formatter の中の一つ PatternFormatter について調べたのでメモ。 [Log4j] にも PatternFormatter はあるので同じかなーと思いつつ、少し違うようです。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2010/12/26/microlog4android-patternformatter/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">Microlog4android で PatternFormatter を使う</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2010-12-26T06:03:00+09:00" pubdate data-updated="true">Dec 26<span>th</span>, 2010</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>前回 から連続ポストですが、 <a href="http://code.google.com/p/microlog4android/">microlog4android</a> の Formatter の中の一つ PatternFormatter について調べたのでメモ。</p>
+
+<!--more-->
+
+
+<p>[Log4j] にも PatternFormatter はあるので同じかなーと思いつつ、少し違うようです。</p>
+
+<p>microlog4android の<a href="https://github.com/johanlkarlsson/microlog4android">ソースコード</a> から、使える項目の説明を抜粋したのが以下です。</p>
+
+<ul>
+<li>%i : the client id</li>
+<li>%c : prints the name of the Logger</li>
+<li>%d : prints the date (absolute time)</li>
+<li>%m : prints the logged message</li>
+<li>%P : prints the priority, i.e. Level of the message.</li>
+<li>%r : prints the relative time of the logging. (The first logging is done at time 0.)</li>
+<li>%t : prints the thread name.</li>
+<li>%T : prints the Throwable object.</li>
+<li>%% : prints the ‘%’ sign.</li>
+</ul>
+
+
+<p>よく使うのは %d, %m, %P, %T って所でしょうか。</p>
+
+<p>中でも %d 時刻の出力について詳しく見ていきます。</p>
+
+<p>%d を普通に使うと以下のような出力になります。ex:“%d [%P] %m %T”</p>
+
+<blockquote><p>13:07:27,683 [INFO] information</p></blockquote>
+
+<p>%d には {} でフォーマットが指定できます。使用できるのは、ABSOLUTE / DATE / ISO8601 の３種類。これも ソースコード から抜粋。何も指定しないと（つまり上記は）ABSOLUTE という事です。</p>
+
+<p>次に DATE を指定した場合です。ex:“%d{DATE} [%P] %m %T”</p>
+
+<blockquote><p>26 DEC 2010 13:34:20,120 [INFO] information</p></blockquote>
+
+<p>最後に ISO8601 の場合です。ex:“%d{ISO8601} [%P] %m %T”</p>
+
+<p>2010-12-26 13:36:40,684 [INFO] information</p>
+
+<p>日本人的に一番みやすいのは ISO8601 ですかね。文字列でソートしやすいし。</p>
+
+<p>[Log4j] では、 %d{yyyy-MM-dd} って感じで直接書式を指定できるっぽいですが microlog4android ではサポートされていないようです。実装されてる様子もありませんでした。</p>
+
+<p>(余談ですが、microlog4android の中の実装では String.format とか SimpleDateFormat とか使われていませんでした。思うに、コイツらメチャ遅いからだと思います。)</p>
+
+<p>最後に使い方はこんな感じです。</p>
+
+<h3>Using PatternFormatter example</h3>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// initialize logger</span>
+</span><span class='line'><span class="n">PatternFormatter</span> <span class="n">formatter</span> <span class="o">=</span> <span class="k">new</span> <span class="n">PatternFormatter</span><span class="o">();</span>
+</span><span class='line'><span class="n">formatter</span><span class="o">.</span><span class="na">setPattern</span><span class="o">(</span><span class="s">&quot;%d{ISO8601} [%P] %m %T&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">logger</span><span class="o">.</span><span class="na">setLevel</span><span class="o">(</span><span class="n">Level</span><span class="o">.</span><span class="na">INFO</span><span class="o">);</span>
+</span><span class='line'><span class="c1">// write to LogCat</span>
+</span><span class='line'><span class="n">LogCatAppender</span> <span class="n">logCatAppender</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LogCatAppender</span><span class="o">();</span>
+</span><span class='line'><span class="n">logCatAppender</span><span class="o">.</span><span class="na">setFormatter</span><span class="o">(</span><span class="n">formatter</span><span class="o">);</span>
+</span><span class='line'><span class="n">logger</span><span class="o">.</span><span class="na">addAppender</span><span class="o">(</span><span class="n">logCatAppender</span><span class="o">);</span>
+</span><span class='line'><span class="c1">// write to text file of SD-card.(need WRITE_EXTERNAL_STORAGE permission)</span>
+</span><span class='line'><span class="n">FileAppender</span> <span class="n">fileAppender</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FileAppender</span><span class="o">();</span>
+</span><span class='line'><span class="n">fileAppender</span><span class="o">.</span><span class="na">setAppend</span><span class="o">(</span><span class="kc">true</span><span class="o">);</span>
+</span><span class='line'><span class="n">fileAppender</span><span class="o">.</span><span class="na">setFileName</span><span class="o">(</span><span class="s">&quot;microlog4android.log&quot;</span><span class="o">);</span>
+</span><span class='line'><span class="n">fileAppender</span><span class="o">.</span><span class="na">setFormatter</span><span class="o">(</span><span class="n">formatter</span><span class="o">);</span>
+</span><span class='line'><span class="n">logger</span><span class="o">.</span><span class="na">addAppender</span><span class="o">(</span><span class="n">fileAppender</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>前回のソースコードと照らし合わせてみてください。</p>
+
+<h4>2010.12.27 追記</h4>
+
+<p>うぉ！時刻が UTC(GMT?) で出力されますね。まあいいか。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2010-12-26T06:03:00+09:00" pubdate data-updated="true">Dec 26<span>th</span>, 2010</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/java/'>Java</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2010/12/26/microlog4android-patternformatter/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2010/12/26/microlog4android-patternformatter/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2010/12/26/microlog4android-patternformatter/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2010/12/26/getting-start-of-microlog4android/" title="Previous Post: Getting start of microlog4android">&laquo; Getting start of microlog4android</a>
+      
+      
+        <a class="basic-alignment right articlenav" href="/blog/2010/12/28/wifi-location-accuracy/" title="Next Post: WiFi 位置測位の精度を調べてみた">WiFi 位置測位の精度を調べてみた &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/open-multi-solution-in-xamarin-studio/">Xamarin Studio で複数のソリューションを開く方法</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/">Pull up to Close を実装してみる、Xamarin.iOS で</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/28/recognition-gestures-using-xamarin-ios/">Xamarin.iOS でジェスチャを認識する</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/slides-is-very-useful/">オンラインでサクッとスライド作ってシェアできる Slides が便利だった件</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/24/using-code-template-on-xamarin-studio/">Xamarin Studio でコードテンプレートを使う</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (59)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (26)</a></li><li><a href='/blog/categories/java'>Java (17)</a></li><li><a href='/blog/categories/c-'>C# (15)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (14)</a></li><li><a href='/blog/categories/ios'>iOS (9)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>Latest Tweets</h1>
+  <ul id="tweets">
+    <li class="loading">Status updating...</li>
+  </ul>
+  <script type="text/javascript">
+    $.domReady(function(){
+      getTwitterFeed("amay077", 5, false);
+    });
+  </script>
+  <script src="/javascripts/twitter.js" type="text/javascript"> </script>
+  
+    <a href="http://twitter.com/amay077" class="twitter-follow-button" data-show-count="false">Follow @amay077</a>
+  
+</section>
+
+
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

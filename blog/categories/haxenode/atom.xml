@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: haxenode | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/haxenode/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[haxenode でエラー window is not defined]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/hexnode-error-window-is-not-found/"/>
+    <updated>2012-10-03T22:06:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/hexnode-error-window-is-not-found</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.fukaoi.org/2012/06/19/haxe_nodejs_express">HaxeでつくるWebアプリ開発(node.js + Express) | 深追い Fukaoi.org</a> を参考に、<a href="http://haxenode.org/">haxenode</a>を使ってみたときにハマったこと。</p>
+
+<!-- more -->
+
+
+<p>```as rootnode.hx
+import js.Node;</p>
+
+<p>class RootNode {</p>
+
+<pre><code>static function main() {
+ var server = Node.http.createServer( function(
+      req:NodeHttpServerReq, res:NodeHttpServerResp){
+        res.setHeader("Content-Type","text/plain");
+        res.writeHead(200);
+        res.end(Hoge.print());
+      }
+    );
+
+    server.listen(1337,"localhost");
+    trace( 'Server running at http://127.0.0.1:1337/' );
+}   
+</code></pre>
+
+<p>}</p>
+
+<p>@:keep
+@:expose
+class Hoge {</p>
+
+<pre><code>public static function print():String {
+    return "Hello World.\n";
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>こんな感じでサンプル作って、</p>
+
+<pre><code>node rootnode.js
+</code></pre>
+
+<p>を実行したところ、</p>
+
+<blockquote><p>/.../bin/haxenode.js:53</p>
+
+<pre><code>var o = window;
+        ^
+</code></pre>
+
+<p>ReferenceError: window is not defined</p>
+
+<pre><code>at $hxExpose (/.../bin/haxenode.js:53:10)
+at /.../bin/haxenode.js:13:1
+at Object.&lt;anonymous&gt; (/.../bin/haxenode.js:62:3)
+at Module._compile (module.js:449:26)
+at Object.Module._extensions..js (module.js:467:10)
+at Module.load (module.js:356:32)
+at Function.Module._load (module.js:312:12)
+at Module.runMain (module.js:492:10)
+at process.startup.processNextTick.process._tickCallback (node.js:244:9)
+</code></pre></blockquote>
+
+<p>こんなエラーが出ました。</p>
+
+<p>いろいろ試したところ、Hoge クラスに <code>@:keep</code> と <code>@:expose</code> をどちらも指定するとダメみたい。どちらか片方だけなら正常。
+<a href="http://haxe.org/doc/compiler">--dead-code-elimination</a> をあきらめて、minify とかすればいいのかな。
+<code>@:keep</code> と <code>@:expose</code> は意味が被る、というか expose は keep を包括するような感じなので、@:expose だけでよさそうな気もします。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://haxe.org/manual/tips_and_tricks">Tips and Tricks - Haxe</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

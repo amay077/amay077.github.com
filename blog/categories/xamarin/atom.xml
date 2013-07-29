@@ -1,0 +1,401 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/xamarin/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-07-29T19:33:31+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio で複数のソリューションを開く方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/open-multi-solution-in-xamarin-studio/"/>
+    <updated>2013-07-28T13:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/open-multi-solution-in-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>わかりにくいのでメモっておく。</p>
+
+<!--more-->
+
+
+<h3>1. ソリューションをひとつ開く</h3>
+
+<h3>2. ２つ目のソリューションを開く</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/open_multi_solution_in_xamarin_studio_01.png" alt="img1" /> この時、「現在のワークスペースを閉じる」のチェックを <strong>外す</strong></p>
+
+<h3>3. すると２つ目のソリューションが追加されてます。</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/open_multi_solution_in_xamarin_studio_02.png" alt="img1" /></p>
+
+<p>ソリューションを新規作成する時には行えないようです。
+分かりにくいよママン。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Pull up to Close を実装してみる、Xamarin.iOS で]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:51:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。</p>
+
+<p>この操作性がなかなか使いやすかったので、自分でも実装してみました。</p>
+
+<!--more-->
+
+
+<h2>デモ</h2>
+
+<p>こんな感じ。
+WebView なんですが、一番下までスクロールして、さらに上に引っ張ると "Pull up to Close" → "Release to Close" とラベルが変わり、そこで離すとコールバックします。</p>
+
+<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
+
+
+<h2>実装してみたコード</h2>
+
+<p><a href="http://xamarin.com/">Xamarin.iOS</a> ですから、C# です。</p>
+
+<p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
+
+<p>```c# PullUpToCloseSampleViewController.cs
+public partial class PullUpToCloseSampleViewController : UIViewController
+{</p>
+
+<pre><code>public PullUpToCloseSampleViewController() : base ("PullUpToCloseSampleViewController", null)
+{
+}
+
+public override void ViewDidLoad()
+{
+    base.ViewDidLoad();
+
+    // WebView が持ってる ScrollView、よく使うので変数化しておく
+    // webView は Interface Builder で UIWebView を Outlet にしたもの。
+    var scrollView = webView.ScrollView;
+
+    // Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
+    scrollView.Subviews.Where(v =&gt; v is UIImageView)
+        .ToList().ForEach(v =&gt; v.Hidden = true);
+
+    // 上に引っ張った時に見える背景とラベル
+    var bounceBackground = new UIView(
+        new RectangleF(0f, 0f, webView.Frame.Width, webView.Frame.Height));
+    bounceBackground.BackgroundColor = UIColor.LightGray;
+    var bounceLabel = new UILabel(
+        new RectangleF(0f, webView.Frame.Height - 30f, webView.Frame.Width, 30f));
+    bounceLabel.Text = "Pull up to Close";
+    bounceLabel.TextAlignment = UITextAlignment.Center;
+    bounceLabel.BackgroundColor = UIColor.Clear;
+    bounceLabel.Opaque = false;
+
+    // 背景とラベルを WebView の一番奥に追加する
+    webView.InsertSubview(bounceLabel, 0);
+    webView.InsertSubview(bounceBackground, 0);
+
+    // 適当な URL を読み込み
+    webView.LoadRequest(NSUrlRequest.FromUrl(new NSUrl("http://yahoo.co.jp/")));
+
+    // 閉じるのに必要な分だけ上に引っ張ったら true になる
+    var canClose = false;
+
+    // ドラッグ開始時にフラグOFF(一応)
+    scrollView.DraggingStarted += (sender, e) =&gt; 
+    {
+        canClose = false;
+    };
+
+    // ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
+    scrollView.DraggingEnded += (sender, e) =&gt; 
+    {
+        if (canClose)
+        {
+            OnCloseByPullUp();
+        }
+    };
+
+    // スクロールした時にいろいろやる
+    scrollView.Scrolled += (sender, e) =&gt; 
+    {
+        var labelFrame = bounceLabel.Frame;
+
+        // コンテンツの一番下まで表示してさらに引っ張ったサイズ
+        var offsetY = (scrollView.Frame.Height + scrollView.ContentOffset.Y) 
+            - scrollView.ContentSize.Height;
+
+        // 50px 上に引っ張ったら閉じるものとする
+        canClose = offsetY &gt; 50f;
+        bounceLabel.Text = canClose ? "Release to Close" : "Pull up to Close";
+
+        // ラベルがいつまでも移動しないように
+        if (offsetY &gt; labelFrame.Height)
+        {
+            offsetY = labelFrame.Height;
+        }
+
+        // ラベルがドラッグと共に下からせり出してくるように
+        labelFrame.Y = scrollView.Frame.Height - offsetY;
+        bounceLabel.Frame = labelFrame;
+    };
+}
+
+// "Release to Close" で離すと呼ばれる
+void OnCloseByPullUp()
+{
+    var v = new UIAlertView("", "Close this view",  null, "Close");
+    v.Show ();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>やってる事</h2>
+
+<ol>
+<li>ScrollView の「引っ張った時に見える場所（= Bounce というらしい）」の影を消す。 via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</li>
+<li>背景と、ラベルを WebView 内の一番奥に挿入する（引っ張った時にのみ見えるように）</li>
+<li>あとはイベントハンドラでの処理。スクロール中に、「最下部で引っ張り中」だったら "Pull up to Close" ラベルをアニメーションさせながら表示する。50px 以上引っ張ってたら "Release to Close" にラベルを変える。「閉じられるよ」フラグも ON にしとく。</li>
+<li>ドラッグ終了イベントで、「閉じられるよ」フラグが立ってたら、コールバックする。</li>
+</ol>
+
+
+<h2>今後</h2>
+
+<p>もうちょっとライブラリっぽくしたいですね。あと引っ張り中にアイコンとか表示させたい。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でジェスチャを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p><a href="http://xamarin.com/">Xamarin.iOS</a> でも <code>UIGestureRecognizer</code> が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。</p>
+
+<!--more-->
+
+
+<p>本日の Obj-C の先生はこちら。</p>
+
+<ul>
+<li><a href="http://labs.techfirm.co.jp/ipad/cho/466">Gesture Recognizers 〜簡単にタッチ操作を検知 | iPad Techfirm Lab </a></li>
+</ul>
+
+
+<p>このサンプルを Xamarin.iOS に移植してみます。</p>
+
+<h2>サンプルコード</h2>
+
+<p>```c# GesturesSample_ViewDidLoad.cs
+// Tap gesture
+this.View.AddGestureRecognizer(new UITapGestureRecognizer(tap =>
+{</p>
+
+<pre><code>Debug.WriteLine("Double Tap.");
+</code></pre>
+
+<p>})
+{</p>
+
+<pre><code>NumberOfTapsRequired = 2 // Double tap 
+</code></pre>
+
+<p>});</p>
+
+<p>// Drag(Pan) gesture
+this.View.AddGestureRecognizer(new UIPanGestureRecognizer(pan =>
+{</p>
+
+<pre><code>var p = pan.TranslationInView(this.View);
+var v = pan.VelocityInView(this.View);
+Debug.WriteLine("Pan. transration:{0}, velocity:{1}", p, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Pinch gesture
+this.View.AddGestureRecognizer(new UIPinchGestureRecognizer(pin =>
+{</p>
+
+<pre><code>var scale = pin.Scale;
+var v = pin.Velocity;
+Debug.WriteLine("Pinch. scale:{0}, velocity:{1}", scale, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Swipe gesture
+this.View.AddGestureRecognizer(new UISwipeGestureRecognizer(sw =>
+{</p>
+
+<pre><code>Debug.WriteLine("Swipe.");
+</code></pre>
+
+<p>}));</p>
+
+<p>// Rotate gesture
+this.View.AddGestureRecognizer(new UIRotationGestureRecognizer(ro =>
+{</p>
+
+<pre><code>var rotation = ro.Rotation;
+var v = ro.Velocity;
+Debug.WriteLine("Rotate. rotation:{0}, velocity:{1}", rotation, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Long press gesture
+this.View.AddGestureRecognizer(new UILongPressGestureRecognizer(lp =>
+{</p>
+
+<pre><code>Debug.WriteLine("Long press.");
+</code></pre>
+
+<p>}));
+```</p>
+
+<p>ViewController 全体のソースは <a href="https://gist.github.com/amay077/6094422">コチラ</a></p>
+
+<p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
+
+<p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[オンラインでサクッとスライド作ってシェアできる Slides が便利だった件]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/24/slides-is-very-useful/"/>
+    <updated>2013-07-24T19:18:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/24/slides-is-very-useful</id>
+    <content type="html"><![CDATA[<p>先日の <a href="http://connpass.com/event/2847/">日本Androidの会浜松支部　第27回ミーティング -AndroidとHTML5-</a> で HTML5 中心の話題にも関わらず Xamarin の LT をした訳ですが、むりやりこじつけるために、HTML5 でプレゼンスライドを作りました。</p>
+
+<!--more-->
+
+
+<p>この手のもので最も有名なのが <a href="http://lab.hakim.se/reveal-js/">reveal.js</a> というライブラリですが、環境準備が面倒だったので、HTML5 で作れてオンラインでシェアできるものを探してたどり着いたのが Slides(slid.es) でした。</p>
+
+<ul>
+<li>[Slides - The easiest way to create and share beautiful presentations.] (http://slid.es/)</li>
+</ul>
+
+
+<p>使い方は簡単で、Google か Facebook のアカウントでサインインでき、無料で使えます。</p>
+
+<p>実はこれ reveal.js を使ったサービスで、機能もほぼ相違ないのですが、PDF へのエクスポートやデザインテーマは有償の Pro 版でないと使えなくなっています。reveal.js を直接使えば、エクスポートや Markdown 対応もできるので、まあ SaaS としての戦略でしょうか。</p>
+
+<p>reveal.js はライブラリなのでコンテンツは自力で HTML or Markdown で書く必要がありますが、Slides にはリッチエディタが付いているので、簡単に資料を書くことができます。</p>
+
+<p>凝った演出はできませんが、 LT くらいの資料なら十分実用できます。そのままシェアできますし。(逆に Private にするには Pro 版が必要)</p>
+
+<p>というわけで reveal.js 使いたいけどいろいろ面倒そう、という人は Slides を試されると良いかと思います。</p>
+
+<p>最後に、その時発表した Xamarin の LT 資料を貼って終わります。
+Xamarin もどうぞよろしくおねがいします。</p>
+
+<iframe src="http://slid.es/amay/intro_of_xamarin/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコードテンプレートを使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio/"/>
+    <updated>2013-07-24T17:48:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>Visual Studio や Eclipse とか、IDE ならだいたい備えているコードテンプレート、呼び名はそれぞれ違いますが、<code>for</code> ってタイプすると <code>for (object o : items) {  }</code> 的なコードのひな形を生成してくれる機能の事です。</p>
+
+<!--more-->
+
+
+<p>Xamarin Studio にも当然ありまして、その使い方を説明します。</p>
+
+<h2>きっかけ</h2>
+
+<p>MvvmCross っていうフレームワークの Tutorial 動画で Visual Studio を使っているんですが、その中で多用されてるので、真似してみたくなりました。</p>
+
+<p>例えばこれ</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=_DHDMNB_IeY&amp;list=PLR6WI6W1JdeYSXLbm58jwAKYT7RQR31-W&amp;feature=player_detailpage&amp;t=178">N=0 : A first MvvmCross Application (N+1 days of MvvmCross) | N+1 days of MvvmCross</a></li>
+</ul>
+
+
+<h2>手順</h2>
+
+<h3>1. Xamarin Studio の Preference を開く</h3>
+
+<p>システムメニュー → Preference → テキストエディタ → コード テンプレート です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_01.png" alt="img1" /></p>
+
+<h3>2. コードテンプレートを作成する</h3>
+
+<p>追加 で "新しいテンプレート" の画面を開き、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_02.png" alt="img2" /></p>
+
+<p>のように設定します。</p>
+
+<ul>
+<li>ショートカット : pmvx</li>
+<li>グループ : C#</li>
+<li>説明 : 適当に</li>
+<li>Mime : text/x-csharp</li>
+<li>[展開されるテンプレート] にチェックを入れる</li>
+</ul>
+
+
+<p>テンプレート テキスト は以下の通り</p>
+
+<p>```c#
+private $type$ $property$;
+public $type$ $Property$
+{</p>
+
+<pre><code>get { return $property$; }
+set { $property$ = value; RaisePropertyChanged(() =&gt; $Property$); }
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>$type$</code>, <code>$property$</code>, <code>$Property$</code> という3つの変数を使っています。画面右端にあるドロップダウンで、各変数が選択できるので、それぞれ Default で既定値を設定します。</p>
+
+<p>ここでは、以下のようにしました。</p>
+
+<ul>
+<li>type : object</li>
+<li>property : _property</li>
+<li>Property : MyProperty</li>
+</ul>
+
+
+<p>OK を押して保存します。</p>
+
+<h3>3.  使ってみる</h3>
+
+<p>コードエディタで <code>pmvx</code> とタイプすると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_03.png" alt="img2" /></p>
+
+<p>となり、タブを2回ほど押すと、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_04.png" alt="img2" /></p>
+
+<p>と、テンプレートコードが挿入されます。
+あとは、ハイライトされている部分を変更すると、テンプレート内も連動して変更されます。</p>
+
+<p>これでコード入力が楽になりました。</p>
+
+<p>コードテンプレートのインポート／エクスポートや、Visual Studio との互換性なども調べてみたいですね。</p>
+]]></content>
+  </entry>
+  
+</feed>
