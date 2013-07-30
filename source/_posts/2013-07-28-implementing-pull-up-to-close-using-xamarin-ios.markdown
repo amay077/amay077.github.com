@@ -3,7 +3,7 @@ layout: post
 title: "Pull up to Close を実装してみる、Xamarin.iOS で"
 date: 2013-07-28 13:51
 comments: true
-categories: [Xamarin, iOS]
+categories: [Xamarin, iOS, C#]
 ---
 イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。
 

@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin Studio でコードテンプレートを使う"
 date: 2013-07-24 17:48
 comments: true
-categories: [Xamarin, MvvmCross]
+categories: [Xamarin, MvvmCross, C#]
 ---
 Visual Studio や Eclipse とか、IDE ならだいたい備えているコードテンプレート、呼び名はそれぞれ違いますが、``for`` ってタイプすると ``for (object o : items) {  }`` 的なコードのひな形を生成してくれる機能の事です。
 <!--more-->

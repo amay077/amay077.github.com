@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin Studio で MvvmCross を使うための準備"
 date: 2013-07-22 20:46
 comments: true
-categories: [Xamarin, MvvmCross]
+categories: [Xamarin, MvvmCross, C#]
 ---
 クロスプラットフォーム MVVM フレームワーク「[MvvmCross](https://github.com/slodge/MvvmCross)」を Mac の Xamarin Studio で使うための準備についてです。
 <!--more-->

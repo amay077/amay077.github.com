@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.Android で Fused Location Provider(など)を使う"
 date: 2013-05-27 21:24
 comments: true
-categories: [Xamarin, Android, GoogleMapsAPI]
+categories: [Xamarin, Android, GoogleMapsAPI, C#]
 ---
 Xamarin.Android は [Java ライブラリから C# のラッパを生成する機能](http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar) がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。
 <!--more-->

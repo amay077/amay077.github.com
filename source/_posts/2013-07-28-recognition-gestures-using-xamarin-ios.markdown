@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.iOS でジェスチャを認識する"
 date: 2013-07-28 13:49
 comments: true
-categories: [Xamarin, iOS]
+categories: [Xamarin, iOS, C#]
 ---
 [Xamarin.iOS](http://xamarin.com/) でも ``UIGestureRecognizer`` が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。
 <!--more-->
