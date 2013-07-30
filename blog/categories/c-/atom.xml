@@ -4,7 +4,7 @@
   <title><![CDATA[Category: C# | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/c-/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-07-30T18:20:02+09:00</updated>
+  <updated>2013-07-30T18:26:38+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -14,816 +14,509 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Xamarin.Android/iOS で IsolatedStorage を使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin/"/>
-    <updated>2013-04-26T18:04:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/04/26/using-isolatedstorage-in-xamarin</id>
-    <content type="html"><![CDATA[<p>アプリの設定情報なんかを保存する時、Android では SharedPreference 、iOS では NSUserDefaults を使うわけですが、プラットフォーム毎にコード書くのめんどい！と思って</p>
+    <title type="html"><![CDATA[Pull up to Close を実装してみる、Xamarin.iOS で]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:51:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。</p>
+
+<p>この操作性がなかなか使いやすかったので、自分でも実装してみました。</p>
 
 <!--more-->
 
 
-<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; あめい@ざまらーさん (@amay077) <a href="https://twitter.com/amay077/status/326942931028148224">2013年4月24日</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>とツイートしたところ、Xamarin の中の人である <a href="https://twitter.com/atsushieno">@atsushieno</a> さんから、</p>
-
-<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>IsolatedStorageじゃダメなんでしょうか? RT @<a href="https://twitter.com/amay077">amay077</a>: <a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; Atsushi Enoさん (@atsushieno) <a href="https://twitter.com/atsushieno/status/327355284416757761">2013年4月25日</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>とアドバイスを頂きました。</p>
-
-<p>IsolatedStorage(分離ストレージ) とは、.NET Framework(当然 Mono も)に用意されている、OS のファイルシステムとは切り離されたデータ領域の事で、アプリケーション毎、ユーザー毎など、アクセス権限を細かく設定できるのが特徴です。</p>
-
-<p>そこで気になったのは、Xamarin.Android/iOS で IsolatedStorage を利用した時に、実体はどこに保存されるのか？ということ。</p>
-
-<p>Android では、ストレージの <code>/data/data/&lt;アプリ名&gt;</code> 配下は、そのアプリ専用のデータ領域であり、そのアプリしかアクセス許可が与えられていない他、アプリをアンインストールするとそのデータ領域も削除されます。
-(iOS は詳しくないですが、 userDefaults も同様だろうと思ってます。)</p>
-
-<p>で、調べてみました。</p>
-
-<h2>Xamarin.Android の場合</h2>
-
-<p>Xamarin Studio で、適当な Xamarin.Android プロジェクトを作って、MainActivity の onCreate で、IsolatedStorage にファイルを作成しています。
-IsolatedStorage は、どこまでアクセス許可を与えるかを <a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragescope.aspx"><code>IsolatedStorageScope</code></a> 列挙体 で指定しますが、ここでは、SharedPreference の MODE_PRIVATE に最も近いであろう <code>Application</code> と <code>User</code> を組み合わせた Scope で生成する <code>GetUserStoreForApplication()</code> を使います。</p>
-
-<p>サンプルコードは、</p>
-
-<ul>
-<li><a href="http://ch3cooh.jp/index.php/tips/windowsphone7/system/strage/using-isolated-storage/">分離ストレージ（Isolated Storage）を使ってデータの保存と取得を行う – CH3COOH(酢酸)の実験室</a></li>
-</ul>
-
-
-<p>を参考にさせてもらいました。</p>
-
-<p>```c# MainActivity.cs
-using System;</p>
-
-<p>using Android.App;
-using Android.Content;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using Android.OS;
-using System.IO.IsolatedStorage;
-using System.IO;</p>
-
-<p>namespace IsolatedStorageTest
-{</p>
-
-<pre><code>[Activity (Label = "IsolatedStorageTest", MainLauncher = true)]
-public class Activity1 : Activity
-{
-    int count = 1;
-
-    protected override void OnCreate(Bundle bundle)
-    {
-        base.OnCreate(bundle);
-
-        // Set our view from the "main" layout resource
-        SetContentView(Resource.Layout.Main);
-
-        var file = IsolatedStorageFile.GetUserStoreForApplication();
-
-        // 分離ストレージにtest.txtというファイルを作成しストリームを開く
-        using (IsolatedStorageFileStream strm = file.CreateFile("test.txt"))
-        using (StreamWriter writer = new StreamWriter(strm))
-        {
-            // データを書き込む
-            writer.Write("Hello!");
-            writer.Write("Storage.");
-        }
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>上記の <code>var file = …</code> の次の行にブレークポイントを設置して、デバッグ実行します。
-ブレークしたら、変数 <code>file</code> をウォッチなどを覗いてみると、Non-public なフィールド <code>directory</code> が「/data/data/&lt;アプリ名>/files/.config/.isolated-storage」
-を示していることが分かります。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin1.png" alt="image1" /></p>
-
-<h2>Xamarin.iOS の場合</h2>
-
-<p>次に Xamarin.iOS でも適当なプロジェクトを作って、<code>ViewDidLoad</code> に IsolatedStorage への書き出しコードを挿入します。</p>
-
-<p>```c# IsolatedStorageiOSTestViewController.cs
-using System;
-using System.Drawing;</p>
-
-<p>using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.IO.IsolatedStorage;
-using System.IO;</p>
-
-<p>namespace IsolatedStorageiOSTest
-{</p>
-
-<pre><code>public partial class IsolatedStorageiOSTestViewController : UIViewController
-{
-    public IsolatedStorageiOSTestViewController() : base ("IsolatedStorageiOSTestViewController", null)
-    {
-    }
-
-    public override void DidReceiveMemoryWarning()
-    {
-        // Releases the view if it doesn't have a superview.
-        base.DidReceiveMemoryWarning();
-
-        // Release any cached data, images, etc that aren't in use.
-    }
-
-    public override void ViewDidLoad()
-    {
-        base.ViewDidLoad();
-
-        var file = IsolatedStorageFile.GetUserStoreForApplication();
-
-        // 分離ストレージにtest.txtというファイルを作成しストリームを開く
-        using (IsolatedStorageFileStream strm = file.CreateFile("test.txt"))
-            using (StreamWriter writer = new StreamWriter(strm))
-        {
-            // データを書き込む
-            writer.Write("Hello!");
-            writer.Write("Storage.");
-        }
-    }
-
-    public override bool ShouldAutorotateToInterfaceOrientation(UIInterfaceOrientation toInterfaceOrientation)
-    {
-        // Return true for supported orientations
-        return (toInterfaceOrientation != UIInterfaceOrientation.PortraitUpsideDown);
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>デバッグして、<code>file</code> 変数を覗いてみると、<code>directory</code> が「&lt;省略>/iPhone Simulator/6.1/Applications/&lt;アプリのUUID>/Documents/.config/.isolated-storage」
-を示していることが分かります。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/location_of_isolatedstorage_in_xamarin2.png" alt="image2" /></p>
-
-<p>ということで、IsolatedStorage の保存先は、Android では <code>/data/data/&lt;アプリ名&gt;/</code>、iOS の場合は <code>/&lt;アプリのUUID&gt;/Documents/</code> と、アプリごとの固有の場所になっている事が分かりました。</p>
-
-<h2>セキュリティ上の注意</h2>
-
-<p>Android の <code>/data/data/&lt;アプリ名&gt;</code> はアプリしかアクセスできないディレクトリですが、データ自体が暗号化されるわけではありません。(端末のROOT化や、apkを入手してエミュレータでアプリを実行することで /data/data/ のデータは取り出せます。)</p>
-
-<p>また、iOS の <code>/&lt;アプリUIID&gt;/</code> はセキュアではないようです。(UUIDさえ分かれば他のアプリからもアクセスできるという事？)</p>
-
-<ul>
-<li><a href="http://software-security.sans.org/blog/2011/01/05/using-keychain-to-store-passwords-ios-iphone-ipad">How Not to Store Passwords in iOS</a></li>
-<li><a href="http://stackoverflow.com/questions/1560801/how-to-secure-nsuserdefaults">iphone - How to secure NSUserDefaults? - Stack Overflow</a></li>
-<li><a href="http://iphonedevsdk.com/forum/iphone-sdk-development/28041-nsuserdefaults-secure.html">NSUserDefaults Secure? - iPhone Dev SDK</a></li>
-</ul>
-
-
-<p>秘匿情報の保存には <code>KeyChain</code> を使え、と書いてありますね。</p>
-
-<p>さらに、.NET の IsolatedStorage の説明にも、「暗号化されていないキーやパスワードは保存するな」と書いてあります。</p>
-
-<ul>
-<li><a href="http://msdn.microsoft.com/en-us/library/3ak841sy.aspx">Scenarios for Isolated Storage - MSDN</a></li>
-</ul>
-
-
-<blockquote><p>You <strong>should not use</strong> isolated storage in the following situations:</p>
-
-<ul>
-<li>To store high-value secrets, such as unencrypted keys or passwords, because isolated storage is not protected from highly trusted code, from unmanaged code, or from trusted users of the computer.</li>
-</ul>
-</blockquote>
-
-<p>(つか、<a href="http://msdn.microsoft.com/ja-jp/library/vstudio/3ak841sy.aspx#scenarios_for_isolated_storage">日本語サイト</a>、誤訳ってない？)</p>
-
-<p>ということで、パスワードなどの秘匿情報をどうしても端末に保存する時は、</p>
-
-<ul>
-<li>iOS なら KeyChain を使う</li>
-<li>Android の場合は独自の暗号化を施す(Mono の <code>SecureString</code> とか <code>ProtectedData</code> が使える？)</li>
-</ul>
-
-
-<p>などの対策が必要です。</p>
-
-<h2>まとめ</h2>
-
-<ul>
-<li>IsolatedStorage は、SharedPreference や NSUserDefaults の代わりに、「アプリケーション情報格納領域」として使える
-
-<ul>
-<li>本文に書きませんでしたが、アプリ専用領域なので、アプリをアンインストールするとちゃんと消えます</li>
-</ul>
-</li>
-<li>ただし、パスワードとかの秘匿情報は保存しちゃダメよ</li>
-<li><a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragesettings"><code>IsolatedStorageSettings</code></a> が使えたらもっと便利だったが、 System.Windows.dll が必要なのでムリー</li>
-</ul>
-
-
-<h2>ちょっと気になる</h2>
-
-<ul>
-<li><a href="http://msdn.microsoft.com/ja-jp/library/3ak841sy">分離ストレージ - MSDN</a></li>
-</ul>
-
-
-<p>に、</p>
-
-<blockquote><p>分離ストレージは Windows ストア の apps では使用できません。 代わりに、ローカル データとファイルを格納する Windows ランタイム API に含まれる Windows.Storage の名前空間にアプリケーション データのクラスを使用します。 詳細については、Windows Dev センターの" アプリケーション データ "を参照してください。</p></blockquote>
-
-<p>と書いてある。Windows 8 の Store App だと、IsolatedStorage が使えなくて、代わりに WinRT を使う必要があるらしい。それを考えると、IsolatedStorage を直で使わずに１枚咬ませた方が良さそう。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google Maps SDK for iOS を Xamarin.iOS で使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/"/>
-    <updated>2013-04-22T22:13:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk</id>
-    <content type="html"><![CDATA[<p>Googleマップの iOS版とともに公開された <a href="https://developers.google.com/maps/documentation/ios/">iOS用のMaps SDK</a> ですが、Xamarin.iOS でも使うことができます。(ちなみに Android用の Google Maps API v2 を Xamarin.Android で使う方法は<a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">以前</a>書きました。)</p>
-
-<!--more-->
-
-
-<p><a href="http://components.xamarin.com/">Xamarin Component Store</a> にて Free で(ラッパー)ライブラリが公開されているので、それを使います。</p>
-
-<p>コンポーネントをダウンロードすると、中にサンプルプロジェクトが含まれているのでそれを動かしてみます。</p>
-
-<h2>適当な Xamarin.iOS プロジェクトを作る</h2>
-
-<p>メニュー -> ファイル -> 新規 -> ソリューション -> C# -> iOS -> iPhone -> Single View Application を選択。ソリューションはなんでもいいです。どうせ後で捨てるので。テキトーに <code>HogeApp</code> とでもしましょうか。</p>
-
-<h2>プロジェクトに Google Maps コンポーネントを追加する</h2>
-
-<p>メニュー -> プロジェクト -> Get More Components を選択します。</p>
-
-<p><strong>Google Maps</strong> を探しだして [Add to App] します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_1.png" alt="image1" /></p>
-
-<p>しばらくすると、左側のビューの Components の中に "Google Maps" が作成されるので、それをダブルクリックして開きます。</p>
-
-<p>右に表示されるコンテンツのタブから「Samples」を選択します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_2.png" alt="image2" /></p>
-
-<p>さらに "iOS Sample" の「Open Sample」を押します。
-すると、左側のビューに「GoogleMapsSample」プロジェクトが追加されます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_3.png" alt="image3" /></p>
-
-<p>この時点で HogeApp は意味がなくなってしまいましたが、ディスクから削除すると GoogleMapsSample も一緒に消えてしまうので、無視しておきます。GoogleMapsSample がどこにあるかは、上図のように「親フォルダを開く」すると Finder で確認できます。</p>
-
-<p>以降はこの GoogleMapsSample プロジェクトを使います。</p>
-
-<h2>APIキーを取得する</h2>
-
-<p>ここからは、Component -> GoogleMaps をダブルクリックすると表示される「Getting Started」の「The Google Maps API Key」に沿っていきます。</p>
-
-<h4>1. Create an API project in the <a href="https://code.google.com/apis/console">Google API Console</a></h4>
-
-<p>ブラウザで Google API Console へ移動して、左上のドロップダウンから「Create…」にてプロジェクトを作成します。既に存在しているなら、それを使ってもいいです。</p>
-
-<h4>2. Select the Services pane in your API project, and enable the Google Maps SDK for iOS. This displays the Google Maps Terms of Service.</h4>
-
-<p>左側のメニュー「Services」の中にある「Google Maps SDK for iOS」を ON にします。利用規約にも同意しましょう。</p>
-
-<h4>3. Select the API Access pane in the console, and click Create new iOS key.</h4>
-
-<p>左側のメニュー「API Access」を開き、ページの一番下に表示される「Create new iOS key」ボタンを押します。</p>
-
-<h4>4. Enter one or more bundle identifiers as listed in your application's .plist file, such as com.example.myapp.</h4>
-
-<p>入力欄に「com.example.myapp」とタイプします。本来はちゃんとした「あなたのアプリの固有ID」を入れるのでしょうが、当方 iOS 開発は詳しくないのでここでは例のままにします。</p>
-
-<h4>5. Click Create.</h4>
-
-<p>「Create」を押します。</p>
-
-<h4>6. In the API Access page, locate the section Key for iOS apps (with bundle identifiers) and note or copy the 40-character *API key.</h4>
-
-<p>すると、<strong>Key for iOS apps</strong> に 作成されたAPIキーが表示されるはずです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_4.png" alt="image4" /></p>
-
-<p>この API key をコピーしておいて、Xamarin Studio に戻ります。</p>
-
-<h2>Info.plist を開いて、Identifier を設定します</h2>
-
-<p>Google API Console で設定した Identifier と一致させる必要があるので「com.example.myapp」を設定します。(普通は先にアプリの Identifier を決めてから API key を取得するのでしょうが)</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_5.png" alt="image5" /></p>
-
-<h2>AppDelegate.cs を開いて、API key を設定する</h2>
-
-<p>コピーしておいた API key を、下図の位置に貼り付けます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_6.png" alt="image6" /></p>
-
-<h2>動かす！</h2>
-
-<p>以上で準備完了です。
-実行してみましょう。Android版の Google Maps API v2 は、エミュレータでは実行できませんが、iOS版は、シミュレータでも実行できます。</p>
-
-<p>ばばーん！</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmap_on_xamarin_ios_7.png" alt="image7" /></p>
-
-<p>あれ？ズームコントロールとか表示されないのね。</p>
-
-<p>とりあえず動く所までできたので、今日はこの辺で。</p>
-
-<h2>まとめ</h2>
-
-<ul>
-<li>Google Maps SDK for iOS も Xamarin で普通に使える！</li>
-<li>Xamarin さん、Component に含まれるサンプルの「よりよい取り出し方」教えてください</li>
-<li><code>CLLocationCoordinate2D</code> とか長ェよ、ただの <code>LatLng</code> だろ</li>
-<li>というように Google Maps Android API v2 とは設計思想は同じですが、インターフェースが違う(CLLocationCoordinate2D は CoreLocation のクラスですね)ので共通にはなりません。SDK が提供する機能にも差異があります。(さすがに Android > iOS です)</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin Component Store を眺めてみる]]></title>
-    <link href="http://amay077.github.io/blog/2013/03/26/walking-xamarin-components/"/>
-    <updated>2013-03-26T22:26:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/03/26/walking-xamarin-components</id>
-    <content type="html"><![CDATA[<p>Xamarin には Component Store というものがあって、Xamarin で利用できる部品をここから購入することができます。(FREE もあります)</p>
-
-<!--more-->
-
-
-<p>こちらです</p>
-
-<ul>
-<li><a href="http://components.xamarin.com/">Components / Xamarin</a></li>
-</ul>
-
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_1.png" alt="&quot;1&quot;" /></p>
-
-<p>TAGS のところで対応プラットフォームを絞りこめます。
-iOS は MonoTouch の歴史が長いだけあってなかなかの数のコンポーネントがありますが、Android, Windows に関してはまだこれから、という感じでしょうか。
-iOS/Android 両対応のコンポーネントも1ページに収まる程度の数はあります。</p>
-
-<h2>試しにつかってみる</h2>
-
-<p>試しに</p>
-
-<ul>
-<li><a href="http://components.xamarin.com/view/alert-center/">Alert Center / Components / Xamarin</a></li>
-</ul>
-
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_2.png" alt="&quot;2&quot;" /></p>
-
-<p>を使ってみます。</p>
-
-<p>確か、Component Store は Xamarin Studio と連携してるとのことなので、そちらから使ってみましょう。</p>
-
-<h3>プロジェクトの作成</h3>
-
-<p>Android Application、名称は <strong>AlertCenterSample</strong> としました。</p>
-
-<h3>コンポーネントを (Nu)Get!</h3>
-
-<p>メニュー → プロジェクト → Edit Components… から。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_3.png" alt="&quot;3&quot;" /></p>
-
-<p>こんな画面になりました。次に <strong>Open Conponent Store</strong> をクリック。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_4.png" alt="&quot;4&quot;" /></p>
-
-<p>Xamarin Components が出ました。Webサイトと同じやつです
-。この中から <strong>Alert Center</strong> をクリック。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_5.png" alt="&quot;5&quot;" /></p>
-
-<p>なんか動画が真っ黒ですが。気にせず <strong>Add to App</strong> をクリック。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_6.png" alt="&quot;6&quot;" /></p>
-
-<p>ソリューションエクスプローラの Components に Alert Center が追加されました。また Getting Started が表示されています。</p>
-
-<p>これで部品が追加できたようです、簡単でした。ちなみにコレ、NuGet というものが使われているそうです。(私は VS2005 以前の人なので使った事がありません)</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_7.png" alt="&quot;7&quot;" /></p>
-
-<p>ここから、Getting Started に表示されている通りに実装して動かしてみます。</p>
-
-<h3>AndroidManifest に権限を追加する</h3>
-
-<p>最初、完全に見落としていましたが、AndroidManifest.xml に <code>SYSTEM_ALERT_WINDOW</code> 権限を追加してください、と書いてありました。
-Xamarin Studio での AndroidManifest.xml 編集については、</p>
-
-<ul>
-<li><a href="http://amay077.github.com/blog/2013/03/02/xamarin-android-permission/">Xamarin.Android で PERMISSION を設定する - Experiments Never Fail</a></li>
-</ul>
-
-
-<p>をご参考に。</p>
-
-<p>確かに、<code>SYSTEM_ALERT_WINDOW</code> もありますね。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_9.png" alt="&quot;9&quot;" /></p>
-
-<p>この手順を飛ばすと、ボタンをクリックした瞬間にアプリが落ちます(経験者</p>
-
-<h3>コーディング</h3>
-
-<p>Getting Started のコードをコピペで。</p>
-
-<p>```c# MainActivity.cs
-&lt;省略>
-using Xamarin.Controls;</p>
-
-<p>namespace AlertCenterSample
-{</p>
-
-<pre><code>[Activity (Label = "AlertCenterSample", MainLauncher = true)]
-public class Activity1 : Activity
-{
-    protected override void OnCreate(Bundle bundle)
-    {
-        base.OnCreate(bundle);
-
-        // Set our view from the "main" layout resource
-        SetContentView(Resource.Layout.Main);
-
-        // Get our button from the layout resource,
-        // and attach an event to it
-        Button button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
-
-        button.Click += delegate
-        {
-            AlertCenter.Default.Init (Application);
-
-            AlertCenter.Default.PostMessage ("Knock knock!", "Who's there?", Resource.Drawable.Icon);
-            AlertCenter.Default.PostMessage ("Interrupting cow.", "Interrupting cow who?",
-                                             Resource.Drawable.Icon, () =&gt; {
-                Console.WriteLine ("Moo!");
-            });
-        };
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>そういえば、コンポーネントを取得直後、なぜか Xamarin Studio さんがそれを認識してくれずエラーが出ていました(ビルドはできた)が、Xamarin Studio を再起動したらエラーは消えました。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_8.png" alt="&quot;8&quot;" /></p>
-
-<h3>動かす</h3>
-
-<p>ビルドして実行するだけです。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/walking_xamarin_components_10.png" alt="&quot;10&quot;" /></p>
-
-<h3>iOS/Android 両対応と言っても 'Write once' ではない(かも知れない)</h3>
-
-<p>Alert Center は、iOS/Android 両対応とされていますが、Getting Started の iOS と Android のコードをよく見るとわかりますが、異なっています。「Android は iOS に '似せて' いる」とも書かれています。
-同じコードで iOS/Android 共に動く！という夢はやっぱり見ない方がいいです。クロスプラットフォームで開発する時は View の部分はプラットフォーム毎にプロジェクトを分けなければならないので、共有できるコードも少ないと思います。</p>
-
-<p>他のコンポーネントも、UI に絡むものは Look&amp;Feel が統一できるだけで、(コンポーネントを使った)実装はプラットフォーム毎に必要と考えた方が良いでしょう。</p>
-
-<h2>まとめ</h2>
-
-<p>Xamarin Studio に統合された Component Store はとても簡単に使うことができました。</p>
-
-<p>試しに使った Alert Center の他にも、</p>
-
-<ul>
-<li><a href="http://components.xamarin.com/view/azure-mobile-services/">Mobile Services by Windows Azure</a></li>
-<li><a href="http://components.xamarin.com/view/json.net">Json.NET</a></li>
-<li><a href="http://components.xamarin.com/view/xamarin.auth">Xamarin.Auth</a></li>
-<li><a href="http://components.xamarin.com/view/xamarin.mobile">Xamarin.Mobile</a></li>
-<li><a href="http://components.xamarin.com/view/xamarin.social">Xamarin.Social</a></li>
-<li><a href="http://components.xamarin.com/view/zxing.net.mobile">ZXing.Net.Mobile</a></li>
-</ul>
-
-
-<p>などは、どこかで使えそうです。</p>
-
-<p>また、Component Store でなくても、.NET framework の基本的なクラスのみで書かれた(<strong>POCO</strong> な)ライブラリであれば、Xamarin でも概ね使うことができます。
-例えば、Amazon Web Services の .NET SDK</p>
-
-<ul>
-<li><a href="http://aws.amazon.com/jp/sdkfornet/">AWS SDK for .NET | アマゾン ウェブ サービス（AWS 日本語）</a></li>
-</ul>
-
-
-<p>は、Xamarin.Mac で使うことができました。(Xamain.iOS/Android は未確認)</p>
-
-<p>View 部分の共有は最初から想定しない思想なので、Model 部分を開発する際に使えるコンポーネントがさらに充実していくことに期待します。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin の Alpha版で async/await を試す]]></title>
-    <link href="http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview/"/>
-    <updated>2013-03-18T20:42:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/03/18/xamarin-alpha-async-await-preview</id>
-    <content type="html"><![CDATA[<p>Xamarin Blog で "<a href="http://blog.xamarin.com/brave-new-async-mobile-world/">Alpha版だけど async/await 使えるようになったよー</a>" との事だったのでさっそく試してみました。</p>
-
-<!--more-->
-
-
-<p>以前から、<a href="http://xamarin.uservoice.com/forums/144858-xamarin-suggestions/suggestions/2697497-async-await-support">"Good news – we plan to release full support for async/await in all our products in April of 2013."</a> と言われていたので予定どおりですかね。</p>
-
-<h2>Alpha版をインストール</h2>
-
-<p>Xamarin Studio のシステムメニュー → アップデートをチェック で、 "Update channel" で <strong>Alpha</strong> を選ぶとインストールできます。もちろん、アルファ版なので自己責任で。</p>
-
-<p>インストール後の、Xamarin と各SDK のバージョンはこう↓なってました。</p>
-
-<blockquote><p>Xamarin Studio
-Version 4.0.2 (build 18)
-Installation UUID: xxxxxx
-Runtime:
-  Mono 3.0.7 (master/514fcd7)
-  GTK 2.24.16
-  GTK# (2.12.0.0)
-  Package version: 300070000</p>
-
-<p>Apple Developer Tools
-Xcode 4.6 (2066)
-Build 4H127</p>
-
-<p>Xamarin.Mac
-Xamarin.Mac: Not Installed</p>
-
-<p>Xamarin.Android
-Version: 4.7.0 (Trial Edition)
-Android SDK: /Users/hrnv/dev/sdks/android-sdk-macosx</p>
-
-<p>Xamarin.iOS
-Version: 6.3.0.255 (Trial Edition)
-Hash: ba05545</p></blockquote>
-
-<h2>同期処理だと…</h2>
-
-<p>「ボタンを押すと <strong>超時間のかかる処理</strong> を実行して、結果を表示する」というケースで試してみます。</p>
-
-<p>まず何も考えず同期処理で書くと、、、</p>
-
-<p>```c# sync.cs
-// ボタンが押されたよ
-private void button1_Click(Object sender, EventArgs e)
-{</p>
-
-<pre><code>button.Enabled = false; // 実行中はボタン使えなくする
-
-// 超時間のかかる計算
-var result = HeavyCalc();
-
-button.Text = String.Format("result:{0}", result); // 結果を表示する
-button.Enabled = true;
-</code></pre>
-
-<p>}</p>
-
-<p>// 超時間のかかる計算
-private static int HeavyCalc()
-{</p>
-
-<pre><code>System.Threading.Thread.Sleep(10000);
-return 5; // 超時間をかけて 5 を計算したつもり
-</code></pre>
-
-<p>}
-```</p>
+<h2>デモ</h2>
 
 <p>こんな感じ。
-動かしてみます。</p>
+WebView なんですが、一番下までスクロールして、さらに上に引っ張ると "Pull up to Close" → "Release to Close" とラベルが変わり、そこで離すとコールバックします。</p>
 
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_anr.png" alt="&quot;anr&quot;" /></p>
-
-<p>あえなくフリーズ＆ANR、当然です。</p>
-
-<h2>async/await 化</h2>
-
-<p>async/await については、ググればたくさん情報が出てきますが、探した中でもっとも簡単とおもわれる例を紹介します。</p>
-
-<ul>
-<li><a href="http://kimux.net/?p=902">[C#]async/awaitの使い方メモ、その１。 | Kimux.Net</a></li>
-</ul>
+<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
 
 
-<p>さて、先ほどのプログラムを、async/await 構文を使って非同期化してみます。</p>
+<h2>実装してみたコード</h2>
 
-<p>```c# async.cs
-// ボタンが押されたよ
-private async void button1_Click(Object sender, EventArgs e)
+<p><a href="http://xamarin.com/">Xamarin.iOS</a> ですから、C# です。</p>
+
+<p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
+
+<p>```c# PullUpToCloseSampleViewController.cs
+public partial class PullUpToCloseSampleViewController : UIViewController
 {</p>
 
-<pre><code>button.Enabled = false; // 実行中はボタン使えなくする
+<pre><code>public PullUpToCloseSampleViewController() : base ("PullUpToCloseSampleViewController", null)
+{
+}
 
-// 超時間のかかる計算
-var result = await HeavyCalcAsync();
+public override void ViewDidLoad()
+{
+    base.ViewDidLoad();
 
-// ここから下は UIスレッド で実行される
-button.Text = String.Format("result:{0}", result); // 結果を表示する
-button.Enabled = true;
-</code></pre>
+    // WebView が持ってる ScrollView、よく使うので変数化しておく
+    // webView は Interface Builder で UIWebView を Outlet にしたもの。
+    var scrollView = webView.ScrollView;
 
-<p>}</p>
+    // Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
+    scrollView.Subviews.Where(v =&gt; v is UIImageView)
+        .ToList().ForEach(v =&gt; v.Hidden = true);
 
-<p>// 超時間のかかる計算
-private static int HeavyCalc()
-{</p>
+    // 上に引っ張った時に見える背景とラベル
+    var bounceBackground = new UIView(
+        new RectangleF(0f, 0f, webView.Frame.Width, webView.Frame.Height));
+    bounceBackground.BackgroundColor = UIColor.LightGray;
+    var bounceLabel = new UILabel(
+        new RectangleF(0f, webView.Frame.Height - 30f, webView.Frame.Width, 30f));
+    bounceLabel.Text = "Pull up to Close";
+    bounceLabel.TextAlignment = UITextAlignment.Center;
+    bounceLabel.BackgroundColor = UIColor.Clear;
+    bounceLabel.Opaque = false;
 
-<pre><code>System.Threading.Thread.Sleep(10000);
-return 5; // 超時間をかけて 5 を計算したつもり
-</code></pre>
+    // 背景とラベルを WebView の一番奥に追加する
+    webView.InsertSubview(bounceLabel, 0);
+    webView.InsertSubview(bounceBackground, 0);
 
-<p>}</p>
+    // 適当な URL を読み込み
+    webView.LoadRequest(NSUrlRequest.FromUrl(new NSUrl("http://yahoo.co.jp/")));
 
-<p>// HeavyCalc をラップして非同期で実行
-private Task<int> HeavyCalcAsync()
-{</p>
+    // 閉じるのに必要な分だけ上に引っ張ったら true になる
+    var canClose = false;
 
-<pre><code>return Task.Run(() =&gt; HeavyCalc());
+    // ドラッグ開始時にフラグOFF(一応)
+    scrollView.DraggingStarted += (sender, e) =&gt; 
+    {
+        canClose = false;
+    };
+
+    // ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
+    scrollView.DraggingEnded += (sender, e) =&gt; 
+    {
+        if (canClose)
+        {
+            OnCloseByPullUp();
+        }
+    };
+
+    // スクロールした時にいろいろやる
+    scrollView.Scrolled += (sender, e) =&gt; 
+    {
+        var labelFrame = bounceLabel.Frame;
+
+        // コンテンツの一番下まで表示してさらに引っ張ったサイズ
+        var offsetY = (scrollView.Frame.Height + scrollView.ContentOffset.Y) 
+            - scrollView.ContentSize.Height;
+
+        // 50px 上に引っ張ったら閉じるものとする
+        canClose = offsetY &gt; 50f;
+        bounceLabel.Text = canClose ? "Release to Close" : "Pull up to Close";
+
+        // ラベルがいつまでも移動しないように
+        if (offsetY &gt; labelFrame.Height)
+        {
+            offsetY = labelFrame.Height;
+        }
+
+        // ラベルがドラッグと共に下からせり出してくるように
+        labelFrame.Y = scrollView.Frame.Height - offsetY;
+        bounceLabel.Frame = labelFrame;
+    };
+}
+
+// "Release to Close" で離すと呼ばれる
+void OnCloseByPullUp()
+{
+    var v = new UIAlertView("", "Close this view",  null, "Close");
+    v.Show ();
+}
 </code></pre>
 
 <p>}
 ```</p>
 
-<p>変更点を、ソースの下の方から。
-まず、<code>HeavyCalc</code> をラップして、 <code>HeavyCalcAsync</code> という関数を作りました。<code>Task</code> クラスを使って非同期で <code>HeavyCalc</code> を実行する処理です。async/await のルールに従って <code>Task</code> クラスを返値にします。メソッド名のおしりに "Async" を付けるのもルールです。</p>
+<h2>やってる事</h2>
 
-<p>次に、 <code>button1_Click</code> です。メソッドの定義に <code>async</code> キーワードを付けます。このメソッドが非同期である事を示すと共に、メソッド内に <code>await</code> キーワードが含まれる事を意味します。メソッド内に <code>await</code> が無いとエラーになります。(Xamarin Studio でもちゃんとエラーにしてくれました)</p>
-
-<p>最後に、「超時間のかかる計算」の呼び出し。<code>HeavyCalc</code> の代わりに <code>HeavyCalcAsync</code> を <code>await</code> 付きで記述します。</p>
-
-<p>これで終わり。
-「button1_click は、非同期で HeavyCalcAsync を実行し、その終了を待って、その後続処理を <strong>UIスレッド</strong> で続行する」という意味になりました。</p>
-
-<p>動かしてみます。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_asyc.png" alt="&quot;async&quot;" /></p>
-
-<p>ANR でませんし、ちゃんと計算後に画面が更新されます。</p>
-
-<h2>AsyncTask で書くと…</h2>
-
-<p>Android で非同期処理と言えば <code>AsyncTask</code> がよく紹介されてますので、一応、それを使うとどうなるのか書いてみます。</p>
-
-<p>まず、AsyncTask を拡張して、HeavyCalc をバックグラウンドで実行する <code>HeavyCalcTask</code> を用意します。
-<code>OnPreExecute</code> と <code>OnPostExecute</code> でボタンを無効/有効 にしています。</p>
-
-<p>```c# HeavyCalcTask.cs
-// HeavyCalc を非同期で実行する AsyncTask
-class HeavyCalcTask : Android.OS.AsyncTask
-{</p>
-
-<pre><code>private readonly Button button;
-
-public HeavyCalcTask(Button button)
-{
-    this.button = button;
-}
-
-#region implemented abstract members of AsyncTask
-protected override void OnPreExecute()
-{
-    button.Enabled = false; // 実行中はボタン使えなくする
-}
-
-protected override Java.Lang.Object DoInBackground(params Java.Lang.Object[] @params)
-{
-    // 超時間のかかる計算
-    return HeavyCalc();
-}
-
-protected override void OnPostExecute(Java.Lang.Object result)
-{
-    button.Text = String.Format("result:{0}", result); // 結果を表示する
-    button.Enabled = true;
-}
-#endregion
-</code></pre>
-
-<p>}
-```</p>
-
-<p>使う方は、まあ普通に。</p>
-
-<p>```c# asynctask_execute.cs
-// ボタンが押されたよ
-private async void button1_Click(Object sender, EventArgs e)
-{</p>
-
-<pre><code>var asyncTask = new HeavyCalcTask(button);
-asyncTask.Execute();
-</code></pre>
-
-<p>}
-```</p>
-
-<p>クラスを作らなきゃいけないし、AsyncTask の仕方ないところですけど、View に対する処理とロジックが同じクラスに同居しちゃうし、複数の非同期処理を逐次実行できないし、とあまり良い所が見えません。</p>
-
-<p>そもそも Xamarin.iOS などとクロスプラットフォームを考えるならプラットフォーム固有の機能の利用は最小限に留めたいので、Xamarin.Android で AsyncTask を使う意味は「ない」でしょう。
-(Xamarin.iOS でも async/await は使えるそうです。)</p>
-
-<h2>まとめ</h2>
-
-<ul>
-<li>知らない人がコード見ると「これ await してたら ANR 起こりますよね？」とか「これ HeavyCalcAsync が非同期だから、次の行がすぐ実行されちゃいますよね？」とか言われそうｗ</li>
-<li>諸君らが愛してくれた <code>AsyncTask</code> は死んだ</li>
-<li>async/await が使えるようになるまでは <code>Task.Factory.StartNew</code> で。</li>
-</ul>
+<ol>
+<li>ScrollView の「引っ張った時に見える場所（= Bounce というらしい）」の影を消す。 via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</li>
+<li>背景と、ラベルを WebView 内の一番奥に挿入する（引っ張った時にのみ見えるように）</li>
+<li>あとはイベントハンドラでの処理。スクロール中に、「最下部で引っ張り中」だったら "Pull up to Close" ラベルをアニメーションさせながら表示する。50px 以上引っ張ってたら "Release to Close" にラベルを変える。「閉じられるよ」フラグも ON にしとく。</li>
+<li>ドラッグ終了イベントで、「閉じられるよ」フラグが立ってたら、コールバックする。</li>
+</ol>
 
 
-<h2>参考</h2>
+<h2>今後</h2>
 
-<ul>
-<li><a href="http://blog.xamarin.com/brave-new-async-mobile-world/">Xamarin previews C# async on iOS and Android | Xamarin Blog</a></li>
-<li><a href="http://kimux.net/?p=902">[C#]async/awaitの使い方メモ、その１。 | Kimux.Net</a></li>
-<li><a href="http://xin9le.net/archives/tag/async-await/page/2">async/await : xin9le note</a></li>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/chushin/masterasync_01/masterasync_01_01.html">.NET開発における非同期処理の基礎と歴史 － ＠IT</a></li>
-</ul>
-
+<p>もうちょっとライブラリっぽくしたいですね。あと引っ張り中にアイコンとか表示させたい。</p>
 ]]></content>
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で GPS を使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps/"/>
-    <updated>2013-03-18T00:02:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps</id>
-    <content type="html"><![CDATA[<p>Xamarin.iOS で GPS を使ってみます。
-ちなみ当方、iOS開発についてはシロートに毛が生えた程度なため、Objective-C でも GPS は使ったことありません。</p>
+    <title type="html"><![CDATA[Xamarin.iOS でジェスチャを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p><a href="http://xamarin.com/">Xamarin.iOS</a> でも <code>UIGestureRecognizer</code> が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。</p>
 
 <!--more-->
 
 
-<p>ので、こちらのサンプルを、Xamarin.iOS で書きなおしてみました。</p>
+<p>本日の Obj-C の先生はこちら。</p>
 
 <ul>
-<li><a href="http://d.hatena.ne.jp/ntaku/20090228/1235816377">GPSを利用する方法 - プログラミングノート</a></li>
+<li><a href="http://labs.techfirm.co.jp/ipad/cho/466">Gesture Recognizers 〜簡単にタッチ操作を検知 | iPad Techfirm Lab </a></li>
 </ul>
 
 
-<p>```c# LocationSample.cs
-// LocationManager 的なやつ
-private CLLocationManager _man = null;</p>
+<p>このサンプルを Xamarin.iOS に移植してみます。</p>
 
-<p>public override void ViewDidLoad()
+<h2>サンプルコード</h2>
+
+<p>```c# GesturesSample_ViewDidLoad.cs
+// Tap gesture
+this.View.AddGestureRecognizer(new UITapGestureRecognizer(tap =>
 {</p>
 
-<pre><code>base.ViewDidLoad();
+<pre><code>Debug.WriteLine("Double Tap.");
+</code></pre>
 
-_man = new CLLocationManager();
+<p>})
+{</p>
 
-// ボタンをタップした時
-btnListen.TouchUpInside += (s, _) =&gt; 
-{
-    _man.DesiredAccuracy = 5000; // 希望精度5kmくらい
-    _man.LocationsUpdated += (sender, e) =&gt; // 位置を受信した時のイベント
-    {
-        var l = e.Locations[e.Locations.Length - 1];
+<pre><code>NumberOfTapsRequired = 2 // Double tap 
+</code></pre>
 
-        lblLocation.Text = String.Format("Lat/Lng = {0}/{1}", 
-                                         l.Coordinate.Latitude, l.Coordinate.Longitude);
-    };
+<p>});</p>
 
-    // 受信開始
-    _man.StartUpdatingLocation();
-};
+<p>// Drag(Pan) gesture
+this.View.AddGestureRecognizer(new UIPanGestureRecognizer(pan =>
+{</p>
+
+<pre><code>var p = pan.TranslationInView(this.View);
+var v = pan.VelocityInView(this.View);
+Debug.WriteLine("Pan. transration:{0}, velocity:{1}", p, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Pinch gesture
+this.View.AddGestureRecognizer(new UIPinchGestureRecognizer(pin =>
+{</p>
+
+<pre><code>var scale = pin.Scale;
+var v = pin.Velocity;
+Debug.WriteLine("Pinch. scale:{0}, velocity:{1}", scale, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Swipe gesture
+this.View.AddGestureRecognizer(new UISwipeGestureRecognizer(sw =>
+{</p>
+
+<pre><code>Debug.WriteLine("Swipe.");
+</code></pre>
+
+<p>}));</p>
+
+<p>// Rotate gesture
+this.View.AddGestureRecognizer(new UIRotationGestureRecognizer(ro =>
+{</p>
+
+<pre><code>var rotation = ro.Rotation;
+var v = ro.Velocity;
+Debug.WriteLine("Rotate. rotation:{0}, velocity:{1}", rotation, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Long press gesture
+this.View.AddGestureRecognizer(new UILongPressGestureRecognizer(lp =>
+{</p>
+
+<pre><code>Debug.WriteLine("Long press.");
+</code></pre>
+
+<p>}));
+```</p>
+
+<p>ViewController 全体のソースは <a href="https://gist.github.com/amay077/6094422">コチラ</a></p>
+
+<p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
+
+<p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコードテンプレートを使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio/"/>
+    <updated>2013-07-24T17:48:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>Visual Studio や Eclipse とか、IDE ならだいたい備えているコードテンプレート、呼び名はそれぞれ違いますが、<code>for</code> ってタイプすると <code>for (object o : items) {  }</code> 的なコードのひな形を生成してくれる機能の事です。</p>
+
+<!--more-->
+
+
+<p>Xamarin Studio にも当然ありまして、その使い方を説明します。</p>
+
+<h2>きっかけ</h2>
+
+<p>MvvmCross っていうフレームワークの Tutorial 動画で Visual Studio を使っているんですが、その中で多用されてるので、真似してみたくなりました。</p>
+
+<p>例えばこれ</p>
+
+<ul>
+<li><a href="https://www.youtube.com/watch?v=_DHDMNB_IeY&amp;list=PLR6WI6W1JdeYSXLbm58jwAKYT7RQR31-W&amp;feature=player_detailpage&amp;t=178">N=0 : A first MvvmCross Application (N+1 days of MvvmCross) | N+1 days of MvvmCross</a></li>
+</ul>
+
+
+<h2>手順</h2>
+
+<h3>1. Xamarin Studio の Preference を開く</h3>
+
+<p>システムメニュー → Preference → テキストエディタ → コード テンプレート です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_01.png" alt="img1" /></p>
+
+<h3>2. コードテンプレートを作成する</h3>
+
+<p>追加 で "新しいテンプレート" の画面を開き、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_02.png" alt="img2" /></p>
+
+<p>のように設定します。</p>
+
+<ul>
+<li>ショートカット : pmvx</li>
+<li>グループ : C#</li>
+<li>説明 : 適当に</li>
+<li>Mime : text/x-csharp</li>
+<li>[展開されるテンプレート] にチェックを入れる</li>
+</ul>
+
+
+<p>テンプレート テキスト は以下の通り</p>
+
+<p>```c#
+private $type$ $property$;
+public $type$ $Property$
+{</p>
+
+<pre><code>get { return $property$; }
+set { $property$ = value; RaisePropertyChanged(() =&gt; $Property$); }
 </code></pre>
 
 <p>}
 ```</p>
 
-<p>簡単すぎるやばい。
-Xamarin.iOS のクラスライブラリが CoreLocation をうまくラップしてくれて、<code>LocationsUpdated</code> てなイベントも用意してくれてます。(Android の LocatiomManager にはイベントはなかった)
-そして何度も言いますが Obj-C のキモい構文じゃないのでコードが見やすい書きやすい。</p>
+<p><code>$type$</code>, <code>$property$</code>, <code>$Property$</code> という3つの変数を使っています。画面右端にあるドロップダウンで、各変数が選択できるので、それぞれ Default で既定値を設定します。</p>
 
-<p>もうちょっとちゃんとしたサンプルは公式をみて下さい。</p>
-
-<h2>参考</h2>
+<p>ここでは、以下のようにしました。</p>
 
 <ul>
-<li><a href="http://d.hatena.ne.jp/ntaku/20090228/1235816377">GPSを利用する方法 - プログラミングノート</a></li>
-<li><a href="http://docs.xamarin.com/samples/CoreLocation">Core Location | xamarin</a></li>
+<li>type : object</li>
+<li>property : _property</li>
+<li>Property : MyProperty</li>
 </ul>
 
+
+<p>OK を押して保存します。</p>
+
+<h3>3.  使ってみる</h3>
+
+<p>コードエディタで <code>pmvx</code> とタイプすると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_03.png" alt="img2" /></p>
+
+<p>となり、タブを2回ほど押すと、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_04.png" alt="img2" /></p>
+
+<p>と、テンプレートコードが挿入されます。
+あとは、ハイライトされている部分を変更すると、テンプレート内も連動して変更されます。</p>
+
+<p>これでコード入力が楽になりました。</p>
+
+<p>コードテンプレートのインポート／エクスポートや、Visual Studio との互換性なども調べてみたいですね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio で MvvmCross を使うための準備]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio/"/>
+    <updated>2013-07-22T20:46:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>クロスプラットフォーム MVVM フレームワーク「<a href="https://github.com/slodge/MvvmCross">MvvmCross</a>」を Mac の Xamarin Studio で使うための準備についてです。</p>
+
+<!--more-->
+
+
+<p>基本は、</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">monotouch - Getting PCL, Mvvmcross, Nuget and Xamarin Studio to play "nice" on Mac - Stack Overflow</a></li>
+</ul>
+
+
+<p>のトレース。主には PCL と Nuget が正しく動くようにする手順です。</p>
+
+<h2>前提条件</h2>
+
+<p>必要な(というか試した)環境は以下の通り。
+（Xamarin の PCL サポートがまだ「進行中」なので、将来的には変わる可能性大）</p>
+
+<ul>
+<li>Xamarin Studio Version 4.0.10 (beta)</li>
+<li>Xamarin.Android Version: 4.8.0 (beta)</li>
+<li>Xamarin.iOS Version: 6.3.8.11 (beta)</li>
+<li>Xamarin Studio Add-in NuGet Package Management Version 0.5</li>
+<li>Mac OS X 10.8.4</li>
+</ul>
+
+
+<h2>手順</h2>
+
+<h3>Xamarin Studio</h3>
+
+<ol>
+<li>Mac に Xamarin Studio を入れて、Beta チャンネルに切り替えて更新。</li>
+<li>アドインマネージャから NuGet Package Management をインストール。</li>
+</ol>
+
+
+<h3>.NETPortable DLLs を Win機からコピってくる</h3>
+
+<p>Win機の <code>C:¥Program Files (x86)¥Reference Assemblies¥MicrosoftFramework.NETPortable</code> を、Mac の <code>/Library/Frameworks/Mono.framework/External/xbuild-frameworks/.NETPortable/</code> へコピー。</p>
+
+<p>Win機がない場合は、<a href="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/">これ</a> などで Win仮想環境を作り、<a href="http://www.microsoft.com/visualstudio/jpn/downloads">Visual Studio Ultimate 2012 90日間試用版</a> を入れるとよい(Express 版は上記DLLsがないのでNG)。</p>
+
+<h3>Nuget にパッチをあててビルド</h3>
+
+<p><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">ここ</a> の <strong>Patch to Nuget.Core.dll:</strong> にあるテキストを適当なファイルに保存(ここでは <code>patch.diff</code> とする)して、以下のコマンドを実行。</p>
+
+<p>```sh
+git clone https://git01.codeplex.com/nuget
+cd nuget
+git checkout -b 2.6 origin/2.6</p>
+
+<p>patch -p1 &lt; patch.diff</p>
+
+<p>cd src/Core
+xbuild</p>
+
+<p>cp bin/Debug/NuGet.Core.dll  ~/Library/Application\ Support/XamarinStudio-4.0/LocalInstall/Addins/MonoDevelop.PackageManagement.0.5/NuGet.Core.dll
+```</p>
+
+<p>以上で、環境準備は終わり。</p>
+
+<h2>試す</h2>
+
+<ol>
+<li>Xamarin Studio で Portable Class Library を作成する</li>
+<li>プロジェクト設定を見ると Xamarin.Android、Xamarin.iOS などがあるが、これらを<strong>チェックしてOKしても適用されてない</strong> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio01.png" alt="img1" /></li>
+<li>Nuget Manager から mvvmcorss で検索して "MvvmCross - Hot Tuna  Starter Pack" を Add してもエラーになる。<img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio02.png" alt="img1" /></li>
+</ol>
+
+
+<p>うーん、ダメか？</p>
+
+<h2>プロジェクトファイルをちょっと修正する</h2>
+
+<p>ポータブルクラスライブラリのプロジェクトファイル(xxx.csproj) をテキストエディタで開き、<code>&lt;TargetFrameworkProfile&gt;</code> の値を <code>Profile104</code> に書き換える。(修正前は Profile1 になってた。なぜ Profile104 かと言えば、Visual Studio で作った PCL プロジェクトのプロファイルが 104 だったから、という程度の理解レベル)</p>
+
+<p>```xml xxx.csproj
+&lt;?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup></p>
+
+<pre><code>&lt;Configuration Condition=" '$(Configuration)' == '' "&gt;Debug&lt;/Configuration&gt;
+&lt;Platform Condition=" '$(Platform)' == '' "&gt;AnyCPU&lt;/Platform&gt;
+&lt;ProductVersion&gt;10.0.0&lt;/ProductVersion&gt;
+&lt;SchemaVersion&gt;2.0&lt;/SchemaVersion&gt;
+&lt;ProjectGuid&gt;{50D8E04F-FDE0-4A65-B388-5698BEFE8DC5}&lt;/ProjectGuid&gt;
+&lt;ProjectTypeGuids&gt;{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}&lt;/ProjectTypeGuids&gt;
+&lt;OutputType&gt;Library&lt;/OutputType&gt;
+&lt;RootNamespace&gt;Portable2&lt;/RootNamespace&gt;
+&lt;AssemblyName&gt;Portable2&lt;/AssemblyName&gt;
+&lt;TargetFrameworkProfile&gt;Profile104&lt;/TargetFrameworkProfile&gt;    &lt;--Here!!!!!
+&lt;TargetFrameworkVersion&gt;v4.0&lt;/TargetFrameworkVersion&gt;
+</code></pre>
+
+<p>  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' "></p>
+
+<pre><code>&lt;DebugSymbols&gt;true&lt;/DebugSymbols&gt;
+</code></pre>
+
+<p>```</p>
+
+<h2>再度試す</h2>
+
+<p>もう一度プロジェクトを開いて Nuget から "MvvmCross - Hot Tuna  Starter Pack" を Add すると、成功する。プロジェクトツリーを見ると必要なDLLやソースコードが配置されている。</p>
+
+<p>これで Xamarin Studio でも PCL が使えそう。
+MvvmCross の Tutorial - <a href="http://mvvmcross.wordpress.com/">MvvmCross N+1 Table of Context</a> を試せます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Fused Location Provider(など)を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin/"/>
+    <updated>2013-05-27T21:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin</id>
+    <content type="html"><![CDATA[<p>Xamarin.Android は <a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Java ライブラリから C# のラッパを生成する機能</a> がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。</p>
+
+<!--more-->
+
+
+<h2>monodroid-samples をベースに</h2>
+
+<p>Xamarin.Android のサンプル集 <a href="https://github.com/xamarin/monodroid-samples">monodroid-samples</a> に、既に Google Map v2 を使うサンプルがあり、これが Google Play Service を使っているので、これを参考にします。</p>
+
+<p>これね → <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> 、使い方は、</p>
+
+<ul>
+<li><a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
+</ul>
+
+
+<p>をどうぞ。</p>
+
+<h2>Binding の設定をいじる</h2>
+
+<p>Android SDK の Google Play Service をアップデートしても、Xamarin 側ですぐに <code>LocationClient</code> などが使えるわけではないです。
+プロジェクト GooglePlayServices で、ラップする package などを設定しているため。</p>
+
+<p>その設定は <code>Transform/Metadata.xml</code> にあるので、これを以下のように設定します。</p>
+
+<p>```xml Metadata.xml
+<metadata></p>
+
+<pre><code>&lt;remove-node path="/api/package[@name='com.google.android.gms.maps']/class[@name='GoogleMapOptionsCreator']" /&gt;
+&lt;remove-node path="/api/package[@name!='com.google.android.gms.maps' 
+    and @name != 'com.google.android.gms.maps.model' 
+    and @name != 'com.google.android.gms.common'
+    and @name != 'com.google.android.gms.location']" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.maps.model']/class[contains (@name, 'Creator')]" /&gt;
+&lt;remove-node path="/api/package[@name='com.google.android.gms.location']/class[contains (@name, 'Creator')]" /&gt;
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps']" name="managedName"&gt;Android.Gms.Maps&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']" name="managedName"&gt;Android.Gms.Maps.Model&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.common']" name="managedName"&gt;Android.Gms.Common&lt;/attr&gt;  
+&lt;attr path="/api/package[@name='com.google.android.gms.location']" name="managedName"&gt;Android.Gms.Location&lt;/attr&gt;  
+
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='position']" name="managedName"&gt;SetPosition&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='snippet']" name="managedName"&gt;SetSnippet&lt;/attr&gt;
+&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='title']" name="managedName"&gt;SetTitle&lt;/attr&gt;
+</code></pre>
+
+<p></metadata>
+```</p>
+
+<p><code>com.google.android.gms.location</code> を各所に追加しています。変更前は <a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/GooglePlayServices/Transforms/Metadata.xml">こちら</a> 。</p>
+
+<p>これだけで OK。(がここにたどり着くまでに半日くらいかかったorz)</p>
+
+<h2>使う</h2>
+
+<p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
 ]]></content>
   </entry>
   
