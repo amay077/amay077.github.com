@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-03T15:34:30+09:00</updated>
+  <updated>2013-08-06T21:18:38+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,132 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Marked.js で Markdown をクライアント側でパースして表示する]]></title>
+    <link href="http://amay077.github.io/blog/2013/08/06/parse-markdown-using-markedjs/"/>
+    <updated>2013-08-06T21:10:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/08/06/parse-markdown-using-markedjs</id>
+    <content type="html"><![CDATA[<p><a href="http://phyzkit.net/typescript/">Typescript クイックガイド</a> で、ソースを見たら Markdown で書かれてたのをみて「カッケー」と思ったのと、<a href="http://www.atmarkit.co.jp/ait/articles/1302/05/news091.html">利用規約やプライバシーポリシーは Github に置くといいよ</a> というのを見て、なら「github に .markdown ファイルを置いてクライアントサイドでスタイリングできたら嬉しいじゃん？」と思いやってみた。</p>
+
+<!--more-->
+
+
+<h2>Javascript による markdown パーサいろいろ</h2>
+
+<p>上記 Typescript クイックガイド では <a href="https://github.com/chjj/marked">marked.js</a> が使われているようだが、他にもいろいろある模様。下記にて比較してくださっている。</p>
+
+<ul>
+<li><a href="http://kannokanno.hatenablog.com/entry/2013/06/19/132042">JavaScript - Markdownパーサーのshowdown.js、markdown-js、markedを簡単比較 - ぼっち勉強会</a></li>
+</ul>
+
+
+<p>もともと marked.js を使おうと思ってたし、上記サイトでも問題無さそうだったので、そのままいく。</p>
+
+<h2>使い方</h2>
+
+<p>marked.js を読み込んだ後、</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">formatted</span> <span class="o">=</span> <span class="nx">marked</span><span class="p">(</span><span class="nx">markdown_text</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>で、HTML に整形された文字列が返されるというシンプルなもの。(整形オプションがいろいろあるようだが割愛)</p>
+
+<p>Typescript クイックガイドでは、HTML 内に Markdown テキストがベタ書きされていたが、せっかくなので管理がしやすいように外部 Markdown ファイルを読みこむようにしてみた。</p>
+
+<figure class='code'><figcaption><span>md_renderer.html</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="cp">&lt;!DOCTYPE html&gt;</span>
+</span><span class='line'><span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">&quot;ja&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;head&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;meta</span> <span class="na">charset=</span><span class="s">&quot;utf-8&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;title&gt;</span>Markdown renderer<span class="nt">&lt;/title&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;meta</span> <span class="na">name=</span><span class="s">&quot;description&quot;</span> <span class="na">content=</span><span class="s">&quot;Markdown renderer&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c">&lt;!-- bootstrap --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">href=</span><span class="s">&quot;css/bootstrap.css&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;link</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span> <span class="na">type=</span><span class="s">&quot;text/css&quot;</span> <span class="na">href=</span><span class="s">&quot;css/bootstrap-responsive.css&quot;</span> <span class="na">rel=</span><span class="s">&quot;stylesheet&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c">&lt;!-- js libraries --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;js/jquery-2.0.3.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;script </span><span class="na">type=</span><span class="s">&quot;text/javascript&quot;</span> <span class="na">src=</span><span class="s">&quot;js/marked.js&quot;</span><span class="nt">&gt;&lt;/script&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;script&gt;</span>
+</span><span class='line'>            <span class="nx">$</span><span class="p">(</span><span class="nb">document</span><span class="p">).</span><span class="nx">ready</span><span class="p">(</span><span class="kd">function</span><span class="p">(){</span>
+</span><span class='line'>                <span class="kd">var</span> <span class="nx">target</span> <span class="o">=</span> <span class="nx">$</span><span class="p">(</span><span class="s2">&quot;#markdown_content&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>                <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>                    <span class="nx">url</span><span class="o">:</span> <span class="nx">target</span><span class="p">[</span><span class="mi">0</span><span class="p">].</span><span class="nx">attributes</span><span class="p">[</span><span class="s2">&quot;src&quot;</span><span class="p">].</span><span class="nx">value</span><span class="p">,</span>
+</span><span class='line'>                <span class="p">}).</span><span class="nx">success</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span>
+</span><span class='line'>                    <span class="nx">target</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="nx">marked</span><span class="p">(</span><span class="nx">data</span><span class="p">));</span>
+</span><span class='line'>                <span class="p">}).</span><span class="nx">error</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">){</span>
+</span><span class='line'>                    <span class="nx">target</span><span class="p">.</span><span class="nx">append</span><span class="p">(</span><span class="s2">&quot;This content failed to load.&quot;</span><span class="p">);</span>
+</span><span class='line'>                <span class="p">});</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="nt">&lt;/script&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/head&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;body&gt;</span>
+</span><span class='line'>        <span class="c">&lt;!-- Content --&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;div</span> <span class="na">class=</span><span class="s">&quot;container&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;div</span> <span class="na">id=</span><span class="s">&quot;markdown_content&quot;</span> <span class="na">src=</span><span class="s">&quot;./sample.markdown&quot;</span><span class="nt">&gt;</span> <span class="nt">&lt;/div&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/div&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/body&gt;</span>
+</span><span class='line'><span class="nt">&lt;/html&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一番下の <code>&lt;div id="markdown_content" src="./sample.markdown"&gt;</code> の src に読み込む Markdown ファイルを指定するようにした。</p>
+
+<p>bootstrap で見栄えを良くしているが、必須ではない。</p>
+
+<p>こちらが <a href="https://dl.dropboxusercontent.com/u/264530/qiita/md_renderer/md_renderer.html">デモ</a> 。</p>
+
+<p>さすがに描画に少し時間がかかるみたいです。
+<code>marked()</code> は非同期版もあるようなので、そちらを使うべきだったかな。</p>
+
+<p>これで、データ(Markdown)とプレゼンテーション部(HTML)を分離できて、なんか良さげな感じがする。</p>
+
+<p>Octopress とか、HTMLを生成しちゃうんじゃなくて、クライアントサイドで 「Markdown を描画する」できると、投稿の手間が減って良いかもですね。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件]]></title>
@@ -2891,79 +3017,6 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 
 <p>に置いておきます。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Android SDK を最新の r22 にしたら、Xamarin.Android でビルドできなくなった件]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/16/xamarin-android-fail-build-on-latest-android-sdk/"/>
-    <updated>2013-05-16T17:15:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/16/xamarin-android-fail-build-on-latest-android-sdk</id>
-    <content type="html"><![CDATA[<p><a href="https://developers.google.com/events/io/">Google I/O 2013</a> で<a href="http://japanese.engadget.com/2013/05/15/google-i-o-2013/">いろいろ発表</a>があったので、試してみたくなるのがエンジニアってもんでしょう。</p>
-
-<!--more-->
-
-
-<h2>2013.5.19 追記</h2>
-
-<p>Xamarin.Android の 4.6.6 で Android SDK r22 に対応したので、この記事は無意味になりました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk5.png" alt="image5" /></p>
-
-<p>アップデート後、r22 でも無事ビルドできるようになりました。</p>
-
-<h2>1.Eclipse のエラー</h2>
-
-<p>Keynote から一夜明け、Android SDK を r22 に更新しました。
-するとまず、昨日までビルドできていた Java の Android のプロジェクトがビルドできなくなりました。</p>
-
-<p>この症状は、こちらのツイート:</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p>状況・ライブラリプロジェクトを使用・r22 でビルドが死んだ対策・SDK Build-tools を入れた（antは復旧）・&lt;classpathentry combineaccessrules=&#8221;false&#8221; kind=&#8221;src&#8221; path=&#8221;/hoge&#8221;/&gt; 追加</p>&mdash; dmpさん (@dmp) <a href="https://twitter.com/dmp/status/334839819781955586">2013年5月16日</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>に加えて、<a href="http://developer.android.com/sdk/installing/installing-adt.html">Eclipse の ADT Plugin</a> を更新することで解決できました。(私の場合、<code>&lt;classpathentry〜</code> は行わなくても大丈夫でした。［勝手に追加されてました］)</p>
-
-<h2>2.Xamarin.Android のエラー</h2>
-
-<p>やれやれと思ったところで、こんなツイートが。</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p>I know you are all eager to try the new stuff but since Google shuffled some binaries in the latest SDK, it breaks Xamarin.Android for now</p>&mdash; Jérémie Lavalさん (@jeremie_laval) <a href="https://twitter.com/jeremie_laval/status/334879715611529217">2013年5月16日</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>「Google が SDK の場所を替えたので、Xamarin.Android は今壊れてる(意訳)」とのことです。</p>
-
-<p>マジで？と思って、試してみると確かにビルド時にエラーががが。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk1.png" alt="image1" /></p>
-
-<blockquote><p>Error: Error executing tool &#8216;/…/android-sdk-macosx/platform-tools/aapt&#8217;:</p></blockquote>
-
-<h2>そして回避へ</h2>
-
-<p>先のトラブルで、「SDK Build-tools が新しく追加された」=「今までの場所にはもうない」、つまり、エラーになっているのは aapt(Android のパッケージ作成ツール) が意図した場所に存在しないからでは？と考えられます。</p>
-
-<p>というわけで、 aapt はどこへ行ったのか、Android SDK のフォルダを Finder(エクスプローラ)で覗いてみます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk2.png" alt="image2" /></p>
-
-<p>むう、確かに <code>/platform-tools</code> の中には <code>aapt</code> は存在せず、代わりに <code>/build-tools/17.0.0</code> の中にあります。</p>
-
-<p>Xamarin Studio の設定で、aapt の場所を /build-tools に変更できれば良かったのですが、残念ながら見つけられず、仕方ないので <code>/build-tools/17.0.0</code> 配下のファイルとフォルダを、 <code>/platform-tools</code> にコピーしました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk3.png" alt="image3" /></p>
-
-<p>そして Xamarin Studio に戻り、もう一度ビルドを実行、無事ビルドできました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_android_fail_build_on_latest_android_sdk4.png" alt="image4" /></p>
-
-<p>近いうちに Xamarin さん側で対応してくれると思いますが、それまでのつなぎとして。</p>
 ]]></content>
   </entry>
   
