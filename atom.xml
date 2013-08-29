@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-29T20:27:22+09:00</updated>
+  <updated>2013-08-29T20:44:17+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,96 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[SDカードのファイルI/Oパフォーマンス計測]]></title>
+    <link href="http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io/"/>
+    <updated>2013-08-29T20:43:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io</id>
+    <content type="html"><![CDATA[<p>端末とか SDカード の種類とかで大きく違うんでしょうけど、自分の端末で調べたのでメモ。</p>
+
+<!--more-->
+
+
+<ul>
+<li>機種: au HTC J(ISW13HT)</li>
+<li>SDカード: 最初から付いてたやつ</li>
+</ul>
+
+
+<h2>計測項目</h2>
+
+<ul>
+<li>Create - テキストファイルの生成</li>
+<li>List - ディレクトリ内の全ファイルの列挙</li>
+<li>Rename - ファイル名の変更</li>
+<li>Delete - ファイルを1つずつ削除</li>
+<li>DelDir - 親ディレクトリを削除</li>
+</ul>
+
+
+<h2>計測方法</h2>
+
+<ul>
+<li>ディレクトリ内にファイルを 100個、1000個、10000個作成した時のそれぞれで計測。</li>
+<li>それぞれの計測は5回行った平均値。</li>
+<li>計測に使ったコードは<a href="https://gist.github.com/amay077/6374470">こちら</a></li>
+</ul>
+
+
+<h2>計測結果</h2>
+
+<table>
+<thead>
+<tr>
+<th align="right">ファイル数</th>
+<th align="right">Create</th>
+<th align="right">List</th>
+<th align="right">Rename</th>
+<th align="right">Delete</th>
+<th align="right">DelDir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">100</td>
+<td align="right">1,606ms</td>
+<td align="right">939ms</td>
+<td align="right">1,664ms</td>
+<td align="right">2,792ms</td>
+<td align="right">1ms未満</td>
+</tr>
+<tr>
+<td align="right">1,000</td>
+<td align="right">15,527ms</td>
+<td align="right">950ms</td>
+<td align="right">17,359ms</td>
+<td align="right">27,057ms</td>
+<td align="right">6ms</td>
+</tr>
+<tr>
+<td align="right">10,000</td>
+<td align="right">227,236ms</td>
+<td align="right">1,003ms</td>
+<td align="right">254,338ms</td>
+<td align="right">191,631ms</td>
+<td align="right">69ms</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Create と Rename はファイル100個で約1.5秒、Delete は約×2 の時間がかかる。</li>
+<li>List はファイル数にあまり影響されない。</li>
+<li>DelDir は超早い。</li>
+<li>CPU 使用率は 40〜60% だった。</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[au を解約して全面的にIP電話＋MVNOに移行しようか検討しています]]></title>
@@ -2160,425 +2250,6 @@ Screen dim duration: 6000 ms</p>
 <h2>使う</h2>
 
 <p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google I/O 2013 で発表された Fused Location Provider を使ってみる]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider/"/>
-    <updated>2013-05-23T20:55:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider</id>
-    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。</p>
-
-<!--more-->
-
-
-<h2>Fused Location Provider とは？</h2>
-
-<p>GPS と WiFi とセンサー(加速度など) を組み合わせて、その状況に応じた最適な方法で位置を取得出来ます。今までよりも低消費電力で、精度のよい位置情報を。</p>
-
-<p>実際どんな感じかは、Google I/O 2013 のセッション動画にある <a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a> を見てください。</p>
-
-<p>次から使い方です。</p>
-
-<h2>1. SDK の Google Play Services を更新する</h2>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
-
-<p>Activity Recognition と同じく Google Play services として提供されているので、SDK Manager でライブラリを更新します。</p>
-
-<h2>2. Eclipse でプロジェクトを作る</h2>
-
-<p>Android Studio は使ってません(まだよくわからないので)
-Eclipse で、いつもどおりに Android のプロジェクトを作ります。
-Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
-名前はここでは FusedLocationProviderSample とします。</p>
-
-<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
-
-<p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
-
-<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
-
-<p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
-
-<p>次から FusedLocationProviderSample の実装です。</p>
-
-<h2>4. AndroidManifest.xml の編集</h2>
-
-<p>Fused Location Provider を使うのには今まで通り、<code>ACCESS_FINE_LOCATION</code> と <code>ACCESS_COARSE_LOCATION</code> を設定します。</p>
-
-<p>LocationClient は、指定した PERMISSION に応じてよしなに動いてくれるそうです。</p>
-
-<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
-</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.example.fusedlocationprovidersample&quot;</span>
-</span><span class='line'>    <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
-</span><span class='line'>    <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;uses-sdk</span>
-</span><span class='line'>        <span class="na">android:minSdkVersion=</span><span class="s">&quot;8&quot;</span>
-</span><span class='line'>        <span class="na">android:targetSdkVersion=</span><span class="s">&quot;17&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_FINE_LOCATION&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_COARSE_LOCATION&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;application</span>
-</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
-</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
-</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
-</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;activity</span>
-</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;com.example.fusedlocationprovidersample.MainActivity&quot;</span>
-</span><span class='line'>            <span class="na">android:screenOrientation=</span><span class="s">&quot;portrait&quot;</span>
-</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>5. Fused Location Provider を使う</h2>
-
-<p>ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの <code>LocationProvider</code> が(も)使えるので、画面一つだけのシンプルなコードです。</p>
-
-<p>FusedLocationProvider を使うには、<a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> クラスを使います。</p>
-
-<p>大雑把な流れは:</p>
-
-<ol>
-<li>インスタンスを生成する
-connect を呼ぶ -> ConnectionCallbacks.onConnected がコールバックされる</li>
-<li><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html">LocationRequest</a> を指定して、requestLocationUpdates を呼ぶ。 -> LocationListener.onLocationChanged が呼ばれる</li>
-</ol>
-
-
-<p>です。connect を呼んで onConnected を待つのと、位置取得条件が <code>LocationRequest</code> クラスになった以外は <code>LocationManager</code> と同じです。</p>
-
-<p>では、全コードです。</p>
-
-<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">fusedlocationprovidersample</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.ConnectionResult</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationClient</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.LocationRequest</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.location.Location</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.os.Bundle</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View.OnClickListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.Button</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.TextView</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.Activity</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="c1">// FusedLocationProvider 用の Client</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">LocationClient</span> <span class="n">_locationClient</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="o">;</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="c1">// 以前と変わらない LocationListener</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">final</span> <span class="n">LocationListener</span> <span class="n">_locationListener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocationListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="nd">@Override</span>
-</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onLocationChanged</span><span class="o">(</span><span class="kd">final</span> <span class="n">Location</span> <span class="n">location</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>              <span class="nd">@Override</span>
-</span><span class='line'>              <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">_textResult</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">text</span> <span class="o">=</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">location</span><span class="o">.</span><span class="na">getTime</span><span class="o">())</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span>
-</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getLatitude</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span>
-</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getLongitude</span><span class="o">()</span> <span class="o">+</span> <span class="s">&quot;/&quot;</span> <span class="o">+</span>
-</span><span class='line'>                          <span class="o">+</span> <span class="n">location</span><span class="o">.</span><span class="na">getAccuracy</span><span class="o">()</span> <span class="o">+</span>
-</span><span class='line'>                          <span class="s">&quot;\n&quot;</span> <span class="o">+</span> <span class="n">text</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>                  <span class="n">_textResult</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">text</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>          <span class="o">});</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">};</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">_textResult</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text_result</span><span class="o">);</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="kd">final</span> <span class="n">Button</span> <span class="n">buttonLocate</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">button_locate</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>          <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">_isStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              <span class="k">if</span> <span class="o">(!</span><span class="n">_isStarted</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">startLocate</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Stop&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">stopLocate</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">buttonLocate</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Start&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>              
-</span><span class='line'>              <span class="n">_isStarted</span> <span class="o">=</span> <span class="o">!</span><span class="n">_isStarted</span><span class="o">;</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">});</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">stopLocate</span><span class="o">();</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">startLocate</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">_locationClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocationClient</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">ConnectionCallbacks</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnected</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              <span class="c1">// 2. 位置の取得開始！</span>
-</span><span class='line'>              <span class="n">LocationRequest</span> <span class="n">request</span> <span class="o">=</span> <span class="n">LocationRequest</span><span class="o">.</span><span class="na">create</span><span class="o">()</span>
-</span><span class='line'>              <span class="o">.</span><span class="na">setPriority</span><span class="o">(</span><span class="n">LocationRequest</span><span class="o">.</span><span class="na">PRIORITY_HIGH_ACCURACY</span><span class="o">)</span>
-</span><span class='line'>              <span class="o">.</span><span class="na">setInterval</span><span class="o">(</span><span class="mi">5000</span><span class="o">);</span> <span class="c1">// 5秒おき</span>
-</span><span class='line'>              <span class="n">_locationClient</span><span class="o">.</span><span class="na">requestLocationUpdates</span><span class="o">(</span><span class="n">request</span><span class="o">,</span> <span class="n">_locationListener</span><span class="o">);</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="nd">@Override</span>
-</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDisconnected</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>              <span class="n">_locationClient</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="o">},</span> <span class="k">new</span> <span class="n">OnConnectionFailedListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>            <span class="nd">@Override</span>
-</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnectionFailed</span><span class="o">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>        <span class="o">});</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">// 1. 位置取得サービスに接続！</span>
-</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">private</span> <span class="kt">void</span> <span class="nf">stopLocate</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_locationClient</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">_locationClient</span><span class="o">.</span><span class="na">isConnected</span><span class="o">())</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">removeLocationUpdates</span><span class="o">(</span><span class="n">_locationListener</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">_locationClient</span><span class="o">.</span><span class="na">disconnect</span><span class="o">();</span>
-</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>6. 動くのか！？</h2>
-
-<p>HTC J(not蝶) で動かしてみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_fused_location_provider1.png" alt="image3" /></p>
-
-<p>室内での結果ですが、最初 27m の精度だったのが、放っておくとどんどん精度が上がって行きました。が、地図に重ねてみないと実際合ってるのかよくわかりませんね。</p>
-
-<p>そのうち、地図に載せて検証してみたいです。</p>
-
-<h2>Permission と Priority と精度の話</h2>
-
-<p>Permission と Priority の組み合わせで、位置の精度がどう変わるか、少し調べました。</p>
-
-<h3>FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
-<p>GPS と WiFi と センサーフル活用。GPS が捕捉できなくても数十ｍの位置精度が概ね出るようです。</p>
-
-<h3>COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
-<p>使えない。FINE_LOCATION が必要ってエラーになりました。</p>
-
-<h3>COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY</h3>
-
-<p>位置の精度が数km程度になりました。WiFi測位(従来の NETWORK_PROVIDER)よりも悪いです。うーんこれは期待はずれだなあ。</p>
-
-<p>結局、例えば屋内測位でしか使わないからGPS要らねって FINE_LOCATION を外すと、かえって精度が落ちるという事になります。(GPS使いませんPERMISSIONが欲しいな。。。)</p>
-
-<h2>おまけ</h2>
-
-<ul>
-<li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
-</ul>
-
-
-<p>によると、Google Maps Android API v2 の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean">setMyLocationEnabled(true)</a> でも FusedLocationProvider が使われるようになったとのことです。</p>
-
-<h2>まとめ</h2>
-
-<p>公式のコンプリートな Getting Started は</p>
-
-<ul>
-<li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location | Android Developers</a></li>
-</ul>
-
-
-<p>にありますので、こちらを読まれた方が確実です。</p>
-
-<p>ここで作ったサンプルは、</p>
-
-<ul>
-<li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
-</ul>
-
-
-<p>に置いておきます。</p>
 ]]></content>
   </entry>
   

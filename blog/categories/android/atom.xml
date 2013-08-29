@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-29T20:27:22+09:00</updated>
+  <updated>2013-08-29T20:44:17+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,96 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[SDカードのファイルI/Oパフォーマンス計測]]></title>
+    <link href="http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io/"/>
+    <updated>2013-08-29T20:43:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io</id>
+    <content type="html"><![CDATA[<p>端末とか SDカード の種類とかで大きく違うんでしょうけど、自分の端末で調べたのでメモ。</p>
+
+<!--more-->
+
+
+<ul>
+<li>機種: au HTC J(ISW13HT)</li>
+<li>SDカード: 最初から付いてたやつ</li>
+</ul>
+
+
+<h2>計測項目</h2>
+
+<ul>
+<li>Create - テキストファイルの生成</li>
+<li>List - ディレクトリ内の全ファイルの列挙</li>
+<li>Rename - ファイル名の変更</li>
+<li>Delete - ファイルを1つずつ削除</li>
+<li>DelDir - 親ディレクトリを削除</li>
+</ul>
+
+
+<h2>計測方法</h2>
+
+<ul>
+<li>ディレクトリ内にファイルを 100個、1000個、10000個作成した時のそれぞれで計測。</li>
+<li>それぞれの計測は5回行った平均値。</li>
+<li>計測に使ったコードは<a href="https://gist.github.com/amay077/6374470">こちら</a></li>
+</ul>
+
+
+<h2>計測結果</h2>
+
+<table>
+<thead>
+<tr>
+<th align="right">ファイル数</th>
+<th align="right">Create</th>
+<th align="right">List</th>
+<th align="right">Rename</th>
+<th align="right">Delete</th>
+<th align="right">DelDir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">100</td>
+<td align="right">1,606ms</td>
+<td align="right">939ms</td>
+<td align="right">1,664ms</td>
+<td align="right">2,792ms</td>
+<td align="right">1ms未満</td>
+</tr>
+<tr>
+<td align="right">1,000</td>
+<td align="right">15,527ms</td>
+<td align="right">950ms</td>
+<td align="right">17,359ms</td>
+<td align="right">27,057ms</td>
+<td align="right">6ms</td>
+</tr>
+<tr>
+<td align="right">10,000</td>
+<td align="right">227,236ms</td>
+<td align="right">1,003ms</td>
+<td align="right">254,338ms</td>
+<td align="right">191,631ms</td>
+<td align="right">69ms</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Create と Rename はファイル100個で約1.5秒、Delete は約×2 の時間がかかる。</li>
+<li>List はファイル数にあまり影響されない。</li>
+<li>DelDir は超早い。</li>
+<li>CPU 使用率は 40〜60% だった。</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件]]></title>
@@ -372,55 +462,6 @@ Screen dim duration: 6000 ms</p>
 <li>Fused Provider に期待しすぎないでください</li>
 <li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
 <li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager/"/>
-    <updated>2013-05-28T19:25:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager</id>
-    <content type="html"><![CDATA[<p>サポートパッケージに<code>LocalBroadcastManager</code> というクラスがあるのを今頃知りまして。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html">LocalBroadcastManager | Android Developers</a></li>
-</ul>
-
-
-<p>ブロードキャストは使い方を誤るとデータを(アプリの)外部に流出させる可能性があるわけですが(<a href="http://www.jssec.org/report/securecoding.html">Android アプリのセキュア設計・セキュアコーディングガイド</a> 参照)、このクラスを使うと「他のアプリにデータを漏らさない」「意図しないブロードキャストを受信しない」「効率がよい」だそうです。</p>
-
-<h2>いつ使うんですか？</h2>
-
-<p>たとえば GPS を使うアプリで、GPS の受信は <code>IntentService</code> にやらせて、受信した位置を地図に表示するために、IntentService からブロードキャスト投げて、<code>Activity</code> に仕掛けたレシーバで受信する、なんてケースでしょうか。(いやそれは IntentService じゃなくて普通のサービスで aidl 使ってやれよ、とかいろいろあるわけですが。ん？PendingIntent でサービスを起動する方法だと、クライアントから bind するタイミングが無いからダメかな？)</p>
-
-<h2>使い方</h2>
-
-<p>stackoverflow に良い使い方が載ってました</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/a/8875292">android - how to use LocalBroadcastManager? - Stack Overflow</a></li>
-</ul>
-
-
-<h2>使ってみた</h2>
-
-<p>状態認識の結果も秘匿情報でしょう、ということで<a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">以前</a>作った <code>ActivityRecognitionClient</code> のサンプルを修正してみました。</p>
-
-<ul>
-<li><a href="https://github.com/amay077/androidactivityrecognizingsample/commit/a041b300d3e9fdfe6227c05c3f21fb1e3876bbad">amay077/androidactivityrecognizingsample · GitHub</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<ul>
-<li>ブロードキャストする時は、まず LocalBroadcastManager を使ってみよう。</li>
-<li>stackoverflow の回答へのダイレクトリンクとか、github の changeset へのダイレクトリンク便利すぎる！</li>
 </ul>
 
 ]]></content>
