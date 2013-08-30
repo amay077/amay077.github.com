@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Java | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/java/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-29T20:44:17+09:00</updated>
+  <updated>2013-08-30T10:33:24+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[DateFormat.format では HH:mm ではなく kk:mm を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/04/15/does-not-working-24h-in-dateformat/"/>
+    <updated>2013-04-15T19:34:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/04/15/does-not-working-24h-in-dateformat</id>
+    <content type="html"><![CDATA[<p>Android には <code>android.text.format.DateFormat</code> というユーティリティクラスがあるのですが、これの <code>format</code> メソッド、時刻の24時間形式に対応してません。</p>
+
+<!--more-->
+
+
+<p><code>java DateTimeFormatTest.java
+long t = System.currentTimeMillis();
+Log.d("By DateFormat", DateFormat.format("HH:mm", t));
+Log.d("By SimpleDateFormat", new SimpleDateFormat("HH:mm").format(new Date(t)));
+</code></p>
+
+<p><code>
+04-09 22:42:14.435: D/By DateFormat(2860): HH:42 ←あ〜あ
+04-09 22:42:14.435: D/By SimpleDateFormat(2860): 22:42
+</code></p>
+
+<p>Staclkoverflow とかにも「代わりに SimpleDateToimeFormat を使えば」と書いてあるわけですが、いやいやそれじゃユーティリティクラスの役割果たしてないでしょ？と思うところであります。</p>
+
+<p><strike>自分の中では、時刻は24h表示がデフォルトなので、「DateFormat クラス使えない子」というレッテルを貼ってしまいました。</strike></p>
+
+<h2>追記 2013.7.24</h2>
+
+<p>「HH でなく kk が使えるよ」とコメントで教えて頂きました。</p>
+
+<p><code>java
+DateFormat.format("kk:mm", t);
+new SimpleDateFormat("kk:mm").format(new Date(t));
+</code></p>
+
+<p>どうやら <a href="http://stackoverflow.com/questions/8907509/how-to-set-24-hours-format-for-date-on-java">SimpleDateFormat でも使える</a>ようなので、「Java で 24h表記の場合は kk」って覚えておけばよさそうです。(k って何の略なの…)</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/5755073/24-hour-clock-not-working-in-dateformat-android">java - 24 hour clock not working in dateformat android - Stack Overflow</a></li>
+</ul>
+
+
+<p>よく見たら、ここの Top Vote にも 「kk 使え」って書いてあったorz</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた]]></title>
@@ -578,69 +625,6 @@ return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt
 <li><a href="http://stackoverflow.com/questions/3786825/java-volatile-boolean-vs-atomicboolean">Java: volatile boolean vs AtomicBoolean - Stack Overflow</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Android の static 変数はヤバい]]></title>
-    <link href="http://amay077.github.io/blog/2011/01/21/android-static/"/>
-    <updated>2011-01-21T07:36:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2011/01/21/android-static</id>
-    <content type="html"><![CDATA[<p>今まで Windows アプリケーションしか作ったことのない人（私のような）が、Android アプリケーションをつくりはじめて戸惑うところの一つに、Activity のライフサイクルがあります。今回これ関連で、 見事に static 変数でハマりましたので、メモしておきます。</p>
-
-<!--more-->
-
-
-<p>Android Developper では、Activity のライフサイクルは以下の図で説明されています。</p>
-
-<p><img src="http://developer.android.com/images/activity_lifecycle.png" alt="&quot;image1&quot;" /></p>
-
-<p>この図の説明は、<a href="http://www.android-group.jp/index.php?cmd=read&amp;page=%CA%D9%B6%AF%B2%F1%2FAndroid%20SDK%20WG%20%C2%E81%B2%F3%20%A5%BB%A5%C3%A5%B7%A5%E7%A5%F3%A1%CA2008.10.25%A1%CB&amp;word=activity#iee83184">日本Androidの会のページ</a> などで解説されているので、ここでは割愛しますが、ポイントなのは、</p>
-
-<p>アプリケーションを終了（onDestroy）しても、プロセスは死んでいない。
-という事です。static 変数でハマったと書きましたが、static 変数はプロセス毎に保持されるものですが、Windows アプリケーションでは、アプリケーションを終了して再起動すれば、static 変数も初期化されます。</p>
-
-<p>Android アプリケーションでも普通そうだろう、と思うのが人情です。</p>
-
-<p>で、上のライフサイクルです。この図では、アプリケーションを終了してもプロセスが終了するとは書かれていません。他のアプリケーションによってメモリが必要になった時だけ、プロセスが殺される、とあります。これはつまり、Android アプリケーションでは、起動→終了→再起動しても、（ほとんどの場合）static 変数は初期化されない、という事になります。</p>
-
-<p>ホントにそうでしょうか？サンプルを作ってためしてみました。</p>
-
-<h3>static 変数の生存を確認するサンプル</h3>
-
-<p><div><script src='https://gist.github.com/789458.js'></script>
-<noscript><pre><code></code></pre></noscript></div>
-</p>
-
-<p>static 変数を用意し、LogCat に出力した後、1加算するだけです。上記のコードを実行すると、LogCat にカウンタ値が出力されます。↓こんな感じで。</p>
-
-<blockquote><p>01-21 18:16:54.937: DEBUG/MainActivity(2869): static member:0</p></blockquote>
-
-<p>さて、これを「戻る」で終了し、再び起動してみます。</p>
-
-<blockquote><p>01-21 18:17:43.443: DEBUG/MainActivity(2869): static member:1</p></blockquote>
-
-<p>カウンタが加算されている事が分かります。なんども終了→起動を繰り返すとどんどん加算されていきます。</p>
-
-<blockquote><p>01-21 18:17:43.443: DEBUG/MainActivity(2869): static member:2
-01-21 18:17:45.112: DEBUG/MainActivity(2869): static member:3
-01-21 18:17:48.876: DEBUG/MainActivity(2869): static member:4</p></blockquote>
-
-<p>このようにアプリケーションを終了しても static 変数は（プロセスは）生存していることが分かりました。</p>
-
-<p>次に破棄された事を確認してみます。他のアプリでメモリが必要になった時～というのは再現させにくいので、タスク管理ソフトを使います。</p>
-
-<p>自分は、<a href="http://jp.androlib.com/android.application.nextapp-systempanel-iFtq.aspx">SystemPanel Lite</a> を使いました。このソフトで作成したアプリケーションを選択してタスクを終了させた後、再度アプリケーションを起動してみます。すると、</p>
-
-<blockquote><p>01-21 18:17:50.223: DEBUG/MainActivity(2869): static member:0</p></blockquote>
-
-<p>出力結果はこのようになり、タスクが終了させられたので、カウンタも 0 に戻った事が確認できます。</p>
-
-<p>このように、Android アプリケーション開発では、static 変数は要注意です。</p>
-
-<p>各Activity から共有できるからと多用すると、特に状態を格納するなどで使うと不具合の元になりそうです。</p>
-
-<p>※だれか Activity じゃなくて ”アプリケーション" が終了するタイミングを補足する方法、教えてください</p>
 ]]></content>
   </entry>
   
