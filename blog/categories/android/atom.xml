@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-30T10:33:24+09:00</updated>
+  <updated>2013-09-01T19:57:10+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,422 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ExecutorService の復習]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/01/re-studying-executorservice/"/>
+    <updated>2013-09-01T19:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/01/re-studying-executorservice</id>
+    <content type="html"><![CDATA[<p>Android で非同期処理っていうと、真っ先に <code>AsyncTask</code> が出てくるんですが、なるべくなら Java 標準のマルチスレッドAPI である ExecutorService を使った方が良いと思ってます。</p>
+
+<!--more-->
+
+
+<ul>
+<li>(2007年の記事だけど) <a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20071001/283395/">Java技術最前線 - 「Java SE 6完全攻略」第49回 Concurrency Utilitiesの変更点 その1：ITpro</a></li>
+</ul>
+
+
+<p>Android で初めて Java を書いたので細かい仕様がよく分からず、勉強がてら動きを確認してみました。</p>
+
+<h2>1. 1つのワーカスレッドに実行させる</h2>
+
+<p><code>newSingleThreadExecutor</code> でワーカスレッドを一つ持つ Executor を生成して、2つのタスク(=非同期で実行させる処理)を順に実行。</p>
+
+<p>```java
+public void singleThreadExecutorBasicTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:18:12.891: D/ExecutorTest(391): Primary ThreadID:4943<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task A. ThreadId:4944<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task B. ThreadId:4944<br/></p></blockquote>
+
+<p>A→B の順で（=submit した順で）実行される。
+Primary と task で ThreadID が異なる、2つの task は同じ ThreadID であることに注目。</p>
+
+<h2>2. 最初のタスクに時間がかかったら？</h2>
+
+<p>タスクA の実行に時間がかかる場合、タスクB はどうなる？</p>
+
+<p>```java
+public void singleThreadExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:22:04.288: D/ExecutorTest(1511): Primary ThreadID:5063<br/>
+08-29 17:22:04.288: D/ExecutorTest(1511): Run task A start. ThreadId:5064<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task A end.<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task B. ThreadId:5064<br/></p></blockquote>
+
+<p>A→B の順で実行される。シングルスレッドなので、並列に処理されることはない。</p>
+
+<h2>3. ThreadPoolExecutor を使ったら？</h2>
+
+<p><code>Executors.newSingleThreadExecutor()</code> の代わりに <code>Executors.newFixedThreadPool(2)</code> としてみる。これによりワーカスレッドを2つ使う Execurot が生成される。</p>
+
+<p>```java
+public void threadPoolExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:29:01.731: D/ExecutorTest(3017): Primary ThreadID:5255<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task A start. ThreadId:5256<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task B. ThreadId:5257<br/>
+08-29 17:29:04.725: D/ExecutorTest(3017): Run task A end.<br/></p></blockquote>
+
+<p>タスクA と タスクB で ThreadID が異なる事に注目。
+スレッドが２つ使えるので、タスクA の終了を<strong>待たず</strong>にタスクB が実行される。というか、タスクA から始まる保証もない。</p>
+
+<h2>3. SingleThreadScheduledExecutor を使ってみる</h2>
+
+<p>話題を変えて、タスクの実行時間を制御できる Scheduled系 の Executor を使ってみる。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:36:16.125: D/ExecutorTest(3547): Primary ThreadID:5285<br/>
+08-29 17:36:19.128: D/ExecutorTest(3547): Run task B. ThreadId:5286<br/>
+08-29 17:36:21.130: D/ExecutorTest(3547): Run task A. ThreadId:5286<br/></p></blockquote>
+
+<p>開始から3秒後にタスクBが、開始から5秒後にタスクAが実行される。
+submit した順は関係ないことに注意。</p>
+
+<h2>4. スケジュールされた時間に別のタスクが実行中だったら？</h2>
+
+<p>3秒後に実行されるタスクBの処理が終わらない時、5秒後に実行されるタスクAはどうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:44:18.139: D/ExecutorTest(4737): Primary ThreadID:5456<br/>
+08-29 17:44:21.142: D/ExecutorTest(4737): Run task B start. ThreadId:5457<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task B end.<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task A. ThreadId:5457<br/></p></blockquote>
+
+<p>5秒後とスケジュールされたタスクAだが、タスクB が終わるまで待たされる。シングルスレッドなので。</p>
+
+<h2>5. そこで ScheduledThreadPoolExecutor を使ってみる</h2>
+
+<p><code>Executors.newSingleThreadScheduledExecutor()</code> の代わりに <code>Executors.newScheduledThreadPool(2)</code> としてみる。</p>
+
+<p>```java
+public void threadPoolScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<blockquote><p>08-29 17:48:28.536: D/ExecutorTest(5439): Primary ThreadID:5558<br/>
+08-29 17:48:31.550: D/ExecutorTest(5439): Run task B start. ThreadId:5559<br/>
+08-29 17:48:<strong>33</strong>.542: D/ExecutorTest(5439): Run task A. ThreadId:5560<br/>
+08-29 17:48:41.550: D/ExecutorTest(5439): Run task B end.<br/></p></blockquote>
+
+<p>スレッドが２つ使えるので、タスクA は、スケジュール通り（タスクBの終了を待たずに submit してから5秒後に実行される。</p>
+
+<h2>6. Scheduled系Executor の Timer 的機能を使ってみる</h2>
+
+<p><code>schedule()</code> は、一発だけ(Javascript の <code>setTimeout</code> みたいな)、繰り返し処理するには、<code>scheduleAtFixedRate</code> か <code>scheduleWithFixedDelay</code> を使う。
+まずは <code>scheduleAtFixedRate</code> から。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor. scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:59:33.556: D/ExecutorTest(7228): Primary ThreadID:5795<br/>
+08-29 17:59:38.561: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:41.565: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:44.568: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+…</p></blockquote>
+
+<p>最初は５秒、その後は３秒毎にタスクAが実行される。</p>
+
+<h2>7. 繰り返し実行されるタスクが重かったら？</h2>
+
+<p>繰り返しは３秒だけど、タスクAの実行に１０秒かかったら、どうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:15:49.397: D/ExecutorTest(10157): Primary ThreadID:6188<br/>
+08-29 18:15:54.413: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:24.405: D/ExecutorTest(10157): Run task A end.<br/>
+…</p></blockquote>
+
+<p>３秒置きに設定しているが、タスクAが終わらないので、終わったら<strong>すぐに</strong>、次のタスクを実行する。</p>
+
+<h2>8. scheduleWithFixedDelay ではどうなる？</h2>
+
+<p><code>scheduleAtFixedRate</code> の代わりに <code>scheduleWithFixedDelay</code> にしてみた。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleWithFixedDelay(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:22:37.183: D/ExecutorTest(10663): Primary ThreadID:6245<br/>
+08-29 18:22:42.178: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:22:52.179: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:22:<strong>55</strong>.182: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:23:05.182: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:23:08.176: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+…</p></blockquote>
+
+<p>タスクAが終わって、<strong>さらに３秒待って</strong>、次のタスクを実行する。
+<code>FixedDelay</code> は、前回のタスクが終わってからｎ秒待つ。
+<code>FixedRate</code> は、の終了を待たずにｎ秒置きに実行するが、終わってない場合は仕方がないので終わるまで待つ、という感じらしい。</p>
+
+<h2>9. ScheduledThreadPoolExecutor ではどうか？</h2>
+
+<p>ScheduledThreadPoolExecutor  と <code>scheduleAtFixedRate</code> の組み合わせではどうか？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } 
+        catch (InterruptedException e) { Log.w(TAG, "Interrupted task A. ThreadId:" + Thread.currentThread().getId()); } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 19:09:39.707: D/ExecutorTest(14173): Primary ThreadID:6605<br/>
+08-29 19:09:44.712: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:34.705: D/ExecutorTest(14173): Run task A end.<br/>
+…</p></blockquote>
+
+<p>あれ？２つのスレッドを使ってくれない。を登録した時点でスレッドは決まってるということかな。</p>
+
+<h2>まとめ</h2>
+
+<p>「タスクが実行されるスレッド」を意識すればハマることはなさそう。</p>
+
+<p>シングルスレッドの場合は、<code>submit</code> あるいは <code>schedule</code> されたタスクは、一つのスレッドで順次処理される。スレッドプールを使っている場合は、スレッドの数だけ並列処理される。
+ただし、<code>scheduleAtFixedRate</code> など繰り返し処理では、登録時にスレッドが決まるので、タスクの実行に時間がかかっても並列処理されない。</p>
+
+<p><code>scheduleAtFixedRate</code> や <code>scheduleWithFixedDelay</code> はタイマー的な動きをするが、タスクの処理に時間がかかる場合は、意図した時間間隔で実行されない。タイマーとして使いたければ、Executor を２つ用意し、一つはタイマー専用、もうひとつをタスク実行専用とした方が良さそう。</p>
+
+<p>長くなってしまったので、タスクのキャンセルとか、Terminate 系は別の機会に。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[SDカードのファイルI/Oパフォーマンス計測]]></title>
@@ -373,95 +789,6 @@ Screen dim duration: 6000 ms</p>
 
 <ul>
 <li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Fused Location Provider を近くのショッピングセンターで評価してみた]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider/"/>
-    <updated>2013-05-30T21:31:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/30/testing-fused-location-provider</id>
-    <content type="html"><![CDATA[<p>Android に新しく搭載された Fused Location Provider、これは GPS/WiFi/センサーを統合的に使ってその時ベストな位置を取得できるというもので、<a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Google I/O のデモ</a> が衝撃的だったので、自分でも試してみました。</p>
-
-<!--more-->
-
-
-<h2>検証環境とか</h2>
-
-<ul>
-<li>場所 : イオン豊橋南店（ええ田舎ですが何か？</li>
-<li>日時 : 2013/05/30 17:30頃</li>
-<li>天候 : 小雨（曇天だったので GPS は捕まえにくかったかも）</li>
-<li>端末 : au HTC J(!蝶) OS は 4.0.4</li>
-<li>GPS も WiFi も ON</li>
-<li>Android SDK Tools : rev.21.1</li>
-<li>Google Play service : rev.7</li>
-<li>FusedProvider の Priority : PRIORITY_HIGH_ACCURACY</li>
-<li>位置取得間隔 : 5秒</li>
-<li>姿勢 : スマホを常に左手で掲げて、見ながら歩きました。</li>
-</ul>
-
-
-<h2>その1:駐車場〜1F〜駐車場</h2>
-
-<p>駐車場に車を停めて、歩いて店内に入場、店内をなるべくゆっくり直線的にぐるっと徘徊して、退店、駐車場を歩いて戻って来ました。</p>
-
-<p>緑が実際の経路、青が Fused Provider の経路です。</p>
-
-<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;output=embed"></iframe>
-
-
-<br /><small><a href="https://maps.google.co.jp/maps/ms?msa=0&amp;msid=206106708723125678709.0004ddec1d5240e6ba1d3&amp;brcurrent=3,0x6004d3ebe16cdde1:0xfb92e7477942b89b,0&amp;ie=UTF8&amp;t=h&amp;ll=34.709597,137.387786&amp;spn=0.001372,0.001735&amp;source=embed" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店1F)</a> を表示</small>
-
-
-<h2>その2:駐車場〜1F〜2F〜ぐるっと〜1F〜駐車場</h2>
-
-<p>もう一度。
-今度は入店してすぐエスカレータで2Fへ。2Fフロアをぐるっと回ってからエスカレータで1Fへ降りて駐車場へ戻って来ました。</p>
-
-<iframe width="425" height="350" frameborder="0" scrolling="no" marginheight="0" marginwidth="0" src="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517&amp;output=embed"></iframe>
-
-
-<br /><small>大きな地図で <a href="https://maps.google.co.jp/maps/ms?t=h&amp;brcurrent=3,0x6004d3ec8f3f5bf5:0x7b6f4e2f69453e37,1&amp;msa=0&amp;msid=206106708723125678709.0004ddec316197e38b987&amp;source=embed&amp;ie=UTF8&amp;ll=34.709546,137.388057&amp;spn=0.003479,0.004517" style="color:#0000FF;text-align:left">FusedProviderの評価(イオン豊橋南店2F)</a> を表示</small>
-
-
-<h2>結果をみて</h2>
-
-<p>うーん、かいかぶり過ぎたか Fused Provider。</p>
-
-<p>確かに GPS と WiFi をシームレスに扱ってくれているようですが、期待していた屋内での測位結果はちょっと残念でした。</p>
-
-<p>I/O のセッションの中では、WiFi+Sensor を使ってると言っていたので、WiFi-AP の電波強度と加速度センサーの振れ具合で自律測位してくれるのかなあと思ったのですが、あまり自律測位が機能してないように見えます。</p>
-
-<h3>Accuracy は？</h3>
-
-<p>屋外だとだいたい 10m前後、屋内でも 20〜40m くらいの精度でした。
-上図の幅が約200mですが、実際の位置よりもっと離れている感じがします。</p>
-
-<p>Fused Provider を使うと、妙に Accuracy が小さい(精度の良い)値が得られるのですが、実際の位置がその精度が示す円の中にも入らないこともあり、それなら高い確率で実際の位置を包括する（精度の悪い）WiFi or 基地局測位 の方が有用では？とも思えました。</p>
-
-<p>また、施設内に WiFi-AP が何個あったとかの細かい調査はしていません（たぶん５〜６個）が、都会の繁華街とか地下街の方が圧倒的に多いと思うので、また違った結果が出るものと思います。</p>
-
-<h3>GPS の動きは？</h3>
-
-<p>今回は <code>PRIORITY_HIGH_ACCURACY</code> を使いました。これは GPS を使います。(<code>PRIORITY_BALANCED_POWER_ACCURACY</code> は GPS を使いません［が、 <code>ACCESS_FINE_LOCATION</code> を付けないと精度が数kmレベルになります。］)</p>
-
-<p>記録中の GPS アイコンの動きは、点滅 → 数秒後消える → また点滅 → GPSを捕捉したらつきっぱなし という感じで、屋外に移動すると GPS を捕まえる、屋内では度々トライするが捕まえられないのですぐ消える。という動きをしてました。</p>
-
-<h3>状態認識は貢献してるのか？</h3>
-
-<p>自律測位に状態認識(Activity Recognition)がもし使われているなら、持ちながらよりも、ポケットに入れっぱで歩いた方に最適化されてたかも知れないなあと思ったり。</p>
-
-<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">ActivityRecognitionClient を試した</a> 時も、持ちながらよりも尻ポケに入れたまま歩いた方が認識されやすい気がしました。気だけですが。</p>
-
-<h2>まとめ</h2>
-
-<ul>
-<li>Fused Provider に期待しすぎないでください</li>
-<li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
-<li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
 </ul>
 
 ]]></content>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 
-  <title><![CDATA[Category: Java | Experiments Never Fail]]></title>
+  <title><![CDATA[Category: JAva | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/java/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-08-30T10:33:24+09:00</updated>
+  <updated>2013-09-01T19:57:10+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -14,586 +14,43 @@
 
   
   <entry>
-    <title type="html"><![CDATA[DateFormat.format では HH:mm ではなく kk:mm を使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/04/15/does-not-working-24h-in-dateformat/"/>
-    <updated>2013-04-15T19:34:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/04/15/does-not-working-24h-in-dateformat</id>
-    <content type="html"><![CDATA[<p>Android には <code>android.text.format.DateFormat</code> というユーティリティクラスがあるのですが、これの <code>format</code> メソッド、時刻の24時間形式に対応してません。</p>
+    <title type="html"><![CDATA[ExecutorService の復習]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/01/re-studying-executorservice/"/>
+    <updated>2013-09-01T19:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/01/re-studying-executorservice</id>
+    <content type="html"><![CDATA[<p>Android で非同期処理っていうと、真っ先に <code>AsyncTask</code> が出てくるんですが、なるべくなら Java 標準のマルチスレッドAPI である ExecutorService を使った方が良いと思ってます。</p>
 
 <!--more-->
 
 
-<p><code>java DateTimeFormatTest.java
-long t = System.currentTimeMillis();
-Log.d("By DateFormat", DateFormat.format("HH:mm", t));
-Log.d("By SimpleDateFormat", new SimpleDateFormat("HH:mm").format(new Date(t)));
-</code></p>
-
-<p><code>
-04-09 22:42:14.435: D/By DateFormat(2860): HH:42 ←あ〜あ
-04-09 22:42:14.435: D/By SimpleDateFormat(2860): 22:42
-</code></p>
-
-<p>Staclkoverflow とかにも「代わりに SimpleDateToimeFormat を使えば」と書いてあるわけですが、いやいやそれじゃユーティリティクラスの役割果たしてないでしょ？と思うところであります。</p>
-
-<p><strike>自分の中では、時刻は24h表示がデフォルトなので、「DateFormat クラス使えない子」というレッテルを貼ってしまいました。</strike></p>
-
-<h2>追記 2013.7.24</h2>
-
-<p>「HH でなく kk が使えるよ」とコメントで教えて頂きました。</p>
-
-<p><code>java
-DateFormat.format("kk:mm", t);
-new SimpleDateFormat("kk:mm").format(new Date(t));
-</code></p>
-
-<p>どうやら <a href="http://stackoverflow.com/questions/8907509/how-to-set-24-hours-format-for-date-on-java">SimpleDateFormat でも使える</a>ようなので、「Java で 24h表記の場合は kk」って覚えておけばよさそうです。(k って何の略なの…)</p>
-
-<h2>参考</h2>
-
 <ul>
-<li><a href="http://stackoverflow.com/questions/5755073/24-hour-clock-not-working-in-dateformat-android">java - 24 hour clock not working in dateformat android - Stack Overflow</a></li>
+<li>(2007年の記事だけど) <a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20071001/283395/">Java技術最前線 - 「Java SE 6完全攻略」第49回 Concurrency Utilitiesの変更点 その1：ITpro</a></li>
 </ul>
 
 
-<p>よく見たら、ここの Top Vote にも 「kk 使え」って書いてあったorz</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた]]></title>
-    <link href="http://amay077.github.io/blog/2012/12/20/asynctest-on-junit/"/>
-    <updated>2012-12-20T19:07:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/12/20/asynctest-on-junit</id>
-    <content type="html"><![CDATA[<p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
-ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
+<p>Android で初めて Java を書いたので細かい仕様がよく分からず、勉強がてら動きを確認してみました。</p>
 
-<!-- more -->
+<h2>1. 1つのワーカスレッドに実行させる</h2>
 
+<p><code>newSingleThreadExecutor</code> でワーカスレッドを一つ持つ Executor を生成して、2つのタスク(=非同期で実行させる処理)を順に実行。</p>
 
-<p>まあ CountDownLatch で待ってるだけなんですけども。</p>
+<p>```java
+public void singleThreadExecutorBasicTest() throws Exception {</p>
 
-<p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-<p>```java FutureResult.java
-/<em>*
- * success または error が呼ばれるまで get() で待ってる Future みたいなクラス
- *
- * @author @amay077
- </em>/
-public class FutureResult<T> {</p>
-
-<pre><code>private final int TIMEOUT = 10;
-private final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
-
-private final CountDownLatch _latch = new CountDownLatch(1);
-private T _value;
-private Exception _error;
-
-public static class FutureResultException extends Exception {
-    private static final long serialVersionUID = 1L;
-
-    public FutureResultException(Exception detailException) {
-        super(detailException);
-    }
-}
-
-/**
- * 非同期処理が成功したら呼ぶメソッド
- */
-public synchronized void success(T value) {
-    _value = value;
-    _latch.countDown();
-}
-
-/**
- * 非同期処理が失敗したら呼ぶメソッド
- */
-public synchronized void error(Exception ex) {
-    _error = ex;
-    _latch.countDown();
-}
-
-/**
- * 非同期処理が終わるまで待って結果を返す。
- * エラーだったら例外を投げる。
- */
-public T get() throws Exception {
-    try {
-        if (!_latch.await(TIMEOUT, TIMEOUT_UNIT)) {
-            throw new FutureResultException(new TimeoutException());
-        }
-    } catch (Exception ex) {
-        throw new FutureResultException(ex);
-    }
-
-    if (_error != null) {
-        throw _error;
-    }
-
-    return _value;
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
-使い方はこんな感じ。</p>
-
-<p>```java AsyncMethodTest.java
-public void testAsyncMethod() {</p>
-
-<pre><code>final FutureResult&lt;Integer&gt; result = new FutureResult&lt;Integer&gt;();
-
-// 非同期なメソッドを実行
-hoge.asyncMethod(new OnReceiveListener() {
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.submit(new Runnable() {
     @Override
-    public void onReceive(Integer data) {
-        // 正そうな値を受信しtら success を呼ぶ
-        result.success(data);
-    }
-
-    @Override
-    public void onError(Exception ex) {
-        // エラーを受信した場合は error を呼ぶ
-        result.error(ex);
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
     }
 });
 
-// 検証
-try {
-    // get で success か error かタイムアウトするまで待ってる。
-    Assert.assertEquals(0, result.get()); 
-} catch (Exception e) {
-    fail(e.getMessage());
-}
-</code></pre>
-
-<p>}</p>
-
-<p>```</p>
-
-<h2>参考</h2>
-
-<p>なんて記事を書いたあとにもっかいググってみたらこんなライブラリがあるようで。詳細はまだ見てない。</p>
-
-<ul>
-<li><a href="http://code.google.com/p/awaitility/">Awaitility</a> - Awaitility is a small Java-based DSL for synchronizing asynchronous operations. It makes it easy to test asynchronous code. - Google Project Hosting</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[.NET の MVVM + Messenger パターンにあこがれて、Java で Messenger クラスを自作してみた]]></title>
-    <link href="http://amay077.github.io/blog/2012/10/03/mvvm-on-android/"/>
-    <updated>2012-10-03T23:02:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/10/03/mvvm-on-android</id>
-    <content type="html"><![CDATA[<p>MVVM + Messenger パターンとは、</p>
-
-<ul>
-<li><a href="http://tnakamura.hatenablog.com/entry/20110218/mvvm_messenger">いまさら聞けない「MVVM + Messenger パターン」超入門 - present</a></li>
-</ul>
-
-
-<p>らへんを参照。</p>
-
-<!-- more -->
-
-
-<p>勉強がてら、Android(Java) で、Messenger を実装してみようとした。
-要は、View 側で regist された Action<Message> を溜めておき、ViewModel 側から send(new Message()) した時に invoke させればいいんでしょ？と。</p>
-
-<p>とりあえずこんな感じになると思われる。</p>
-
-<p>```java common_interfaces
-public interface Message {
-}</p>
-
-<p>public interface Action1<T> {</p>
-
-<pre><code>public void invoke(T arg);
-</code></pre>
-
-<p>}
-```</p>
-
-<p>```java Messenger.java
-public final class Messenger {</p>
-
-<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
-        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
-
-public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
-    String nameOfT = /* TODO action から T を取得 */
-    _actions.put(nameOfT, action);
-}
-
-public void send(Message message) {
-    /* TODO message の型をキーにして _actions から取り出して invoke */
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これの実装中、いくつか問題にハマった。</p>
-
-<h2>問題1:X&lt;T> の T が取れない</h2>
-
-<p>Action<Message> を溜める時に、Message をキーにして Map に入れておけばいいでしょ、と思ったのだが、できない。
-<code>Action&lt;T&gt;</code> の <code>T</code> が取り出せない。</p>
-
-<p>よく調べてみると</p>
-
-<ul>
-<li><a href="http://www.ne.jp/asahi/hishidama/home/tech/java/generics.html#erasure">Java総称型メモ(Hishidama's Java Generics Memo)</a></li>
-<li><a href="http://blogs.wankuma.com/nagise/archive/2008/10/13/158708.aspx">イレイジャではジェネリクスの何が消えるのか</a></li>
-</ul>
-
-
-<p>だそうです。ふむーなるほど、実行時には T は消えてしまっていると。</p>
-
-<p>しかしいろいろ試していたら、こんな方法で文字列としては取り出すことができました。</p>
-
-<p>```java Messenger.java
-public final class Messenger {</p>
-
-<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
-        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
-
-public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
-    // action が使ってる Generics な型を取り出す(という意味？)。
-    // action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
-    Type[] types = action.getClass().getGenericInterfaces();
-    // 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
-    // ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
-    String typeString = types[0].toString();
-
-    // &lt; &gt; 内だけ取り出す        
-    int start = typeString.indexOf("&lt;");
-    int end = typeString.lastIndexOf("&gt;");
-    String nameOfT = typeString.subSequence(start + 1, end).toString();
-
-    _actions.put(nameOfT, action);
-}
-
-public void send(Message message) {
-    /* TODO message の型をキーにして _actions から取り出して invoke */
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h2>問題2:&lt;? extend T> or &lt;? super T> ?</h2>
-
-<p>次の問題、今度は send の方。
-<code>_actions.get(nameOfMessage)</code> で取り出した <code>Action1&lt;? extend Message&gt;</code> は、invoke メソッドの型が <code>null</code> になってて、使えませんでした。
-なので仕方なく、Generics パラメータなしの <code>Action1</code> で受けることに。</p>
-
-<p>```java Messenger.java
-public final class Messenger {</p>
-
-<pre><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
-        new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
-
-public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
-    // action が使ってる Generics な型を取り出す(という意味？)。
-    // action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
-    Type[] types = action.getClass().getGenericInterfaces();
-    // 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
-    // ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
-    String typeString = types[0].toString();
-
-    // &lt; &gt; 内だけ取り出す        
-    int start = typeString.indexOf("&lt;");
-    int end = typeString.lastIndexOf("&gt;");
-    String nameOfT = typeString.subSequence(start + 1, end).toString();
-
-    _actions.put(nameOfT, action);
-}
-
-@SuppressWarnings("unchecked")
-public void send(Message message) {
-    final String messengerTypeName = message.getClass().getName();
-
-    if (!_actions.containsKey(messengerTypeName)) {
-        return;
-    }
-
-    // Action1&lt;? extends Message&gt; だと、invoke の型が null になってしまう。
-    // が、_actions は追加/取得を兼ねているので Action1&lt;? super Message&gt; にすることもできず…      
-    // 仕方なく Generics 未使用で。
-    @SuppressWarnings("rawtypes")
-    Action1 action = _actions.get(messengerTypeName);
-    action.invoke(message);
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>とりあえず動くけど、なんかスッキリしない。。。</p>
-
-<h2>ここまで実装しておいて…</h2>
-
-<ul>
-<li><a href="http://gushwell.ldblog.jp/archives/52146816.html">MVVM：Messengerを理解するために自作してみた(2):Gushwell's C# Dev Notes</a></li>
-</ul>
-
-
-<p>を発見。
-あれ、Map じゃなくて List でしたか。1回の Send で複数の Callback が走るのね。ま、いいや Android で使うだけだし。
-.NET はいいなあ <code>typeof(T)</code> が使えて。</p>
-
-<h2>使い方</h2>
-
-<p>だいたいこんな感じで使える。</p>
-
-<p>```java usage
-/<em>* ダイアログを表示させるメッセージ </em>/
-public class DialogMessage implements Message {</p>
-
-<pre><code>public String message;
-public Action1&lt;Boolean&gt; callback; 
-
-public DialogMessage(String message, Action1&lt;Boolean&gt; callback) {
-    this.message = message;
-    this.callback = callback;
-}
-</code></pre>
-
-<p>}</p>
-
-<p>/<em>* View側 </em>/
-public class MyActivity extends Activity {</p>
-
-<pre><code>private MyViewModel _vm = new MyViewModel();
-
-@Override
-public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_my);
-
-    // Messenger に Message に対応する Action を登録する。
-    Messenger messenger = _vm.getMessenger();
-    messenger.register(new Action1&lt;DialogMessage&gt;() {
-        @Override
-        public void invoke(DialogMessage dlgMsg) {
-            boolean isOk = showDialog(dlgMsg.message); // ホントは非同期なのでもう少し複雑
-            if (isOk) {
-                finish();
-            }
-            dlgMsg.callback.invoke(isOk); // VM に結果を通知する
-        }
-    });
-}
-
-// 終了ボタンが押されたら Finish コマンドを実行。
-public void exitButton_Click(View view) {
-    _vm.commandExit.execute();
-}
-</code></pre>
-
-<p>}</p>
-
-<p>/<em>* ViewModel ※ Command インターフェースの定義とかは省略 </em>/
-public class MyViewModel {</p>
-
-<pre><code>private final Messenger _messenger = new Messenger();
-
-public Messenger getMessenger() {
-    return _messenger;
-}
-
-public final Command commandExit = new Command() {
+executor.submit(new Runnable() {
     @Override
-    public void execute() {
-        // ダイアログを表示する Message を送る
-        _messenger.send(new DialogMessage("終了します", new Action1&lt;Boolean&gt;() {
-            @Override
-            public void invoke(Boolean pushOk) {
-                // ダイアログの表示結果を受ける
-                Log.d(TAG, "Pushed button is OK? -&gt; " + pushOk);
-            }
-        }));
-    }
-};
-</code></pre>
-
-<p>}
-```</p>
-
-<h2>その他</h2>
-
-<ul>
-<li>.NET の Messenger はなぜ Singleton なんだろう？VM と View の関係が 1:n だから？</li>
-<li>Messenger に否定的な見解もあるようで。確かに「View の変化は ViewModel の状態変化でのみ行われるべき」という主張にも一理ある。 → <a href="http://torokonbu.blogspot.com/2011/12/mvvmmvvm-dialog-behavior.html">トロこんぶ: MVVMでメッセンジャーを使わずにダイアログを表示する(MVVM Dialog Behaviorライブラリ提供)</a></li>
-<li>ちょっと Trigger まで頭回ってません → <a href="http://ugaya40.net/wpf/mvvm_viewmodel_to_vew.html">MVVMパターンでViewModelからViewを操作したい - the sea of fertility</a></li>
-<li>register/send を持ってる Messenger を View と ViewModel が使うのはちょっと違和感。View には register だけ、ViewModel には send のみを公開する interface を公開すべきかな。</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cold を Hot にできる。そう、Publish ならね。]]></title>
-    <link href="http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot/"/>
-    <updated>2012-10-03T19:13:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot</id>
-    <content type="html"><![CDATA[<p>Rx いいよ Rx とか言っておきながら、いままで Cold と Hot の違いについて、ちゃんとわかってませんでしたスイマセン。</p>
-
-<!--more-->
-
-
-<p>そのため、</p>
-
-<ul>
-<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
-<li><a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a></li>
-</ul>
-
-
-<p>で作ったサンプルプログラム、盛大にバグってましたorz</p>
-
-<h2>Cold な Observable と Hot な Observable</h2>
-
-<p>音楽プレーヤ iPod に例えると自分なりにしっくり来ました。
-Observable が iPod で、Observer は聴く人。
-なんとこの iPod はイヤホンジャックがたくさんあります。
-そしてさらにこの iPod はイヤホンを接続するだけで再生が始まり、抜くと停止します。</p>
-
-<p>Cold な iPod では、聴く人がイヤホンを接続すると、音楽が最初から再生されます。
-次の人がイヤホンを接続すると、また音楽が最初から再生されます。(最初の人は、再生されなおすわけじゃないよ。)</p>
-
-<p>Hot な iPod では、最初に聴く人がイヤホンを接続すると、音楽が再生され始めます。
-次の人が、イヤホンを接続すると、その人は途中から聴くことになります。一つのストリーミング放送をみんなで聴くみたいな。
-最後の人がイヤホンを外すと、再生が止まります(この辺はストリーミングと微妙に感覚が異なる、ストリーミングって、聴いてる人が居ようが居まいが流され続けるってイメージだから)。</p>
-
-<h2>何が問題か</h2>
-
-<p>以上を踏まえた上で、<a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a> で作ったプログラムのどこが問題だったかというと。</p>
-
-<p>位置を聞くために接続をすると、その都度、<code>locMan.requestLocationUpdates</code> が呼ばれているという事です。上記の音楽プレーヤで例えると、<code>player.start()</code> です。</p>
-
-<p>位置情報の取得は、ホントに無限ストリーミングなので、一見問題無さげに見えますが、２つリスナを登録するのは頂けません。(中には複数のリスナを登録できない API もあるでしょう、ありました。それで気づいたんです。)</p>
-
-<p>これは最初の register でのみ <code>locMan.requestLocationUpdates</code> が実行され、2番目以降の register では、observer.next だけが呼ばれるようにしないといけません。
-そのためには、register した複数の observer を保持・管理する必要があります。うげー。</p>
-
-<h2>そこで Publish ですよ。</h2>
-
-<p>.publish() を Observable のおしりにくっつけます。はい、これだけ。本当に。簡単すぎて「いいの？」って思っちゃうくらい。</p>
-
-<p>``java getCurrectLocationAsHotObservable.java
-/<em>*
- * 位置を取得し続ける(Hot)
- </em>/
-public static ObservableBuilder<Location> getCurrentLocationAsHotObservable(</p>
-
-<pre><code>final Context context, final String provider) {
-return ObservableBuilder.from(
-    getCurrentlocationAsObservable(context, provider)
-    ).publish(); // Cold → Hot へ変換！
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これだけで、複数の人が位置を聴きに来ても、<code>locMan.requestLocationUpdates</code> が呼ばれるのは１回だけである、Hot な Observable になります。Rx すげえよ Rx！</p>
-
-<p>reactive4java のソースを読んだところ、前述の「複数の observer を保持・管理して、最初だけリスナ登録して、誰もいなくなったらリスナ解除する」みたいな面倒なことを publish の中(正確には observeOn)で行なってくれているようです。</p>
-
-<p>ますます Reactive Extensions が好きになりましたよ。</p>
-
-<h2>.NET の Reactive Extensions と reactive4java の違い</h2>
-
-<p>.NET の Reactive Extenstions では、Publish は、<code>IConnectableObservable&lt;T&gt;</code> を返すそうです。そして <code>Subscribe</code> しただけでは再生は開始されず、<code>Connect</code> した時に再生されるのだ、とも。</p>
-
-<p>一方、<a href="http://reactive4java.googlecode.com/svn/trunk/Reactive4Java/docs/javadoc/index.html">reactive4java</a> では、<code>publish</code> は、普通の <code>Observable&lt;T&gt;</code> を返します。Observable には register(.NET の Subscribe に相当)しかないので、これを呼び出した時に再生が開始されます。</p>
-
-<p>特に reactive4java の挙動で困っていませんが、今後のバージョンアップで .NET 側に合わせられるかも知れません。
-ConnecableObservable という interface は既に用意されていますが、使われていないようです。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://xin9le.net/archives/104">Rx入門 (14) – Cold to Hot変換 : xin9le note</a></li>
-<li><a href="http://d.hatena.ne.jp/okazuki/20120212/1329059831">Reactive Extensions再入門 その３６「ColdからHotへ！Publishメソッドと参照カウンタ？RefCountメソッド」 - かずきのBlog@Hatena</a></li>
-<li><a href="http://neue.cc/2010/06/24_263.html">neue cc - Reactive Extensions for .NET (Rx) メソッド探訪第7回:IEnumerable vs IObservable</a></li>
-</ul>
-
-
-<p>Rx の神々のみなさんが懇切丁寧に解説してくださってるのに、失敗しないと気づかない自分のバカバカ！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[reactive4java で位置を取得し続ける]]></title>
-    <link href="http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java/"/>
-    <updated>2012-10-03T15:21:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/items/07762776102dbc84b1c7">前回</a>に続き、 reactive4java ネタ。
-調子に乗って Android で位置を取得し続けるのを reactive4java を使ってやってみた。</p>
-
-<!--more-->
-
-
-<p>```java LocationFunctions.java
-/<em>*
- * 位置を取得し続ける(finish は呼ばれない)
- </em>/
-public static Observable<Location> getCurrentLocationAsObservable(</p>
-
-<pre><code>    final Context context, final String provider) {
-return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt;, Closeable&gt;() {
-    private volatile boolean _stop = false;
-
-    @Override
-    public Closeable invoke(final Observer&lt;? super Location&gt; observer) {
-        final LocationManager locMan = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
-
-        final LocationListener listener = new LocationListener() {
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) { }
-
-            @Override
-            public void onProviderEnabled(String provider) { }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                observer.error(
-                    new InvalidParameterException("LocationProvider disabled."));
-            }
-
-            @Override
-            public void onLocationChanged(Location location) {
-                if (_stop) {
-                    return;
-                }
-
-                // 発火
-                observer.next(location);
-            }
-        };
-
-        // 位置取得開始
-        locMan.requestLocationUpdates(provider, 0, 0, listener, Looper.getMainLooper());
-
-        return new Closeable() {
-            @Override
-            public void close() throws IOException {
-                if (_stop) {
-                    return;
-                }
-                _stop = true;
-                locMan.removeUpdates(listener);
-                observer.finish();
-            }
-        };
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
     }
 });
 </code></pre>
@@ -601,30 +58,374 @@ return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt
 <p>}
 ```</p>
 
-<p>使い方は、方位の時とほとんど同じ。パラメータが Float から Location に代わっただけ。</p>
+<h3>出力</h3>
 
-<p><code>_stop</code> フラグは、Listener を unregister しても溜まってるデータは流しちゃうんじゃないか、という事で用意した。
-方位のやつは AtomicBoolean を使ったけどこっちは volatile でやってる。確かどっかで 'AtomicBoolean の方が確実に Atomic' って言ってた気がするけど、そもそもそんなに神経質になるところじゃないか。</p>
+<blockquote><p>08-29 17:18:12.891: D/ExecutorTest(391): Primary ThreadID:4943<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task A. ThreadId:4944<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task B. ThreadId:4944<br/></p></blockquote>
 
-<p>Observable にすることで、「ｎ秒間位置を取得して貯めて、その中で一番精度の良いものを通す」みたいなことも簡単にできる。</p>
+<p>A→B の順で（=submit した順で）実行される。
+Primary と task で ThreadID が異なる、2つの task は同じ ThreadID であることに注目。</p>
 
-<p>Android の場合、購読開始時に registerXXXListener、Close で unregisterXXXEventListener てのがひとつのパターン。
-たぶん BroadcastReceiver にも適用できる。</p>
+<h2>2. 最初のタスクに時間がかかったら？</h2>
 
-<p>XXXListener も BroadcastReceiver も Observable でラップしちゃえば、その後は同じように扱えるので便利♪</p>
+<p>タスクA の実行に時間がかかる場合、タスクB はどうなる？</p>
 
-<h2>追記 9.27</h2>
+<p>```java
+public void singleThreadExecutorHeavyWorkTest() throws Exception {</p>
 
-<p>実はこのプログラム、Cold でしたー。というわけで、Hot についての記事を書きました。
-* <a href="http://qiita.com/items/3a7bda9d0fdcb9248800">Cold を Hot にできる。そう、Publish ならね。 - Qiita</a></p>
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
 
-<h2>参考</h2>
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
 
-<ul>
-<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
-<li><a href="http://stackoverflow.com/questions/3786825/java-volatile-boolean-vs-atomicboolean">Java: volatile boolean vs AtomicBoolean - Stack Overflow</a></li>
-</ul>
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
 
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:22:04.288: D/ExecutorTest(1511): Primary ThreadID:5063<br/>
+08-29 17:22:04.288: D/ExecutorTest(1511): Run task A start. ThreadId:5064<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task A end.<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task B. ThreadId:5064<br/></p></blockquote>
+
+<p>A→B の順で実行される。シングルスレッドなので、並列に処理されることはない。</p>
+
+<h2>3. ThreadPoolExecutor を使ったら？</h2>
+
+<p><code>Executors.newSingleThreadExecutor()</code> の代わりに <code>Executors.newFixedThreadPool(2)</code> としてみる。これによりワーカスレッドを2つ使う Execurot が生成される。</p>
+
+<p>```java
+public void threadPoolExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:29:01.731: D/ExecutorTest(3017): Primary ThreadID:5255<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task A start. ThreadId:5256<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task B. ThreadId:5257<br/>
+08-29 17:29:04.725: D/ExecutorTest(3017): Run task A end.<br/></p></blockquote>
+
+<p>タスクA と タスクB で ThreadID が異なる事に注目。
+スレッドが２つ使えるので、タスクA の終了を<strong>待たず</strong>にタスクB が実行される。というか、タスクA から始まる保証もない。</p>
+
+<h2>3. SingleThreadScheduledExecutor を使ってみる</h2>
+
+<p>話題を変えて、タスクの実行時間を制御できる Scheduled系 の Executor を使ってみる。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:36:16.125: D/ExecutorTest(3547): Primary ThreadID:5285<br/>
+08-29 17:36:19.128: D/ExecutorTest(3547): Run task B. ThreadId:5286<br/>
+08-29 17:36:21.130: D/ExecutorTest(3547): Run task A. ThreadId:5286<br/></p></blockquote>
+
+<p>開始から3秒後にタスクBが、開始から5秒後にタスクAが実行される。
+submit した順は関係ないことに注意。</p>
+
+<h2>4. スケジュールされた時間に別のタスクが実行中だったら？</h2>
+
+<p>3秒後に実行されるタスクBの処理が終わらない時、5秒後に実行されるタスクAはどうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:44:18.139: D/ExecutorTest(4737): Primary ThreadID:5456<br/>
+08-29 17:44:21.142: D/ExecutorTest(4737): Run task B start. ThreadId:5457<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task B end.<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task A. ThreadId:5457<br/></p></blockquote>
+
+<p>5秒後とスケジュールされたタスクAだが、タスクB が終わるまで待たされる。シングルスレッドなので。</p>
+
+<h2>5. そこで ScheduledThreadPoolExecutor を使ってみる</h2>
+
+<p><code>Executors.newSingleThreadScheduledExecutor()</code> の代わりに <code>Executors.newScheduledThreadPool(2)</code> としてみる。</p>
+
+<p>```java
+public void threadPoolScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<blockquote><p>08-29 17:48:28.536: D/ExecutorTest(5439): Primary ThreadID:5558<br/>
+08-29 17:48:31.550: D/ExecutorTest(5439): Run task B start. ThreadId:5559<br/>
+08-29 17:48:<strong>33</strong>.542: D/ExecutorTest(5439): Run task A. ThreadId:5560<br/>
+08-29 17:48:41.550: D/ExecutorTest(5439): Run task B end.<br/></p></blockquote>
+
+<p>スレッドが２つ使えるので、タスクA は、スケジュール通り（タスクBの終了を待たずに submit してから5秒後に実行される。</p>
+
+<h2>6. Scheduled系Executor の Timer 的機能を使ってみる</h2>
+
+<p><code>schedule()</code> は、一発だけ(Javascript の <code>setTimeout</code> みたいな)、繰り返し処理するには、<code>scheduleAtFixedRate</code> か <code>scheduleWithFixedDelay</code> を使う。
+まずは <code>scheduleAtFixedRate</code> から。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor. scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:59:33.556: D/ExecutorTest(7228): Primary ThreadID:5795<br/>
+08-29 17:59:38.561: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:41.565: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:44.568: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+…</p></blockquote>
+
+<p>最初は５秒、その後は３秒毎にタスクAが実行される。</p>
+
+<h2>7. 繰り返し実行されるタスクが重かったら？</h2>
+
+<p>繰り返しは３秒だけど、タスクAの実行に１０秒かかったら、どうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:15:49.397: D/ExecutorTest(10157): Primary ThreadID:6188<br/>
+08-29 18:15:54.413: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:24.405: D/ExecutorTest(10157): Run task A end.<br/>
+…</p></blockquote>
+
+<p>３秒置きに設定しているが、タスクAが終わらないので、終わったら<strong>すぐに</strong>、次のタスクを実行する。</p>
+
+<h2>8. scheduleWithFixedDelay ではどうなる？</h2>
+
+<p><code>scheduleAtFixedRate</code> の代わりに <code>scheduleWithFixedDelay</code> にしてみた。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleWithFixedDelay(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:22:37.183: D/ExecutorTest(10663): Primary ThreadID:6245<br/>
+08-29 18:22:42.178: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:22:52.179: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:22:<strong>55</strong>.182: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:23:05.182: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:23:08.176: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+…</p></blockquote>
+
+<p>タスクAが終わって、<strong>さらに３秒待って</strong>、次のタスクを実行する。
+<code>FixedDelay</code> は、前回のタスクが終わってからｎ秒待つ。
+<code>FixedRate</code> は、の終了を待たずにｎ秒置きに実行するが、終わってない場合は仕方がないので終わるまで待つ、という感じらしい。</p>
+
+<h2>9. ScheduledThreadPoolExecutor ではどうか？</h2>
+
+<p>ScheduledThreadPoolExecutor  と <code>scheduleAtFixedRate</code> の組み合わせではどうか？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } 
+        catch (InterruptedException e) { Log.w(TAG, "Interrupted task A. ThreadId:" + Thread.currentThread().getId()); } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 19:09:39.707: D/ExecutorTest(14173): Primary ThreadID:6605<br/>
+08-29 19:09:44.712: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:34.705: D/ExecutorTest(14173): Run task A end.<br/>
+…</p></blockquote>
+
+<p>あれ？２つのスレッドを使ってくれない。を登録した時点でスレッドは決まってるということかな。</p>
+
+<h2>まとめ</h2>
+
+<p>「タスクが実行されるスレッド」を意識すればハマることはなさそう。</p>
+
+<p>シングルスレッドの場合は、<code>submit</code> あるいは <code>schedule</code> されたタスクは、一つのスレッドで順次処理される。スレッドプールを使っている場合は、スレッドの数だけ並列処理される。
+ただし、<code>scheduleAtFixedRate</code> など繰り返し処理では、登録時にスレッドが決まるので、タスクの実行に時間がかかっても並列処理されない。</p>
+
+<p><code>scheduleAtFixedRate</code> や <code>scheduleWithFixedDelay</code> はタイマー的な動きをするが、タスクの処理に時間がかかる場合は、意図した時間間隔で実行されない。タイマーとして使いたければ、Executor を２つ用意し、一つはタイマー専用、もうひとつをタスク実行専用とした方が良さそう。</p>
+
+<p>長くなってしまったので、タスクのキャンセルとか、Terminate 系は別の機会に。</p>
 ]]></content>
   </entry>
   
