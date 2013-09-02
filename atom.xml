@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-01T19:57:10+09:00</updated>
+  <updated>2013-09-02T22:04:53+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,165 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ARC のメモリ解放タイミングを調べた]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/02/when-release-memory-by-arc/"/>
+    <updated>2013-09-02T21:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/02/when-release-memory-by-arc</id>
+    <content type="html"><![CDATA[<p>一つの関数内で容量の大きなファイルを読み込み加工する処理を連続して行っていたらメモリが足りなくなった。</p>
+
+<!--more-->
+
+
+<p>ARC ではスコープを外れ(て参照カウンタがゼロになっ)たオブジェクトは、すぐに破棄されると思っていたのでしばらくハマった。</p>
+
+<h2>問題のソース(ARC使用)</h2>
+
+<p>ローカルでもWebでも何でもいいけど、ファイルから無視できない程度の容量のデータの読み込みを繰り返す処理。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='obj-c'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nf">buttonDownWithArc:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">sender</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSString</span><span class="o">*</span> <span class="n">path</span> <span class="o">=</span> <span class="s">@&quot;.../bigdata.img&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSData</span><span class="o">*</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSData</span> <span class="nl">dataWithContentsOfFile:</span><span class="n">path</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">NSThread</span> <span class="nl">sleepForTimeInterval:</span><span class="mf">0.5</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="nb">nil</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これを Instruments でプロファイルするとこうなる。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_01.png" alt="img" /></p>
+
+<p>じゃんじゃんメモリ確保してしまう（汗
+ARC で <code>data</code> は <code>nil</code> にしてるからスコープ外れた時にメモリ解放されると思っていたのだが。</p>
+
+<p>ちなみにこの関数の処理が終了すると、メモリが解放される。</p>
+
+<h2>非ARC でやってみた</h2>
+
+<p>メモリ管理をマニュアルでやったらどうなるかを確認した。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='obj-c'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nf">buttonDownNoArc:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">sender</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSString</span><span class="o">*</span> <span class="n">path</span> <span class="o">=</span> <span class="s">@&quot;.../bigdata.img&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">10000</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">NSData</span><span class="o">*</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSData</span> <span class="nl">dataWithContentsOfFile:</span><span class="n">path</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">NSThread</span> <span class="nl">sleepForTimeInterval:</span><span class="mf">0.5</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">[</span><span class="n">data</span> <span class="n">dealloc</span><span class="p">];</span>
+</span><span class='line'>        <span class="n">data</span> <span class="o">=</span> <span class="nb">nil</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>この時のメモリ確保状況は、期待した通りになった。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_02.png" alt="img" /></p>
+
+<p>メモリ使用量が線形に<strong>増えない</strong>ことが分かる。ARC 利用時にもこうなるようにしたい。</p>
+
+<p>状況は、スコープ内変数の破棄が、関数を抜ける時に遅延されている。
+ARC 周りの情報をいろいろ漁っていて、AutoReleasePool との関わりが怪しいと予想した。</p>
+
+<ul>
+<li><a href="http://blog.natsuapps.com/2011/11/ios5-arc-overview.html">[iOS5] ARC (Automatic Reference Counting) : Overview - iOS 開発ブログ Natsu&#8217;s note </a></li>
+</ul>
+
+
+<p>より引用：</p>
+
+<blockquote><h3>retain, release, autorelease, deallocはコンパイラのお仕事</h3>
+
+<p>ARCを利用する場合、コンパイラが</p>
+
+<ul>
+<li>retain, release, autoreleaseを挿入してくれる（自分で呼んではいけない。コンパイラエラーになる）。</li>
+<li>deallocを適切な位置に挿入してくれる（deallocのオーバーライドは可能。ただし[super dealloc]は不可能）。</li>
+</ul>
+
+
+<p>ことになります。</p></blockquote>
+
+<p>コンパイラにより関数単位で <code>@autoreleasepool {  }</code> が挿入されているとしたら、最初の図のような動きになるはず。ということは、for ループの中に @autorelease を持ってったらどうか？</p>
+
+<h2>ARC + @autoreleasepool 版</h2>
+
+<p>for の中の処理を <code>@autoreleasepool { }</code> で括ってみた。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='obj-c'><span class='line'><span class="k">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nf">buttonDownWithArcAndAutoRelease:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="nv">sender</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">;</span> <span class="n">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="err">@</span><span class="n">autoreleasepool</span> <span class="p">{</span>
+</span><span class='line'>            <span class="n">NSData</span><span class="o">*</span> <span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSData</span> <span class="nl">dataWithContentsOfFile:</span><span class="n">_path</span><span class="p">];</span>
+</span><span class='line'>            <span class="p">[</span><span class="n">NSThread</span> <span class="nl">sleepForTimeInterval:</span><span class="mf">0.5</span><span class="p">];</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>すると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_03.png" alt="img" /></p>
+
+<p>やたー、期待する動きになったぞ。</p>
+
+<h2>まとめ</h2>
+
+<p>とここまで調べて、しばらく Obj-C さわってなかったので埃をかぶっていた</p>
+
+<ul>
+<li><a href="http://www.amazon.co.jp/gp/product/4844331094?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=4844331094&amp;linkCode=shr&amp;tag=oku2008-22">エキスパートObjective-Cプログラミング -iOS/OS Xのメモリ管理とマルチスレッド-</a></li>
+</ul>
+
+
+<p>を引っ張り出してきて読んだら、P.25 にまさにその事が書かれていて泣いた。</p>
+
+<blockquote><p>とはいえ、autorelease されたオブジェクトが大量に発生した場合、NSAutoReleasePool のオブジェクトが破棄されない限り、それらのオブジェクトは release されないので、メモリ不足に陥る場合があります。典型的な例は、大量の画像をリサイズしながら読み込む場合でしょう。…</p>
+
+<pre><code>   for (int i = 0; i &lt; 画像数; i++) {
+       /*
+        * 画像読み込み処理
+        * autoreleaseされたオブジェクトが大量発生。
+        * NSAutoReleasePoolのオブジェクトが破棄されないため
+        * いずれメモリ不足発生！
+        */           
+   }
+</code></pre></blockquote>
+
+<p>勉強しなおします。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ExecutorService の復習]]></title>
@@ -2684,55 +2843,6 @@ Screen dim duration: 6000 ms</p>
 <li>Fused Provider に期待しすぎないでください</li>
 <li>実際の位置から（精度値を超えて）大きく外れることもあるのが困る</li>
 <li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager/"/>
-    <updated>2013-05-28T19:25:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/28/using-localbroadcastmanager</id>
-    <content type="html"><![CDATA[<p>サポートパッケージに<code>LocalBroadcastManager</code> というクラスがあるのを今頃知りまして。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html">LocalBroadcastManager | Android Developers</a></li>
-</ul>
-
-
-<p>ブロードキャストは使い方を誤るとデータを(アプリの)外部に流出させる可能性があるわけですが(<a href="http://www.jssec.org/report/securecoding.html">Android アプリのセキュア設計・セキュアコーディングガイド</a> 参照)、このクラスを使うと「他のアプリにデータを漏らさない」「意図しないブロードキャストを受信しない」「効率がよい」だそうです。</p>
-
-<h2>いつ使うんですか？</h2>
-
-<p>たとえば GPS を使うアプリで、GPS の受信は <code>IntentService</code> にやらせて、受信した位置を地図に表示するために、IntentService からブロードキャスト投げて、<code>Activity</code> に仕掛けたレシーバで受信する、なんてケースでしょうか。(いやそれは IntentService じゃなくて普通のサービスで aidl 使ってやれよ、とかいろいろあるわけですが。ん？PendingIntent でサービスを起動する方法だと、クライアントから bind するタイミングが無いからダメかな？)</p>
-
-<h2>使い方</h2>
-
-<p>stackoverflow に良い使い方が載ってました</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/a/8875292">android - how to use LocalBroadcastManager? - Stack Overflow</a></li>
-</ul>
-
-
-<h2>使ってみた</h2>
-
-<p>状態認識の結果も秘匿情報でしょう、ということで<a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">以前</a>作った <code>ActivityRecognitionClient</code> のサンプルを修正してみました。</p>
-
-<ul>
-<li><a href="https://github.com/amay077/androidactivityrecognizingsample/commit/a041b300d3e9fdfe6227c05c3f21fb1e3876bbad">amay077/androidactivityrecognizingsample · GitHub</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<ul>
-<li>ブロードキャストする時は、まず LocalBroadcastManager を使ってみよう。</li>
-<li>stackoverflow の回答へのダイレクトリンクとか、github の changeset へのダイレクトリンク便利すぎる！</li>
 </ul>
 
 ]]></content>
