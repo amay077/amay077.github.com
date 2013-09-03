@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-02T22:04:53+09:00</updated>
+  <updated>2013-09-03T21:31:13+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,103 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS + iOS Simulator で Instruments を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/"/>
+    <updated>2013-09-03T21:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS(旧MonoTouch)では、Xcode のプロファイラである Instruments がそのまま使えます。</p>
+
+<!--more-->
+
+
+<h2>デモプロジェクト</h2>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+</ul>
+
+
+<p>にある <code>MemoryDemo.zip</code> をダウンロード、解凍します。2つプロジェクトが含まれていますが、 <code>before</code> を使います。</p>
+
+<h2>手順</h2>
+
+<h3>1. プロジェクトをとりあえず実行</h3>
+
+<p>Xamarin Studio で <code>before/MemoryDemo.sln</code> を開いて、とりあえずビルド、Simulator で実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_01.png" alt="img" /></p>
+
+<p>上下にスクロールすると、次々と画像を読み込むので Allocate がハンパないよ、ってデモのようです。</p>
+
+<h3>2. Xamarin Studio から Instruments を起動する。</h3>
+
+<p>メニュー - ツール - Launch Instruments で起動します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_02.png" alt="img" /></p>
+
+<p>起動はしましたが、勝手にアプリが実行されるわけではありません。ここから少しだけ面倒な手続きが必要です。</p>
+
+<h3>3. iOS Simulator にインストールしたアプリを指定して Instruments を実行する</h3>
+
+<p>Instruments を起動すると、下のような画面になっています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_03.png" alt="img" /></p>
+
+<p>左メニューから [iOS Simulator] - [Memory]、右から [Allocations] を選び [Choose] ボタンを押します。</p>
+
+<p>次に、[Target] をクリックして、[Choose Target] - [Choose Target…] と進みます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_04.png" alt="img" /></p>
+
+<p>下のような画面になります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_05.png" alt="img" /></p>
+
+<p>次に Finder を起動して、iOS Simulator のディレクトリへ移動します。</p>
+
+<p>iOS Simulator のディレクトリは通常、<code>~/Library/Application Support/iPhone Simulator/</code> です。さらにアプリ毎に GUID で分けられているので目的のアプリを探してください。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_06.png" alt="img" /></p>
+
+<p>アプリのディレクトリを開いたら、その中のアプリケーションファイル(ここでは <code>MemoryDemo</code>) を、先ほど開いておいた Instruments の中へドラッグ＆ドロップします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_07.png" alt="img" /></p>
+
+<p>そして [Choose] を押すと、Target が MemoryTest になっているのが分かります。</p>
+
+<p>これでようやく実行できます。赤い●を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_08.png" alt="img" /></p>
+
+<p>と、iOS Simulator で MemoryTest が実行され、Instruments でプロファイルしている事が確認できます。Simulator でグリグリスクロールすると、Allocations がガンガン増えてく様子が分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_09.png" alt="img" /></p>
+
+<h3>3. 2度目以降は？</h3>
+
+<p>Instruments でもう一度赤い●を押すと停止します。アプリを更新する時は、Xamarin Studio 側でビルド-実行して iOS Simulator のアプリファイルを更新してから、Instruments で再度、赤い●を押します。</p>
+
+<p>もし Instruments を終了してしまっても、最近使ったアプリは Choose Target に最近使ったアプリとして残るので、またドラッグ＆ドロップすることはありません。</p>
+
+<h2>まとめと参考</h2>
+
+<p>Xamarin.iOS+iOS Simulator での Instruments の導入部分を説明しました。</p>
+
+<p>下に紹介するサイトが公式の情報です。
+ここには、実機にインストールしたアプリのプロファイル方法や、Instruments の使い方などが説明されているので合わせてどうぞ。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/using_instruments_to_detect_native_leaks_using_markheap">Profiling Xamarin.iOS Applications with Instruments | xamarin</a></li>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+<li><a href="https://developer.apple.com/library/ios/recipes/instruments_help-launch-into-simulator-help/LaunchIntoSimulator.html">iOS Simulator Help: Setting Instruments to Launch an iOS App in Simulator</a></li>
+</ul>
+
+
+<p>※ <a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough</a> の No.14 の <a href="http://docs.xamarin.com/static/guides/ios/deployment,_testing,_and_metrics/instruments_walkthrough/Images/05_related_code.png">この画像</a> には、Instruments に Xamarin.iOS(C#) のソースコードが表示されているように見えるんだけど、これどうやるのかなあ。。手順通り動かしたつもりが出てこない。。。SourceMap の設定みたいなのが要るのかなあ。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件]]></title>
@@ -444,41 +541,6 @@ this.View.AddGestureRecognizer(new UILongPressGestureRecognizer(lp =>
 <p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
 
 <p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[オンラインでサクッとスライド作ってシェアできる Slides が便利だった件]]></title>
-    <link href="http://amay077.github.io/blog/2013/07/24/slides-is-very-useful/"/>
-    <updated>2013-07-24T19:18:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/07/24/slides-is-very-useful</id>
-    <content type="html"><![CDATA[<p>先日の <a href="http://connpass.com/event/2847/">日本Androidの会浜松支部　第27回ミーティング -AndroidとHTML5-</a> で HTML5 中心の話題にも関わらず Xamarin の LT をした訳ですが、むりやりこじつけるために、HTML5 でプレゼンスライドを作りました。</p>
-
-<!--more-->
-
-
-<p>この手のもので最も有名なのが <a href="http://lab.hakim.se/reveal-js/">reveal.js</a> というライブラリですが、環境準備が面倒だったので、HTML5 で作れてオンラインでシェアできるものを探してたどり着いたのが Slides(slid.es) でした。</p>
-
-<ul>
-<li>[Slides - The easiest way to create and share beautiful presentations.] (http://slid.es/)</li>
-</ul>
-
-
-<p>使い方は簡単で、Google か Facebook のアカウントでサインインでき、無料で使えます。</p>
-
-<p>実はこれ reveal.js を使ったサービスで、機能もほぼ相違ないのですが、PDF へのエクスポートやデザインテーマは有償の Pro 版でないと使えなくなっています。reveal.js を直接使えば、エクスポートや Markdown 対応もできるので、まあ SaaS としての戦略でしょうか。</p>
-
-<p>reveal.js はライブラリなのでコンテンツは自力で HTML or Markdown で書く必要がありますが、Slides にはリッチエディタが付いているので、簡単に資料を書くことができます。</p>
-
-<p>凝った演出はできませんが、 LT くらいの資料なら十分実用できます。そのままシェアできますし。(逆に Private にするには Pro 版が必要)</p>
-
-<p>というわけで reveal.js 使いたいけどいろいろ面倒そう、という人は Slides を試されると良いかと思います。</p>
-
-<p>最後に、その時発表した Xamarin の LT 資料を貼って終わります。
-Xamarin もどうぞよろしくおねがいします。</p>
-
-<iframe src="http://slid.es/amay/intro_of_xamarin/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-
 ]]></content>
   </entry>
   

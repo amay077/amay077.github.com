@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>TimeoutableLocationListener というのを作ってみた - Experiments Never Fail</title>
+  <title>Xamarin.iOS + iOS Simulator で Instruments を使う - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="Android で GPS の位置を受信する場合、LocationListener というインターフェースを渡して位置が受信できるのをジッと待つわけです。Android での GPS の使い方はググるといっぱいでてきますもんね。 で、LocationManager.onStatusChanged &hellip;">
+  <meta name="description" content="Xamarin.iOS(旧MonoTouch)では、Xcode のプロファイラである Instruments がそのまま使えます。 デモプロジェクト Instruments Walkthrough | xamarin にある MemoryDemo.zip をダウンロード、解凍します。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://amay077.github.io/blog/2011/01/13/timeoutable-locationlistener/">
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/data-table.css" rel="stylesheet" type="text/css" />
@@ -90,7 +90,7 @@
   <header>
     
       
-        <h1 class="entry-title">TimeoutableLocationListener というのを作ってみた</h1>
+        <h1 class="entry-title">Xamarin.iOS + iOS Simulator で Instruments を使う</h1>
       
     
     
@@ -107,35 +107,102 @@
   
 
 
-<time datetime="2011-01-13T04:30:00+09:00" pubdate data-updated="true">Jan 13<span>th</span>, 2011</time>
+<time datetime="2013-09-03T21:29:00+09:00" pubdate data-updated="true">Sep 3<span>rd</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>Android で GPS の位置を受信する場合、LocationListener というインターフェースを渡して位置が受信できるのをジッと待つわけです。Android での GPS の使い方はググるといっぱいでてきますもんね。</p>
+<div class="entry-content"><p>Xamarin.iOS(旧MonoTouch)では、Xcode のプロファイラである Instruments がそのまま使えます。</p>
 
 <!--more-->
 
 
-<p>で、LocationManager.onStatusChanged というメソッドがあって、例えば屋内とかで、受信できずにあきらめた場合、こいつが呼び出されるのかと思いきや、期待したようなタイミングで受信してくれません。</p>
-
-<p>結局自力でタイムアウト処理を書いて GPS を止めるハメになるのですが、いつも同じ処理を書くのが面倒なので、共通っぽいクラスにしてみました。</p>
-
-<div><script src='https://gist.github.com/777790.js'></script>
-<noscript><pre><code></code></pre></noscript></div>
-
-
-<p>LocationListener の代わりにこの TimeoutableLocationListener をセットします。いつもと違うのは以下の2箇所です。</p>
+<h2>デモプロジェクト</h2>
 
 <ul>
-<li>コンストラクタで、LocationManager , タイムアウト時間（ミリ秒）, タイムアウト時に呼び出されるリスナ を渡す。</li>
-<li>自分のクラスで onLocationChanged を Override した時に、必ず base.onLocationChanged を呼び出す。</li>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
 </ul>
 
 
-<p>interface じゃなくなっちゃったので、ちょっと不自由ですが、まあ使えるのではないかと思います。</p>
+<p>にある <code>MemoryDemo.zip</code> をダウンロード、解凍します。2つプロジェクトが含まれていますが、 <code>before</code> を使います。</p>
+
+<h2>手順</h2>
+
+<h3>1. プロジェクトをとりあえず実行</h3>
+
+<p>Xamarin Studio で <code>before/MemoryDemo.sln</code> を開いて、とりあえずビルド、Simulator で実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_01.png" alt="img" /></p>
+
+<p>上下にスクロールすると、次々と画像を読み込むので Allocate がハンパないよ、ってデモのようです。</p>
+
+<h3>2. Xamarin Studio から Instruments を起動する。</h3>
+
+<p>メニュー - ツール - Launch Instruments で起動します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_02.png" alt="img" /></p>
+
+<p>起動はしましたが、勝手にアプリが実行されるわけではありません。ここから少しだけ面倒な手続きが必要です。</p>
+
+<h3>3. iOS Simulator にインストールしたアプリを指定して Instruments を実行する</h3>
+
+<p>Instruments を起動すると、下のような画面になっています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_03.png" alt="img" /></p>
+
+<p>左メニューから [iOS Simulator] - [Memory]、右から [Allocations] を選び [Choose] ボタンを押します。</p>
+
+<p>次に、[Target] をクリックして、[Choose Target] - [Choose Target…] と進みます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_04.png" alt="img" /></p>
+
+<p>下のような画面になります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_05.png" alt="img" /></p>
+
+<p>次に Finder を起動して、iOS Simulator のディレクトリへ移動します。</p>
+
+<p>iOS Simulator のディレクトリは通常、<code>~/Library/Application Support/iPhone Simulator/</code> です。さらにアプリ毎に GUID で分けられているので目的のアプリを探してください。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_06.png" alt="img" /></p>
+
+<p>アプリのディレクトリを開いたら、その中のアプリケーションファイル(ここでは <code>MemoryDemo</code>) を、先ほど開いておいた Instruments の中へドラッグ＆ドロップします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_07.png" alt="img" /></p>
+
+<p>そして [Choose] を押すと、Target が MemoryTest になっているのが分かります。</p>
+
+<p>これでようやく実行できます。赤い●を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_08.png" alt="img" /></p>
+
+<p>と、iOS Simulator で MemoryTest が実行され、Instruments でプロファイルしている事が確認できます。Simulator でグリグリスクロールすると、Allocations がガンガン増えてく様子が分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_09.png" alt="img" /></p>
+
+<h3>3. 2度目以降は？</h3>
+
+<p>Instruments でもう一度赤い●を押すと停止します。アプリを更新する時は、Xamarin Studio 側でビルド-実行して iOS Simulator のアプリファイルを更新してから、Instruments で再度、赤い●を押します。</p>
+
+<p>もし Instruments を終了してしまっても、最近使ったアプリは Choose Target に最近使ったアプリとして残るので、またドラッグ＆ドロップすることはありません。</p>
+
+<h2>まとめと参考</h2>
+
+<p>Xamarin.iOS+iOS Simulator での Instruments の導入部分を説明しました。</p>
+
+<p>下に紹介するサイトが公式の情報です。
+ここには、実機にインストールしたアプリのプロファイル方法や、Instruments の使い方などが説明されているので合わせてどうぞ。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/using_instruments_to_detect_native_leaks_using_markheap">Profiling Xamarin.iOS Applications with Instruments | xamarin</a></li>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+<li><a href="https://developer.apple.com/library/ios/recipes/instruments_help-launch-into-simulator-help/LaunchIntoSimulator.html">iOS Simulator Help: Setting Instruments to Launch an iOS App in Simulator</a></li>
+</ul>
+
+
+<p>※ <a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough</a> の No.14 の <a href="http://docs.xamarin.com/static/guides/ios/deployment,_testing,_and_metrics/instruments_walkthrough/Images/05_related_code.png">この画像</a> には、Instruments に Xamarin.iOS(C#) のソースコードが表示されているように見えるんだけど、これどうやるのかなあ。。手順通り動かしたつもりが出てこない。。。SourceMap の設定みたいなのが要るのかなあ。</p>
 </div>
 
 
@@ -158,12 +225,12 @@
   
 
 
-<time datetime="2011-01-13T04:30:00+09:00" pubdate data-updated="true">Jan 13<span>th</span>, 2011</time>
+<time datetime="2013-09-03T21:29:00+09:00" pubdate data-updated="true">Sep 3<span>rd</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/gps/'>Gps</a>, <a class='category' href='/blog/categories/java/'>Java</a>
+    <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
   
 </span>
 
@@ -172,10 +239,10 @@
     
       <div class="sharing">
   <!-- Hatena Boolmark -->
-  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2011/01/13/timeoutable-locationlistener/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
   
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2011/01/13/timeoutable-locationlistener/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2011/01/13/timeoutable-locationlistener/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/" >Tweet</a>
   
   
   
@@ -186,10 +253,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left articlenav" href="/blog/2011/01/07/android-sensors/" title="Previous Post: Android のセンサーの種類について">&laquo; Android のセンサーの種類について</a>
+        <a class="basic-alignment left articlenav" href="/blog/2013/09/02/when-release-memory-by-arc/" title="Previous Post: ARC のメモリ解放タイミングを調べた">&laquo; ARC のメモリ解放タイミングを調べた</a>
       
-      
-        <a class="basic-alignment right articlenav" href="/blog/2011/01/17/nagoya-android-study-1/" title="Next Post: 第1回 名古屋Android勉強会に参加してきました">第1回 名古屋Android勉強会に参加してきました &raquo;</a>
       
     </p>
   </footer>

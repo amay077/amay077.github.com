@@ -4,7 +4,7 @@
   <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-02T22:04:53+09:00</updated>
+  <updated>2013-09-03T21:31:13+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,103 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS + iOS Simulator で Instruments を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/"/>
+    <updated>2013-09-03T21:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS(旧MonoTouch)では、Xcode のプロファイラである Instruments がそのまま使えます。</p>
+
+<!--more-->
+
+
+<h2>デモプロジェクト</h2>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+</ul>
+
+
+<p>にある <code>MemoryDemo.zip</code> をダウンロード、解凍します。2つプロジェクトが含まれていますが、 <code>before</code> を使います。</p>
+
+<h2>手順</h2>
+
+<h3>1. プロジェクトをとりあえず実行</h3>
+
+<p>Xamarin Studio で <code>before/MemoryDemo.sln</code> を開いて、とりあえずビルド、Simulator で実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_01.png" alt="img" /></p>
+
+<p>上下にスクロールすると、次々と画像を読み込むので Allocate がハンパないよ、ってデモのようです。</p>
+
+<h3>2. Xamarin Studio から Instruments を起動する。</h3>
+
+<p>メニュー - ツール - Launch Instruments で起動します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_02.png" alt="img" /></p>
+
+<p>起動はしましたが、勝手にアプリが実行されるわけではありません。ここから少しだけ面倒な手続きが必要です。</p>
+
+<h3>3. iOS Simulator にインストールしたアプリを指定して Instruments を実行する</h3>
+
+<p>Instruments を起動すると、下のような画面になっています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_03.png" alt="img" /></p>
+
+<p>左メニューから [iOS Simulator] - [Memory]、右から [Allocations] を選び [Choose] ボタンを押します。</p>
+
+<p>次に、[Target] をクリックして、[Choose Target] - [Choose Target…] と進みます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_04.png" alt="img" /></p>
+
+<p>下のような画面になります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_05.png" alt="img" /></p>
+
+<p>次に Finder を起動して、iOS Simulator のディレクトリへ移動します。</p>
+
+<p>iOS Simulator のディレクトリは通常、<code>~/Library/Application Support/iPhone Simulator/</code> です。さらにアプリ毎に GUID で分けられているので目的のアプリを探してください。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_06.png" alt="img" /></p>
+
+<p>アプリのディレクトリを開いたら、その中のアプリケーションファイル(ここでは <code>MemoryDemo</code>) を、先ほど開いておいた Instruments の中へドラッグ＆ドロップします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_07.png" alt="img" /></p>
+
+<p>そして [Choose] を押すと、Target が MemoryTest になっているのが分かります。</p>
+
+<p>これでようやく実行できます。赤い●を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_08.png" alt="img" /></p>
+
+<p>と、iOS Simulator で MemoryTest が実行され、Instruments でプロファイルしている事が確認できます。Simulator でグリグリスクロールすると、Allocations がガンガン増えてく様子が分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_09.png" alt="img" /></p>
+
+<h3>3. 2度目以降は？</h3>
+
+<p>Instruments でもう一度赤い●を押すと停止します。アプリを更新する時は、Xamarin Studio 側でビルド-実行して iOS Simulator のアプリファイルを更新してから、Instruments で再度、赤い●を押します。</p>
+
+<p>もし Instruments を終了してしまっても、最近使ったアプリは Choose Target に最近使ったアプリとして残るので、またドラッグ＆ドロップすることはありません。</p>
+
+<h2>まとめと参考</h2>
+
+<p>Xamarin.iOS+iOS Simulator での Instruments の導入部分を説明しました。</p>
+
+<p>下に紹介するサイトが公式の情報です。
+ここには、実機にインストールしたアプリのプロファイル方法や、Instruments の使い方などが説明されているので合わせてどうぞ。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/using_instruments_to_detect_native_leaks_using_markheap">Profiling Xamarin.iOS Applications with Instruments | xamarin</a></li>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+<li><a href="https://developer.apple.com/library/ios/recipes/instruments_help-launch-into-simulator-help/LaunchIntoSimulator.html">iOS Simulator Help: Setting Instruments to Launch an iOS App in Simulator</a></li>
+</ul>
+
+
+<p>※ <a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough</a> の No.14 の <a href="http://docs.xamarin.com/static/guides/ios/deployment,_testing,_and_metrics/instruments_walkthrough/Images/05_related_code.png">この画像</a> には、Instruments に Xamarin.iOS(C#) のソースコードが表示されているように見えるんだけど、これどうやるのかなあ。。手順通り動かしたつもりが出てこない。。。SourceMap の設定みたいなのが要るのかなあ。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ARC のメモリ解放タイミングを調べた]]></title>
@@ -457,73 +554,6 @@ View = mapView;
 <li>つまり Xamarin Components に ReleaseNotes 欲しいです</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google Maps SDK(Android/iOS) で円を描く]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk/"/>
-    <updated>2013-05-06T16:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/06/circle-on-google-maps-sdk</id>
-    <content type="html"><![CDATA[<p><a href="https://developers.google.com/maps/documentation/android/">Google Maps Android API v2</a> にいつの間にか <code>Circle</code> が追加されてました。<a href="https://developers.google.com/maps/documentation/ios/?hl=ja">Google Maps SDK for iOS</a> も同様に。</p>
-
-<!--more-->
-
-
-<p>ということで使ってみました。なぜか Xamarin でｗ
-とはいえ、Xamarin.Android の場合、GoogleMaps の jar からラッパーを生成しているので API は Java 版と(ほぼ)同じです。</p>
-
-<p>Xamarin.Android での Google Maps API v2 の使い方は、手前味噌ながら弊ブログをどうぞ。</p>
-
-<ul>
-<li><a href="http://amay077.github.com/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
-</ul>
-
-
-<p>今回も、<a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2/SimpleMapDemo">monodroid-samples</a> をベースにします。</p>
-
-<p>SampleMapActivity.cs の、<a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/SimpleMapDemo/SampleMapActivity.cs#L88">ここら辺</a> に以下のコードを挿入します。</p>
-
-<p>```c# SampleMapActivity.cs
-var ICELAND = new LatLng(64.88, -18.32);
-var LIBREVILLE = new LatLng(0.401, 9.459);</p>
-
-<p>_map.AddCircle(new CircleOptions()</p>
-
-<pre><code>           .InvokeCenter(ICELAND)
-           .InvokeStrokeColor(Color.Blue.ToArgb())
-           .InvokeStrokeWidth(5f)
-           .InvokeRadius(5000000)); // 500km
-</code></pre>
-
-<p>_map.AddCircle(new CircleOptions()</p>
-
-<pre><code>           .InvokeCenter(LIBREVILLE)
-           .InvokeStrokeColor(Color.DarkGreen.ToArgb())
-           .InvokeStrokeWidth(5f)
-           .InvokeRadius(500000)); // 500km
-</code></pre>
-
-<p>```</p>
-
-<p>Xamarin.Android と Java で違いは無いと言っておきながら、
-Java では <code>new CircleOptions().center(…).storokeColor(…).</code> と書いていた所が、Xamarin では <code>new CircleOptions().InvokeCenter(…).InvokeStorokeColor(…).</code> になっていますね。<a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Xamarin の Binding a Java Library (.jar)</a> 辺りに情報があるでしょうか。</p>
-
-<p>動かすとこんな感じになります。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle_on_google_maps_sdk.png" alt="image1" /></p>
-
-<p>北緯65度付近のアイスランドと、赤道付近のリーブルヴィルという所に、どちらも半径500kmの円を追加していますが、Googleマップはメルカトル表示なので、見ての通り北へ行くほど円が大きくなります。</p>
-
-<p>面白いのは「真円は保たれている事」ですね。逆台形っぽい曲線になるかと思ったのですが。</p>
-
-<p>円をポリゴナイズした多角形と重ねてみると違いが分かるかもしれません。</p>
-
-<h3>2013.5.8追記:大きな円を描いて調べてみました</h3>
-
-<p>大きな円を描いてみたら、ちゃんと geodesic な(北へいけばいくほど距離が長くなる)形状になりました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/circle-on-google-maps-sdk2.png" alt="image2" /></p>
 ]]></content>
   </entry>
   
