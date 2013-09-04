@@ -1,0 +1,518 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>スレッドの優先度について調べた - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Android にも(Java ですから)スレッドの優先度ってありますけど、それちゃんと動きますよね？というのを ExecurorService を使って調べた。 ThreadFactory の拡張 ExecutorService が作るスレッドは、何もしないと 優先度:中 になる模様。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/data-table.css" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">スレッドの優先度について調べた</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-04T22:22:00+09:00" pubdate data-updated="true">Sep 4<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Android にも(Java ですから)スレッドの優先度ってありますけど、それちゃんと動きますよね？というのを ExecurorService を使って調べた。</p>
+
+<!--more-->
+
+
+<h2>ThreadFactory の拡張</h2>
+
+<p><code>ExecutorService</code> が作るスレッドは、何もしないと 優先度:中 になる模様。
+これを変更するには、生成時(<code>newSingleThreadExecutor</code>) に渡す <code>ThreadFactory</code> を自前で実装して、<code>Thread.setPriority</code> してやる。</p>
+
+<p><code>ThreadFactory</code> を Implements したクラス作ってもいいけど、そこまでやる必要も無いでしょ。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 指定した Priority の ThreadFactory を生成して返す</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">ThreadFactory</span> <span class="nf">makeThreadFactory</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">priority</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">ThreadFactory</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="n">Thread</span> <span class="nf">newThread</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">r</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">Thread</span> <span class="n">thread</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Thread</span><span class="o">(</span><span class="n">r</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">thread</span><span class="o">.</span><span class="na">setPriority</span><span class="o">(</span><span class="n">priority</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">thread</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 使ってみる</span>
+</span><span class='line'><span class="kd">private</span> <span class="kt">void</span> <span class="nf">testExecutor</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span>
+</span><span class='line'>        <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MIN_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// なにかの処理</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>優先度が考慮されるかの検証</h2>
+
+<p>設定した Priority が正しく機能するのか試してみた。</p>
+
+<h3>検証方法</h3>
+
+<ul>
+<li>MIN, NORMAL, MAX の優先度を設定をした、SingleThread な Executor を1つずつ、計３つ生成。</li>
+<li>３つの Executor に、タスクをじゃんじゃん投入(submit)する。</li>
+<li>タスクの処理が開始された所をログ出力して、その順番を調べる。</li>
+</ul>
+
+
+<h3>検証コード</h3>
+
+<p>上を実装したのがこれ。<code>CountDownLatch</code> で待ち合わせするのがなんだかなぁって感じだがまあいいや。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">ThreadFactory</span> <span class="nf">makeThreadFactory</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">priority</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// 上と同じなので省略</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// タスクを生成する</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Runnable</span> <span class="nf">makeTask</span><span class="o">(</span><span class="kd">final</span> <span class="n">String</span> <span class="n">tag</span><span class="o">,</span> <span class="kd">final</span> <span class="n">StringBuffer</span> <span class="n">buffer</span><span class="o">,</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">latch</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// タスクが開始された時に、A or B or C を追加してく</span>
+</span><span class='line'>            <span class="n">buffer</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">tag</span><span class="o">);</span> <span class="c1">// StringBuffer は Thread-safe なハズだ</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Wait</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span> <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 検証実行</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testThreadPriority</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// MIN, NORMAL, MAX な Priority の Executor を生成</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">minExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MIN_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">norExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">NORM_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">maxExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MAX_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">100</span> <span class="o">*</span> <span class="mi">3</span><span class="o">);</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">StringBuffer</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuffer</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// それぞれの Executor にじゃんじゃんタスクを投入</span>
+</span><span class='line'>    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">minExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;C&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// MIN-&gt;&quot;C&quot;</span>
+</span><span class='line'>        <span class="n">norExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;B&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// NORMAL-&gt;&quot;B&quot;</span>
+</span><span class='line'>        <span class="n">maxExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;A&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// MAX-&gt;&quot;A&quot;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 全部のタスクが終わるのを待つ</span>
+</span><span class='line'>    <span class="n">latch</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span> <span class="c1">// タスクが処理された順番を出力</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>検証結果(HTC J)</h3>
+
+<h4>1回目</h4>
+
+<blockquote><p>BAACAAABABABABABABABABABABABABABABABABACACACACBAABABABABABAB
+ABABABABABABACBAABABABABABABABAABBABABABABABAABABABABABABABA
+BABABABAABABABABABABABABABABABAABABABABABABABABABABABABABABA
+BABABABABABABABCBBBBCBBCBCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>2回目</h4>
+
+<blockquote><p>CBACABAABABABABABABAABABABABABABABABABACBABABABAABABBABABABA
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAABABABA
+BABABABABBABAABABABABABABABABABABABABABABABABABCABABABABABAB
+ABABABABABABAABABABBCBCBBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>3回目</h4>
+
+<blockquote><p>BAACAABABABAABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABACBABABABABABABABABABABABABABABABA
+BABABABAABABABABABCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<p>&#8220;C&#8221;(優先度:MIN) のタスクが後ろの方に追いやられているのが分かる。
+&#8220;A&#8221;(MAX) と &#8220;B&#8221;(NORMAL) の差ははっきりとはわからないが、それでも &#8220;A&#8221; の方が先に全部終わっているので優先されているのがなんとか分かる。</p>
+
+<h2>まとめ</h2>
+
+<p>優先度の変更、ちゃんと効果あるんですね。</p>
+
+<p>よく調べると Android には <code>android.os.Process.setThreadPriority()</code> というのもあるそうで。</p>
+
+<ul>
+<li><a href="http://mikanbako.blog.shinobi.jp/android/android.os.process.setthreadpriority--%E3%81%A8java.lang.thread.setpriority--%E3%81%AE%E5%8A%B9%E6%9E%9C%E3%81%AF%E5%90%8C%E3%81%98">android.os.Process.setThreadPriority()とjava.lang.Thread.setPriority()の効果は同じ - みかん箱</a></li>
+</ul>
+
+
+<blockquote><p>結果、両者の効果は同じです。ただし、android.os.Processではスレッドの優先度が用途ごとに定数として定義されているため、まずandroid.os.Process.setThreadPriority()の使用を検討すべきでしょう。</p></blockquote>
+
+<p>とのこと。確かに <code>THREAD_PRIORITY_FOREGROUND</code>, <code>THREAD_PRIORITY_AUDIO</code>, <code>THREAD_PRIORITY_LOWEST</code> などが定義されているので、こちらを使った方が良さげですね。
+個人的には、Java の API でできる事はその範囲で閉じてしまいたいのですがね。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-04T22:22:00+09:00" pubdate data-updated="true">Sep 4<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/java/'>Java</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/09/03/using-instruments-with-xamarin-ios/" title="Previous Post: Xamarin.iOS + iOS Simulator で Instruments を使う">&laquo; Xamarin.iOS + iOS Simulator で Instruments を使う</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/04/understanding-android-thread-priority/">スレッドの優先度について調べた</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/03/using-instruments-with-xamarin-ios/">Xamarin.iOS + iOS Simulator で Instruments を使う</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/02/when-release-memory-by-arc/">ARC のメモリ解放タイミングを調べた</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/01/re-studying-executorservice/">ExecutorService の復習</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/08/29/performance-of-sdcard-io/">SDカードのファイルI/Oパフォーマンス計測</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (63)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (28)</a></li><li><a href='/blog/categories/c-'>C# (22)</a></li><li><a href='/blog/categories/java'>Java (19)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (15)</a></li><li><a href='/blog/categories/ios'>iOS (11)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/html5'>HTML5 (5)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/勉強会'>勉強会 (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+<a class="twitter-timeline"  height="400" href="https://twitter.com/amay077" data-widget-id="362129904348848128" data-theme="light" data-related="amay077,twitter" data-chrome="nofooter noborders transparent">Tweets by @amay077</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

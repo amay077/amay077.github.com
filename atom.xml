@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-03T21:31:13+09:00</updated>
+  <updated>2013-09-04T22:24:00+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,233 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[スレッドの優先度について調べた]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/"/>
+    <updated>2013-09-04T22:22:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority</id>
+    <content type="html"><![CDATA[<p>Android にも(Java ですから)スレッドの優先度ってありますけど、それちゃんと動きますよね？というのを ExecurorService を使って調べた。</p>
+
+<!--more-->
+
+
+<h2>ThreadFactory の拡張</h2>
+
+<p><code>ExecutorService</code> が作るスレッドは、何もしないと 優先度:中 になる模様。
+これを変更するには、生成時(<code>newSingleThreadExecutor</code>) に渡す <code>ThreadFactory</code> を自前で実装して、<code>Thread.setPriority</code> してやる。</p>
+
+<p><code>ThreadFactory</code> を Implements したクラス作ってもいいけど、そこまでやる必要も無いでしょ。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 指定した Priority の ThreadFactory を生成して返す</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">ThreadFactory</span> <span class="nf">makeThreadFactory</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">priority</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">ThreadFactory</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="n">Thread</span> <span class="nf">newThread</span><span class="o">(</span><span class="n">Runnable</span> <span class="n">r</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">Thread</span> <span class="n">thread</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Thread</span><span class="o">(</span><span class="n">r</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">thread</span><span class="o">.</span><span class="na">setPriority</span><span class="o">(</span><span class="n">priority</span><span class="o">);</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">thread</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 使ってみる</span>
+</span><span class='line'><span class="kd">private</span> <span class="kt">void</span> <span class="nf">testExecutor</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">executor</span> <span class="o">=</span>
+</span><span class='line'>        <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MIN_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">executor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// なにかの処理</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>優先度が考慮されるかの検証</h2>
+
+<p>設定した Priority が正しく機能するのか試してみた。</p>
+
+<h3>検証方法</h3>
+
+<ul>
+<li>MIN, NORMAL, MAX の優先度を設定をした、SingleThread な Executor を1つずつ、計３つ生成。</li>
+<li>３つの Executor に、タスクをじゃんじゃん投入(submit)する。</li>
+<li>タスクの処理が開始された所をログ出力して、その順番を調べる。</li>
+</ul>
+
+
+<h3>検証コード</h3>
+
+<p>上を実装したのがこれ。<code>CountDownLatch</code> で待ち合わせするのがなんだかなぁって感じだがまあいいや。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">ThreadFactory</span> <span class="nf">makeThreadFactory</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">priority</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// 上と同じなので省略</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// タスクを生成する</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Runnable</span> <span class="nf">makeTask</span><span class="o">(</span><span class="kd">final</span> <span class="n">String</span> <span class="n">tag</span><span class="o">,</span> <span class="kd">final</span> <span class="n">StringBuffer</span> <span class="n">buffer</span><span class="o">,</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">latch</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="k">new</span> <span class="nf">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// タスクが開始された時に、A or B or C を追加してく</span>
+</span><span class='line'>            <span class="n">buffer</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">tag</span><span class="o">);</span> <span class="c1">// StringBuffer は Thread-safe なハズだ</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Wait</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">j</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="o">;</span> <span class="n">j</span><span class="o">++)</span> <span class="o">{</span> <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">};</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 検証実行</span>
+</span><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">testThreadPriority</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">InterruptedException</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// MIN, NORMAL, MAX な Priority の Executor を生成</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">minExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MIN_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">norExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">NORM_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">ExecutorService</span> <span class="n">maxExecutor</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">Executors</span><span class="o">.</span><span class="na">newSingleThreadExecutor</span><span class="o">(</span><span class="n">makeThreadFactory</span><span class="o">(</span><span class="n">Thread</span><span class="o">.</span><span class="na">MAX_PRIORITY</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">100</span> <span class="o">*</span> <span class="mi">3</span><span class="o">);</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">StringBuffer</span> <span class="n">builder</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuffer</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// それぞれの Executor にじゃんじゃんタスクを投入</span>
+</span><span class='line'>    <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span> <span class="n">i</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="o">;</span> <span class="n">i</span><span class="o">++)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">minExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;C&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// MIN-&gt;&quot;C&quot;</span>
+</span><span class='line'>        <span class="n">norExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;B&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// NORMAL-&gt;&quot;B&quot;</span>
+</span><span class='line'>        <span class="n">maxExecutor</span><span class="o">.</span><span class="na">submit</span><span class="o">(</span><span class="n">makeTask</span><span class="o">(</span><span class="s">&quot;A&quot;</span><span class="o">,</span> <span class="n">builder</span><span class="o">,</span> <span class="n">latch</span><span class="o">));</span> <span class="c1">// MAX-&gt;&quot;A&quot;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 全部のタスクが終わるのを待つ</span>
+</span><span class='line'>    <span class="n">latch</span><span class="o">.</span><span class="na">await</span><span class="o">();</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="n">builder</span><span class="o">.</span><span class="na">toString</span><span class="o">());</span> <span class="c1">// タスクが処理された順番を出力</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>検証結果(HTC J)</h3>
+
+<h4>1回目</h4>
+
+<blockquote><p>BAACAAABABABABABABABABABABABABABABABABACACACACBAABABABABABAB
+ABABABABABABACBAABABABABABABABAABBABABABABABAABABABABABABABA
+BABABABAABABABABABABABABABABABAABABABABABABABABABABABABABABA
+BABABABABABABABCBBBBCBBCBCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>2回目</h4>
+
+<blockquote><p>CBACABAABABABABABABAABABABABABABABABABACBABABABAABABBABABABA
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAABABABA
+BABABABABBABAABABABABABABABABABABABABABABABABABCABABABABABAB
+ABABABABABABAABABABBCBCBBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>3回目</h4>
+
+<blockquote><p>BAACAABABABAABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABACBABABABABABABABABABABABABABABABA
+BABABABAABABABABABCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<p>&#8220;C&#8221;(優先度:MIN) のタスクが後ろの方に追いやられているのが分かる。
+&#8220;A&#8221;(MAX) と &#8220;B&#8221;(NORMAL) の差ははっきりとはわからないが、それでも &#8220;A&#8221; の方が先に全部終わっているので優先されているのがなんとか分かる。</p>
+
+<h2>まとめ</h2>
+
+<p>優先度の変更、ちゃんと効果あるんですね。</p>
+
+<p>よく調べると Android には <code>android.os.Process.setThreadPriority()</code> というのもあるそうで。</p>
+
+<ul>
+<li><a href="http://mikanbako.blog.shinobi.jp/android/android.os.process.setthreadpriority--%E3%81%A8java.lang.thread.setpriority--%E3%81%AE%E5%8A%B9%E6%9E%9C%E3%81%AF%E5%90%8C%E3%81%98">android.os.Process.setThreadPriority()とjava.lang.Thread.setPriority()の効果は同じ - みかん箱</a></li>
+</ul>
+
+
+<blockquote><p>結果、両者の効果は同じです。ただし、android.os.Processではスレッドの優先度が用途ごとに定数として定義されているため、まずandroid.os.Process.setThreadPriority()の使用を検討すべきでしょう。</p></blockquote>
+
+<p>とのこと。確かに <code>THREAD_PRIORITY_FOREGROUND</code>, <code>THREAD_PRIORITY_AUDIO</code>, <code>THREAD_PRIORITY_LOWEST</code> などが定義されているので、こちらを使った方が良さげですね。
+個人的には、Java の API でできる事はその範囲で閉じてしまいたいのですがね。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.iOS + iOS Simulator で Instruments を使う]]></title>
@@ -2803,54 +3030,6 @@ isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 cont
 
 <ul>
 <li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[WakeLock の状態を確認する]]></title>
-    <link href="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/"/>
-    <updated>2013-06-13T20:58:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/06/13/view-wakelock-status</id>
-    <content type="html"><![CDATA[<p>どのアプリが WakeLock を取得しているかを見る方法。</p>
-
-<!--more-->
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>adb shell dumpsys power
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>を実行して、ずらっと出力される中から &#8220;Wake Locks:&#8221; を探す。
-出力されるのはこんな感じの情報。</p>
-
-<blockquote><p>POWER MANAGER (dumpsys power)</p>
-
-<p>Power Manager State:
- mDirty=0x0
- (中略)</p>
-
-<p>Settings and Configuration:
- mDreamsSupportedConfig=true
- (中略)</p>
-
-<p>Screen off timeout: 30000 ms
-Screen dim duration: 6000 ms</p>
-
-<p>Wake Locks: size=1
- SCREEN_BRIGHT_WAKE_LOCK        &#8216;WindowManager&#8217; ON_AFTER_RELEASE (uid=1000, pid=389, ws={WorkSource: uids=[10070]})</p>
-
-<p>(以下省略)</p></blockquote>
-
-<p>&#8220;Wake Locks: size=1&#8221; となっており、
-&#8216;WindowManager&#8217; という TAG で <code>SCREEN_BRIGHT_WAKE_LOCK</code> が取得されているのが分かる。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
 </ul>
 
 ]]></content>

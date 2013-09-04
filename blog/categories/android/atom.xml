@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-03T21:31:13+09:00</updated>
+  <updated>2013-09-04T22:24:00+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,178 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[スレッドの優先度について調べた]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/"/>
+    <updated>2013-09-04T22:22:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority</id>
+    <content type="html"><![CDATA[<p>Android にも(Java ですから)スレッドの優先度ってありますけど、それちゃんと動きますよね？というのを ExecurorService を使って調べた。</p>
+
+<!--more-->
+
+
+<h2>ThreadFactory の拡張</h2>
+
+<p><code>ExecutorService</code> が作るスレッドは、何もしないと 優先度:中 になる模様。
+これを変更するには、生成時(<code>newSingleThreadExecutor</code>) に渡す <code>ThreadFactory</code> を自前で実装して、<code>Thread.setPriority</code> してやる。</p>
+
+<p><code>ThreadFactory</code> を Implements したクラス作ってもいいけど、そこまでやる必要も無いでしょ。</p>
+
+<p>```java
+// 指定した Priority の ThreadFactory を生成して返す
+private ThreadFactory makeThreadFactory(final int priority) {</p>
+
+<pre><code>return new ThreadFactory() {
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread thread = new Thread(r);
+        thread.setPriority(priority);
+        return thread;
+    }
+};
+</code></pre>
+
+<p>}</p>
+
+<p>// 使ってみる
+private void testExecutor() {</p>
+
+<pre><code>final ExecutorService executor = 
+    Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MIN_PRIORITY));
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        // なにかの処理
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>優先度が考慮されるかの検証</h2>
+
+<p>設定した Priority が正しく機能するのか試してみた。</p>
+
+<h3>検証方法</h3>
+
+<ul>
+<li>MIN, NORMAL, MAX の優先度を設定をした、SingleThread な Executor を1つずつ、計３つ生成。</li>
+<li>３つの Executor に、タスクをじゃんじゃん投入(submit)する。</li>
+<li>タスクの処理が開始された所をログ出力して、その順番を調べる。</li>
+</ul>
+
+
+<h3>検証コード</h3>
+
+<p>上を実装したのがこれ。<code>CountDownLatch</code> で待ち合わせするのがなんだかなぁって感じだがまあいいや。</p>
+
+<p>```java
+private ThreadFactory makeThreadFactory(final int priority) {</p>
+
+<pre><code>// 上と同じなので省略
+</code></pre>
+
+<p>}</p>
+
+<p>// タスクを生成する
+private Runnable makeTask(final String tag, final StringBuffer buffer,</p>
+
+<pre><code>    final CountDownLatch latch) {
+return new Runnable() {
+    @Override
+    public void run() {
+        // タスクが開始された時に、A or B or C を追加してく
+        buffer.append(tag); // StringBuffer は Thread-safe なハズだ
+
+        // Wait
+        for (int j = 0; j &lt; 1000000; j++) { } 
+
+        latch.countDown();
+    }
+};
+</code></pre>
+
+<p>}</p>
+
+<p>// 検証実行
+public void testThreadPriority() throws InterruptedException {</p>
+
+<pre><code>// MIN, NORMAL, MAX な Priority の Executor を生成
+final ExecutorService minExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MIN_PRIORITY));
+final ExecutorService norExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.NORM_PRIORITY));
+final ExecutorService maxExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MAX_PRIORITY));
+
+final CountDownLatch latch = new CountDownLatch(100 * 3);
+final StringBuffer builder = new StringBuffer();
+
+// それぞれの Executor にじゃんじゃんタスクを投入
+for (int i = 0; i &lt; 100; i++) {
+    minExecutor.submit(makeTask("C", builder, latch)); // MIN-&gt;"C"
+    norExecutor.submit(makeTask("B", builder, latch)); // NORMAL-&gt;"B"
+    maxExecutor.submit(makeTask("A", builder, latch)); // MAX-&gt;"A"
+}
+
+// 全部のタスクが終わるのを待つ
+latch.await();
+Log.d(TAG, builder.toString()); // タスクが処理された順番を出力
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>検証結果(HTC J)</h3>
+
+<h4>1回目</h4>
+
+<blockquote><p>BAACAAABABABABABABABABABABABABABABABABACACACACBAABABABABABAB
+ABABABABABABACBAABABABABABABABAABBABABABABABAABABABABABABABA
+BABABABAABABABABABABABABABABABAABABABABABABABABABABABABABABA
+BABABABABABABABCBBBBCBBCBCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>2回目</h4>
+
+<blockquote><p>CBACABAABABABABABABAABABABABABABABABABACBABABABAABABBABABABA
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAABABABA
+BABABABABBABAABABABABABABABABABABABABABABABABABCABABABABABAB
+ABABABABABABAABABABBCBCBBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>3回目</h4>
+
+<blockquote><p>BAACAABABABAABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABACBABABABABABABABABABABABABABABABA
+BABABABAABABABABABCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<p>"C"(優先度:MIN) のタスクが後ろの方に追いやられているのが分かる。
+"A"(MAX) と "B"(NORMAL) の差ははっきりとはわからないが、それでも "A" の方が先に全部終わっているので優先されているのがなんとか分かる。</p>
+
+<h2>まとめ</h2>
+
+<p>優先度の変更、ちゃんと効果あるんですね。</p>
+
+<p>よく調べると Android には <code>android.os.Process.setThreadPriority()</code> というのもあるそうで。</p>
+
+<ul>
+<li><a href="http://mikanbako.blog.shinobi.jp/android/android.os.process.setthreadpriority--%E3%81%A8java.lang.thread.setpriority--%E3%81%AE%E5%8A%B9%E6%9E%9C%E3%81%AF%E5%90%8C%E3%81%98">android.os.Process.setThreadPriority()とjava.lang.Thread.setPriority()の効果は同じ - みかん箱</a></li>
+</ul>
+
+
+<blockquote><p>結果、両者の効果は同じです。ただし、android.os.Processではスレッドの優先度が用途ごとに定数として定義されているため、まずandroid.os.Process.setThreadPriority()の使用を検討すべきでしょう。</p></blockquote>
+
+<p>とのこと。確かに <code>THREAD_PRIORITY_FOREGROUND</code>, <code>THREAD_PRIORITY_AUDIO</code>, <code>THREAD_PRIORITY_LOWEST</code> などが定義されているので、こちらを使った方が良さげですね。
+個人的には、Java の API でできる事はその範囲で閉じてしまいたいのですがね。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ExecutorService の復習]]></title>
@@ -742,53 +914,6 @@ isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 cont
 
 <ul>
 <li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[WakeLock の状態を確認する]]></title>
-    <link href="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/"/>
-    <updated>2013-06-13T20:58:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/06/13/view-wakelock-status</id>
-    <content type="html"><![CDATA[<p>どのアプリが WakeLock を取得しているかを見る方法。</p>
-
-<!--more-->
-
-
-<p><code>sh
-adb shell dumpsys power
-</code></p>
-
-<p>を実行して、ずらっと出力される中から "Wake Locks:" を探す。
-出力されるのはこんな感じの情報。</p>
-
-<blockquote><p>POWER MANAGER (dumpsys power)</p>
-
-<p>Power Manager State:
- mDirty=0x0
- (中略)</p>
-
-<p>Settings and Configuration:
- mDreamsSupportedConfig=true
- (中略)</p>
-
-<p>Screen off timeout: 30000 ms
-Screen dim duration: 6000 ms</p>
-
-<p>Wake Locks: size=1
- SCREEN_BRIGHT_WAKE_LOCK        'WindowManager' ON_AFTER_RELEASE (uid=1000, pid=389, ws={WorkSource: uids=[10070]})</p>
-
-<p>(以下省略)</p></blockquote>
-
-<p>"Wake Locks: size=1" となっており、
-'WindowManager' という TAG で <code>SCREEN_BRIGHT_WAKE_LOCK</code> が取得されているのが分かる。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
 </ul>
 
 ]]></content>
