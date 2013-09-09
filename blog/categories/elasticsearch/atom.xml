@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Elasticsearch | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/elasticsearch/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-09-09T21:10:19+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch で位置情報を検索する手順]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch/"/>
+    <updated>2013-09-09T21:08:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch</id>
+    <content type="html"><![CDATA[<p>Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。</p>
+
+<p>位置情報の検索機能も標準搭載しているとのことで、試しに使ってみました。</p>
+
+<!--more-->
+
+
+<h2>Elasticsearch の導入</h2>
+
+<p>下の情報が大変参考になりました。(環境は Mac。事前に Java と homebrew の導入が必要です）</p>
+
+<ul>
+<li><a href="http://qiita.com/Konboi@github/items/56f0aaca77db5df027af">elasticsearch - ElasitcSearch ことはじめ - Qiita [キータ]</a></li>
+</ul>
+
+
+<h2>試しに使ってみる</h2>
+
+<p>下のサイトが大変参考なりました。</p>
+
+<ul>
+<li><a href="http://inokara.hateblo.jp/entry/2013/09/07/153826">Elasticsearch を試してみる - ようへいの日々精進</a></li>
+</ul>
+
+
+<h2>位置情報を検索してみる</h2>
+
+<p>下のようなスキーマのデータを登録して検索する想定です。</p>
+
+<p>```javascript venue_example.json
+{</p>
+
+<pre><code>"name" : "Tokyo St",
+"pin" : {
+    "location" : {
+        "lat" : 35.68,
+        "lon" : 139.76
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>1. スキーマを登録する</h3>
+
+<p>Elasticsearch は基本的にはスキーマレスで動くのですが、位置情報を表す項目は、明確にスキーマを定義する必要があるようです。</p>
+
+<p>データ投入の前にそれを行います。</p>
+
+<p>```sh
+curl -XPUT 'http://localhost:9200/myvenues/'</p>
+
+<p>curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
+{</p>
+
+<pre><code>"venue" : {
+    "properties" : {
+        "pin" : { "type" : "geo_point" }
+    }
+}
+</code></pre>
+
+<p>}'
+```</p>
+
+<p>ここでは、<code>venue</code> のプロパティ群の内の <code>pin</code> 項目は、位置情報(geo_point)だよ、と定義しています。</p>
+
+<h3>2. データを投入する</h3>
+
+<p>2件ほど、テストデータを投入します。</p>
+
+<p>```sh
+curl -XPUT 'http://localhost:9200/myvenues/venue/1' -d '{</p>
+
+<pre><code>"name" : "Tokyo St",
+"tag" : ["station", "train"],
+"pin" : {
+    "location" : {
+        "lat" : 35.68,
+        "lon" : 139.76
+    }
+}
+</code></pre>
+
+<p>}'</p>
+
+<p>curl -XPUT 'http://localhost:9200/myvenues/venue/2' -d '{</p>
+
+<pre><code>"name" : "Nagoya St",
+"tag" : ["station", "train"],
+"pin" : {
+    "location" : {
+        "lat" : 35.17,
+        "lon" : 136.88
+    }
+}
+</code></pre>
+
+<p>}'
+```</p>
+
+<h3>3. 位置情報で検索する</h3>
+
+<h4>位置＋距離</h4>
+
+<p>緯度/経度:35.6/139.8 から 20km 周囲にあるデータを検索します。</p>
+
+<p>```sh
+curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
+
+<pre><code>"query": {
+    "filtered" : {
+        "query" : {
+            "match_all" : {}
+        },
+        "filter" : {
+            "geo_distance" : {
+                "distance" : "20km",
+                "venue.pin" : {
+                    "lat" : 35.6,
+                    "lon" : 139.8
+                }
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>}'
+```</p>
+
+<h5>結果</h5>
+
+<p>Tokyo St だけがヒットしました。</p>
+
+<p>```javascript
+{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"1","<em>score":1.0, "</em>source" : {</p>
+
+<pre><code>"name" : "Tokyo St",
+"pin" : {
+    "location" : {
+        "lat" : 35.68,
+        "lon" : 139.76
+    }
+}
+</code></pre>
+
+<p>}}]}}
+```</p>
+
+<h4>範囲(矩形)</h4>
+
+<p>左上:35.2/136.8 〜 右下:35.1/136.9 にあるデータを検索します。緯度は上(北)の方が値が大きくなるので、上下関係に注意が必要です。</p>
+
+<p>```sh
+curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
+
+<pre><code>"query": {
+    "filtered" : {
+        "query" : {
+            "match_all" : {}
+        },
+        "filter" : {
+            "geo_bounding_box" : {
+                "venue.pin" : {
+                    "top_left" : {
+                        "lat" : 35.2,
+                        "lon" : 136.8
+                    },
+                    "bottom_right" : {
+                        "lat" : 35.1,
+                        "lon" : 136.9
+                    }
+                }
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>}'
+```</p>
+
+<h5>結果</h5>
+
+<p>Nagoya St だけがヒットしました。</p>
+
+<p>```javascript
+{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"2","<em>score":1.0, "</em>source" : {</p>
+
+<pre><code>"name" : "Nagoya St",
+"pin" : {
+    "location" : {
+        "lat" : 35.17,
+        "lon" : 136.88
+    }
+}
+</code></pre>
+
+<p>}}]}}
+```</p>
+
+<h4>範囲(多角形)</h4>
+
+<p>任意の多角形領域にあるデータを検索します。</p>
+
+<p>ここでは GeoJSON 互換の記述方式で書いてます。経度が先なので注意。
+今までのような lat: lon: の配列でもかけますが、 GeoJSON 便利なので。</p>
+
+<p>```sh
+curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
+
+<pre><code>"query": {
+    "filtered" : {
+        "query" : {
+            "match_all" : {}
+        },
+        "filter" : {
+            "geo_polygon" : {
+                "venue.pin" : {
+                    "points" : [
+                        [139.7, 35.7],  // 経度が先！
+                        [139.8, 35.7],
+                        [139.8, 35.6],
+                        [139.7, 35.6],
+                        [139.7, 35.7]
+                    ]
+                }
+            }
+        }
+    }
+}
+</code></pre>
+
+<p>}'
+```</p>
+
+<h5>結果</h5>
+
+<p>Tokyo St だけがヒットしました。</p>
+
+<p>```javascript
+{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"1","<em>score":1.0, "</em>source" : {</p>
+
+<pre><code>"name" : "Tokyo St",
+"pin" : {
+    "location" : {
+        "lat" : 35.68,
+        "lon" : 139.76
+    }
+}
+</code></pre>
+
+<p>}}]}}
+```</p>
+
+<p>(ポリゴンの座標群が、右回りじゃないとダメかな？と思って恐る恐る左回りにしてみたら、問題なく検索できました！)</p>
+
+<h2>まとめ</h2>
+
+<p>最初 <code>geo_point</code> を明示的に指定しないといけないのに気づかなくてしばらくハマりましたが、それ意外はすんなりと動きました。</p>
+
+<p>機能を試しただけでパフォーマンスなどは計測できていませんが、なんか使えそうな気はします。</p>
+
+<p>位置情報関係の情報を探したい時は、公式サイトの GUIDE</p>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/guide/">Reference Guide | Elasticsearch</a></li>
+</ul>
+
+
+<p>の検索バーで 「geo」で検索すると、有用な情報が得られます。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/">Open Source Distributed Real Time Search &amp; Analytics | Elasticsearch</a></li>
+<li><a href="http://www.elasticsearch.org/blog/geo-location-and-search/">Geo Location And Search | Blog | Elasticsearch</a></li>
+<li><a href="http://www.elasticsearchtutorial.com/spatial-search-tutorial.html">Spatial Search ElasticSearch tutorial - ElasticSearch Tutorial.com</a></li>
+<li><a href="http://stackoverflow.com/questions/16113439/elasticsearch-geo-distance-filter-with-multiple-locations-in-array-possible">ElasticSearch geo distance filter with multiple locations in array - possible? - Stack Overflow</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

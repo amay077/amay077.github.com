@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-04T22:24:00+09:00</updated>
+  <updated>2013-09-09T21:10:19+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,397 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch で位置情報を検索する手順]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch/"/>
+    <updated>2013-09-09T21:08:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch</id>
+    <content type="html"><![CDATA[<p>Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。</p>
+
+<p>位置情報の検索機能も標準搭載しているとのことで、試しに使ってみました。</p>
+
+<!--more-->
+
+
+<h2>Elasticsearch の導入</h2>
+
+<p>下の情報が大変参考になりました。(環境は Mac。事前に Java と homebrew の導入が必要です）</p>
+
+<ul>
+<li><a href="http://qiita.com/Konboi@github/items/56f0aaca77db5df027af">elasticsearch - ElasitcSearch ことはじめ - Qiita [キータ]</a></li>
+</ul>
+
+
+<h2>試しに使ってみる</h2>
+
+<p>下のサイトが大変参考なりました。</p>
+
+<ul>
+<li><a href="http://inokara.hateblo.jp/entry/2013/09/07/153826">Elasticsearch を試してみる - ようへいの日々精進</a></li>
+</ul>
+
+
+<h2>位置情報を検索してみる</h2>
+
+<p>下のようなスキーマのデータを登録して検索する想定です。</p>
+
+<figure class='code'><figcaption><span>venue_example.json</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;name&quot;</span> <span class="o">:</span> <span class="s2">&quot;Tokyo St&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;pin&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s2">&quot;location&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;lat&quot;</span> <span class="o">:</span> <span class="mf">35.68</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;lon&quot;</span> <span class="o">:</span> <span class="mf">139.76</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>1. スキーマを登録する</h3>
+
+<p>Elasticsearch は基本的にはスキーマレスで動くのですが、位置情報を表す項目は、明確にスキーマを定義する必要があるようです。</p>
+
+<p>データ投入の前にそれを行います。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPUT <span class="s1">&#39;http://localhost:9200/myvenues/&#39;</span>
+</span><span class='line'>
+</span><span class='line'>curl -XPUT <span class="s1">&#39;http://localhost:9200/myvenues/venue/_mapping&#39;</span> -d <span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">{</span>
+</span><span class='line'><span class="s1">    &quot;venue&quot; : {</span>
+</span><span class='line'><span class="s1">        &quot;properties&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;pin&quot; : { &quot;type&quot; : &quot;geo_point&quot; }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ここでは、<code>venue</code> のプロパティ群の内の <code>pin</code> 項目は、位置情報(geo_point)だよ、と定義しています。</p>
+
+<h3>2. データを投入する</h3>
+
+<p>2件ほど、テストデータを投入します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPUT <span class="s1">&#39;http://localhost:9200/myvenues/venue/1&#39;</span> -d <span class="s1">&#39;{</span>
+</span><span class='line'><span class="s1">    &quot;name&quot; : &quot;Tokyo St&quot;,</span>
+</span><span class='line'><span class="s1">    &quot;tag&quot; : [&quot;station&quot;, &quot;train&quot;],</span>
+</span><span class='line'><span class="s1">    &quot;pin&quot; : {</span>
+</span><span class='line'><span class="s1">        &quot;location&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;lat&quot; : 35.68,</span>
+</span><span class='line'><span class="s1">            &quot;lon&quot; : 139.76</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span><span class='line'>
+</span><span class='line'>curl -XPUT <span class="s1">&#39;http://localhost:9200/myvenues/venue/2&#39;</span> -d <span class="s1">&#39;{</span>
+</span><span class='line'><span class="s1">    &quot;name&quot; : &quot;Nagoya St&quot;,</span>
+</span><span class='line'><span class="s1">    &quot;tag&quot; : [&quot;station&quot;, &quot;train&quot;],</span>
+</span><span class='line'><span class="s1">    &quot;pin&quot; : {</span>
+</span><span class='line'><span class="s1">        &quot;location&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;lat&quot; : 35.17,</span>
+</span><span class='line'><span class="s1">            &quot;lon&quot; : 136.88</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>3. 位置情報で検索する</h3>
+
+<h4>位置＋距離</h4>
+
+<p>緯度/経度:35.6/139.8 から 20km 周囲にあるデータを検索します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/myvenues/venue/_search&#39;</span> -d <span class="s1">&#39;{</span>
+</span><span class='line'><span class="s1">    &quot;query&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;filtered&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;query&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;match_all&quot; : {}</span>
+</span><span class='line'><span class="s1">            },</span>
+</span><span class='line'><span class="s1">            &quot;filter&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;geo_distance&quot; : {</span>
+</span><span class='line'><span class="s1">                    &quot;distance&quot; : &quot;20km&quot;,</span>
+</span><span class='line'><span class="s1">                    &quot;venue.pin&quot; : {</span>
+</span><span class='line'><span class="s1">                        &quot;lat&quot; : 35.6,</span>
+</span><span class='line'><span class="s1">                        &quot;lon&quot; : 139.8</span>
+</span><span class='line'><span class="s1">                    }</span>
+</span><span class='line'><span class="s1">                }</span>
+</span><span class='line'><span class="s1">            }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>結果</h5>
+
+<p>Tokyo St だけがヒットしました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span><span class="s2">&quot;took&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">&quot;timed_out&quot;</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">&quot;_shards&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;successful&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;failed&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&quot;max_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">[{</span><span class="s2">&quot;_index&quot;</span><span class="o">:</span><span class="s2">&quot;myvenues&quot;</span><span class="p">,</span><span class="s2">&quot;_type&quot;</span><span class="o">:</span><span class="s2">&quot;venue&quot;</span><span class="p">,</span><span class="s2">&quot;_id&quot;</span><span class="o">:</span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="s2">&quot;_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;_source&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;name&quot;</span> <span class="o">:</span> <span class="s2">&quot;Tokyo St&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;pin&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s2">&quot;location&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;lat&quot;</span> <span class="o">:</span> <span class="mf">35.68</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;lon&quot;</span> <span class="o">:</span> <span class="mf">139.76</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}}]}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>範囲(矩形)</h4>
+
+<p>左上:35.2/136.8 〜 右下:35.1/136.9 にあるデータを検索します。緯度は上(北)の方が値が大きくなるので、上下関係に注意が必要です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/myvenues/venue/_search&#39;</span> -d <span class="s1">&#39;{</span>
+</span><span class='line'><span class="s1">    &quot;query&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;filtered&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;query&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;match_all&quot; : {}</span>
+</span><span class='line'><span class="s1">            },</span>
+</span><span class='line'><span class="s1">            &quot;filter&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;geo_bounding_box&quot; : {</span>
+</span><span class='line'><span class="s1">                 &quot;venue.pin&quot; : {</span>
+</span><span class='line'><span class="s1">                     &quot;top_left&quot; : {</span>
+</span><span class='line'><span class="s1">                         &quot;lat&quot; : 35.2,</span>
+</span><span class='line'><span class="s1">                         &quot;lon&quot; : 136.8</span>
+</span><span class='line'><span class="s1">                     },</span>
+</span><span class='line'><span class="s1">                     &quot;bottom_right&quot; : {</span>
+</span><span class='line'><span class="s1">                         &quot;lat&quot; : 35.1,</span>
+</span><span class='line'><span class="s1">                         &quot;lon&quot; : 136.9</span>
+</span><span class='line'><span class="s1">                     }</span>
+</span><span class='line'><span class="s1">                 }</span>
+</span><span class='line'><span class="s1">             }</span>
+</span><span class='line'><span class="s1">            }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>結果</h5>
+
+<p>Nagoya St だけがヒットしました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span><span class="s2">&quot;took&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">&quot;timed_out&quot;</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">&quot;_shards&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;successful&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;failed&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&quot;max_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">[{</span><span class="s2">&quot;_index&quot;</span><span class="o">:</span><span class="s2">&quot;myvenues&quot;</span><span class="p">,</span><span class="s2">&quot;_type&quot;</span><span class="o">:</span><span class="s2">&quot;venue&quot;</span><span class="p">,</span><span class="s2">&quot;_id&quot;</span><span class="o">:</span><span class="s2">&quot;2&quot;</span><span class="p">,</span><span class="s2">&quot;_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;_source&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;name&quot;</span> <span class="o">:</span> <span class="s2">&quot;Nagoya St&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;pin&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s2">&quot;location&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;lat&quot;</span> <span class="o">:</span> <span class="mf">35.17</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;lon&quot;</span> <span class="o">:</span> <span class="mf">136.88</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}}]}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>範囲(多角形)</h4>
+
+<p>任意の多角形領域にあるデータを検索します。</p>
+
+<p>ここでは GeoJSON 互換の記述方式で書いてます。経度が先なので注意。
+今までのような lat: lon: の配列でもかけますが、 GeoJSON 便利なので。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/myvenues/venue/_search&#39;</span> -d <span class="s1">&#39;{</span>
+</span><span class='line'><span class="s1">    &quot;query&quot;: {</span>
+</span><span class='line'><span class="s1">        &quot;filtered&quot; : {</span>
+</span><span class='line'><span class="s1">            &quot;query&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;match_all&quot; : {}</span>
+</span><span class='line'><span class="s1">            },</span>
+</span><span class='line'><span class="s1">            &quot;filter&quot; : {</span>
+</span><span class='line'><span class="s1">                &quot;geo_polygon&quot; : {</span>
+</span><span class='line'><span class="s1">                 &quot;venue.pin&quot; : {</span>
+</span><span class='line'><span class="s1">                     &quot;points&quot; : [</span>
+</span><span class='line'><span class="s1">                         [139.7, 35.7],  // 経度が先！</span>
+</span><span class='line'><span class="s1">                         [139.8, 35.7],</span>
+</span><span class='line'><span class="s1">                         [139.8, 35.6],</span>
+</span><span class='line'><span class="s1">                         [139.7, 35.6],</span>
+</span><span class='line'><span class="s1">                         [139.7, 35.7]</span>
+</span><span class='line'><span class="s1">                     ]</span>
+</span><span class='line'><span class="s1">                 }</span>
+</span><span class='line'><span class="s1">             }</span>
+</span><span class='line'><span class="s1">            }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">    }</span>
+</span><span class='line'><span class="s1">}&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h5>結果</h5>
+
+<p>Tokyo St だけがヒットしました。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="p">{</span><span class="s2">&quot;took&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">&quot;timed_out&quot;</span><span class="o">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">&quot;_shards&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;successful&quot;</span><span class="o">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">&quot;failed&quot;</span><span class="o">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">{</span><span class="s2">&quot;total&quot;</span><span class="o">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">&quot;max_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">&quot;hits&quot;</span><span class="o">:</span><span class="p">[{</span><span class="s2">&quot;_index&quot;</span><span class="o">:</span><span class="s2">&quot;myvenues&quot;</span><span class="p">,</span><span class="s2">&quot;_type&quot;</span><span class="o">:</span><span class="s2">&quot;venue&quot;</span><span class="p">,</span><span class="s2">&quot;_id&quot;</span><span class="o">:</span><span class="s2">&quot;1&quot;</span><span class="p">,</span><span class="s2">&quot;_score&quot;</span><span class="o">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;_source&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="s2">&quot;name&quot;</span> <span class="o">:</span> <span class="s2">&quot;Tokyo St&quot;</span><span class="p">,</span>
+</span><span class='line'>    <span class="s2">&quot;pin&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>        <span class="s2">&quot;location&quot;</span> <span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>            <span class="s2">&quot;lat&quot;</span> <span class="o">:</span> <span class="mf">35.68</span><span class="p">,</span>
+</span><span class='line'>            <span class="s2">&quot;lon&quot;</span> <span class="o">:</span> <span class="mf">139.76</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}}]}}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>(ポリゴンの座標群が、右回りじゃないとダメかな？と思って恐る恐る左回りにしてみたら、問題なく検索できました！)</p>
+
+<h2>まとめ</h2>
+
+<p>最初 <code>geo_point</code> を明示的に指定しないといけないのに気づかなくてしばらくハマりましたが、それ意外はすんなりと動きました。</p>
+
+<p>機能を試しただけでパフォーマンスなどは計測できていませんが、なんか使えそうな気はします。</p>
+
+<p>位置情報関係の情報を探したい時は、公式サイトの GUIDE</p>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/guide/">Reference Guide | Elasticsearch</a></li>
+</ul>
+
+
+<p>の検索バーで 「geo」で検索すると、有用な情報が得られます。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.elasticsearch.org/">Open Source Distributed Real Time Search &amp; Analytics | Elasticsearch</a></li>
+<li><a href="http://www.elasticsearch.org/blog/geo-location-and-search/">Geo Location And Search | Blog | Elasticsearch</a></li>
+<li><a href="http://www.elasticsearchtutorial.com/spatial-search-tutorial.html">Spatial Search ElasticSearch tutorial - ElasticSearch Tutorial.com</a></li>
+<li><a href="http://stackoverflow.com/questions/16113439/elasticsearch-geo-distance-filter-with-multiple-locations-in-array-possible">ElasticSearch geo distance filter with multiple locations in array - possible? - Stack Overflow</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[スレッドの優先度について調べた]]></title>
@@ -2979,57 +3370,6 @@ D3 自体でもいろいろなチャート描画ができるが、なんか勝�
 
 <ul>
 <li><a href="http://qiita.com/hurutoriya/items/727296839a2ec638fdc4">グラフ描画に良さげなJavaScriptライブラリ - Qiita</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Service が Foreground で動いているか確認する]]></title>
-    <link href="http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground/"/>
-    <updated>2013-06-14T18:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground</id>
-    <content type="html"><![CDATA[<p>Android で「死ににくいサービス」を作るには <a href="http://developer.android.com/reference/android/app/Service.html#startForeground(int,%20android.app.Notification">Service.startForegound</a> を呼び出す必要がありますが、動いてるサービスがちゃんと「Foregound になってるか？」は以下のようにして確認できます。(Notification 表示が強制されるから通知バー見ればいいじゃん、と言われればそうなんですけど、ちゃんとしたエビデンスっぽいのが欲しくて)</p>
-
-<!--more-->
-
-
-<h2>手順</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>adb shell dumpsys activity s &lt;サービス名&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>&lt;サービス名> はサービスの完全名称を入れます。AndroidManifest.xml の <code>&lt;service android:name=</code> で定義したやつ。</p>
-
-<p>実行すると以下のように出力されます。</p>
-
-<blockquote><p>ACTIVITY MANAGER SERVICES (dumpsys activity services)
-  User 0 active services:
-  * ServiceRecord{41b2dd18 u0 com.amay077.android.gpsfaker/.service.GpsSignalService}</p>
-
-<pre><code>intent={cmp=com.amay077.android.gpsfaker/.service.GpsSignalService}
-packageName=com.amay077.android.gpsfaker
-processName=com.amay077.android.gpsfaker
-baseDir=/data/app/com.amay077.android.gpsfaker-1.apk
-dataDir=/data/data/com.amay077.android.gpsfaker
-app=ProcessRecord{416e19e8 3209:com.amay077.android.gpsfaker/u0a10072}
-isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 contentView=com.amay077.android.
-</code></pre>
-
-<p>(以下省略)</p></blockquote>
-
-<p><code>isForegound=true</code> と表示されているので、確かに「このサービスはフォアグラウンドだ」と分かります。サービス側で <code>startForeground</code> を呼び出さなかった場合は、この項目は表れません。</p>
-
-<p><code>dumpsys</code> 今までコマンドめんどいと思ってあまり使ってませんでしたすいませんでした(汗</p>
-
-<h2>参考</h2>
-
-<p>大変参考になりました。</p>
-
-<ul>
-<li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
 </ul>
 
 ]]></content>
