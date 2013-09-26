@@ -62,6 +62,7 @@ Google は神！Google 先生について行きます！
 * ロケタッチ - http://tou.ch/developer/api_all?uri=spots%2Fsearch
 * Leaflet - http://leafletjs.com/reference.html#latlng
 * Yahoo(地図API) - http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/js/#index6-2
+* mapquest - http://www.mapquestapi.com/staticmap/#getmap
 
 ### Lon 派
 
@@ -77,13 +78,16 @@ Google は神！Google 先生について行きます！
 * 簡易逆ジオコーディングサービス / Finds.jp - http://www.finds.jp/wsdocs/rgeocode/index.html.ja#PARAMS
 * ジオどす - http://geodosu.com/
 * モバイラーズオアシスAPI - http://oasis.mogya.com/blog/API
+* GeOAP(東京ガス) - http://dev.geoap.jp/GeOAP_Course/GeOAP_Trial.asmx?op=CourseLineOfLLToLL
+* はてなココ - http://c.hatena.ne.jp/s/nearby?lat=36.2648177777778&lon=137.910003611111
+* Nokia - http://developer.here.com/rest-apis/documentation/enterprise-map-image
 
 ### Long 派
 
 「〜itude」は同じなんだから、それより前の部分を省略形にすべきだろ（でっち上げの根拠ですｗ
 
 * LatLongLab(Yahoo) - http://latlonglab.yahoo.co.jp/
-* はてなココスポット - http://developer.hatena.ne.jp/ja/documents/coco/apis/v1/spots#spots
+* はてなココ - http://developer.hatena.ne.jp/ja/documents/coco/apis/v1/spots#spots
 
 ### Longitude(略さない)派
 
@@ -94,6 +98,7 @@ Google は神！Google 先生について行きます！
 * Facebook -  https://developers.facebook.com/docs/reference/fql/location_post
 * Amazon - https://developer.amazon.com/sdk/maps/api-reference.html
 * Evernote - http://dev.evernote.com/doc/reference/Types.html#Struct_NoteAttributes
+* Path - https://path.com/developers#tags
 
 ### 緯度経度ペアに名前付けちゃう派
 
@@ -110,12 +115,7 @@ Google は神！Google 先生について行きます！
 * Solr(pt) - http://docs.lucidworks.com/display/solr/Spatial+Search 
 * Oracle Spatial - http://otndnld.oracle.co.jp/document/products/oracle10g/102/doc_cd/appdev.102/B19243-02/sdo_cs_concepts.htm 
 * PostGIS - http://postgis.net/docs/manual-2.1/using_postgis_dbmanagement.html#RefObject
-
-### 不明
-
-だれか教えてください。
-
-* GeOAP(東京ガス) - http://www.geoap.jp/service/service/service1.htm
+* PlaceEngine - http://www.placeengine.com/doc/tut
 
 ## まとめ
 
