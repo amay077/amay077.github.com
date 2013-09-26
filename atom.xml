@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-25T21:10:03+09:00</updated>
+  <updated>2013-09-26T23:57:50+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,84 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[自作ビューで layout_width のマネをしたい時]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/"/>
+    <updated>2013-09-26T23:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view</id>
+    <content type="html"><![CDATA[<p><code>android:layout_width</code> って、型は <code>dimension</code> であるのに、Layout XML には、 <code>"match_parent"</code> とか <code>"wrap_content"</code> とか指定できる。これと同じことを自作ビューの自作プロパティでやりたい。</p>
+
+<!--more-->
+
+
+<p>自作ビュー(カスタムビュー)の作りかたは下などを参照。</p>
+
+<ul>
+<li><a href="http://techbooster.org/android/application/7361/">Androidでxmlファイルを用いてカスタムViewを作る方法 | Tech Booster</a></li>
+</ul>
+
+
+<p>で、<code>android:layout_width</code> のマネをするには、 attrs.xml に以下のように書く。</p>
+
+<figure class='code'><figcaption><span>attrs.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MyCustomView&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;my_width&quot;</span> <span class="na">format=</span><span class="s">&quot;dimension&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;fill_parent&quot;</span> <span class="na">value=</span><span class="s">&quot;-1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;match_parent&quot;</span> <span class="na">value=</span><span class="s">&quot;-1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;wrap_content&quot;</span> <span class="na">value=</span><span class="s">&quot;-2&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Android Framework のソースコードにこう書いてあったので、真似しただけ。</p>
+
+<ul>
+<li><a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r2.1/frameworks/base/core/res/res/values/attrs.xml">GrepCode: frameworks / base / core / res / res / values / attrs.xml - Source Code View</a></li>
+</ul>
+
+
+<p>自作ビューの実装クラスで、この値を読み込む時は、<code>TypedArray.getLayoutDimension</code> を使う。</p>
+
+<figure class='code'><figcaption><span>MyCustomView.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="nf">MyCustomView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">TypedArray</span> <span class="n">a</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">obtainStyledAttributes</span><span class="o">(</span><span class="n">attrs</span><span class="o">,</span> <span class="n">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">MyCustomView</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">_myWidth</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getLayoutDimension</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">MyCustomView_my_width</span><span class="o">,</span>
+</span><span class='line'>            <span class="n">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">a</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Android Framework 側で仕様が増えた時は、追従しないといかんのかー。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Longitude の略し方。lng 派と lon 派の終わらない争い]]></title>
@@ -107,6 +185,7 @@
 <li>ロケタッチ - http://tou.ch/developer/api_all?uri=spots%2Fsearch</li>
 <li>Leaflet - http://leafletjs.com/reference.html#latlng</li>
 <li>Yahoo(地図API) - http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/js/#index6-2</li>
+<li>mapquest - http://www.mapquestapi.com/staticmap/#getmap</li>
 </ul>
 
 
@@ -125,6 +204,9 @@
 <li>簡易逆ジオコーディングサービス / Finds.jp - http://www.finds.jp/wsdocs/rgeocode/index.html.ja#PARAMS</li>
 <li>ジオどす - http://geodosu.com/</li>
 <li>モバイラーズオアシスAPI - http://oasis.mogya.com/blog/API</li>
+<li>GeOAP(東京ガス) - http://dev.geoap.jp/GeOAP_Course/GeOAP_Trial.asmx?op=CourseLineOfLLToLL</li>
+<li>はてなココ - http://c.hatena.ne.jp/s/nearby?lat=36.2648177777778&amp;lon=137.910003611111</li>
+<li>Nokia - http://developer.here.com/rest-apis/documentation/enterprise-map-image</li>
 </ul>
 
 
@@ -134,7 +216,7 @@
 
 <ul>
 <li>LatLongLab(Yahoo) - http://latlonglab.yahoo.co.jp/</li>
-<li>はてなココスポット - http://developer.hatena.ne.jp/ja/documents/coco/apis/v1/spots#spots</li>
+<li>はてなココ - http://developer.hatena.ne.jp/ja/documents/coco/apis/v1/spots#spots</li>
 </ul>
 
 
@@ -148,6 +230,7 @@
 <li>Facebook -  https://developers.facebook.com/docs/reference/fql/location_post</li>
 <li>Amazon - https://developer.amazon.com/sdk/maps/api-reference.html</li>
 <li>Evernote - http://dev.evernote.com/doc/reference/Types.html#Struct_NoteAttributes</li>
+<li>Path - https://path.com/developers#tags</li>
 </ul>
 
 
@@ -170,15 +253,7 @@
 <li>Solr(pt) - http://docs.lucidworks.com/display/solr/Spatial+Search</li>
 <li>Oracle Spatial - http://otndnld.oracle.co.jp/document/products/oracle10g/102/doc_cd/appdev.102/B19243-02/sdo_cs_concepts.htm</li>
 <li>PostGIS - http://postgis.net/docs/manual-2.1/using_postgis_dbmanagement.html#RefObject</li>
-</ul>
-
-
-<h3>不明</h3>
-
-<p>だれか教えてください。</p>
-
-<ul>
-<li>GeOAP(東京ガス) - http://www.geoap.jp/service/service/service1.htm</li>
+<li>PlaceEngine - http://www.placeengine.com/doc/tut</li>
 </ul>
 
 
@@ -3607,147 +3682,6 @@ Xamarin もどうぞよろしくおねがいします。</p>
 <p>これでコード入力が楽になりました。</p>
 
 <p>コードテンプレートのインポート／エクスポートや、Visual Studio との互換性なども調べてみたいですね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin Studio で MvvmCross を使うための準備]]></title>
-    <link href="http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio/"/>
-    <updated>2013-07-22T20:46:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/07/22/using-pcl-on-xamarin-studio</id>
-    <content type="html"><![CDATA[<p>クロスプラットフォーム MVVM フレームワーク「<a href="https://github.com/slodge/MvvmCross">MvvmCross</a>」を Mac の Xamarin Studio で使うための準備についてです。</p>
-
-<!--more-->
-
-
-<p>基本は、</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">monotouch - Getting PCL, Mvvmcross, Nuget and Xamarin Studio to play &#8220;nice&#8221; on Mac - Stack Overflow</a></li>
-</ul>
-
-
-<p>のトレース。主には PCL と Nuget が正しく動くようにする手順です。</p>
-
-<h2>前提条件</h2>
-
-<p>必要な(というか試した)環境は以下の通り。
-（Xamarin の PCL サポートがまだ「進行中」なので、将来的には変わる可能性大）</p>
-
-<ul>
-<li>Xamarin Studio Version 4.0.10 (beta)</li>
-<li>Xamarin.Android Version: 4.8.0 (beta)</li>
-<li>Xamarin.iOS Version: 6.3.8.11 (beta)</li>
-<li>Xamarin Studio Add-in NuGet Package Management Version 0.5</li>
-<li>Mac OS X 10.8.4</li>
-</ul>
-
-
-<h2>手順</h2>
-
-<h3>Xamarin Studio</h3>
-
-<ol>
-<li>Mac に Xamarin Studio を入れて、Beta チャンネルに切り替えて更新。</li>
-<li>アドインマネージャから NuGet Package Management をインストール。</li>
-</ol>
-
-
-<h3>.NETPortable DLLs を Win機からコピってくる</h3>
-
-<p>Win機の <code>C:¥Program Files (x86)¥Reference Assemblies¥MicrosoftFramework.NETPortable</code> を、Mac の <code>/Library/Frameworks/Mono.framework/External/xbuild-frameworks/.NETPortable/</code> へコピー。</p>
-
-<p>Win機がない場合は、<a href="http://amay077.github.io/blog/2013/07/21/building-testing-environment-for-mac-using-ietestdrive/">これ</a> などで Win仮想環境を作り、<a href="http://www.microsoft.com/visualstudio/jpn/downloads">Visual Studio Ultimate 2012 90日間試用版</a> を入れるとよい(Express 版は上記DLLsがないのでNG)。</p>
-
-<h3>Nuget にパッチをあててビルド</h3>
-
-<p><a href="http://stackoverflow.com/questions/17653208/getting-pcl-mvvmcross-nuget-and-xamarin-studio-to-play-nice-on-mac">ここ</a> の <strong>Patch to Nuget.Core.dll:</strong> にあるテキストを適当なファイルに保存(ここでは <code>patch.diff</code> とする)して、以下のコマンドを実行。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>git clone https://git01.codeplex.com/nuget
-</span><span class='line'><span class="nb">cd </span>nuget
-</span><span class='line'>git checkout -b 2.6 origin/2.6
-</span><span class='line'>
-</span><span class='line'>patch -p1 &lt; patch.diff
-</span><span class='line'>
-</span><span class='line'><span class="nb">cd </span>src/Core
-</span><span class='line'>xbuild
-</span><span class='line'>
-</span><span class='line'>cp bin/Debug/NuGet.Core.dll  ~/Library/Application<span class="se">\ </span>Support/XamarinStudio-4.0/LocalInstall/Addins/MonoDevelop.PackageManagement.0.5/NuGet.Core.dll
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p></p>
-
-<p>以上で、環境準備は終わり。</p>
-
-<h2>試す</h2>
-
-<ol>
-<li>Xamarin Studio で Portable Class Library を作成する</li>
-<li>プロジェクト設定を見ると Xamarin.Android、Xamarin.iOS などがあるが、これらを<strong>チェックしてOKしても適用されてない</strong> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio01.png" alt="img1" /></li>
-<li>Nuget Manager から mvvmcorss で検索して &#8220;MvvmCross - Hot Tuna  Starter Pack&#8221; を Add してもエラーになる。<img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_pcl_on_xamarin_studio02.png" alt="img1" /></li>
-</ol>
-
-
-<p>うーん、ダメか？</p>
-
-<h2>プロジェクトファイルをちょっと修正する</h2>
-
-<p>ポータブルクラスライブラリのプロジェクトファイル(xxx.csproj) をテキストエディタで開き、<code>&lt;TargetFrameworkProfile&gt;</code> の値を <code>Profile104</code> に書き換える。(修正前は Profile1 になってた。なぜ Profile104 かと言えば、Visual Studio で作った PCL プロジェクトのプロファイルが 104 だったから、という程度の理解レベル)</p>
-
-<figure class='code'><figcaption><span>xxx.csproj</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;Project</span> <span class="na">DefaultTargets=</span><span class="s">&quot;Build&quot;</span> <span class="na">ToolsVersion=</span><span class="s">&quot;4.0&quot;</span> <span class="na">xmlns=</span><span class="s">&quot;http://schemas.microsoft.com/developer/msbuild/2003&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;PropertyGroup&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;Configuration</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Configuration)&#39; == &#39;&#39; &quot;</span><span class="nt">&gt;</span>Debug<span class="nt">&lt;/Configuration&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;Platform</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Platform)&#39; == &#39;&#39; &quot;</span><span class="nt">&gt;</span>AnyCPU<span class="nt">&lt;/Platform&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;ProductVersion&gt;</span>10.0.0<span class="nt">&lt;/ProductVersion&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;SchemaVersion&gt;</span>2.0<span class="nt">&lt;/SchemaVersion&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;ProjectGuid&gt;</span>{50D8E04F-FDE0-4A65-B388-5698BEFE8DC5}<span class="nt">&lt;/ProjectGuid&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;ProjectTypeGuids&gt;</span>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}<span class="nt">&lt;/ProjectTypeGuids&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;OutputType&gt;</span>Library<span class="nt">&lt;/OutputType&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;RootNamespace&gt;</span>Portable2<span class="nt">&lt;/RootNamespace&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;AssemblyName&gt;</span>Portable2<span class="nt">&lt;/AssemblyName&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;TargetFrameworkProfile&gt;</span>Profile104<span class="nt">&lt;/TargetFrameworkProfile&gt;</span>    <span class="nt">&lt;--Here</span><span class="err">!!!!!</span>
-</span><span class='line'>    <span class="err">&lt;TargetFrameworkVersion</span><span class="nt">&gt;</span>v4.0<span class="nt">&lt;/TargetFrameworkVersion&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;/PropertyGroup&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;PropertyGroup</span> <span class="na">Condition=</span><span class="s">&quot; &#39;$(Configuration)|$(Platform)&#39; == &#39;Debug|AnyCPU&#39; &quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;DebugSymbols&gt;</span>true<span class="nt">&lt;/DebugSymbols&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>再度試す</h2>
-
-<p>もう一度プロジェクトを開いて Nuget から &#8220;MvvmCross - Hot Tuna  Starter Pack&#8221; を Add すると、成功する。プロジェクトツリーを見ると必要なDLLやソースコードが配置されている。</p>
-
-<p>これで Xamarin Studio でも PCL が使えそう。
-MvvmCross の Tutorial - <a href="http://mvvmcross.wordpress.com/">MvvmCross N+1 Table of Context</a> を試せます。</p>
 ]]></content>
   </entry>
   

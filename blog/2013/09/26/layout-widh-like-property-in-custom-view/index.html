@@ -5,13 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>WakeLock の状態を確認する - Experiments Never Fail</title>
+  <title>自作ビューで layout_width のマネをしたい時 - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="どのアプリが WakeLock を取得しているかを見る方法。 1
-adb shell dumpsys power を実行して、ずらっと出力される中から &#8220;Wake Locks:&#8221; を探す。
-出力されるのはこんな感じの情報。 POWER MANAGER (dumpsys &hellip;">
+  <meta name="description" content="android:layout_width って、型は dimension であるのに、Layout XML には、 "match_parent" とか "wrap_content" とか指定できる。これと同じことを自作ビューの自作プロパティでやりたい。 自作ビュー(カスタムビュー) &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -20,7 +18,7 @@ adb shell dumpsys power を実行して、ずらっと出力される中から &
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/">
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/data-table.css" rel="stylesheet" type="text/css" />
@@ -92,7 +90,7 @@ adb shell dumpsys power を実行して、ずらっと出力される中から &
   <header>
     
       
-        <h1 class="entry-title">WakeLock の状態を確認する</h1>
+        <h1 class="entry-title">自作ビューで Layout_width のマネをしたい時</h1>
       
     
     
@@ -109,53 +107,83 @@ adb shell dumpsys power を実行して、ずらっと出力される中から &
   
 
 
-<time datetime="2013-06-13T20:58:00+09:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
+<time datetime="2013-09-26T23:55:00+09:00" pubdate data-updated="true">Sep 26<span>th</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>どのアプリが WakeLock を取得しているかを見る方法。</p>
+<div class="entry-content"><p><code>android:layout_width</code> って、型は <code>dimension</code> であるのに、Layout XML には、 <code>"match_parent"</code> とか <code>"wrap_content"</code> とか指定できる。これと同じことを自作ビューの自作プロパティでやりたい。</p>
 
 <!--more-->
 
 
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>adb shell dumpsys power
+<p>自作ビュー(カスタムビュー)の作りかたは下などを参照。</p>
+
+<ul>
+<li><a href="http://techbooster.org/android/application/7361/">Androidでxmlファイルを用いてカスタムViewを作る方法 | Tech Booster</a></li>
+</ul>
+
+
+<p>で、<code>android:layout_width</code> のマネをするには、 attrs.xml に以下のように書く。</p>
+
+<figure class='code'><figcaption><span>attrs.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MyCustomView&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;my_width&quot;</span> <span class="na">format=</span><span class="s">&quot;dimension&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;fill_parent&quot;</span> <span class="na">value=</span><span class="s">&quot;-1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;match_parent&quot;</span> <span class="na">value=</span><span class="s">&quot;-1&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;enum</span> <span class="na">name=</span><span class="s">&quot;wrap_content&quot;</span> <span class="na">value=</span><span class="s">&quot;-2&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/attr&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>を実行して、ずらっと出力される中から &#8220;Wake Locks:&#8221; を探す。
-出力されるのはこんな感じの情報。</p>
-
-<blockquote><p>POWER MANAGER (dumpsys power)</p>
-
-<p>Power Manager State:
- mDirty=0x0
- (中略)</p>
-
-<p>Settings and Configuration:
- mDreamsSupportedConfig=true
- (中略)</p>
-
-<p>Screen off timeout: 30000 ms
-Screen dim duration: 6000 ms</p>
-
-<p>Wake Locks: size=1
- SCREEN_BRIGHT_WAKE_LOCK        &#8216;WindowManager&#8217; ON_AFTER_RELEASE (uid=1000, pid=389, ws={WorkSource: uids=[10070]})</p>
-
-<p>(以下省略)</p></blockquote>
-
-<p>&#8220;Wake Locks: size=1&#8221; となっており、
-&#8216;WindowManager&#8217; という TAG で <code>SCREEN_BRIGHT_WAKE_LOCK</code> が取得されているのが分かる。</p>
-
-<h2>参考</h2>
+<p>Android Framework のソースコードにこう書いてあったので、真似しただけ。</p>
 
 <ul>
-<li><a href="http://kazumeat.hatenablog.com/entry/20110814/1313295257">adb各種コマンド - 肉になるメモ</a></li>
+<li><a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r2.1/frameworks/base/core/res/res/values/attrs.xml">GrepCode: frameworks / base / core / res / res / values / attrs.xml - Source Code View</a></li>
 </ul>
 
+
+<p>自作ビューの実装クラスで、この値を読み込む時は、<code>TypedArray.getLayoutDimension</code> を使う。</p>
+
+<figure class='code'><figcaption><span>MyCustomView.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="nf">MyCustomView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">TypedArray</span> <span class="n">a</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="na">obtainStyledAttributes</span><span class="o">(</span><span class="n">attrs</span><span class="o">,</span> <span class="n">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">MyCustomView</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">_myWidth</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="na">getLayoutDimension</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">styleable</span><span class="o">.</span><span class="na">MyCustomView_my_width</span><span class="o">,</span>
+</span><span class='line'>            <span class="n">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">a</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Android Framework 側で仕様が増えた時は、追従しないといかんのかー。</p>
 </div>
 
 
@@ -178,7 +206,7 @@ Screen dim duration: 6000 ms</p>
   
 
 
-<time datetime="2013-06-13T20:58:00+09:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
+<time datetime="2013-09-26T23:55:00+09:00" pubdate data-updated="true">Sep 26<span>th</span>, 2013</time>
       
 
 <span class="categories">
@@ -192,10 +220,10 @@ Screen dim duration: 6000 ms</p>
     
       <div class="sharing">
   <!-- Hatena Boolmark -->
-  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/06/13/view-wakelock-status/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
   
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/06/13/view-wakelock-status/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/" >Tweet</a>
   
   
   
@@ -206,10 +234,8 @@ Screen dim duration: 6000 ms</p>
     
     <p class="meta">
       
-        <a class="basic-alignment left articlenav" href="/blog/2013/05/30/testing-fused-location-provider/" title="Previous Post: Fused Location Provider を近くのショッピングセンターで評価してみた">&laquo; Fused Location Provider を近くのショッピングセンターで評価してみた</a>
+        <a class="basic-alignment left articlenav" href="/blog/2013/09/25/the-battle-of-abbreviation-lat-vs-lng/" title="Previous Post: Longitude の略し方。lng 派と lon 派の終わらない争い">&laquo; Longitude の略し方。lng 派と lon 派の終わらない争い</a>
       
-      
-        <a class="basic-alignment right articlenav" href="/blog/2013/06/14/viewing-is-service-foreground/" title="Next Post: Service が Foreground で動いているか確認する">Service が Foreground で動いているか確認する &raquo;</a>
       
     </p>
   </footer>

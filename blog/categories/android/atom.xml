@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-25T21:10:03+09:00</updated>
+  <updated>2013-09-26T23:57:50+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,70 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[自作ビューで layout_width のマネをしたい時]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/"/>
+    <updated>2013-09-26T23:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view</id>
+    <content type="html"><![CDATA[<p><code>android:layout_width</code> って、型は <code>dimension</code> であるのに、Layout XML には、 <code>"match_parent"</code> とか <code>"wrap_content"</code> とか指定できる。これと同じことを自作ビューの自作プロパティでやりたい。</p>
+
+<!--more-->
+
+
+<p>自作ビュー(カスタムビュー)の作りかたは下などを参照。</p>
+
+<ul>
+<li><a href="http://techbooster.org/android/application/7361/">Androidでxmlファイルを用いてカスタムViewを作る方法 | Tech Booster</a></li>
+</ul>
+
+
+<p>で、<code>android:layout_width</code> のマネをするには、 attrs.xml に以下のように書く。</p>
+
+<p>```xml attrs.xml
+&lt;?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="MyCustomView"></p>
+
+<pre><code>&lt;attr name="my_width" format="dimension"&gt;
+  &lt;enum name="fill_parent" value="-1" /&gt;
+  &lt;enum name="match_parent" value="-1" /&gt;
+  &lt;enum name="wrap_content" value="-2" /&gt;
+&lt;/attr&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+</resources>
+```</p>
+
+<p>Android Framework のソースコードにこう書いてあったので、真似しただけ。</p>
+
+<ul>
+<li><a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r2.1/frameworks/base/core/res/res/values/attrs.xml">GrepCode: frameworks / base / core / res / res / values / attrs.xml - Source Code View</a></li>
+</ul>
+
+
+<p>自作ビューの実装クラスで、この値を読み込む時は、<code>TypedArray.getLayoutDimension</code> を使う。</p>
+
+<p>```java MyCustomView.java
+public MyCustomView(Context context, AttributeSet attrs) {</p>
+
+<pre><code>super(context, attrs);
+
+TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.MyCustomView, 0, 0);
+
+_myWidth = a.getLayoutDimension(R.styleable.MyCustomView_my_width, 
+        LayoutParams.WRAP_CONTENT);
+
+a.recycle();
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Android Framework 側で仕様が増えた時は、追従しないといかんのかー。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[スレッドの優先度について調べた]]></title>
@@ -866,56 +930,6 @@ package="com.amay077.sample.googlemapv2sample"&gt;  &lt;--------※1
 
 
 <p>とのことなのでよろしくおねがいします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Service が Foreground で動いているか確認する]]></title>
-    <link href="http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground/"/>
-    <updated>2013-06-14T18:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/06/14/viewing-is-service-foreground</id>
-    <content type="html"><![CDATA[<p>Android で「死ににくいサービス」を作るには <a href="http://developer.android.com/reference/android/app/Service.html#startForeground(int,%20android.app.Notification">Service.startForegound</a> を呼び出す必要がありますが、動いてるサービスがちゃんと「Foregound になってるか？」は以下のようにして確認できます。(Notification 表示が強制されるから通知バー見ればいいじゃん、と言われればそうなんですけど、ちゃんとしたエビデンスっぽいのが欲しくて)</p>
-
-<!--more-->
-
-
-<h2>手順</h2>
-
-<p><code>sh
-adb shell dumpsys activity s &lt;サービス名&gt;
-</code></p>
-
-<p>&lt;サービス名> はサービスの完全名称を入れます。AndroidManifest.xml の <code>&lt;service android:name=</code> で定義したやつ。</p>
-
-<p>実行すると以下のように出力されます。</p>
-
-<blockquote><p>ACTIVITY MANAGER SERVICES (dumpsys activity services)
-  User 0 active services:
-  * ServiceRecord{41b2dd18 u0 com.amay077.android.gpsfaker/.service.GpsSignalService}</p>
-
-<pre><code>intent={cmp=com.amay077.android.gpsfaker/.service.GpsSignalService}
-packageName=com.amay077.android.gpsfaker
-processName=com.amay077.android.gpsfaker
-baseDir=/data/app/com.amay077.android.gpsfaker-1.apk
-dataDir=/data/data/com.amay077.android.gpsfaker
-app=ProcessRecord{416e19e8 3209:com.amay077.android.gpsfaker/u0a10072}
-isForeground=true foregroundId=2130968576 foregroundNoti=Notification(pri=0 contentView=com.amay077.android.
-</code></pre>
-
-<p>(以下省略)</p></blockquote>
-
-<p><code>isForegound=true</code> と表示されているので、確かに「このサービスはフォアグラウンドだ」と分かります。サービス側で <code>startForeground</code> を呼び出さなかった場合は、この項目は表れません。</p>
-
-<p><code>dumpsys</code> 今までコマンドめんどいと思ってあまり使ってませんでしたすいませんでした(汗</p>
-
-<h2>参考</h2>
-
-<p>大変参考になりました。</p>
-
-<ul>
-<li><a href="http://yuki312.blogspot.com/2013/02/androidservicedump.html">Yukiの枝折: Android:Service.dumpでサービスの状態をダンプする</a></li>
-</ul>
-
 ]]></content>
   </entry>
   
