@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-26T23:57:50+09:00</updated>
+  <updated>2013-09-29T21:18:57+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,122 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/"/>
+    <updated>2013-09-29T21:16:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes</id>
+    <content type="html"><![CDATA[<p>Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://tryworks-design.com/?p=1530">Android GooglMapを使い、現在値と目的地を（２点間）を表示させる。 | App Camp</a></li>
+</ul>
+
+
+<p>その理由と、対策を記録しておきます。</p>
+
+<h2>エラーになるコード</h2>
+
+<p>GoogleMap v2 を使ったよくあるコード。</p>
+
+<p>```java MainActivity.java
+@Override
+protected void onCreate(Bundle savedInstanceState) {</p>
+
+<pre><code>super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_main);
+
+SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
+        .findFragmentById(R.id.map));
+GoogleMap gmap = fragment.getMap();
+
+LatLngBounds bounds = LatLngBounds.builder()
+    .include(new LatLng(35.4433011,139.646108)) // 横浜
+    .include(new LatLng(35.6846001,139.696919)) // 東京
+    .build();
+
+gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>起動時に、横浜-東京 が画面内に入るようにズームする、つもりのコード。</p>
+
+<p>これは以下のエラーになる。</p>
+
+<blockquote><p>09-29 20:22:58.508: E/AndroidRuntime(18904): FATAL EXCEPTION: main<br/>
+09-29 20:22:58.508: E/AndroidRuntime(18904): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.amay077.<br/>android/com.amay077.android.mapsample.view.MainActivity}: java.lang.IllegalStateException: Map size should not be 0. Most likely, layout has not yet occured for the map view.</p></blockquote>
+
+<h2>エラーの原因</h2>
+
+<p>StackOverflow さまに載ってた。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/13692579/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes">android - moveCamera with CameraUpdateFactory.newLatLngBounds crashes - Stack Overflow</a></li>
+</ul>
+
+
+<p>また、<a href="https://developers.google.com/maps/documentation/android/views#changing_camera_position">APIリファレンス</a> にも次のように記載がある。</p>
+
+<blockquote><p>Note: Only use the simpler method newLatLngBounds(boundary, padding) to generate a CameraUpdate if it is going to be used to move the camera after the map has undergone layout. During layout, the API calculates the display boundaries of the map which are needed to correctly project the bounding box. In comparison, you can use the CameraUpdate returned by the more complex method newLatLngBounds(boundary, width, height, padding) at any time, even before the map has undergone layout, because the API calculates the display boundaries from the arguments that you pass.</p></blockquote>
+
+<p>意訳すると <code>newLatLngBounds(boundary, padding)</code> は、レイアウトが完了した後で使ってね、そうでない場合は、<code>newLatLngBounds(boundary, width, height, padding)</code> を使ってね。ということらしい。</p>
+
+<p>確かに <code>onCreate</code> ではまだレイアウトされていないので納得。</p>
+
+<h2>対策</h2>
+
+<p>上の StackOverflow でも解決策として、<code>ViewTreeObserver.addOnGlobalLayoutListener</code> を使って、レイアウトが完了したタイミングで moveCamera する方法が紹介されているが、もうちっとシンプルにできないかなと思っていたところ、ちょうど別件で「ビューのサイズが確定(して Width/Height が取得できる)タイミング」を調べていて、同じく StackOverflow で以下の情報を発見。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view/15301092#15301092">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+
+
+<p>これによると <code>view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
+
+<p>```java MainActivity.java
+@Override
+protected void onCreate(Bundle savedInstanceState) {</p>
+
+<pre><code>super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_main);
+
+SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
+        .findFragmentById(R.id.map));
+final GoogleMap gmap = fragment.getMap();
+
+// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった
+fragment.getView().post(new Runnable() {
+    @Override
+    public void run() {
+        LatLngBounds bounds = LatLngBounds.builder()
+                .include(new LatLng(35.4433011,139.646108)) // 横浜
+                .include(new LatLng(35.6846001,139.696919)) // 東京
+                .build();
+
+        gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15));
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<p>としたところ、正常に地図がズームされました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
+
+<p>ちなみに、処理をメインスレッド上で行う <code>Activity.runOnUiThread</code> や <code>Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
+
+<p>起動時の処理は、全ての View で post 内に書いておいた方がいいのかも。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Longitude の略し方。lng 派と lon 派の終わらない争い]]></title>
@@ -527,286 +643,6 @@ package="com.amay077.sample.googlemapv2sample"&gt;  &lt;--------※1
 <h2>使う</h2>
 
 <p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google I/O 2013 で発表された Fused Location Provider を使ってみる]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider/"/>
-    <updated>2013-05-23T20:55:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/23/getting-started-fused-location-provider</id>
-    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。</p>
-
-<!--more-->
-
-
-<h2>Fused Location Provider とは？</h2>
-
-<p>GPS と WiFi とセンサー(加速度など) を組み合わせて、その状況に応じた最適な方法で位置を取得出来ます。今までよりも低消費電力で、精度のよい位置情報を。</p>
-
-<p>実際どんな感じかは、Google I/O 2013 のセッション動画にある <a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a> を見てください。</p>
-
-<p>次から使い方です。</p>
-
-<h2>1. SDK の Google Play Services を更新する</h2>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
-
-<p>Activity Recognition と同じく Google Play services として提供されているので、SDK Manager でライブラリを更新します。</p>
-
-<h2>2. Eclipse でプロジェクトを作る</h2>
-
-<p>Android Studio は使ってません(まだよくわからないので)
-Eclipse で、いつもどおりに Android のプロジェクトを作ります。
-Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
-名前はここでは FusedLocationProviderSample とします。</p>
-
-<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
-
-<p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
-
-<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
-
-<p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
-
-<p>次から FusedLocationProviderSample の実装です。</p>
-
-<h2>4. AndroidManifest.xml の編集</h2>
-
-<p>Fused Location Provider を使うのには今まで通り、<code>ACCESS_FINE_LOCATION</code> と <code>ACCESS_COARSE_LOCATION</code> を設定します。</p>
-
-<p>LocationClient は、指定した PERMISSION に応じてよしなに動いてくれるそうです。</p>
-
-<p>```xml AndroidManifest.xml
-&lt;?xml version="1.0" encoding="utf-8"?>
-&lt;manifest xmlns:android="http://schemas.android.com/apk/res/android"</p>
-
-<pre><code>package="com.example.fusedlocationprovidersample"
-android:versionCode="1"
-android:versionName="1.0" &gt;
-
-&lt;uses-sdk
-    android:minSdkVersion="8"
-    android:targetSdkVersion="17" /&gt;
-&lt;uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/&gt;
-&lt;uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/&gt;
-
-&lt;application
-    android:allowBackup="true"
-    android:icon="@drawable/ic_launcher"
-    android:label="@string/app_name"
-    android:theme="@style/AppTheme" &gt;
-    &lt;activity
-        android:name="com.example.fusedlocationprovidersample.MainActivity"
-        android:screenOrientation="portrait"
-        android:label="@string/app_name" &gt;
-        &lt;intent-filter&gt;
-            &lt;action android:name="android.intent.action.MAIN" /&gt;
-
-            &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
-        &lt;/intent-filter&gt;
-    &lt;/activity&gt;
-&lt;/application&gt;
-</code></pre>
-
-<p></manifest>
-```</p>
-
-<h2>5. Fused Location Provider を使う</h2>
-
-<p>ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの <code>LocationProvider</code> が(も)使えるので、画面一つだけのシンプルなコードです。</p>
-
-<p>FusedLocationProvider を使うには、<a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> クラスを使います。</p>
-
-<p>大雑把な流れは:</p>
-
-<ol>
-<li>インスタンスを生成する
-connect を呼ぶ -> ConnectionCallbacks.onConnected がコールバックされる</li>
-<li><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html">LocationRequest</a> を指定して、requestLocationUpdates を呼ぶ。 -> LocationListener.onLocationChanged が呼ばれる</li>
-</ol>
-
-
-<p>です。connect を呼んで onConnected を待つのと、位置取得条件が <code>LocationRequest</code> クラスになった以外は <code>LocationManager</code> と同じです。</p>
-
-<p>では、全コードです。</p>
-
-<p>```java MainActivity.java
-package com.example.fusedlocationprovidersample;</p>
-
-<p>import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
-import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
-import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import android.location.Location;
-import android.os.Bundle;
-import android.text.format.DateFormat;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.TextView;
-import android.app.Activity;</p>
-
-<p>public class MainActivity extends Activity {</p>
-
-<pre><code>// FusedLocationProvider 用の Client
-private LocationClient _locationClient;
-private TextView _textResult;
-
-// 以前と変わらない LocationListener
-private final LocationListener _locationListener = new LocationListener() {
-
-    @Override
-    public void onLocationChanged(final Location location) {
-        MainActivity.this.runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                String text = _textResult.getText().toString();
-                text = DateFormat.format("hh:mm:ss.sss", location.getTime()) + " - " 
-                        + location.getLatitude() + "/" +
-                        + location.getLongitude() + "/" +
-                        + location.getAccuracy() + 
-                        "\n" + text;
-
-                _textResult.setText(text);
-            }
-        });
-    }
-};
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-
-    _textResult = (TextView)findViewById(R.id.text_result);
-
-    final Button buttonLocate = (Button)findViewById(R.id.button_locate);
-    buttonLocate.setOnClickListener(new OnClickListener() {
-        private boolean _isStarted = false;
-
-        @Override
-        public void onClick(View v) {
-            if (!_isStarted) {
-                startLocate();
-                buttonLocate.setText("Stop");
-            } else {
-                stopLocate();
-                buttonLocate.setText("Start");
-            }
-
-            _isStarted = !_isStarted;
-        }
-    });
-}
-
-@Override
-protected void onDestroy() {
-    stopLocate();
-    super.onDestroy();
-}
-
-private void startLocate() {
-    _locationClient = new LocationClient(this, new ConnectionCallbacks() {
-
-        @Override
-        public void onConnected(Bundle bundle) {
-            // 2. 位置の取得開始！
-            LocationRequest request = LocationRequest.create()
-            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-            .setInterval(5000); // 5秒おき
-            _locationClient.requestLocationUpdates(request, _locationListener);
-        }
-
-        @Override
-        public void onDisconnected() {
-            _locationClient = null;
-        }
-
-    }, new OnConnectionFailedListener() {
-        @Override
-        public void onConnectionFailed(ConnectionResult result) {
-        }
-    });
-
-    // 1. 位置取得サービスに接続！
-    _locationClient.connect();
-}
-
-private void stopLocate() {
-    if (_locationClient == null || !_locationClient.isConnected()) {
-        return;
-    }
-
-    _locationClient.removeLocationUpdates(_locationListener);
-    _locationClient.disconnect();
-    // ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h2>6. 動くのか！？</h2>
-
-<p>HTC J(not蝶) で動かしてみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_fused_location_provider1.png" alt="image3" /></p>
-
-<p>室内での結果ですが、最初 27m の精度だったのが、放っておくとどんどん精度が上がって行きました。が、地図に重ねてみないと実際合ってるのかよくわかりませんね。</p>
-
-<p>そのうち、地図に載せて検証してみたいです。</p>
-
-<h2>Permission と Priority と精度の話</h2>
-
-<p>Permission と Priority の組み合わせで、位置の精度がどう変わるか、少し調べました。</p>
-
-<h3>FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
-<p>GPS と WiFi と センサーフル活用。GPS が捕捉できなくても数十ｍの位置精度が概ね出るようです。</p>
-
-<h3>COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
-<p>使えない。FINE_LOCATION が必要ってエラーになりました。</p>
-
-<h3>COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY</h3>
-
-<p>位置の精度が数km程度になりました。WiFi測位(従来の NETWORK_PROVIDER)よりも悪いです。うーんこれは期待はずれだなあ。</p>
-
-<p>結局、例えば屋内測位でしか使わないからGPS要らねって FINE_LOCATION を外すと、かえって精度が落ちるという事になります。(GPS使いませんPERMISSIONが欲しいな。。。)</p>
-
-<h2>おまけ</h2>
-
-<ul>
-<li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
-</ul>
-
-
-<p>によると、Google Maps Android API v2 の <a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean">setMyLocationEnabled(true)</a> でも FusedLocationProvider が使われるようになったとのことです。</p>
-
-<h2>まとめ</h2>
-
-<p>公式のコンプリートな Getting Started は</p>
-
-<ul>
-<li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location | Android Developers</a></li>
-</ul>
-
-
-<p>にありますので、こちらを読まれた方が確実です。</p>
-
-<p>ここで作ったサンプルは、</p>
-
-<ul>
-<li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
-</ul>
-
-
-<p>に置いておきます。</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-26T23:57:50+09:00</updated>
+  <updated>2013-09-29T21:18:57+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,154 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/"/>
+    <updated>2013-09-29T21:16:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes</id>
+    <content type="html"><![CDATA[<p>Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://tryworks-design.com/?p=1530">Android GooglMapを使い、現在値と目的地を（２点間）を表示させる。 | App Camp</a></li>
+</ul>
+
+
+<p>その理由と、対策を記録しておきます。</p>
+
+<h2>エラーになるコード</h2>
+
+<p>GoogleMap v2 を使ったよくあるコード。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+</span><span class='line'>    <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>起動時に、横浜-東京 が画面内に入るようにズームする、つもりのコード。</p>
+
+<p>これは以下のエラーになる。</p>
+
+<blockquote><p>09-29 20:22:58.508: E/AndroidRuntime(18904): FATAL EXCEPTION: main<br/>
+09-29 20:22:58.508: E/AndroidRuntime(18904): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.amay077.<br/>android/com.amay077.android.mapsample.view.MainActivity}: java.lang.IllegalStateException: Map size should not be 0. Most likely, layout has not yet occured for the map view.</p></blockquote>
+
+<h2>エラーの原因</h2>
+
+<p>StackOverflow さまに載ってた。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/13692579/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes">android - moveCamera with CameraUpdateFactory.newLatLngBounds crashes - Stack Overflow</a></li>
+</ul>
+
+
+<p>また、<a href="https://developers.google.com/maps/documentation/android/views#changing_camera_position">APIリファレンス</a> にも次のように記載がある。</p>
+
+<blockquote><p>Note: Only use the simpler method newLatLngBounds(boundary, padding) to generate a CameraUpdate if it is going to be used to move the camera after the map has undergone layout. During layout, the API calculates the display boundaries of the map which are needed to correctly project the bounding box. In comparison, you can use the CameraUpdate returned by the more complex method newLatLngBounds(boundary, width, height, padding) at any time, even before the map has undergone layout, because the API calculates the display boundaries from the arguments that you pass.</p></blockquote>
+
+<p>意訳すると <code>newLatLngBounds(boundary, padding)</code> は、レイアウトが完了した後で使ってね、そうでない場合は、<code>newLatLngBounds(boundary, width, height, padding)</code> を使ってね。ということらしい。</p>
+
+<p>確かに <code>onCreate</code> ではまだレイアウトされていないので納得。</p>
+
+<h2>対策</h2>
+
+<p>上の StackOverflow でも解決策として、<code>ViewTreeObserver.addOnGlobalLayoutListener</code> を使って、レイアウトが完了したタイミングで moveCamera する方法が紹介されているが、もうちっとシンプルにできないかなと思っていたところ、ちょうど別件で「ビューのサイズが確定(して Width/Height が取得できる)タイミング」を調べていて、同じく StackOverflow で以下の情報を発見。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view/15301092#15301092">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+
+
+<p>これによると <code>view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった</span>
+</span><span class='line'>    <span class="n">fragment</span><span class="o">.</span><span class="na">getView</span><span class="o">().</span><span class="na">post</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>としたところ、正常に地図がズームされました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
+
+<p>ちなみに、処理をメインスレッド上で行う <code>Activity.runOnUiThread</code> や <code>Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
+
+<p>起動時の処理は、全ての View で post 内に書いておいた方がいいのかも。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[自作ビューで layout_width のマネをしたい時]]></title>
@@ -3585,103 +3733,6 @@ Xamarin もどうぞよろしくおねがいします。</p>
 
 <iframe src="http://slid.es/amay/intro_of_xamarin/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin Studio でコードテンプレートを使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio/"/>
-    <updated>2013-07-24T17:48:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/07/24/using-code-template-on-xamarin-studio</id>
-    <content type="html"><![CDATA[<p>Visual Studio や Eclipse とか、IDE ならだいたい備えているコードテンプレート、呼び名はそれぞれ違いますが、<code>for</code> ってタイプすると <code>for (object o : items) {  }</code> 的なコードのひな形を生成してくれる機能の事です。</p>
-
-<!--more-->
-
-
-<p>Xamarin Studio にも当然ありまして、その使い方を説明します。</p>
-
-<h2>きっかけ</h2>
-
-<p>MvvmCross っていうフレームワークの Tutorial 動画で Visual Studio を使っているんですが、その中で多用されてるので、真似してみたくなりました。</p>
-
-<p>例えばこれ</p>
-
-<ul>
-<li><a href="https://www.youtube.com/watch?v=_DHDMNB_IeY&amp;list=PLR6WI6W1JdeYSXLbm58jwAKYT7RQR31-W&amp;feature=player_detailpage&amp;t=178">N=0 : A first MvvmCross Application (N+1 days of MvvmCross) | N+1 days of MvvmCross</a></li>
-</ul>
-
-
-<h2>手順</h2>
-
-<h3>1. Xamarin Studio の Preference を開く</h3>
-
-<p>システムメニュー → Preference → テキストエディタ → コード テンプレート です。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_01.png" alt="img1" /></p>
-
-<h3>2. コードテンプレートを作成する</h3>
-
-<p>追加 で &#8220;新しいテンプレート&#8221; の画面を開き、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_02.png" alt="img2" /></p>
-
-<p>のように設定します。</p>
-
-<ul>
-<li>ショートカット : pmvx</li>
-<li>グループ : C#</li>
-<li>説明 : 適当に</li>
-<li>Mime : text/x-csharp</li>
-<li>[展開されるテンプレート] にチェックを入れる</li>
-</ul>
-
-
-<p>テンプレート テキスト は以下の通り</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">private</span> <span class="err">$</span><span class="n">type</span><span class="err">$</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span><span class="p">;</span>
-</span><span class='line'><span class="k">public</span> <span class="err">$</span><span class="n">type</span><span class="err">$</span> <span class="err">$</span><span class="n">Property</span><span class="err">$</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span><span class="p">;</span> <span class="p">}</span>
-</span><span class='line'>  <span class="k">set</span> <span class="p">{</span> <span class="err">$</span><span class="n">property</span><span class="err">$</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="n">RaisePropertyChanged</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="err">$</span><span class="n">Property</span><span class="err">$</span><span class="p">);</span> <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>$type$</code>, <code>$property$</code>, <code>$Property$</code> という3つの変数を使っています。画面右端にあるドロップダウンで、各変数が選択できるので、それぞれ Default で既定値を設定します。</p>
-
-<p>ここでは、以下のようにしました。</p>
-
-<ul>
-<li>type : object</li>
-<li>property : _property</li>
-<li>Property : MyProperty</li>
-</ul>
-
-
-<p>OK を押して保存します。</p>
-
-<h3>3.  使ってみる</h3>
-
-<p>コードエディタで <code>pmvx</code> とタイプすると、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_03.png" alt="img2" /></p>
-
-<p>となり、タブを2回ほど押すと、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_code_template_in_xamarin_studio_04.png" alt="img2" /></p>
-
-<p>と、テンプレートコードが挿入されます。
-あとは、ハイライトされている部分を変更すると、テンプレート内も連動して変更されます。</p>
-
-<p>これでコード入力が楽になりました。</p>
-
-<p>コードテンプレートのインポート／エクスポートや、Visual Studio との互換性なども調べてみたいですね。</p>
 ]]></content>
   </entry>
   

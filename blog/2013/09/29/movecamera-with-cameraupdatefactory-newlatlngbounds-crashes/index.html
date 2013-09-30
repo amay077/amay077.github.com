@@ -1,0 +1,439 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+  
+  <meta name="description" content="Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣 Android GooglMapを使い、現在値と目的地を（２点間）を表示させる &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/stylesheets/data-table.css" rel="stylesheet" type="text/css" />
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="/javascripts/ender.js"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <link href='http://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic' rel='stylesheet' type='text/css'>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <div id="logo">
+  	<div id="logoLeft">{</div>
+  	<div id="logoText">mob</div>
+  	<div id="logoRight">}</div>
+  	<div class="clear"></div>
+  </div>
+  <h1><a href="/">Experiments Never Fail</a></h1>
+  
+    <h2>try and try again.</h2>
+  
+  <div class="clear"></div>
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:amay077.github.io" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+  <li><a href="/category-list">Category List</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      
+        <h1 class="entry-title">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</h1>
+      
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-29T21:16:00+09:00" pubdate data-updated="true">Sep 29<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://tryworks-design.com/?p=1530">Android GooglMapを使い、現在値と目的地を（２点間）を表示させる。 | App Camp</a></li>
+</ul>
+
+
+<p>その理由と、対策を記録しておきます。</p>
+
+<h2>エラーになるコード</h2>
+
+<p>GoogleMap v2 を使ったよくあるコード。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+</span><span class='line'>    <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>起動時に、横浜-東京 が画面内に入るようにズームする、つもりのコード。</p>
+
+<p>これは以下のエラーになる。</p>
+
+<blockquote><p>09-29 20:22:58.508: E/AndroidRuntime(18904): FATAL EXCEPTION: main<br/>
+09-29 20:22:58.508: E/AndroidRuntime(18904): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.amay077.<br/>android/com.amay077.android.mapsample.view.MainActivity}: java.lang.IllegalStateException: Map size should not be 0. Most likely, layout has not yet occured for the map view.</p></blockquote>
+
+<h2>エラーの原因</h2>
+
+<p>StackOverflow さまに載ってた。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/13692579/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes">android - moveCamera with CameraUpdateFactory.newLatLngBounds crashes - Stack Overflow</a></li>
+</ul>
+
+
+<p>また、<a href="https://developers.google.com/maps/documentation/android/views#changing_camera_position">APIリファレンス</a> にも次のように記載がある。</p>
+
+<blockquote><p>Note: Only use the simpler method newLatLngBounds(boundary, padding) to generate a CameraUpdate if it is going to be used to move the camera after the map has undergone layout. During layout, the API calculates the display boundaries of the map which are needed to correctly project the bounding box. In comparison, you can use the CameraUpdate returned by the more complex method newLatLngBounds(boundary, width, height, padding) at any time, even before the map has undergone layout, because the API calculates the display boundaries from the arguments that you pass.</p></blockquote>
+
+<p>意訳すると <code>newLatLngBounds(boundary, padding)</code> は、レイアウトが完了した後で使ってね、そうでない場合は、<code>newLatLngBounds(boundary, width, height, padding)</code> を使ってね。ということらしい。</p>
+
+<p>確かに <code>onCreate</code> ではまだレイアウトされていないので納得。</p>
+
+<h2>対策</h2>
+
+<p>上の StackOverflow でも解決策として、<code>ViewTreeObserver.addOnGlobalLayoutListener</code> を使って、レイアウトが完了したタイミングで moveCamera する方法が紹介されているが、もうちっとシンプルにできないかなと思っていたところ、ちょうど別件で「ビューのサイズが確定(して Width/Height が取得できる)タイミング」を調べていて、同じく StackOverflow で以下の情報を発見。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view/15301092#15301092">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+
+
+<p>これによると <code>view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった</span>
+</span><span class='line'>    <span class="n">fragment</span><span class="o">.</span><span class="na">getView</span><span class="o">().</span><span class="na">post</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+</span><span class='line'>                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>としたところ、正常に地図がズームされました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
+
+<p>ちなみに、処理をメインスレッド上で行う <code>Activity.runOnUiThread</code> や <code>Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
+
+<p>起動時の処理は、全ての View で post 内に書いておいた方がいいのかも。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+<span class="byline author vcard">Posted by <span class="fn">amay077</span></span>
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-09-29T21:16:00+09:00" pubdate data-updated="true">Sep 29<span>th</span>, 2013</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>, <a class='category' href='/blog/categories/java/'>Java</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  <!-- Hatena Boolmark -->
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/" >Tweet</a>
+  
+  
+  
+    <div class="fb-like" data-send="true" data-width="450" data-show-faces="false"></div>
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left articlenav" href="/blog/2013/09/26/layout-widh-like-property-in-custom-view/" title="Previous Post: 自作ビューで layout_width のマネをしたい時">&laquo; 自作ビューで layout_width のマネをしたい時</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>About Me</h1>
+  <p>name : amay077</p>
+  <p>Posterous さんが <a href="https://posterous.com/bye.html">お亡くなりになった</a>ので、引っ越して来ました</p>
+</section><section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/26/layout-widh-like-property-in-custom-view/">自作ビューで layout_width のマネをしたい時</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/25/the-battle-of-abbreviation-lat-vs-lng/">Longitude の略し方。lng 派と lon 派の終わらない争い</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/10/implementing-reverse-geocoding-using-elasticsearch/">総務省のデータを Elasticsearch にぶち込んで、緯度経度から市区町村の何丁目までを取り出す</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/09/09/using-spatialdata-with-elasticsearch/">Elasticsearch で位置情報を検索する手順</a>
+      </li>
+    
+  </ul>
+</section>
+<section>
+  <h1>Top Categories</h1>
+    <ul id="top-category-list">
+    	<li><a href='/blog/categories/android'>Android (65)</a></li><li><a href='/blog/categories/xamarin'>Xamarin (28)</a></li><li><a href='/blog/categories/c-'>C# (22)</a></li><li><a href='/blog/categories/java'>Java (20)</a></li><li><a href='/blog/categories/googlemapsapi'>GoogleMapsAPI (17)</a></li><li><a href='/blog/categories/ios'>iOS (11)</a></li><li><a href='/blog/categories/gps'>Gps (6)</a></li><li><a href='/blog/categories/html5'>HTML5 (5)</a></li><li><a href='/blog/categories/map'>Map (5)</a></li><li><a href='/blog/categories/bitcasa'>Bitcasa (5)</a></li><li><a href='/blog/categories/reactiveextensions'>ReactiveExtensions (4)</a></li><li><a href='/blog/categories/backup'>Backup (4)</a></li><li><a href='/blog/categories/mac'>Mac (3)</a></li><li><a href='/blog/categories/ar'>AR (3)</a></li><li><a href='/blog/categories/openstreetmap'>OpenStreetMap (3)</a></li>
+    </ul>
+	view <a href="/category-list">All-Categories</a>
+</section>
+<section>
+  <h1>GitHub Repos</h1>
+  <ul id="gh_repos">
+    <li class="loading">Status updating...</li>
+  </ul>
+  
+  <a href="https://github.com/amay077">@amay077</a> on GitHub
+  
+  <script type="text/javascript">
+    $.domReady(function(){
+        if (!window.jXHR){
+            var jxhr = document.createElement('script');
+            jxhr.type = 'text/javascript';
+            jxhr.src = '/javascripts/libs/jXHR.js';
+            var s = document.getElementsByTagName('script')[0];
+            s.parentNode.insertBefore(jxhr, s);
+        }
+
+        github.showRepos({
+            user: 'amay077',
+            count: 3,
+            skip_forks: true,
+            target: '#gh_repos'
+        });
+    });
+  </script>
+  <script src="/javascripts/github.js" type="text/javascript"> </script>
+</section>
+
+
+<section>
+  <h1>Latest Tweets</h1>
+<a class="twitter-timeline"  height="400" href="https://twitter.com/amay077" data-widget-id="362129904348848128" data-theme="light" data-related="amay077,twitter" data-chrome="nofooter noborders transparent">Tweets by @amay077</a>
+<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+"://platform.twitter.com/widgets.js";fjs.parentNode.insertBefore(js,fjs);}}(document,"script","twitter-wjs");</script>
+</section>
+
+
+
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
