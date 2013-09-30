@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる"
+title: "moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる"
 date: 2013-09-29 21:16
 comments: true
 categories: [Android, Java, GoogleMapsAPI]
