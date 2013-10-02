@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-09-30T23:33:52+09:00</updated>
+  <updated>2013-10-02T19:24:39+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,88 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ディレクトリを再帰的にたどってファイル一覧を出力する]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/"/>
+    <updated>2013-10-02T19:20:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs</id>
+    <content type="html"><![CDATA[<p><a href="https://twitter.com/_shimizu">@_shimizu</a> さんの</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://shimz.me/blog/node-js/2944">[node.js]ディレクトリを再帰的にたどってファイル一覧をJSONとして出力する | GUNMA GIS GEEK</a></li>
+</ul>
+
+
+<p>の派生品です。ファイルパスを出力するだけにしました。</p>
+
+<figure class='code'><figcaption><span>enumFilesRecursive.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;fs&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">,</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">,</span> <span class="nx">dir</span> <span class="o">=</span> <span class="nx">process</span><span class="p">.</span><span class="nx">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">||</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span> <span class="c1">//引数が無いときはカレントディレクトリを対象とする</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">var</span> <span class="nx">walk</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="nx">fileCallback</span><span class="p">,</span> <span class="nx">errCallback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nx">fs</span><span class="p">.</span><span class="nx">readdir</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">files</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">errCallback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="nx">files</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">fp</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="nx">f</span><span class="p">);</span> <span class="c1">// to full-path</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">statSync</span><span class="p">(</span><span class="nx">fp</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">walk</span><span class="p">(</span><span class="nx">fp</span><span class="p">,</span> <span class="nx">fileCallback</span><span class="p">);</span> <span class="c1">// ディレクトリなら再帰</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">fileCallback</span><span class="p">(</span><span class="nx">fp</span><span class="p">);</span> <span class="c1">// ファイルならコールバックで通知</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 使う方</span>
+</span><span class='line'><span class="nx">walk</span><span class="p">(</span><span class="nx">dir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">path</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span> <span class="c1">// ファイル１つ受信    </span>
+</span><span class='line'><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Receive err:&quot;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span> <span class="c1">// エラー受信</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる]]></title>
@@ -3698,41 +3780,6 @@ WebView なんですが、一番下までスクロールして、さらに上に
 <p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
 
 <p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[オンラインでサクッとスライド作ってシェアできる Slides が便利だった件]]></title>
-    <link href="http://amay077.github.io/blog/2013/07/24/slides-is-very-useful/"/>
-    <updated>2013-07-24T19:18:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/07/24/slides-is-very-useful</id>
-    <content type="html"><![CDATA[<p>先日の <a href="http://connpass.com/event/2847/">日本Androidの会浜松支部　第27回ミーティング -AndroidとHTML5-</a> で HTML5 中心の話題にも関わらず Xamarin の LT をした訳ですが、むりやりこじつけるために、HTML5 でプレゼンスライドを作りました。</p>
-
-<!--more-->
-
-
-<p>この手のもので最も有名なのが <a href="http://lab.hakim.se/reveal-js/">reveal.js</a> というライブラリですが、環境準備が面倒だったので、HTML5 で作れてオンラインでシェアできるものを探してたどり着いたのが Slides(slid.es) でした。</p>
-
-<ul>
-<li>[Slides - The easiest way to create and share beautiful presentations.] (http://slid.es/)</li>
-</ul>
-
-
-<p>使い方は簡単で、Google か Facebook のアカウントでサインインでき、無料で使えます。</p>
-
-<p>実はこれ reveal.js を使ったサービスで、機能もほぼ相違ないのですが、PDF へのエクスポートやデザインテーマは有償の Pro 版でないと使えなくなっています。reveal.js を直接使えば、エクスポートや Markdown 対応もできるので、まあ SaaS としての戦略でしょうか。</p>
-
-<p>reveal.js はライブラリなのでコンテンツは自力で HTML or Markdown で書く必要がありますが、Slides にはリッチエディタが付いているので、簡単に資料を書くことができます。</p>
-
-<p>凝った演出はできませんが、 LT くらいの資料なら十分実用できます。そのままシェアできますし。(逆に Private にするには Pro 版が必要)</p>
-
-<p>というわけで reveal.js 使いたいけどいろいろ面倒そう、という人は Slides を試されると良いかと思います。</p>
-
-<p>最後に、その時発表した Xamarin の LT 資料を貼って終わります。
-Xamarin もどうぞよろしくおねがいします。</p>
-
-<iframe src="http://slid.es/amay/intro_of_xamarin/embed" width="576" height="420" scrolling="no" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
-
 ]]></content>
   </entry>
   

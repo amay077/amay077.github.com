@@ -5,12 +5,22 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Xamarin.iOS で GPS を使う - Experiments Never Fail</title>
+  <title>ディレクトリを再帰的にたどってファイル一覧を出力する - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
   
-  <meta name="description" content="Xamarin.iOS で GPS を使ってみます。
-ちなみ当方、iOS開発についてはシロートに毛が生えた程度なため、Objective-C でも GPS は使ったことありません。 ので、こちらのサンプルを、Xamarin.iOS で書きなおしてみました。 GPSを利用する方法 - &hellip;">
+  <meta name="description" content="@_shimizu さんの [node.js]ディレクトリを再帰的にたどってファイル一覧をJSONとして出力する | GUNMA GIS GEEK の派生品です。ファイルパスを出力するだけにしました。 enumFilesRecursive.js1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -19,7 +29,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps/">
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/stylesheets/data-table.css" rel="stylesheet" type="text/css" />
@@ -91,7 +101,7 @@
   <header>
     
       
-        <h1 class="entry-title">Xamarin.iOS で GPS を使う</h1>
+        <h1 class="entry-title">ディレクトリを再帰的にたどってファイル一覧を出力する</h1>
       
     
     
@@ -108,27 +118,26 @@
   
 
 
-<time datetime="2013-03-18T00:02:00+09:00" pubdate data-updated="true">Mar 18<span>th</span>, 2013</time>
+<time datetime="2013-10-02T19:20:00+09:00" pubdate data-updated="true">Oct 2<span>nd</span>, 2013</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>Xamarin.iOS で GPS を使ってみます。
-ちなみ当方、iOS開発についてはシロートに毛が生えた程度なため、Objective-C でも GPS は使ったことありません。</p>
+<div class="entry-content"><p><a href="https://twitter.com/_shimizu">@_shimizu</a> さんの</p>
 
 <!--more-->
 
 
-<p>ので、こちらのサンプルを、Xamarin.iOS で書きなおしてみました。</p>
-
 <ul>
-<li><a href="http://d.hatena.ne.jp/ntaku/20090228/1235816377">GPSを利用する方法 - プログラミングノート</a></li>
+<li><a href="http://shimz.me/blog/node-js/2944">[node.js]ディレクトリを再帰的にたどってファイル一覧をJSONとして出力する | GUNMA GIS GEEK</a></li>
 </ul>
 
 
-<figure class='code'><figcaption><span>LocationSample.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<p>の派生品です。ファイルパスを出力するだけにしました。</p>
+
+<figure class='code'><figcaption><span>enumFilesRecursive.js</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
@@ -153,46 +162,42 @@
 <span class='line-number'>23</span>
 <span class='line-number'>24</span>
 <span class='line-number'>25</span>
-</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="c1">// LocationManager 的なやつ</span>
-</span><span class='line'><span class="k">private</span> <span class="n">CLLocationManager</span> <span class="n">_man</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='js'><span class='line'><span class="kd">var</span> <span class="nx">fs</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;fs&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">,</span> <span class="nx">path</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="s2">&quot;path&quot;</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">,</span> <span class="nx">dir</span> <span class="o">=</span> <span class="nx">process</span><span class="p">.</span><span class="nx">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">||</span> <span class="s1">&#39;.&#39;</span><span class="p">;</span> <span class="c1">//引数が無いときはカレントディレクトリを対象とする</span>
 </span><span class='line'>
-</span><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">walk</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="nx">fileCallback</span><span class="p">,</span> <span class="nx">errCallback</span><span class="p">)</span> <span class="p">{</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="n">_man</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLLocationManager</span><span class="p">();</span>
-</span><span class='line'>  
-</span><span class='line'>    <span class="c1">// ボタンをタップした時</span>
-</span><span class='line'>    <span class="n">btnListen</span><span class="p">.</span><span class="n">TouchUpInside</span> <span class="p">+=</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="p">=&gt;</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="n">_man</span><span class="p">.</span><span class="n">DesiredAccuracy</span> <span class="p">=</span> <span class="m">5000</span><span class="p">;</span> <span class="c1">// 希望精度5kmくらい</span>
-</span><span class='line'>        <span class="n">_man</span><span class="p">.</span><span class="n">LocationsUpdated</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="c1">// 位置を受信した時のイベント</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="kt">var</span> <span class="n">l</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">Locations</span><span class="p">[</span><span class="n">e</span><span class="p">.</span><span class="n">Locations</span><span class="p">.</span><span class="n">Length</span> <span class="p">-</span> <span class="m">1</span><span class="p">];</span>
+</span><span class='line'>  <span class="nx">fs</span><span class="p">.</span><span class="nx">readdir</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">,</span> <span class="nx">files</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="k">if</span> <span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="nx">errCallback</span><span class="p">(</span><span class="nx">err</span><span class="p">);</span>
+</span><span class='line'>          <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>      <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>            <span class="n">lblLocation</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;Lat/Lng = {0}/{1}&quot;</span><span class="p">,</span>
-</span><span class='line'>                                             <span class="n">l</span><span class="p">.</span><span class="n">Coordinate</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">l</span><span class="p">.</span><span class="n">Coordinate</span><span class="p">.</span><span class="n">Longitude</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>      <span class="nx">files</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">f</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>          <span class="kd">var</span> <span class="nx">fp</span> <span class="o">=</span> <span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">p</span><span class="p">,</span> <span class="nx">f</span><span class="p">);</span> <span class="c1">// to full-path</span>
+</span><span class='line'>          <span class="k">if</span><span class="p">(</span><span class="nx">fs</span><span class="p">.</span><span class="nx">statSync</span><span class="p">(</span><span class="nx">fp</span><span class="p">).</span><span class="nx">isDirectory</span><span class="p">())</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">walk</span><span class="p">(</span><span class="nx">fp</span><span class="p">,</span> <span class="nx">fileCallback</span><span class="p">);</span> <span class="c1">// ディレクトリなら再帰</span>
+</span><span class='line'>          <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+</span><span class='line'>              <span class="nx">fileCallback</span><span class="p">(</span><span class="nx">fp</span><span class="p">);</span> <span class="c1">// ファイルならコールバックで通知</span>
+</span><span class='line'>          <span class="p">}</span>
+</span><span class='line'>      <span class="p">});</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="p">};</span>
 </span><span class='line'>
-</span><span class='line'>      <span class="c1">// 受信開始</span>
-</span><span class='line'>        <span class="n">_man</span><span class="p">.</span><span class="n">StartUpdatingLocation</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">};</span>
-</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 使う方</span>
+</span><span class='line'><span class="nx">walk</span><span class="p">(</span><span class="nx">dir</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">path</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">path</span><span class="p">);</span> <span class="c1">// ファイル１つ受信    </span>
+</span><span class='line'><span class="p">},</span> <span class="kd">function</span><span class="p">(</span><span class="nx">err</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s2">&quot;Receive err:&quot;</span> <span class="o">+</span> <span class="nx">err</span><span class="p">);</span> <span class="c1">// エラー受信</span>
+</span><span class='line'><span class="p">});</span>
 </span></code></pre></td></tr></table></div></figure>
-
-
-<p>簡単すぎるやばい。
-Xamarin.iOS のクラスライブラリが CoreLocation をうまくラップしてくれて、<code>LocationsUpdated</code> てなイベントも用意してくれてます。(Android の LocatiomManager にはイベントはなかった)
-そして何度も言いますが Obj-C のキモい構文じゃないのでコードが見やすい書きやすい。</p>
-
-<p>もうちょっとちゃんとしたサンプルは公式をみて下さい。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://d.hatena.ne.jp/ntaku/20090228/1235816377">GPSを利用する方法 - プログラミングノート</a></li>
-<li><a href="http://docs.xamarin.com/samples/CoreLocation">Core Location | xamarin</a></li>
-</ul>
 
 </div>
 
@@ -216,12 +221,12 @@ Xamarin.iOS のクラスライブラリが CoreLocation をうまくラップし
   
 
 
-<time datetime="2013-03-18T00:02:00+09:00" pubdate data-updated="true">Mar 18<span>th</span>, 2013</time>
+<time datetime="2013-10-02T19:20:00+09:00" pubdate data-updated="true">Oct 2<span>nd</span>, 2013</time>
       
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+    <a class='category' href='/blog/categories/javascript/'>JavaScript</a>, <a class='category' href='/blog/categories/node-js/'>Node.js</a>
   
 </span>
 
@@ -230,10 +235,10 @@ Xamarin.iOS のクラスライブラリが CoreLocation をうまくラップし
     
       <div class="sharing">
   <!-- Hatena Boolmark -->
-  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
   
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/03/18/xamarin-ios-using-gps/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/" >Tweet</a>
   
   
   
@@ -244,10 +249,8 @@ Xamarin.iOS のクラスライブラリが CoreLocation をうまくラップし
     
     <p class="meta">
       
-        <a class="basic-alignment left articlenav" href="/blog/2013/03/17/xamarin-android-using-gps-by-rx/" title="Previous Post: Xamarin.Android で GPS を使う(Reactive Extensions版)">&laquo; Xamarin.Android で GPS を使う(Reactive Extensions版)</a>
+        <a class="basic-alignment left articlenav" href="/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/" title="Previous Post: moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる">&laquo; moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる</a>
       
-      
-        <a class="basic-alignment right articlenav" href="/blog/2013/03/18/backbraze-vs-pogoplug-vs-bitcasa/" title="Next Post: さよなら BackBlaze、ようこそ Bitcasa">さよなら BackBlaze、ようこそ Bitcasa &raquo;</a>
       
     </p>
   </footer>
