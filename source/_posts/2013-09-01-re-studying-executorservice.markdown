@@ -3,7 +3,7 @@ layout: post
 title: "ExecutorService の復習"
 date: 2013-09-01 19:52
 comments: true
-categories: [JAva,Android]
+categories: [Java,Android]
 ---
 Android で非同期処理っていうと、真っ先に ``AsyncTask`` が出てくるんですが、なるべくなら Java 標準のマルチスレッドAPI である ExecutorService を使った方が良いと思ってます。
 <!--more-->

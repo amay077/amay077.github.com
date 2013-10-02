@@ -3,7 +3,7 @@ layout: post
 title: "Homebrew で Nodes.js をやってみた"
 date: 2012-10-03 20:10
 comments: true
-categories: [node.js, homebrew]
+categories: [Node.js, homebrew]
 ---
 ##環境
 * Mac OS X 10.7

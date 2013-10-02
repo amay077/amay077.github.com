@@ -3,7 +3,7 @@ layout: post
 title: "haxenode でエラー window is not defined"
 date: 2012-10-03 22:06
 comments: true
-categories: [haxe, node.js, haxenode]
+categories: [haxe, Node.js, haxenode]
 ---
 [HaxeでつくるWebアプリ開発(node.js + Express) | 深追い Fukaoi.org](http://blog.fukaoi.org/2012/06/19/haxe_nodejs_express) を参考に、[haxenode](http://haxenode.org/)を使ってみたときにハマったこと。
 

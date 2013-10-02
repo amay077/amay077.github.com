@@ -3,7 +3,7 @@ layout: post
 title: "Marked.js で Markdown をクライアント側でパースして表示する"
 date: 2013-08-06 21:10
 comments: true
-categories: [Markdown, HTML5, Javascript]
+categories: [Markdown, HTML5, JavaScript]
 ---
 [Typescript クイックガイド](http://phyzkit.net/typescript/) で、ソースを見たら Markdown で書かれてたのをみて「カッケー」と思ったのと、[利用規約やプライバシーポリシーは Github に置くといいよ](http://www.atmarkit.co.jp/ait/articles/1302/05/news091.html) というのを見て、なら「github に .markdown ファイルを置いてクライアントサイドでスタイリングできたら嬉しいじゃん？」と思いやってみた。
 <!--more-->
