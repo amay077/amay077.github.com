@@ -1,6 +1,6 @@
 ---
 layout: page
-title: "Category List"
+title: "Tags"
 comments: false
 sharing: false
 footer: true
