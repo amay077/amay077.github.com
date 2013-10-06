@@ -1,0 +1,406 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Android で Reactive Extensions を使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,C#,ReactiveExtensions,Xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/03/01/how-to-use-rx-in-xamarin">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin.Android で Reactive Extensions を使う
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-03-01T17:38:00+09:00" pubdate data-updated="true">Mar 1<span>st</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/reactiveextensions/'>ReactiveExtensions</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>なんか一気にハードル上がったような。。。</p>
+
+<!-- more -->
+
+
+<p>Reactive Extensions(Rx) については、</p>
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_01/introrx_01_01.html">Reactive Extensionsの概要と利用方法 － ＠IT</a></li>
+</ul>
+
+
+<p>などを読んで頂くとして、Rx は昨年 <a href="http://www.infoq.com/jp/news/2012/11/rx-net-open-source">オープンソース化され</a>、本家を Mono for Android で使えるようにした</p>
+
+<ul>
+<li><a href="http://rxm4a.codeplex.com/">RxM4A - Mono For Android Reactive Extensions</a></li>
+</ul>
+
+
+<p>というプロジェクトがあります。
+Mono で使えるということは Xamarin でももちろん…ということで使ってみます。</p>
+
+<h2>サンプルアプリケーションを作る</h2>
+
+<p>とりあえず Xamarin.Android で &#8220;XamarinAndroidRxSample&#8221; というプロジェクトを作りました。</p>
+
+<h2>RxM4A のソースを Clone する</h2>
+
+<p>上記のサイトからソースを取得します。以下のコマンドでもおｋ(要git)</p>
+
+<blockquote><p>$git clone https://git01.codeplex.com/rxm4a</p></blockquote>
+
+<h2>ソリューションにプロジェクトを追加する</h2>
+
+<p>ソリューションツリーのソリューションのところで右クリック→追加→既存のプロジェクトを追加</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a.png" alt="&quot;add_project&quot;" /></p>
+
+<p>で、先ほど取得した RxM4A のディレクトリへ移動します。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_projects.png" alt="&quot;projects&quot;" /></p>
+
+<p>RxMonoForAndroid の中から以下のプロジェクトを追加します。</p>
+
+<ul>
+<li>System.Reactive.Interfaces</li>
+<li>System.Reactive.Core</li>
+<li>System.Reactive.Linq</li>
+</ul>
+
+
+<p>フォルダを掘ってくと xxx.csproj ってファイルがあるので、それを選択します。
+依存関係があるので、上記の順番通りやらないとなにかエラーが出ますが、最終的に３つ揃えば問題ないでしょう。</p>
+
+<h2>参照を追加する</h2>
+
+<p>XamarinAndroidRxSample から、今追加した３つのプロジェクトを参照に追加します。</p>
+
+<p>ソリューションツリーの XamarinAndroidRxSample のところで右クリック→参照アセンブリの追加 から、</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_add_reference.png" alt="&quot;add_project_reference&quot;" />
+<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_add_reference2.png" alt="&quot;add_project_reference&quot;" /></p>
+
+<p>ダイアログのタブで Projects を選ぶと３つ出てくるのでチェックをいれて OK してください。</p>
+
+<h2>Reactive Extensions を使ってみる</h2>
+
+<p>ボタンを押した時の処理で Rx を使ってみます。</p>
+
+<figure class='code'><figcaption><span>Main.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="p">(</span><span class="err">ここまで省略</span><span class="p">)</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Util</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Reactive.Linq</span><span class="p">;</span> <span class="c1">// これ必要</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">XamarinAndroidRxSample</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [Activity (Label = &quot;XamarinAndroidRxSample&quot;, MainLauncher = true)]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">Activity1</span> <span class="p">:</span> <span class="n">Activity</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
+</span><span class='line'>            <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Get our button from the layout resource,</span>
+</span><span class='line'>            <span class="c1">// and attach an event to it</span>
+</span><span class='line'>            <span class="n">Button</span> <span class="n">button</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">myButton</span><span class="p">);</span>
+</span><span class='line'>          
+</span><span class='line'>            <span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="k">delegate</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">Observable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span> <span class="c1">// 0〜9 のリスト</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">n</span> <span class="p">=&gt;</span> <span class="n">n</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span> <span class="c1">// 偶数だけ抽出</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">n</span> <span class="p">=&gt;</span> <span class="n">n</span> <span class="p">*</span> <span class="m">2</span><span class="p">)</span> <span class="c1">// 値を２倍して</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">n</span> <span class="p">=&gt;</span> <span class="n">Log</span><span class="p">.</span><span class="n">Debug</span><span class="p">(</span><span class="s">&quot;Activity1&quot;</span><span class="p">,</span> <span class="n">n</span><span class="p">.</span><span class="n">ToString</span><span class="p">()));</span> <span class="c1">// 出力</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>動かしてみた結果</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_output.png" alt="&quot;output&quot;" /></p>
+
+<p>全然 Rx っぽくない(Linq だけでできる) 処理ですけど、Rx 関連クラスが使えることは確認できました。</p>
+
+<p>使い倒すには、RxMonoForAndroid 配下の他のプロジェクトを参照に追加して〜となるでしょう。</p>
+
+<h2>アセンブリ参照はどうやるの？</h2>
+
+<p>ここではプロジェクト参照で行ったのですけど、各Rxプロジェクトをビルドしてできた</p>
+
+<ul>
+<li>System.Reactive.Interfaces.dll</li>
+<li>System.Reactive.Core.dll</li>
+<li>System.Reactive.Linq.dll</li>
+</ul>
+
+
+<p>をアセンブリ参照してもいいでしょ？と思ってやってみました。
+それぞれの System.Reactive.Linq プロジェクトの <code>/bin/Debug</code> ディレクトリの中に上記ファイルができているので、てっとり早くそれを XamarinAndroidRxSample でアセンブリ参照してみました。(ほんとはちゃんと Release ビルドしてね)</p>
+
+<p>そしたらアプリは動くには動いたのですが、ソリューションツリーに怪しげなエラーが↓</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_error.png" alt="&quot;error&quot;" /></p>
+
+<p>アプリとDLLでターゲットフレームワークが違う(アプリは ICS4.0.3 でDLLは 4.0.0) だとこうなるんでしょうか？
+Yes、アプリ側を 4.0.0 にしてプロジェクトクリーン→Xamarin Studio を再起動したら消えました。(けどアプリの方がバージョン上位だったのに、下位互換性はどうなってるんでしょ？)</p>
+
+<h2>サンプルプロジェクト</h2>
+
+<p>これも github においておこう。RxM4A は Submodule として登録してみた。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XamarinAndroid_RxSample">amay077 / XamarinAndroid_RxSample</a></li>
+</ul>
+
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_01/introrx_01_01.html">Reactive Extensionsの概要と利用方法 － ＠IT</a></li>
+<li><a href="http://rxm4a.codeplex.com/">RxM4A - Mono For Android Reactive Extensions</a></li>
+<li><a href="http://neue.cc/">neue cc</a> スーパー勉強になります</li>
+<li><a href="http://d.hatena.ne.jp/okazuki/20111114/1321277465">かずきのBlog@Hatena</a> 膨大なサンプル集がようやく Android開発で活かせます！</li>
+<li><a href="https://code.google.com/p/reactive4java/">reactive4java</a> Java ではこれ使ってました</li>
+</ul>
+
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/03/01/xamarin-android-implement-parcelable/" title="Previous Post: Xamarin.Android で画面遷移時にデータを渡す">&lt; Xamarin.Android で画面遷移時にデータを渡す</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2013/03/02/xamarin-android-permission/" title="Next Post: Xamarin.Android で PERMISSION を設定する">Xamarin.Android で PERMISSION を設定する &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

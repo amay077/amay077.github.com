@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Haskell | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/haskell/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Mac に Homebrew で Haskell 入れて HelloWorld]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/20/helloworld-of-haskell/"/>
+    <updated>2012-10-20T14:22:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/20/helloworld-of-haskell</id>
+    <content type="html"><![CDATA[<p>OS は Mountain Lion、Homebrew は入ってる前提で。</p>
+
+<!-- more -->
+
+
+<h2>インストール</h2>
+
+<p>「処理系」の GHC と、開発用プラットフォームをインストールする。</p>
+
+<p><code>
+brew install ghc
+</code></p>
+
+<blockquote><p>==> Downloading http://www.haskell.org/ghc/dist/7.4.2/ghc-7.4.2-x86_64-apple-darwin.tar.bz2</p>
+
+<h6>################################################################## 100.0%</h6>
+
+<p>==> ./configure --prefix=/usr/local/Cellar/ghc/7.4.2
+==> make install
+==> Caveats
+This brew is for GHC only; you might also be interested in haskell-platform.
+==> Summary
+/usr/local/Cellar/ghc/7.4.2: 6209 files, 842M, built in 18.9 minutes</p></blockquote>
+
+<p>20分弱かかった。</p>
+
+<p><code>
+brew install haskell-platform
+</code></p>
+
+<blockquote><p>==> Downloading http://lambda.haskell.org/platform/download/2012.2.0.0/haskell-platform-2012</p>
+
+<h6>################################################################## 100.0%</h6>
+
+<p>==> ./configure --prefix=/usr/local/Cellar/haskell-platform/2012.2.0.0 --enable-unsupported-
+==> EXTRA_CONFIGURE_OPTS="--libdir=/usr/local/Cellar/haskell-platform/2012.2.0.0/lib/ghc" ma
+==> Caveats
+Run <code>cabal update</code> to initialize the package list.</p>
+
+<p>If you are replacing a previous version of haskell-platform, you may want
+to unregister packages belonging to the old version. You can find broken
+packages using:
+  ghc-pkg check --simple-output
+You can uninstall them using:
+  ghc-pkg check --simple-output | xargs -n 1 ghc-pkg unregister --force
+==> Summary
+/usr/local/Cellar/haskell-platform/2012.2.0.0: 869 files, 174M, built in 13.4 minutes</p></blockquote>
+
+<p>全部で３０分ほど。途中「ほんとに動いてんの？」って状態になったが焦らず放っておいたら終わってた。</p>
+
+<h2>対話式インタプリタを起動する</h2>
+
+<p><code>
+ghci
+</code></p>
+
+<blockquote><p>GHCi, version 7.4.2: http://www.haskell.org/ghc/  :? for help
+Loading package ghc-prim ... linking ... done.
+Loading package integer-gmp ... linking ... done.
+Loading package base ... linking ... done.
+Prelude></p></blockquote>
+
+<h2>ハロワ</h2>
+
+<p><code>
+Prelude&gt; putStrLn "Hello, World"
+</code></p>
+
+<blockquote><p>Hello, World</p></blockquote>
+
+<h2>GHCi の終了</h2>
+
+<p>意外と分からなかった。</p>
+
+<p><code>
+:quit
+</code></p>
+
+<blockquote><p>Leaving GHCi.</p></blockquote>
+
+<h2>【未解決】runhaskell で「lexical error (UTF-8 decoding error)」エラー</h2>
+
+<p><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a> にあった REPL じゃなくてソースをビルドして実行する方法でエラーが。</p>
+
+<p>```hs Test.hs
+main = do putStrLn "What is 2 + 2?"</p>
+
+<pre><code>      x &lt;- readLn
+      if x == 4
+          then putStrLn "You're right!"
+          else putStrLn "You're wrong!"
+</code></pre>
+
+<p>```</p>
+
+<p>を Test.hs で保存して、</p>
+
+<p><code>
+ghc --make Test.hs
+</code></p>
+
+<p>を実行して、Test, Test.hi, Test.o ファイルが生成される。
+で、</p>
+
+<p><code>
+runhaskell Test
+</code>
+とすると</p>
+
+<blockquote><p>Test:1:1: lexical error (UTF-8 decoding error)</p></blockquote>
+
+<p>というエラーが。よく分からないからとりあえず、</p>
+
+<p><code>
+runghc Test.hs
+</code>
+で満足してる。まだ入り口にも立ってない気分。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a></li>
+<li><a href="http://d.hatena.ne.jp/hide_o_55/20110427/1303914801">Haskell再入門 1日目(環境構築) - WebService::Blog->new( user => ’hide_o_55’ )</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

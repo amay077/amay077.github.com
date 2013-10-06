@@ -1,0 +1,560 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS + iOS Simulator で Instruments を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios/"/>
+    <updated>2013-09-03T21:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/03/using-instruments-with-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS(旧MonoTouch)では、Xcode のプロファイラである Instruments がそのまま使えます。</p>
+
+<!--more-->
+
+
+<h2>デモプロジェクト</h2>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+</ul>
+
+
+<p>にある <code>MemoryDemo.zip</code> をダウンロード、解凍します。2つプロジェクトが含まれていますが、 <code>before</code> を使います。</p>
+
+<h2>手順</h2>
+
+<h3>1. プロジェクトをとりあえず実行</h3>
+
+<p>Xamarin Studio で <code>before/MemoryDemo.sln</code> を開いて、とりあえずビルド、Simulator で実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_01.png" alt="img" /></p>
+
+<p>上下にスクロールすると、次々と画像を読み込むので Allocate がハンパないよ、ってデモのようです。</p>
+
+<h3>2. Xamarin Studio から Instruments を起動する。</h3>
+
+<p>メニュー - ツール - Launch Instruments で起動します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_02.png" alt="img" /></p>
+
+<p>起動はしましたが、勝手にアプリが実行されるわけではありません。ここから少しだけ面倒な手続きが必要です。</p>
+
+<h3>3. iOS Simulator にインストールしたアプリを指定して Instruments を実行する</h3>
+
+<p>Instruments を起動すると、下のような画面になっています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_03.png" alt="img" /></p>
+
+<p>左メニューから [iOS Simulator] - [Memory]、右から [Allocations] を選び [Choose] ボタンを押します。</p>
+
+<p>次に、[Target] をクリックして、[Choose Target] - [Choose Target…] と進みます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_04.png" alt="img" /></p>
+
+<p>下のような画面になります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_05.png" alt="img" /></p>
+
+<p>次に Finder を起動して、iOS Simulator のディレクトリへ移動します。</p>
+
+<p>iOS Simulator のディレクトリは通常、<code>~/Library/Application Support/iPhone Simulator/</code> です。さらにアプリ毎に GUID で分けられているので目的のアプリを探してください。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_06.png" alt="img" /></p>
+
+<p>アプリのディレクトリを開いたら、その中のアプリケーションファイル(ここでは <code>MemoryDemo</code>) を、先ほど開いておいた Instruments の中へドラッグ＆ドロップします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_07.png" alt="img" /></p>
+
+<p>そして [Choose] を押すと、Target が MemoryTest になっているのが分かります。</p>
+
+<p>これでようやく実行できます。赤い●を押します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_08.png" alt="img" /></p>
+
+<p>と、iOS Simulator で MemoryTest が実行され、Instruments でプロファイルしている事が確認できます。Simulator でグリグリスクロールすると、Allocations がガンガン増えてく様子が分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_instruments_with_xamarin_ios_09.png" alt="img" /></p>
+
+<h3>3. 2度目以降は？</h3>
+
+<p>Instruments でもう一度赤い●を押すと停止します。アプリを更新する時は、Xamarin Studio 側でビルド-実行して iOS Simulator のアプリファイルを更新してから、Instruments で再度、赤い●を押します。</p>
+
+<p>もし Instruments を終了してしまっても、最近使ったアプリは Choose Target に最近使ったアプリとして残るので、またドラッグ＆ドロップすることはありません。</p>
+
+<h2>まとめと参考</h2>
+
+<p>Xamarin.iOS+iOS Simulator での Instruments の導入部分を説明しました。</p>
+
+<p>下に紹介するサイトが公式の情報です。
+ここには、実機にインストールしたアプリのプロファイル方法や、Instruments の使い方などが説明されているので合わせてどうぞ。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/using_instruments_to_detect_native_leaks_using_markheap">Profiling Xamarin.iOS Applications with Instruments | xamarin</a></li>
+<li><a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough | xamarin</a></li>
+<li><a href="https://developer.apple.com/library/ios/recipes/instruments_help-launch-into-simulator-help/LaunchIntoSimulator.html">iOS Simulator Help: Setting Instruments to Launch an iOS App in Simulator</a></li>
+</ul>
+
+
+<p>※ <a href="http://docs.xamarin.com/guides/ios/deployment%2C_testing%2C_and_metrics/instruments_walkthrough">Instruments Walkthrough</a> の No.14 の <a href="http://docs.xamarin.com/static/guides/ios/deployment,_testing,_and_metrics/instruments_walkthrough/Images/05_related_code.png">この画像</a> には、Instruments に Xamarin.iOS(C#) のソースコードが表示されているように見えるんだけど、これどうやるのかなあ。。手順通り動かしたつもりが出てこない。。。SourceMap の設定みたいなのが要るのかなあ。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ARC のメモリ解放タイミングを調べた]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/02/when-release-memory-by-arc/"/>
+    <updated>2013-09-02T21:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/02/when-release-memory-by-arc</id>
+    <content type="html"><![CDATA[<p>一つの関数内で容量の大きなファイルを読み込み加工する処理を連続して行っていたらメモリが足りなくなった。</p>
+
+<!--more-->
+
+
+<p>ARC ではスコープを外れ(て参照カウンタがゼロになっ)たオブジェクトは、すぐに破棄されると思っていたのでしばらくハマった。</p>
+
+<h2>問題のソース(ARC使用)</h2>
+
+<p>ローカルでもWebでも何でもいいけど、ファイルから無視できない程度の容量のデータの読み込みを繰り返す処理。</p>
+
+<p>```obj-c
+- (IBAction)buttonDownWithArc:(id)sender {</p>
+
+<pre><code>NSString* path = @".../bigdata.img";
+
+for (int i = 0; i &lt; 10000; i++) {
+    NSData* data = [NSData dataWithContentsOfFile:path];
+    [NSThread sleepForTimeInterval:0.5];
+    data = nil;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これを Instruments でプロファイルするとこうなる。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_01.png" alt="img" /></p>
+
+<p>じゃんじゃんメモリ確保してしまう（汗
+ARC で <code>data</code> は <code>nil</code> にしてるからスコープ外れた時にメモリ解放されると思っていたのだが。</p>
+
+<p>ちなみにこの関数の処理が終了すると、メモリが解放される。</p>
+
+<h2>非ARC でやってみた</h2>
+
+<p>メモリ管理をマニュアルでやったらどうなるかを確認した。</p>
+
+<p>```obj-c
+- (IBAction)buttonDownNoArc:(id)sender {</p>
+
+<pre><code>NSString* path = @".../bigdata.img";
+
+for (int i = 0; i &lt; 10000; i++) {
+    NSData* data = [NSData dataWithContentsOfFile:path];
+    [NSThread sleepForTimeInterval:0.5];
+    [data dealloc];
+    data = nil;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>この時のメモリ確保状況は、期待した通りになった。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_02.png" alt="img" /></p>
+
+<p>メモリ使用量が線形に<strong>増えない</strong>ことが分かる。ARC 利用時にもこうなるようにしたい。</p>
+
+<p>状況は、スコープ内変数の破棄が、関数を抜ける時に遅延されている。
+ARC 周りの情報をいろいろ漁っていて、AutoReleasePool との関わりが怪しいと予想した。</p>
+
+<ul>
+<li><a href="http://blog.natsuapps.com/2011/11/ios5-arc-overview.html">[iOS5] ARC (Automatic Reference Counting) : Overview - iOS 開発ブログ Natsu's note </a></li>
+</ul>
+
+
+<p>より引用：</p>
+
+<blockquote><h3>retain, release, autorelease, deallocはコンパイラのお仕事</h3>
+
+<p>ARCを利用する場合、コンパイラが</p>
+
+<ul>
+<li>retain, release, autoreleaseを挿入してくれる（自分で呼んではいけない。コンパイラエラーになる）。</li>
+<li>deallocを適切な位置に挿入してくれる（deallocのオーバーライドは可能。ただし[super dealloc]は不可能）。</li>
+</ul>
+
+
+<p>ことになります。</p></blockquote>
+
+<p>コンパイラにより関数単位で <code>@autoreleasepool {  }</code> が挿入されているとしたら、最初の図のような動きになるはず。ということは、for ループの中に @autorelease を持ってったらどうか？</p>
+
+<h2>ARC + @autoreleasepool 版</h2>
+
+<p>for の中の処理を <code>@autoreleasepool { }</code> で括ってみた。</p>
+
+<p>```obj-c
+- (IBAction)buttonDownWithArcAndAutoRelease:(id)sender {</p>
+
+<pre><code>for (int i = 0; i &lt; 100; i++) {
+    @autoreleasepool {
+        NSData* data = [NSData dataWithContentsOfFile:_path];
+        [NSThread sleepForTimeInterval:0.5];
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>すると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/arc_memory_release_timing_03.png" alt="img" /></p>
+
+<p>やたー、期待する動きになったぞ。</p>
+
+<h2>まとめ</h2>
+
+<p>とここまで調べて、しばらく Obj-C さわってなかったので埃をかぶっていた</p>
+
+<ul>
+<li><a href="http://www.amazon.co.jp/gp/product/4844331094?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=4844331094&amp;linkCode=shr&amp;tag=oku2008-22">エキスパートObjective-Cプログラミング -iOS/OS Xのメモリ管理とマルチスレッド-</a></li>
+</ul>
+
+
+<p>を引っ張り出してきて読んだら、P.25 にまさにその事が書かれていて泣いた。</p>
+
+<blockquote><p>とはいえ、autorelease されたオブジェクトが大量に発生した場合、NSAutoReleasePool のオブジェクトが破棄されない限り、それらのオブジェクトは release されないので、メモリ不足に陥る場合があります。典型的な例は、大量の画像をリサイズしながら読み込む場合でしょう。…</p>
+
+<pre><code>   for (int i = 0; i &lt; 画像数; i++) {
+       /*
+        * 画像読み込み処理
+        * autoreleaseされたオブジェクトが大量発生。
+        * NSAutoReleasePoolのオブジェクトが破棄されないため
+        * いずれメモリ不足発生！
+        */           
+   }
+</code></pre></blockquote>
+
+<p>勉強しなおします。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Pull up to Close を実装してみる、Xamarin.iOS で]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:51:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/implementing-pull-up-to-close-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>イマドキのスマホアプリでは Pull to Refresh（引っ張って更新）を実装してるアプリをよく目にするのですが、RSS Reader の Feedly では Pull up to Close（上に引っぱって閉じる）も採用しています。</p>
+
+<p>この操作性がなかなか使いやすかったので、自分でも実装してみました。</p>
+
+<!--more-->
+
+
+<h2>デモ</h2>
+
+<p>こんな感じ。
+WebView なんですが、一番下までスクロールして、さらに上に引っ張ると "Pull up to Close" → "Release to Close" とラベルが変わり、そこで離すとコールバックします。</p>
+
+<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen></iframe>
+
+
+<h2>実装してみたコード</h2>
+
+<p><a href="http://xamarin.com/">Xamarin.iOS</a> ですから、C# です。</p>
+
+<p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
+
+<p>```c# PullUpToCloseSampleViewController.cs
+public partial class PullUpToCloseSampleViewController : UIViewController
+{</p>
+
+<pre><code>public PullUpToCloseSampleViewController() : base ("PullUpToCloseSampleViewController", null)
+{
+}
+
+public override void ViewDidLoad()
+{
+    base.ViewDidLoad();
+
+    // WebView が持ってる ScrollView、よく使うので変数化しておく
+    // webView は Interface Builder で UIWebView を Outlet にしたもの。
+    var scrollView = webView.ScrollView;
+
+    // Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
+    scrollView.Subviews.Where(v =&gt; v is UIImageView)
+        .ToList().ForEach(v =&gt; v.Hidden = true);
+
+    // 上に引っ張った時に見える背景とラベル
+    var bounceBackground = new UIView(
+        new RectangleF(0f, 0f, webView.Frame.Width, webView.Frame.Height));
+    bounceBackground.BackgroundColor = UIColor.LightGray;
+    var bounceLabel = new UILabel(
+        new RectangleF(0f, webView.Frame.Height - 30f, webView.Frame.Width, 30f));
+    bounceLabel.Text = "Pull up to Close";
+    bounceLabel.TextAlignment = UITextAlignment.Center;
+    bounceLabel.BackgroundColor = UIColor.Clear;
+    bounceLabel.Opaque = false;
+
+    // 背景とラベルを WebView の一番奥に追加する
+    webView.InsertSubview(bounceLabel, 0);
+    webView.InsertSubview(bounceBackground, 0);
+
+    // 適当な URL を読み込み
+    webView.LoadRequest(NSUrlRequest.FromUrl(new NSUrl("http://yahoo.co.jp/")));
+
+    // 閉じるのに必要な分だけ上に引っ張ったら true になる
+    var canClose = false;
+
+    // ドラッグ開始時にフラグOFF(一応)
+    scrollView.DraggingStarted += (sender, e) =&gt; 
+    {
+        canClose = false;
+    };
+
+    // ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
+    scrollView.DraggingEnded += (sender, e) =&gt; 
+    {
+        if (canClose)
+        {
+            OnCloseByPullUp();
+        }
+    };
+
+    // スクロールした時にいろいろやる
+    scrollView.Scrolled += (sender, e) =&gt; 
+    {
+        var labelFrame = bounceLabel.Frame;
+
+        // コンテンツの一番下まで表示してさらに引っ張ったサイズ
+        var offsetY = (scrollView.Frame.Height + scrollView.ContentOffset.Y) 
+            - scrollView.ContentSize.Height;
+
+        // 50px 上に引っ張ったら閉じるものとする
+        canClose = offsetY &gt; 50f;
+        bounceLabel.Text = canClose ? "Release to Close" : "Pull up to Close";
+
+        // ラベルがいつまでも移動しないように
+        if (offsetY &gt; labelFrame.Height)
+        {
+            offsetY = labelFrame.Height;
+        }
+
+        // ラベルがドラッグと共に下からせり出してくるように
+        labelFrame.Y = scrollView.Frame.Height - offsetY;
+        bounceLabel.Frame = labelFrame;
+    };
+}
+
+// "Release to Close" で離すと呼ばれる
+void OnCloseByPullUp()
+{
+    var v = new UIAlertView("", "Close this view",  null, "Close");
+    v.Show ();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>やってる事</h2>
+
+<ol>
+<li>ScrollView の「引っ張った時に見える場所（= Bounce というらしい）」の影を消す。 via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview</li>
+<li>背景と、ラベルを WebView 内の一番奥に挿入する（引っ張った時にのみ見えるように）</li>
+<li>あとはイベントハンドラでの処理。スクロール中に、「最下部で引っ張り中」だったら "Pull up to Close" ラベルをアニメーションさせながら表示する。50px 以上引っ張ってたら "Release to Close" にラベルを変える。「閉じられるよ」フラグも ON にしとく。</li>
+<li>ドラッグ終了イベントで、「閉じられるよ」フラグが立ってたら、コールバックする。</li>
+</ol>
+
+
+<h2>今後</h2>
+
+<p>もうちょっとライブラリっぽくしたいですね。あと引っ張り中にアイコンとか表示させたい。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でジェスチャを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios/"/>
+    <updated>2013-07-28T13:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/07/28/recognition-gestures-using-xamarin-ios</id>
+    <content type="html"><![CDATA[<p><a href="http://xamarin.com/">Xamarin.iOS</a> でも <code>UIGestureRecognizer</code> が普通に使えるわけですが、Objective-C に比べてコードが短く書けて感動した話です。</p>
+
+<!--more-->
+
+
+<p>本日の Obj-C の先生はこちら。</p>
+
+<ul>
+<li><a href="http://labs.techfirm.co.jp/ipad/cho/466">Gesture Recognizers 〜簡単にタッチ操作を検知 | iPad Techfirm Lab </a></li>
+</ul>
+
+
+<p>このサンプルを Xamarin.iOS に移植してみます。</p>
+
+<h2>サンプルコード</h2>
+
+<p>```c# GesturesSample_ViewDidLoad.cs
+// Tap gesture
+this.View.AddGestureRecognizer(new UITapGestureRecognizer(tap =>
+{</p>
+
+<pre><code>Debug.WriteLine("Double Tap.");
+</code></pre>
+
+<p>})
+{</p>
+
+<pre><code>NumberOfTapsRequired = 2 // Double tap 
+</code></pre>
+
+<p>});</p>
+
+<p>// Drag(Pan) gesture
+this.View.AddGestureRecognizer(new UIPanGestureRecognizer(pan =>
+{</p>
+
+<pre><code>var p = pan.TranslationInView(this.View);
+var v = pan.VelocityInView(this.View);
+Debug.WriteLine("Pan. transration:{0}, velocity:{1}", p, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Pinch gesture
+this.View.AddGestureRecognizer(new UIPinchGestureRecognizer(pin =>
+{</p>
+
+<pre><code>var scale = pin.Scale;
+var v = pin.Velocity;
+Debug.WriteLine("Pinch. scale:{0}, velocity:{1}", scale, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Swipe gesture
+this.View.AddGestureRecognizer(new UISwipeGestureRecognizer(sw =>
+{</p>
+
+<pre><code>Debug.WriteLine("Swipe.");
+</code></pre>
+
+<p>}));</p>
+
+<p>// Rotate gesture
+this.View.AddGestureRecognizer(new UIRotationGestureRecognizer(ro =>
+{</p>
+
+<pre><code>var rotation = ro.Rotation;
+var v = ro.Velocity;
+Debug.WriteLine("Rotate. rotation:{0}, velocity:{1}", rotation, v);
+</code></pre>
+
+<p>}));</p>
+
+<p>// Long press gesture
+this.View.AddGestureRecognizer(new UILongPressGestureRecognizer(lp =>
+{</p>
+
+<pre><code>Debug.WriteLine("Long press.");
+</code></pre>
+
+<p>}));
+```</p>
+
+<p>ViewController 全体のソースは <a href="https://gist.github.com/amay077/6094422">コチラ</a></p>
+
+<p>元のサイトのサンプルコードは 70行弱ありますが、Xamarin.iOS では 45行くらいで書けました。しかも、GestureRecongnizer の登録とハンドラが同じ場所に書けるので見やすい。</p>
+
+<p>しかしこれ、ハンドラとか GesutureRecognizer、破棄しなくていいのかなあ。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio でコンポーネントを更新する方法]]></title>
+    <link href="http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio/"/>
+    <updated>2013-05-08T20:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/05/08/update-components-using-xamarin-studio</id>
+    <content type="html"><![CDATA[<p>分かりにくかったのでメモ。</p>
+
+<!--more-->
+
+
+<p><a href="http://amay077.github.io/blog/2013/04/22/xamarin-ios-using-gmap-ios-sdk/">以前</a>使ってみた <a href="http://components.xamarin.com/view/googlemapsios/">Google Maps Component</a>、「Polygon や Circle がないなー、対応してないのかなー」と思って <a href="http://componentsapi.xamarin.com/?link=T%3aGoogle.Maps.Circle">API Doc</a> 見たら存在してたので、いつの間にかバージョンアップしてたらしい、確かに手持ちのバージョンは「1.1.2」、Webサイトの方は「1.2.2」になってた。</p>
+
+<h2>Component を更新する</h2>
+
+<p>じゃあ更新するか、と思って Xamarin Studio で入り口を探すものの見つからない。
+結局、メニュー -> Get More Components から、Google Maps を検索しなおしたら、ボタンが「Update」になってたので、押したら更新された。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio1.png" alt="image1" /></p>
+
+<h2>Component に付属のサンプルが増えてた</h2>
+
+<p>更新後、Samples を見てみたら、、、お、 <strong>iOS Advanced Sample</strong> というのが増えてる！きっとアドバンスドなサンプルなのでしょうな（試せよ</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/update_components_using_xamarin_studio2.png" alt="image1" /></p>
+
+<h2>Component を更新したら API の互換性が無くなってた</h2>
+
+<p>更新後、意気揚々と以前作ったサンプルをビルドしてみたらビルドエラーが。
+どうやら <code>MapView.AddMarker</code> や <code>MarkerOption</code> が無くなって、<code>Marker</code> に MapView を設定するように変更されたらしい。(以下は、さっきのアドバンスドなサンプルからの抜粋)</p>
+
+<p>```c# PartOfMarkersViewController.cs
+public override void ViewDidLoad ()
+{</p>
+
+<pre><code>base.ViewDidLoad ();
+
+var camera = CameraPosition.FromCamera (-37.81969, 144.966085, 4);
+var mapView = MapView.FromCamera (RectangleF.Empty, camera);
+
+var sydneyMarker = new Marker () {
+    Title = "Sydney",
+    Snippet = "Population: 4,605,992",
+    Position = new CLLocationCoordinate2D (-33.8683, 151.2086),
+    Map = mapView
+};
+
+var melbourneMarker = new Marker () {
+    Title = "Melbourne",
+    Snippet = "Population: 4,169,103",
+    Position = new CLLocationCoordinate2D (-37.81969, 144.966085),
+    Map = mapView
+};
+
+// Set the marker in Sydney to be selected
+mapView.SelectedMarker = sydneyMarker;
+
+View = mapView;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これは、元の Google Maps SDK for iOS が根源なのか、Google Maps の Xamarin Component がそうしたのか知りませんが、ReleaseNotes とかないのかな？うっかり更新すると怖いな。</p>
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Component の Update は、 Get More Components から</li>
+<li>むやみに Update すると互換性なくなってるかもなのでバックアップというかバージョン管理ちゃんとしよう</li>
+<li>つまり Xamarin Components に ReleaseNotes 欲しいです</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

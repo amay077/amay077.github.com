@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: AR | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/ar/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[QCAR SDK で複数のオブジェクトを認識する]]></title>
+    <link href="http://amay077.github.io/blog/2010/12/06/qcar-sdk/"/>
+    <updated>2010-12-06T11:01:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2010/12/06/qcar-sdk</id>
+    <content type="html"><![CDATA[<p><a href="https://ar.qualcomm.com/qdevnet/developer_guide">QCAR SDK の Developper Guide</a> の Tips and tricks → Detecting and tracking simultaneous Image Targets を見ると、この SDK では複数のオブジェクトを認識することができるそう。</p>
+
+<!--more-->
+
+
+<h2>Detecting and Tracking Image Targets Simultaneously</h2>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_1.png" alt="&quot;1&quot;" /></p>
+
+<blockquote><p>The QCAR SDK is also capable of simultaneous tracking of up to 5 Image Targets - as shown in the screenshot on top of this page. This feature can be enabled by providing hints to the QCAR SDK. The Image Targets sample allows you to switch on this feature by uncommenting the highlighted two lines in the native source ImageTargets.cpp:</p>
+
+<p>via <a href="https://ar.qualcomm.com/qdevnet/developer_guide/369">ar.qualcomm.com</a></p></blockquote>
+
+<p>説明を読むと、５つのオブジェクトまで同時に認識できるそうです。</p>
+
+<p>複数の認識を有効にするには、コードで SDK にヒントを設定する必要があって、サンプル 「ImageTarget」では、ImageTargets.cpp （つまり NDK の方）を以下のように修正すればよいとのこと。</p>
+
+<p>```c
+JNIEXPORT void JNICALL
+Java_com_qualcomm_QCARSamples_ImageTargets_ImageTargets_onQCARInitializedNative</p>
+
+<pre><code>(JNIEnv *, jobject)
+</code></pre>
+
+<p>{</p>
+
+<pre><code>// Comment in to enable tracking of up to 2 targets simultaneously and
+// split the work over multiple frames:
+QCAR::setHint(QCAR::HINT_MAX_SIMULTANEOUS_IMAGE_TARGETS, 2);
+QCAR::setHint(QCAR::HINT_IMAGE_TARGET_MULTI_FRAME_ENABLED, 1);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ためしにやってみました。</p>
+
+<p>３つの画像を認識するようにしてみましたよ。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_2.png" alt="&quot;2&quot;" /></p>
+
+<p>おぉ～、なんかスゲー。</p>
+
+<p>なんかスゴいライブラリな気がして来ましたよ、この QCAR SDK 。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[クアルコムの AR SDK ”QCAR” を Xperia と IS03 で動かしてみた]]></title>
+    <link href="http://amay077.github.io/blog/2010/12/01/qcar-xperia-is03/"/>
+    <updated>2010-12-01T02:32:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2010/12/01/qcar-xperia-is03</id>
+    <content type="html"><![CDATA[<p>QCAR とは クアルコム社 が<a href="http://japanese.engadget.com/2010/10/07/android-ar-sdk/">提供している</a> Android 用の AR（拡張現実） SDK です。</p>
+
+<!--more-->
+
+
+<p><a href="https://ar.qualcomm.com/qdevnet/sdk">Qualcomm Developper Network - AR SDK | Qualcomm Augmented Reality</a></p>
+
+<p>こちらの方々</p>
+
+<ul>
+<li>クアルコムのAndroid向けAR SDK（QCAR）を動かしてみた - kotamzの日記</li>
+<li>QualcommのAR SDK "QCAR" で遊んでみた - hdk_embeddedの日記</li>
+</ul>
+
+
+<p>が使い方を説明してくださってますので、自分も（仕事で）やってみました。</p>
+
+<p>対応している端末は Desire , Nexus One との事でしたが、どちらも持ってないので、手持ちの Xperia (※ Android 2.1 に上げたやつ) と IS03 で試してみました。</p>
+
+<p>まず Xperia 。</p>
+
+<p>お、できた！（QCAR というより NDK と Cygwin でかなりてこずりましたが、順番にやれば大丈夫）</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_1.png" alt="&quot;1&quot;" />
+<img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_2.png" alt="&quot;2&quot;" /></p>
+
+<p>なかなかイイ感じに認識します。</p>
+
+<p>ただ、MultiImageTargets だけはうまく認識してくれませんでした。せっかく立方体作ったのに…）
+カメラのピントなどを調節すれば認識するのかも知れません。</p>
+
+<p>(2010.12.2追記)あ、動いた。なかなか認識してくれなかったけど、正面（ライオンがついてない方）をまっすぐ映してじっとしてたらできました。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_3.png" alt="&quot;3&quot;" /></p>
+
+<p>ミンティアの上にポットを載せてみました(^ ^)</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_4.png" alt="&quot;4&quot;" /></p>
+
+<p>自分の画像を使うには、Qualcomm Developper Network の AR SDK のページ内にある <a href="https://ar.qualcomm.com/qdevnet/projects">My Trackables</a> へ行き、プロジェクトを作った後、画像（JPG か PNG で 2MB未満）をアップロードします。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_5.png" alt="&quot;5&quot;" /></p>
+
+<p>アップロードできると↑こんな画面になります。たぶん ☆ が多い方が認識しやすい画像です。（試しにホットペッパーの見開き２ページをアップしたら ☆ がひとつも付きませんでした。→追記(2010.12.2)ちゃんとスキャンしてもらってグレイスケールに変換して制限2MBギリギリな画像でアップしたら、☆が4つ付きました。）</p>
+
+<p>このデータをアプリで使うには、項目をチェックして download selected trackables をクリックすると ZIP がダウンロードできるので、その中身を ImageTargets サンプル の assets フォルダに上書きしてあげると適用できます。（たぶん、複数項目をチェックしてダウンロードすると画像によってポットの色が変わるようになると思います。→追記(2010.12.2)大嘘。JNI 側の ImageTargets.cpp をダウンロードした画像の名前（config.xml を見ると分かる）に合わせて修正してあげないとダメっぽい）</p>
+
+<p>自分で動かすと相当オモシロイので、是非お試しください！</p>
+
+<p>次に IS03 ですが、、、動きませんでしたー(^ ^;</p>
+
+<p>エラーは出ませんが、カメラが起動しないです。
+ソースコードを直すと動くかも知れないので、また調べたいと思います。</p>
+
+<p>今日はこんなところで。</p>
+
+<h3>追記（2010.12.2）：Xperia ではバグがあるらしい</h3>
+
+<p>QCAR SDK のページに 「Xperia で動かすとバグがある」的な情報が載ってました。MultiImageTargets サンプルがうまく動いてくれなかったのはこの為かなあ？</p>
+
+<blockquote><p>Note: We have currently identified a bug that prevents the SDK from working correctly on the Sony Ericsson Xperia X10i (QSD 8250) running Android 2.1. This page will be updated once it is fixed.</p>
+
+<p>via <a href="https://ar.qualcomm.com/qdevnet/sdk">AR SDK | Qualcomm Augmented Realit</a></p></blockquote>
+
+<h3>追記（2010.12.2）：認識できる画像について</h3>
+
+<ul>
+<li>アルゴリズムは良く分からないけど、画像から特徴点を算出している。これに色は関係ないみたい。カラー画像もアップしたらグレイスケールに変換されてた。</li>
+<li>認識率のよい（☆がいっぱい付く）画像は、ごちゃごちゃしている画像。</li>
+<li>ホットペッパーの各ページは、構図は似ているけど、店の写真がそれぞれ違うので認識率は高い。</li>
+<li>店内写真だけ切り抜いてアップしたら、写真によってバラつきがある。下の左の写真は認識率が高いが、右は低い。</li>
+</ul>
+
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_6.png" alt="&quot;6&quot;" />
+<img src="https://dl.dropbox.com/u/264530/qiita/qcar_xperia_7.png" alt="&quot;7&quot;" /></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ARカーナビとな？]]></title>
+    <link href="http://amay077.github.io/blog/2010/11/15/ar-car-navi/"/>
+    <updated>2010-11-15T08:35:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2010/11/15/ar-car-navi</id>
+    <content type="html"><![CDATA[<!--more-->
+
+
+
+
+<iframe src="http://player.vimeo.com/video/11870382" width="400" height="300" frameborder="0" webkitAllowFullScreen mozallowfullscreen allowFullScreen></iframe>
+
+
+<p>カッコいいなあ。 やりたいなあ。たぶんできないけど。
+必要なものを推測してみる。</p>
+
+<ul>
+<li>道路ネットワークデータ</li>
+<li>GPS</li>
+<li>カメラ</li>
+<li>カメラ（目線）の高さ</li>
+<li>カメラの角度</li>
+<li>方位角</li>
+</ul>
+
+
+<p>こんなもんで、映像に道路を重ねられるのかな？</p>
+
+<p>これができたら、さ、カーナビの3D表示とか要らないね。</p>
+
+<p>あと振動センサと連動させてドライブレコーダーにもなりそうだし。</p>
+
+<p>いろいろアイデア膨らむなぁ、たぶんどこかが既に着手してるんだろうな。</p>
+]]></content>
+  </entry>
+  
+</feed>

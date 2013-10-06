@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: NDK | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/ndk/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Android NDK のセットアップ方法(バージョン r4b, 2010/11/30時点)]]></title>
+    <link href="http://amay077.github.io/blog/2010/11/30/android-nds-setup/"/>
+    <updated>2010-11-30T02:37:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2010/11/30/android-nds-setup</id>
+    <content type="html"><![CDATA[<p>Cygwin も NDK もド素人ですが、何とかできました。</p>
+
+<!--more-->
+
+
+<p>NDK 1.5 の時から変わっていて苦労しましたが、解説してくれているサイトやツイート、SDKドキュメントを読んで何とかできましたので、その手順を記録しました。</p>
+
+<h2>Cygwin のインストール</h2>
+
+<p><a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> を参考にして進めました。</p>
+
+<p>ダウンロードした Cygwin は 1.7.7 でした。</p>
+
+<p>途中、</p>
+
+<blockquote><p>さらにスクロールし、gccのパッケージを選択(※赤丸のしるしの部分をクリック)します。自動的にgcc-coreなどにもチェックが入りますが、そのままにしておきます。</p></blockquote>
+
+<p>とありましたが、勝手にチェックが入らなかったので、手動で同じようにチェックを入れました。</p>
+
+<h2>NDK のインストール</h2>
+
+<p>引き続き <a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> を参考にしました。</p>
+
+<p>android-ndk-r4b-windows.zip を</p>
+
+<blockquote><p>c:\cygwin\home\h_oku</p></blockquote>
+
+<p>に解凍しましたが、</p>
+
+<blockquote><p>\android-ndk-r4b-windows\android-ndk-r4b</p></blockquote>
+
+<p>となってしまって混乱したので、</p>
+
+<blockquote><p>c:\cygwin\home\h_oku\android-ndk-r4b</p></blockquote>
+
+<p>となるようにしました。</p>
+
+<p>次に、</p>
+
+<blockquote><p>$ sh build/host-setup.sh</p></blockquote>
+
+<p>としてもコマンドが無い（確かにファイルを検索しても host-setup.sh がない）ので焦りましたが、</p>
+
+<blockquote><p>@saltpp (Tomoki Shiono)</p>
+
+<p>build/host-setup.sh が無くなって、アプリのトップディレクトリで、ndk-build コマンドを実行すれば、ビルドできるようになってるね。>NDKr4</p>
+
+<p>5月21日 TweetDeckから</p></blockquote>
+
+<p>とのだったので、</p>
+
+<blockquote><p>$ sh ndk-build</p></blockquote>
+
+<p>を実行しました。</p>
+
+<p>…がエラーが出ました。</p>
+
+<blockquote><p>$ sh ndk-build
+Android NDK: Could not find application project directory !
+Android NDK: Please define the NDK_PROJECT_PATH variable to point to it.
+/home/h_oku/android-ndk-r4b/build/core/build-local.mk:85: ***
+Android NDK: Aborting    .  Stop.</p></blockquote>
+
+<p>NDK_PROJECT_PATH を定義しろ、といってるようだったので、 HOME と同じように環境変数に 「/home/h_oku/project」 と定義しました。</p>
+
+<h2>サンプルを NDK でビルド</h2>
+
+<p><a href="http://developer.android.com/sdk/ndk/index.html">Android NDK | Android Developers</a> の</p>
+
+<p>Getting Started with the NDK</p>
+
+<p>に</p>
+
+<blockquote><ol>
+<li>Place your native sources under /jni/…</li>
+<li>Create /jni/Android.mk to describe your native sources to the NDK build system</li>
+<li>Optional: Create /jni/Application.mk.</li>
+</ol>
+</blockquote>
+
+<p>とあったので、</p>
+
+<blockquote><p>C:\cygwin\home\h_oku\android-ndk-r4b\samples\hello-jni</p></blockquote>
+
+<p>のフォルダとファイルを</p>
+
+<blockquote><p>C:\cygwin\home\h_okuyama\project</p></blockquote>
+
+<p>にコピーしました。</p>
+
+<p>次に、</p>
+
+<blockquote><p>Build your native code by running the ‘ndk-build’ script from your projet’s directory. It is located in the top-level NDK directory: $ cd $ /ndk-build</p></blockquote>
+
+<p>とあったので、</p>
+
+<blockquote><p>C:\cygwin\home\h_oku\project</p></blockquote>
+
+<p>に CD で移動し、</p>
+
+<blockquote><p>C:\cygwin\home\h_oku\android-ndk-r4b\ndk-build</p></blockquote>
+
+<p>を実行しました。怒られました。</p>
+
+<blockquote><p>C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build</p></blockquote>
+
+<p>でうまくいきました（\ と / が違ってました）。</p>
+
+<p>こんな感じの出力がされました。</p>
+
+<blockquote><p>$ C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build
+Compile thumb  : hello-jni &lt;= /home/h_oku/project/jni/hello-jni.c
+SharedLibrary  : libhello-jni.so
+Install        : libhello-jni.so => /home/h_oku/project/libs/armeabi
+そして、おお！</p>
+
+<p>C:\cygwin\home\h_oku\project\libs</p></blockquote>
+
+<p>とか</p>
+
+<blockquote><p>C:\cygwin\home\h_oku\project\obj</p></blockquote>
+
+<p>ができている！</p>
+
+<h2>Eclipse でビルド。そしてアプリの実行</h2>
+
+<p>再び <a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> に戻り、 Eclipse で Android Project を作成し、既存の project フォルダを指定しました。</p>
+
+<p>プロジェクト名やビルド・ターゲットが自動で設定されましたが、Android 2.2 がチェックされ、上部に</p>
+
+<blockquote><p>The API level for the selected SDK target does not match the Min SDK Version.</p></blockquote>
+
+<p>と警告が出ています。とりあえず無視して完了しました。</p>
+
+<p>プロジェクトをビルド→実行し、Android 2.2 のエミュレータ上で動作を確認することができました。</p>
+
+<p>NDK 側のソースを修正したら、Cygwin で、</p>
+
+<blockquote><p>CD C:\cygwin\home\h_oku\project
+C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build</p></blockquote>
+
+<p>として、C:\cygwin\home\h_oku\project\libs\armeabi\libhello-jni.so を再作成し、Eclipse 側で F5 を押して読み込みなおして実行しなおせば反映されます。</p>
+
+<p>※ちなみに全角文字を表示しようとしたら落ちました…orz</p>
+]]></content>
+  </entry>
+  
+</feed>

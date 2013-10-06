@@ -1,0 +1,874 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/"/>
+    <updated>2013-09-29T21:16:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/29/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes</id>
+    <content type="html"><![CDATA[<p>Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://tryworks-design.com/?p=1530">Android GooglMapを使い、現在値と目的地を（２点間）を表示させる。 | App Camp</a></li>
+</ul>
+
+
+<p>その理由と、対策を記録しておきます。</p>
+
+<h2>エラーになるコード</h2>
+
+<p>GoogleMap v2 を使ったよくあるコード。</p>
+
+<p>```java MainActivity.java
+@Override
+protected void onCreate(Bundle savedInstanceState) {</p>
+
+<pre><code>super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_main);
+
+SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
+        .findFragmentById(R.id.map));
+GoogleMap gmap = fragment.getMap();
+
+LatLngBounds bounds = LatLngBounds.builder()
+    .include(new LatLng(35.4433011,139.646108)) // 横浜
+    .include(new LatLng(35.6846001,139.696919)) // 東京
+    .build();
+
+gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>起動時に、横浜-東京 が画面内に入るようにズームする、つもりのコード。</p>
+
+<p>これは以下のエラーになる。</p>
+
+<blockquote><p>09-29 20:22:58.508: E/AndroidRuntime(18904): FATAL EXCEPTION: main<br/>
+09-29 20:22:58.508: E/AndroidRuntime(18904): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.amay077.<br/>android/com.amay077.android.mapsample.view.MainActivity}: java.lang.IllegalStateException: Map size should not be 0. Most likely, layout has not yet occured for the map view.</p></blockquote>
+
+<h2>エラーの原因</h2>
+
+<p>StackOverflow さまに載ってた。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/13692579/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes">android - moveCamera with CameraUpdateFactory.newLatLngBounds crashes - Stack Overflow</a></li>
+</ul>
+
+
+<p>また、<a href="https://developers.google.com/maps/documentation/android/views#changing_camera_position">APIリファレンス</a> にも次のように記載がある。</p>
+
+<blockquote><p>Note: Only use the simpler method newLatLngBounds(boundary, padding) to generate a CameraUpdate if it is going to be used to move the camera after the map has undergone layout. During layout, the API calculates the display boundaries of the map which are needed to correctly project the bounding box. In comparison, you can use the CameraUpdate returned by the more complex method newLatLngBounds(boundary, width, height, padding) at any time, even before the map has undergone layout, because the API calculates the display boundaries from the arguments that you pass.</p></blockquote>
+
+<p>意訳すると <code>newLatLngBounds(boundary, padding)</code> は、レイアウトが完了した後で使ってね、そうでない場合は、<code>newLatLngBounds(boundary, width, height, padding)</code> を使ってね。ということらしい。</p>
+
+<p>確かに <code>onCreate</code> ではまだレイアウトされていないので納得。</p>
+
+<h2>対策</h2>
+
+<p>上の StackOverflow でも解決策として、<code>ViewTreeObserver.addOnGlobalLayoutListener</code> を使って、レイアウトが完了したタイミングで moveCamera する方法が紹介されているが、もうちっとシンプルにできないかなと思っていたところ、ちょうど別件で「ビューのサイズが確定(して Width/Height が取得できる)タイミング」を調べていて、同じく StackOverflow で以下の情報を発見。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view/15301092#15301092">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+
+
+<p>これによると <code>view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
+
+<p>```java MainActivity.java
+@Override
+protected void onCreate(Bundle savedInstanceState) {</p>
+
+<pre><code>super.onCreate(savedInstanceState);
+setContentView(R.layout.activity_main);
+
+SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
+        .findFragmentById(R.id.map));
+final GoogleMap gmap = fragment.getMap();
+
+// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった
+fragment.getView().post(new Runnable() {
+    @Override
+    public void run() {
+        LatLngBounds bounds = LatLngBounds.builder()
+                .include(new LatLng(35.4433011,139.646108)) // 横浜
+                .include(new LatLng(35.6846001,139.696919)) // 東京
+                .build();
+
+        gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15));
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<p>としたところ、正常に地図がズームされました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
+
+<p>ちなみに、処理をメインスレッド上で行う <code>Activity.runOnUiThread</code> や <code>Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
+
+<p>起動時の処理は、全ての View で post 内に書いておいた方がいいのかも。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[自作ビューで layout_width のマネをしたい時]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view/"/>
+    <updated>2013-09-26T23:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/26/layout-widh-like-property-in-custom-view</id>
+    <content type="html"><![CDATA[<p><code>android:layout_width</code> って、型は <code>dimension</code> であるのに、Layout XML には、 <code>"match_parent"</code> とか <code>"wrap_content"</code> とか指定できる。これと同じことを自作ビューの自作プロパティでやりたい。</p>
+
+<!--more-->
+
+
+<p>自作ビュー(カスタムビュー)の作りかたは下などを参照。</p>
+
+<ul>
+<li><a href="http://techbooster.org/android/application/7361/">Androidでxmlファイルを用いてカスタムViewを作る方法 | Tech Booster</a></li>
+</ul>
+
+
+<p>で、<code>android:layout_width</code> のマネをするには、 attrs.xml に以下のように書く。</p>
+
+<p>```xml attrs.xml
+&lt;?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="MyCustomView"></p>
+
+<pre><code>&lt;attr name="my_width" format="dimension"&gt;
+  &lt;enum name="fill_parent" value="-1" /&gt;
+  &lt;enum name="match_parent" value="-1" /&gt;
+  &lt;enum name="wrap_content" value="-2" /&gt;
+&lt;/attr&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+</resources>
+```</p>
+
+<p>Android Framework のソースコードにこう書いてあったので、真似しただけ。</p>
+
+<ul>
+<li><a href="http://grepcode.com/file/repository.grepcode.com/java/ext/com.google.android/android/4.3_r2.1/frameworks/base/core/res/res/values/attrs.xml">GrepCode: frameworks / base / core / res / res / values / attrs.xml - Source Code View</a></li>
+</ul>
+
+
+<p>自作ビューの実装クラスで、この値を読み込む時は、<code>TypedArray.getLayoutDimension</code> を使う。</p>
+
+<p>```java MyCustomView.java
+public MyCustomView(Context context, AttributeSet attrs) {</p>
+
+<pre><code>super(context, attrs);
+
+TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.MyCustomView, 0, 0);
+
+_myWidth = a.getLayoutDimension(R.styleable.MyCustomView_my_width, 
+        LayoutParams.WRAP_CONTENT);
+
+a.recycle();
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Android Framework 側で仕様が増えた時は、追従しないといかんのかー。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[スレッドの優先度について調べた]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority/"/>
+    <updated>2013-09-04T22:22:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/04/understanding-android-thread-priority</id>
+    <content type="html"><![CDATA[<p>Android にも(Java ですから)スレッドの優先度ってありますけど、それちゃんと動きますよね？というのを ExecurorService を使って調べた。</p>
+
+<!--more-->
+
+
+<h2>ThreadFactory の拡張</h2>
+
+<p><code>ExecutorService</code> が作るスレッドは、何もしないと 優先度:中 になる模様。
+これを変更するには、生成時(<code>newSingleThreadExecutor</code>) に渡す <code>ThreadFactory</code> を自前で実装して、<code>Thread.setPriority</code> してやる。</p>
+
+<p><code>ThreadFactory</code> を Implements したクラス作ってもいいけど、そこまでやる必要も無いでしょ。</p>
+
+<p>```java
+// 指定した Priority の ThreadFactory を生成して返す
+private ThreadFactory makeThreadFactory(final int priority) {</p>
+
+<pre><code>return new ThreadFactory() {
+
+    @Override
+    public Thread newThread(Runnable r) {
+        Thread thread = new Thread(r);
+        thread.setPriority(priority);
+        return thread;
+    }
+};
+</code></pre>
+
+<p>}</p>
+
+<p>// 使ってみる
+private void testExecutor() {</p>
+
+<pre><code>final ExecutorService executor = 
+    Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MIN_PRIORITY));
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        // なにかの処理
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>優先度が考慮されるかの検証</h2>
+
+<p>設定した Priority が正しく機能するのか試してみた。</p>
+
+<h3>検証方法</h3>
+
+<ul>
+<li>MIN, NORMAL, MAX の優先度を設定をした、SingleThread な Executor を1つずつ、計３つ生成。</li>
+<li>３つの Executor に、タスクをじゃんじゃん投入(submit)する。</li>
+<li>タスクの処理が開始された所をログ出力して、その順番を調べる。</li>
+</ul>
+
+
+<h3>検証コード</h3>
+
+<p>上を実装したのがこれ。<code>CountDownLatch</code> で待ち合わせするのがなんだかなぁって感じだがまあいいや。</p>
+
+<p>```java
+private ThreadFactory makeThreadFactory(final int priority) {</p>
+
+<pre><code>// 上と同じなので省略
+</code></pre>
+
+<p>}</p>
+
+<p>// タスクを生成する
+private Runnable makeTask(final String tag, final StringBuffer buffer,</p>
+
+<pre><code>    final CountDownLatch latch) {
+return new Runnable() {
+    @Override
+    public void run() {
+        // タスクが開始された時に、A or B or C を追加してく
+        buffer.append(tag); // StringBuffer は Thread-safe なハズだ
+
+        // Wait
+        for (int j = 0; j &lt; 1000000; j++) { } 
+
+        latch.countDown();
+    }
+};
+</code></pre>
+
+<p>}</p>
+
+<p>// 検証実行
+public void testThreadPriority() throws InterruptedException {</p>
+
+<pre><code>// MIN, NORMAL, MAX な Priority の Executor を生成
+final ExecutorService minExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MIN_PRIORITY));
+final ExecutorService norExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.NORM_PRIORITY));
+final ExecutorService maxExecutor = 
+        Executors.newSingleThreadExecutor(makeThreadFactory(Thread.MAX_PRIORITY));
+
+final CountDownLatch latch = new CountDownLatch(100 * 3);
+final StringBuffer builder = new StringBuffer();
+
+// それぞれの Executor にじゃんじゃんタスクを投入
+for (int i = 0; i &lt; 100; i++) {
+    minExecutor.submit(makeTask("C", builder, latch)); // MIN-&gt;"C"
+    norExecutor.submit(makeTask("B", builder, latch)); // NORMAL-&gt;"B"
+    maxExecutor.submit(makeTask("A", builder, latch)); // MAX-&gt;"A"
+}
+
+// 全部のタスクが終わるのを待つ
+latch.await();
+Log.d(TAG, builder.toString()); // タスクが処理された順番を出力
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>検証結果(HTC J)</h3>
+
+<h4>1回目</h4>
+
+<blockquote><p>BAACAAABABABABABABABABABABABABABABABABACACACACBAABABABABABAB
+ABABABABABABACBAABABABABABABABAABBABABABABABAABABABABABABABA
+BABABABAABABABABABABABABABABABAABABABABABABABABABABABABABABA
+BABABABABABABABCBBBBCBBCBCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>2回目</h4>
+
+<blockquote><p>CBACABAABABABABABABAABABABABABABABABABACBABABABAABABBABABABA
+ABABABABABABABABABABABABABABABABABABABABABABABABABABAABABABA
+BABABABABBABAABABABABABABABABABABABABABABABABABCABABABABABAB
+ABABABABABABAABABABBCBCBBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<h4>3回目</h4>
+
+<blockquote><p>BAACAABABABAABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABABABABABABABABABABABABABABABABABAB
+ABABABABABABABABABABABABABACBABABABABABABABABABABABABABABABA
+BABABABAABABABABABCBBCBCBCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
+CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC</p></blockquote>
+
+<p>"C"(優先度:MIN) のタスクが後ろの方に追いやられているのが分かる。
+"A"(MAX) と "B"(NORMAL) の差ははっきりとはわからないが、それでも "A" の方が先に全部終わっているので優先されているのがなんとか分かる。</p>
+
+<h2>まとめ</h2>
+
+<p>優先度の変更、ちゃんと効果あるんですね。</p>
+
+<p>よく調べると Android には <code>android.os.Process.setThreadPriority()</code> というのもあるそうで。</p>
+
+<ul>
+<li><a href="http://mikanbako.blog.shinobi.jp/android/android.os.process.setthreadpriority--%E3%81%A8java.lang.thread.setpriority--%E3%81%AE%E5%8A%B9%E6%9E%9C%E3%81%AF%E5%90%8C%E3%81%98">android.os.Process.setThreadPriority()とjava.lang.Thread.setPriority()の効果は同じ - みかん箱</a></li>
+</ul>
+
+
+<blockquote><p>結果、両者の効果は同じです。ただし、android.os.Processではスレッドの優先度が用途ごとに定数として定義されているため、まずandroid.os.Process.setThreadPriority()の使用を検討すべきでしょう。</p></blockquote>
+
+<p>とのこと。確かに <code>THREAD_PRIORITY_FOREGROUND</code>, <code>THREAD_PRIORITY_AUDIO</code>, <code>THREAD_PRIORITY_LOWEST</code> などが定義されているので、こちらを使った方が良さげですね。
+個人的には、Java の API でできる事はその範囲で閉じてしまいたいのですがね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[ExecutorService の復習]]></title>
+    <link href="http://amay077.github.io/blog/2013/09/01/re-studying-executorservice/"/>
+    <updated>2013-09-01T19:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/09/01/re-studying-executorservice</id>
+    <content type="html"><![CDATA[<p>Android で非同期処理っていうと、真っ先に <code>AsyncTask</code> が出てくるんですが、なるべくなら Java 標準のマルチスレッドAPI である ExecutorService を使った方が良いと思ってます。</p>
+
+<!--more-->
+
+
+<ul>
+<li>(2007年の記事だけど) <a href="http://itpro.nikkeibp.co.jp/article/COLUMN/20071001/283395/">Java技術最前線 - 「Java SE 6完全攻略」第49回 Concurrency Utilitiesの変更点 その1：ITpro</a></li>
+</ul>
+
+
+<p>Android で初めて Java を書いたので細かい仕様がよく分からず、勉強がてら動きを確認してみました。</p>
+
+<h2>1. 1つのワーカスレッドに実行させる</h2>
+
+<p><code>newSingleThreadExecutor</code> でワーカスレッドを一つ持つ Executor を生成して、2つのタスク(=非同期で実行させる処理)を順に実行。</p>
+
+<p>```java
+public void singleThreadExecutorBasicTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:18:12.891: D/ExecutorTest(391): Primary ThreadID:4943<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task A. ThreadId:4944<br/>
+08-29 17:18:12.891: D/ExecutorTest(391): Run task B. ThreadId:4944<br/></p></blockquote>
+
+<p>A→B の順で（=submit した順で）実行される。
+Primary と task で ThreadID が異なる、2つの task は同じ ThreadID であることに注目。</p>
+
+<h2>2. 最初のタスクに時間がかかったら？</h2>
+
+<p>タスクA の実行に時間がかかる場合、タスクB はどうなる？</p>
+
+<p>```java
+public void singleThreadExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newSingleThreadExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:22:04.288: D/ExecutorTest(1511): Primary ThreadID:5063<br/>
+08-29 17:22:04.288: D/ExecutorTest(1511): Run task A start. ThreadId:5064<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task A end.<br/>
+08-29 17:22:07.291: D/ExecutorTest(1511): Run task B. ThreadId:5064<br/></p></blockquote>
+
+<p>A→B の順で実行される。シングルスレッドなので、並列に処理されることはない。</p>
+
+<h2>3. ThreadPoolExecutor を使ったら？</h2>
+
+<p><code>Executors.newSingleThreadExecutor()</code> の代わりに <code>Executors.newFixedThreadPool(2)</code> としてみる。これによりワーカスレッドを2つ使う Execurot が生成される。</p>
+
+<p>```java
+public void threadPoolExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ExecutorService executor = Executors.newFixedThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(3000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+});
+
+executor.submit(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:29:01.731: D/ExecutorTest(3017): Primary ThreadID:5255<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task A start. ThreadId:5256<br/>
+08-29 17:29:01.731: D/ExecutorTest(3017): Run task B. ThreadId:5257<br/>
+08-29 17:29:04.725: D/ExecutorTest(3017): Run task A end.<br/></p></blockquote>
+
+<p>タスクA と タスクB で ThreadID が異なる事に注目。
+スレッドが２つ使えるので、タスクA の終了を<strong>待たず</strong>にタスクB が実行される。というか、タスクA から始まる保証もない。</p>
+
+<h2>3. SingleThreadScheduledExecutor を使ってみる</h2>
+
+<p>話題を変えて、タスクの実行時間を制御できる Scheduled系 の Executor を使ってみる。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:36:16.125: D/ExecutorTest(3547): Primary ThreadID:5285<br/>
+08-29 17:36:19.128: D/ExecutorTest(3547): Run task B. ThreadId:5286<br/>
+08-29 17:36:21.130: D/ExecutorTest(3547): Run task A. ThreadId:5286<br/></p></blockquote>
+
+<p>開始から3秒後にタスクBが、開始から5秒後にタスクAが実行される。
+submit した順は関係ないことに注意。</p>
+
+<h2>4. スケジュールされた時間に別のタスクが実行中だったら？</h2>
+
+<p>3秒後に実行されるタスクBの処理が終わらない時、5秒後に実行されるタスクAはどうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:44:18.139: D/ExecutorTest(4737): Primary ThreadID:5456<br/>
+08-29 17:44:21.142: D/ExecutorTest(4737): Run task B start. ThreadId:5457<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task B end.<br/>
+08-29 17:44:31.143: D/ExecutorTest(4737): Run task A. ThreadId:5457<br/></p></blockquote>
+
+<p>5秒後とスケジュールされたタスクAだが、タスクB が終わるまで待たされる。シングルスレッドなので。</p>
+
+<h2>5. そこで ScheduledThreadPoolExecutor を使ってみる</h2>
+
+<p><code>Executors.newSingleThreadScheduledExecutor()</code> の代わりに <code>Executors.newScheduledThreadPool(2)</code> としてみる。</p>
+
+<p>```java
+public void threadPoolScheduledExecutorHeavyWorkTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, TimeUnit.SECONDS);
+
+executor.schedule(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task B start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } catch (InterruptedException e) { } 
+
+        Log.d(TAG, "Run task B end.");
+    }
+}, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<blockquote><p>08-29 17:48:28.536: D/ExecutorTest(5439): Primary ThreadID:5558<br/>
+08-29 17:48:31.550: D/ExecutorTest(5439): Run task B start. ThreadId:5559<br/>
+08-29 17:48:<strong>33</strong>.542: D/ExecutorTest(5439): Run task A. ThreadId:5560<br/>
+08-29 17:48:41.550: D/ExecutorTest(5439): Run task B end.<br/></p></blockquote>
+
+<p>スレッドが２つ使えるので、タスクA は、スケジュール通り（タスクBの終了を待たずに submit してから5秒後に実行される。</p>
+
+<h2>6. Scheduled系Executor の Timer 的機能を使ってみる</h2>
+
+<p><code>schedule()</code> は、一発だけ(Javascript の <code>setTimeout</code> みたいな)、繰り返し処理するには、<code>scheduleAtFixedRate</code> か <code>scheduleWithFixedDelay</code> を使う。
+まずは <code>scheduleAtFixedRate</code> から。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerBasicTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor. scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 17:59:33.556: D/ExecutorTest(7228): Primary ThreadID:5795<br/>
+08-29 17:59:38.561: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:41.565: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+08-29 17:59:44.568: D/ExecutorTest(7228): Run task A. ThreadId:5796<br/>
+…</p></blockquote>
+
+<p>最初は５秒、その後は３秒毎にタスクAが実行される。</p>
+
+<h2>7. 繰り返し実行されるタスクが重かったら？</h2>
+
+<p>繰り返しは３秒だけど、タスクAの実行に１０秒かかったら、どうなる？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorTimerHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:15:49.397: D/ExecutorTest(10157): Primary ThreadID:6188<br/>
+08-29 18:15:54.413: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:04.403: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A end.<br/>
+08-29 18:16:14.404: D/ExecutorTest(10157): Run task A start. ThreadId:6189<br/>
+08-29 18:16:24.405: D/ExecutorTest(10157): Run task A end.<br/>
+…</p></blockquote>
+
+<p>３秒置きに設定しているが、タスクAが終わらないので、終わったら<strong>すぐに</strong>、次のタスクを実行する。</p>
+
+<h2>8. scheduleWithFixedDelay ではどうなる？</h2>
+
+<p><code>scheduleAtFixedRate</code> の代わりに <code>scheduleWithFixedDelay</code> にしてみた。</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleWithFixedDelay(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A. ThreadId:" + Thread.currentThread().getId());
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 18:22:37.183: D/ExecutorTest(10663): Primary ThreadID:6245<br/>
+08-29 18:22:42.178: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:22:52.179: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:22:<strong>55</strong>.182: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+08-29 18:23:05.182: D/ExecutorTest(10663): Run task A end.<br/>
+08-29 18:23:08.176: D/ExecutorTest(10663): Run task A start. ThreadId:6246<br/>
+…</p></blockquote>
+
+<p>タスクAが終わって、<strong>さらに３秒待って</strong>、次のタスクを実行する。
+<code>FixedDelay</code> は、前回のタスクが終わってからｎ秒待つ。
+<code>FixedRate</code> は、の終了を待たずにｎ秒置きに実行するが、終わってない場合は仕方がないので終わるまで待つ、という感じらしい。</p>
+
+<h2>9. ScheduledThreadPoolExecutor ではどうか？</h2>
+
+<p>ScheduledThreadPoolExecutor  と <code>scheduleAtFixedRate</code> の組み合わせではどうか？</p>
+
+<p>```java
+public void singleThreadScheduledExecutorFixedDelayHeavyTest() throws Exception {</p>
+
+<pre><code>final ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+
+Log.d(TAG, "Primary ThreadID:" + Thread.currentThread().getId());
+executor.scheduleAtFixedRate(new Runnable() {
+    @Override
+    public void run() {
+        Log.d(TAG, "Run task A start. ThreadId:" + Thread.currentThread().getId());
+
+        // Wait
+        try { Thread.sleep(10000); } 
+        catch (InterruptedException e) { Log.w(TAG, "Interrupted task A. ThreadId:" + Thread.currentThread().getId()); } 
+
+        Log.d(TAG, "Run task A end.");
+    }
+}, 5, 3, TimeUnit.SECONDS);
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>出力</h3>
+
+<blockquote><p>08-29 19:09:39.707: D/ExecutorTest(14173): Primary ThreadID:6605<br/>
+08-29 19:09:44.712: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:09:54.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:04.713: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:14.714: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A end.<br/>
+08-29 19:10:24.705: D/ExecutorTest(14173): Run task A start. ThreadId:6606<br/>
+08-29 19:10:34.705: D/ExecutorTest(14173): Run task A end.<br/>
+…</p></blockquote>
+
+<p>あれ？２つのスレッドを使ってくれない。を登録した時点でスレッドは決まってるということかな。</p>
+
+<h2>まとめ</h2>
+
+<p>「タスクが実行されるスレッド」を意識すればハマることはなさそう。</p>
+
+<p>シングルスレッドの場合は、<code>submit</code> あるいは <code>schedule</code> されたタスクは、一つのスレッドで順次処理される。スレッドプールを使っている場合は、スレッドの数だけ並列処理される。
+ただし、<code>scheduleAtFixedRate</code> など繰り返し処理では、登録時にスレッドが決まるので、タスクの実行に時間がかかっても並列処理されない。</p>
+
+<p><code>scheduleAtFixedRate</code> や <code>scheduleWithFixedDelay</code> はタイマー的な動きをするが、タスクの処理に時間がかかる場合は、意図した時間間隔で実行されない。タイマーとして使いたければ、Executor を２つ用意し、一つはタイマー専用、もうひとつをタスク実行専用とした方が良さそう。</p>
+
+<p>長くなってしまったので、タスクのキャンセルとか、Terminate 系は別の機会に。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[SDカードのファイルI/Oパフォーマンス計測]]></title>
+    <link href="http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io/"/>
+    <updated>2013-08-29T20:43:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io</id>
+    <content type="html"><![CDATA[<p>端末とか SDカード の種類とかで大きく違うんでしょうけど、自分の端末で調べたのでメモ。</p>
+
+<!--more-->
+
+
+<ul>
+<li>機種: au HTC J(ISW13HT)</li>
+<li>SDカード: 最初から付いてたやつ</li>
+</ul>
+
+
+<h2>計測項目</h2>
+
+<ul>
+<li>Create - テキストファイルの生成</li>
+<li>List - ディレクトリ内の全ファイルの列挙</li>
+<li>Rename - ファイル名の変更</li>
+<li>Delete - ファイルを1つずつ削除</li>
+<li>DelDir - 親ディレクトリを削除</li>
+</ul>
+
+
+<h2>計測方法</h2>
+
+<ul>
+<li>ディレクトリ内にファイルを 100個、1000個、10000個作成した時のそれぞれで計測。</li>
+<li>それぞれの計測は5回行った平均値。</li>
+<li>計測に使ったコードは<a href="https://gist.github.com/amay077/6374470">こちら</a></li>
+</ul>
+
+
+<h2>計測結果</h2>
+
+<table>
+<thead>
+<tr>
+<th align="right">ファイル数</th>
+<th align="right">Create</th>
+<th align="right">List</th>
+<th align="right">Rename</th>
+<th align="right">Delete</th>
+<th align="right">DelDir</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="right">100</td>
+<td align="right">1,606ms</td>
+<td align="right">939ms</td>
+<td align="right">1,664ms</td>
+<td align="right">2,792ms</td>
+<td align="right">1ms未満</td>
+</tr>
+<tr>
+<td align="right">1,000</td>
+<td align="right">15,527ms</td>
+<td align="right">950ms</td>
+<td align="right">17,359ms</td>
+<td align="right">27,057ms</td>
+<td align="right">6ms</td>
+</tr>
+<tr>
+<td align="right">10,000</td>
+<td align="right">227,236ms</td>
+<td align="right">1,003ms</td>
+<td align="right">254,338ms</td>
+<td align="right">191,631ms</td>
+<td align="right">69ms</td>
+</tr>
+</tbody>
+</table>
+
+
+<h2>まとめ</h2>
+
+<ul>
+<li>Create と Rename はファイル100個で約1.5秒、Delete は約×2 の時間がかかる。</li>
+<li>List はファイル数にあまり影響されない。</li>
+<li>DelDir は超早い。</li>
+<li>CPU 使用率は 40〜60% だった。</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件 - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,C#,GoogleMapsAPI,Xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/08/03/gmapv2-from-xamarin-component">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-08-03T15:29:00+09:00" pubdate data-updated="true">Aug 3<span>rd</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/googlemapsapi/'>GoogleMapsAPI</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>Xamarin Components に「Google Play Services」が追加されまして。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://blog.xamarin.com/introducing-the-google-play-services-component-for-xamarin-android/">Introducing the Google Play Services Component for Xamarin.Android | Xamarin Blog</a></li>
+</ul>
+
+
+<p>これが何を意味するかと言うと、これまで Google Play Service を利用するには、ライブラリプロジェクトを作って、アプリから参照するという煩わしい手順が必要でした。</p>
+
+<p>で、これは Android-Eclipse でも同じく面倒だったわけですが、Xamarin.Android  に新しく提供されるこのコンポーネントを使えば、その手間を省くことができます。この点で Eclipse での開発より簡単になりました。</p>
+
+<p>実際に、Play Services の一つである Google Map Android API v2 を使うアプリを作る手順を書いてみます。</p>
+
+<h2>手順</h2>
+
+<h3>1. Google API Console から API key を取得する</h3>
+
+<p>この手順は、これまでと変わらないので、以下のサイトなどを参考にしてください。
+package名が必要になるので、先に決めておきましょう。
+ここでは <code>com.amay077.sample.googlemapv2sample</code> とします。</p>
+
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+
+
+<p>取得して API key はメモっておきます。</p>
+
+<h3>2. プロジェクト/ソリューションを作る</h3>
+
+<p>Xamarin Studio を起動します。
+ここでは Ice Cream Sandwich 用に作ります。(Android Application の方だと Support Library が要るので少し手順が増えるはず)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_01.png" alt="img" /></p>
+
+<h3>3. プロジェクトに「Google Play Service」コンポーネントを追加する</h3>
+
+<p>メニュー → プロジェクト → Get More Components から、、、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_03.png" alt="img" /></p>
+
+<p>Google Play Services を検索して Add to App します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_04.png" alt="img" /></p>
+
+<p>すると、プロジェクトに Google Play Services が追加されます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_05.png" alt="img" /></p>
+
+<p>ここで一度、Xamarin Studio を再起動しておいた方が無難です。
+このまま継続したら、追加されたアセンブリがうまく読み込まれてない場合がありました。</p>
+
+<h3>4. 実装する</h3>
+
+<p><code>MainActivity.cs</code> は、最初の内容をごっそり削除して以下のようにします。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.OS</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">GoogleMapV2Sample</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [Activity (Label = &quot;GoogleMapV2Sample&quot;, MainLauncher = true)]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
+</span><span class='line'>            <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>画面定義である <code>Main.axml</code> も以下のように置き換えます。</p>
+
+<figure class='code'><figcaption><span>Resources/layout/Main.axml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;fragment</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">android:id=</span><span class="s">&quot;@+id/map&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>    <span class="na">class=</span><span class="s">&quot;com.google.android.gms.maps.MapFragment&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>5. AndroidManifest.xml への設定いろいろ</h3>
+
+<p>たぶん一番面倒なところです。</p>
+
+<p>まず Xamarin.Android では、最初は AndroidManifest.xml が生成されていないので、メニュー → プロジェクト → xxx のオプション から、下図のように [Add Android manifest] します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_06.png" alt="img" /></p>
+
+<p>次に作成された AndroidManifest.xml を開いて、以下のようにします。</p>
+
+<p>※1 のところは、最初に決めた Package名に、※2 の時は、先に取得しておいた API key に置き換えてください。</p>
+
+<figure class='code'><figcaption><span>Properties/AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>  <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
+</span><span class='line'>  <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span>
+</span><span class='line'>  <span class="na">package=</span><span class="s">&quot;com.amay077.sample.googlemapv2sample&quot;</span><span class="nt">&gt;</span>  <span class="nt">&lt;--------</span><span class="err">※1</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>  <span class="err">&lt;uses-feature</span> <span class="na">android:glEsVersion=</span><span class="s">&quot;0x00020000&quot;</span> <span class="na">android:required=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.INTERNET&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;com.google.android.providers.gsf.permission.READ_GSERVICES&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_NETWORK_STATE&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_COARSE_LOCATION&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_FINE_LOCATION&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;uses-permission</span>
+</span><span class='line'>      <span class="na">android:name=</span><span class="s">&quot;com.amay077.sample.playservicesample.permission.MAPS_RECEIVE&quot;</span> <span class="nt">/&gt;</span>   <span class="nt">&lt;--------</span><span class="err">※1</span>
+</span><span class='line'>  <span class="err">&lt;permission</span>
+</span><span class='line'>      <span class="na">android:name=</span><span class="s">&quot;com.amay077.sample.playservicesample.permission.MAPS_RECEIVE&quot;</span>   <span class="err">&lt;--------※1</span>
+</span><span class='line'>      <span class="na">android:protectionLevel=</span><span class="s">&quot;signature&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nt">&lt;application</span> <span class="na">android:label=</span><span class="s">&quot;GoogleMapV2Sample&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>      <span class="nt">&lt;meta-data</span>
+</span><span class='line'>          <span class="na">android:name=</span><span class="s">&quot;com.google.android.maps.v2.API_KEY&quot;</span>
+</span><span class='line'>          <span class="na">android:value=</span><span class="s">&quot;AIzaByD1jiFER3le_HFrkOrEhaNIsemoNoDesuU&quot;</span> <span class="nt">/&gt;</span>  <span class="nt">&lt;--------</span><span class="err">※2</span>
+</span><span class='line'>  <span class="err">&lt;/application</span><span class="nt">&gt;</span>
+</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>6. 動かす</h3>
+
+<p>設定が正しくできていれば、地図が表示されるはずです。
+アプリが落ちるなら Main.cs や Main.axml が、地図が表示されないなら AndroidManifest.xml や Google API Console での設定が間違っていると思います。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_07.png" alt="img" /></p>
+
+<h2>まとめなど</h2>
+
+<p>Google Play Service コンポーネントを使うことでライブラリプロジェクトをなくす事ができました。慣れた人にはどうってこと無い話ですが、説明する人には面倒で、始めて行う人には混乱の元になってたと思います。</p>
+
+<p>もう一つ特筆すべきは、このコンポーネントを Google 自身が開発、提供していることです。</p>
+
+<p>これだけでなく、<a href="http://components.xamarin.com/view/googlemapsios/">Google Map SDK for iOS</a> や <a href="http://components.xamarin.com/view/googleadmob/">Admob 用のコンポーネント</a>も Google 自身が提供しています。</p>
+
+<p>また Microsoft も <a href="http://components.xamarin.com/view/azure-mobile-services/">Azure Mobile Service</a> を自身が提供していますし、なんなんでしょうこのプラットフォーマーの Xamarin への参入ぶりは。</p>
+
+<p>このように本家が開発していることにより、信頼性、機能網羅性、新機能への追従などがとても充実しており、安心して使うことができます。</p>
+
+<p>最後に、</p>
+
+<blockquote class="twitter-tweet"><p>おおおお、すげえ！これでめんどいビルド手順必要なくなった！Google++！でも、Gmaps iOSの1.4アップデートと、Retina対応のため128dpタイルへの対応もしてください…。 / “Google Play Servi…” <a href="http://t.co/mjnN7sE0t7">http://t.co/mjnN7sE0t7</a></p>&mdash; Кочизуфан (@kochizufan) <a href="https://twitter.com/kochizufan/statuses/363116371351052290">August 2, 2013</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>とのことなのでよろしくおねがいします。</p>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <div class="addthis_toolbox addthis_default_style ">
+  
+  <a class="addthis_button_facebook_like" fb:like:layout="button_count"></a>
+  
+  
+  <a class="addthis_button_tweet"></a>
+  
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/07/30/online-site-builder-reviews/" title="Previous Post: Web サイトがサクッと作れて公開できちゃう系サービスまとめ">&lt; Web サイトがサクッと作れて公開できちゃう系サービスまとめ</a>
+          
+          
+            <a class="basic-alignment right" href="/blog/2013/08/06/parse-markdown-using-markedjs/" title="Next Post: Marked.js で Markdown をクライアント側でパースして表示する">Marked.js で Markdown をクライアント側でパースして表示する &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

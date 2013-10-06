@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: Node.js | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/node-js/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2013-10-06T20:30:32+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[ディレクトリを再帰的にたどってファイル一覧を出力する]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs/"/>
+    <updated>2013-10-02T19:20:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/02/enum-files-recursive-on-nodejs</id>
+    <content type="html"><![CDATA[<p><a href="https://twitter.com/_shimizu">@_shimizu</a> さんの</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://shimz.me/blog/node-js/2944">[node.js]ディレクトリを再帰的にたどってファイル一覧をJSONとして出力する | GUNMA GIS GEEK</a></li>
+</ul>
+
+
+<p>の派生品です。ファイルパスを出力するだけにしました。</p>
+
+<p>```js enumFilesRecursive.js
+var fs = require("fs")</p>
+
+<pre><code>, path = require("path")
+, dir = process.argv[2] || '.'; //引数が無いときはカレントディレクトリを対象とする
+</code></pre>
+
+<p>var walk = function(p, fileCallback, errCallback) {</p>
+
+<pre><code>fs.readdir(p, function(err, files) {
+    if (err) {
+        errCallback(err);
+        return;
+    }
+
+    files.forEach(function(f) {
+        var fp = path.join(p, f); // to full-path
+        if(fs.statSync(fp).isDirectory()) {
+            walk(fp, fileCallback); // ディレクトリなら再帰
+        } else {
+            fileCallback(fp); // ファイルならコールバックで通知
+        }
+    });
+});
+</code></pre>
+
+<p>};</p>
+
+<p>// 使う方
+walk(dir, function(path) {</p>
+
+<pre><code>console.log(path); // ファイル１つ受信  
+</code></pre>
+
+<p>}, function(err) {</p>
+
+<pre><code>console.log("Receive err:" + err); // エラー受信
+</code></pre>
+
+<p>});
+```</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Express で ejs のつもりなのに jade が入っちゃう時]]></title>
+    <link href="http://amay077.github.io/blog/2012/11/20/how-to-install-jade-on-express/"/>
+    <updated>2012-11-20T15:17:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/11/20/how-to-install-jade-on-express</id>
+    <content type="html"><![CDATA[<p><code>
+$ express -t ejs myapp
+</code>
+で ejs を入れたつもりが、<code>views/index.jade</code> とかが入っちゃう。</p>
+
+<!-- more -->
+
+
+<p>```
+$ express -tejs myapp</p>
+
+<pre><code>        ^スペース空けない
+</code></pre>
+
+<p>```
+と、正しく ejs が使われる。</p>
+
+<p>なんなのよこれ。express が rc だから？</p>
+
+<h2>0:51追記</h2>
+
+<p>あーっ、ヘルプ見たら <code>express -e myapp</code> が正しいのね。</p>
+
+<p><code>
+$ express -h
+</code></p>
+
+<blockquote><p> Usage: express [options]</p>
+
+<p> Options:</p>
+
+<p>   -h, --help          output usage information
+   -V, --version       output the version number
+   -s, --sessions      add session support
+   -e, --ejs           add ejs engine support (defaults to jade)
+   -J, --jshtml        add jshtml engine support (defaults to jade)
+   -H, --hogan         add hogan.js engine support
+   -c, --css <engine>  add stylesheet <engine> support (less|stylus) (defaults to plain css)
+   -f, --force         force on non-empty directory</p></blockquote>
+
+<h2>環境</h2>
+
+<ul>
+<li>Mac OS X 10.8.2</li>
+<li>node v0.9.2</li>
+<li>express 3.0.0rc5</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[haxenode でエラー window is not defined]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/hexnode-error-window-is-not-found/"/>
+    <updated>2012-10-03T22:06:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/hexnode-error-window-is-not-found</id>
+    <content type="html"><![CDATA[<p><a href="http://blog.fukaoi.org/2012/06/19/haxe_nodejs_express">HaxeでつくるWebアプリ開発(node.js + Express) | 深追い Fukaoi.org</a> を参考に、<a href="http://haxenode.org/">haxenode</a>を使ってみたときにハマったこと。</p>
+
+<!-- more -->
+
+
+<p>```as rootnode.hx
+import js.Node;</p>
+
+<p>class RootNode {</p>
+
+<pre><code>static function main() {
+ var server = Node.http.createServer( function(
+      req:NodeHttpServerReq, res:NodeHttpServerResp){
+        res.setHeader("Content-Type","text/plain");
+        res.writeHead(200);
+        res.end(Hoge.print());
+      }
+    );
+
+    server.listen(1337,"localhost");
+    trace( 'Server running at http://127.0.0.1:1337/' );
+}   
+</code></pre>
+
+<p>}</p>
+
+<p>@:keep
+@:expose
+class Hoge {</p>
+
+<pre><code>public static function print():String {
+    return "Hello World.\n";
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>こんな感じでサンプル作って、</p>
+
+<pre><code>node rootnode.js
+</code></pre>
+
+<p>を実行したところ、</p>
+
+<blockquote><p>/.../bin/haxenode.js:53</p>
+
+<pre><code>var o = window;
+        ^
+</code></pre>
+
+<p>ReferenceError: window is not defined</p>
+
+<pre><code>at $hxExpose (/.../bin/haxenode.js:53:10)
+at /.../bin/haxenode.js:13:1
+at Object.&lt;anonymous&gt; (/.../bin/haxenode.js:62:3)
+at Module._compile (module.js:449:26)
+at Object.Module._extensions..js (module.js:467:10)
+at Module.load (module.js:356:32)
+at Function.Module._load (module.js:312:12)
+at Module.runMain (module.js:492:10)
+at process.startup.processNextTick.process._tickCallback (node.js:244:9)
+</code></pre></blockquote>
+
+<p>こんなエラーが出ました。</p>
+
+<p>いろいろ試したところ、Hoge クラスに <code>@:keep</code> と <code>@:expose</code> をどちらも指定するとダメみたい。どちらか片方だけなら正常。
+<a href="http://haxe.org/doc/compiler">--dead-code-elimination</a> をあきらめて、minify とかすればいいのかな。
+<code>@:keep</code> と <code>@:expose</code> は意味が被る、というか expose は keep を包括するような感じなので、@:expose だけでよさそうな気もします。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://haxe.org/manual/tips_and_tricks">Tips and Tricks - Haxe</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Homebrew で Nodes.js をやってみた]]></title>
+    <link href="http://amay077.github.io/blog/2012/10/03/nodejs-by-homebrew/"/>
+    <updated>2012-10-03T20:10:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2012/10/03/nodejs-by-homebrew</id>
+    <content type="html"><![CDATA[<h2>環境</h2>
+
+<ul>
+<li>Mac OS X 10.7</li>
+<li>Homebrew はインストール済み</li>
+</ul>
+
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/nomnel/20111204/1323003399">Node.jsでHello worldするまで - 飲む、寝る。</a></li>
+</ul>
+
+
+<!-- more -->
+
+
+<p>手順はほぼこのとおり。</p>
+
+<h2>手順</h2>
+
+<pre><code>$ brew install node.js
+</code></pre>
+
+<blockquote><p>Warning: It appears you have MacPorts or Fink installed.
+Software installed with other package managers causes known problems for
+Homebrew. If a formula fails to build, uninstall MacPorts/Fink and try again.
+==> Downloading http://nodejs.org/dist/v0.8.4/node-v0.8.4.tar.gz</p>
+
+<h6>################################################################## 100.0%</h6>
+
+<p>==> ./configure --prefix=/usr/local/Cellar/node/0.8.4 --without-npm
+==> make install
+==> Caveats
+Homebrew has NOT installed npm. We recommend the following method of
+installation:
+  curl http://npmjs.org/install.sh | sh</p>
+
+<p>After installing, add the following path to your NODE_PATH environment
+variable to have npm libraries picked up:
+  /usr/local/lib/node_modules
+==> Summary
+/usr/local/Cellar/node/0.8.4: 79 files, 11M, built in 6.2 minutes</p></blockquote>
+
+<p>なんか、 MacPorts/Fink と仲が悪そうだけど、とりあえず無視して次へ。</p>
+
+<pre><code>$ curl http://npmjs.org/install.sh | sh
+</code></pre>
+
+<blockquote><p> % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</p>
+
+<pre><code>                             Dload  Upload   Total   Spent    Left  Speed
+</code></pre>
+
+<p>100    85    0    85    0     0    109      0 --:--:-- --:--:-- --:--:--   384
+sh: line 1: syntax error near unexpected token `newline'
+sh: line 1: `&lt;html>Moved: &lt;a href="https://npmjs.org/install.sh">https://npmjs.org/install.sh &lt;/a>'</p></blockquote>
+
+<p>うお、エラーだ！どうやら URL が変わった(http → http<strong><em>s</em></strong> になっただけ)らしい。
+URL を修正してリトライ。</p>
+
+<pre><code>$ curl https://npmjs.org/install.sh | sh
+</code></pre>
+
+<blockquote><p> % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</p>
+
+<pre><code>                             Dload  Upload   Total   Spent    Left  Speed
+</code></pre>
+
+<p>100  7882  100  7882    0     0   5672      0  0:00:01  0:00:01 --:--:--  7977
+tar=/usr/bin/tar
+version:
+bsdtar 2.8.3 - libarchive 2.8.3
+install npm@1.1
+fetching: http://registry.npmjs.org/npm/-/npm-1.1.62.tgz
+0.8.4
+1.1.62
+cleanup prefix=/usr/local</p>
+
+<p>All clean!</p>
+
+<p>npm@1.1.62 prepublish .
+npm prune ; rm -rf test/<em>/</em>/node_modules ; make -j4 doc</p>
+
+<p>sh: npm: command not found
+make: Nothing to be done for `doc'.
+/usr/local/bin/npm -> /usr/local/lib/node_modules/npm/bin/npm-cli.js
+npm@1.1.62 /usr/local/lib/node_modules/npm
+It worked
+```</p></blockquote>
+
+<p><strong>npm: command not found</strong> が気になるけど成功したぽい。</p>
+
+<h2>Hello World!!</h2>
+
+<p>前述のサイトそのまんまなので略。
+ふむ、うまくいった。</p>
+]]></content>
+  </entry>
+  
+</feed>
