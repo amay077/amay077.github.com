@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-10-06T21:12:05+09:00</updated>
+  <updated>2013-10-09T00:23:17+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,68 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[metersToEquatorPixels を Google Maps Android API v2 で]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2/"/>
+    <updated>2013-10-09T00:21:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2</id>
+    <content type="html"><![CDATA[<p>Google Map API v1 には、「地図上の距離(ｍ)を画面上の距離(ピクセル)に変換する」ためのメソッド <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) がありましたが、v2 ではなくなってしまいました。</p>
+
+<!--more-->
+
+
+<p>ので、以下のような代替関数を作ってみました。</p>
+
+<p>```java metersToEquatorPixels.java
+public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {</p>
+
+<pre><code>final double OFFSET_LON = 0.5d;
+
+Location baseLoc = new Location("");
+baseLoc.setLatitude(base.latitude);
+baseLoc.setLongitude(base.longitude);
+
+Location dest = new Location("");
+dest.setLatitude(base.latitude);
+dest.setLongitude(base.longitude + OFFSET_LON);
+
+double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
+double lonDistance = meters * degPerMeter; // m を度に変換
+
+Projection proj = map.getProjection();
+Point basePt = proj.toScreenLocation(base);
+Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
+
+return Math.abs(destPt.x - basePt.x);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>行っていることは単純で、基準となる緯度経度:<code>base</code> から、適当に(ここでは 0.5度)東へ移動した緯度経度を <code>Location.distanceTo</code> で求め、その結果から、「1ｍは何度か？」を求めます。あとは、この係数を使って 地図上の距離:<code>meters</code> を度に変換し、最後に、<code>base</code> と移動後の緯度経度それぞれを画面座標に変換して、画面上の距離を返す、というものです。</p>
+
+<p>「1ｍは何度か？」は、赤道上の値を使っても良いのですが、緯度によって値が大きく変わるので、このような手法を取りました。</p>
+
+<p>ただこれでも、求める距離の精度によっては、<code>OFFSET_LON</code> の値の調整が必要な気がします。また、経度:0 をまたぐような地域では正しく動かない気がします。(いずれも未検証)</p>
+
+<p>また、緯度方向にもそれなりに正確な数値を出すには、上記と同じことを緯度に対しても行う必要があります。(これは v1 の API にもなかった)</p>
+
+<p>v2 になって、描画系でピクセル座標を意識することはなくなったんであまり使うことも無いと思いますが、なにかで必要になったら思い出す程度で。</p>
+
+<h3>追記</h3>
+
+<p>あとで気づいたんですが、 v1 の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) は、赤道上の距離で算出してたんですね。それと比べるとちょっとオーバースペックでした。</p>
+
+<p> それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
+
+<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる]]></title>
@@ -778,96 +840,6 @@ executor.scheduleAtFixedRate(new Runnable() {
 <p><code>scheduleAtFixedRate</code> や <code>scheduleWithFixedDelay</code> はタイマー的な動きをするが、タスクの処理に時間がかかる場合は、意図した時間間隔で実行されない。タイマーとして使いたければ、Executor を２つ用意し、一つはタイマー専用、もうひとつをタスク実行専用とした方が良さそう。</p>
 
 <p>長くなってしまったので、タスクのキャンセルとか、Terminate 系は別の機会に。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[SDカードのファイルI/Oパフォーマンス計測]]></title>
-    <link href="http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io/"/>
-    <updated>2013-08-29T20:43:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/08/29/performance-of-sdcard-io</id>
-    <content type="html"><![CDATA[<p>端末とか SDカード の種類とかで大きく違うんでしょうけど、自分の端末で調べたのでメモ。</p>
-
-<!--more-->
-
-
-<ul>
-<li>機種: au HTC J(ISW13HT)</li>
-<li>SDカード: 最初から付いてたやつ</li>
-</ul>
-
-
-<h2>計測項目</h2>
-
-<ul>
-<li>Create - テキストファイルの生成</li>
-<li>List - ディレクトリ内の全ファイルの列挙</li>
-<li>Rename - ファイル名の変更</li>
-<li>Delete - ファイルを1つずつ削除</li>
-<li>DelDir - 親ディレクトリを削除</li>
-</ul>
-
-
-<h2>計測方法</h2>
-
-<ul>
-<li>ディレクトリ内にファイルを 100個、1000個、10000個作成した時のそれぞれで計測。</li>
-<li>それぞれの計測は5回行った平均値。</li>
-<li>計測に使ったコードは<a href="https://gist.github.com/amay077/6374470">こちら</a></li>
-</ul>
-
-
-<h2>計測結果</h2>
-
-<table>
-<thead>
-<tr>
-<th align="right">ファイル数</th>
-<th align="right">Create</th>
-<th align="right">List</th>
-<th align="right">Rename</th>
-<th align="right">Delete</th>
-<th align="right">DelDir</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td align="right">100</td>
-<td align="right">1,606ms</td>
-<td align="right">939ms</td>
-<td align="right">1,664ms</td>
-<td align="right">2,792ms</td>
-<td align="right">1ms未満</td>
-</tr>
-<tr>
-<td align="right">1,000</td>
-<td align="right">15,527ms</td>
-<td align="right">950ms</td>
-<td align="right">17,359ms</td>
-<td align="right">27,057ms</td>
-<td align="right">6ms</td>
-</tr>
-<tr>
-<td align="right">10,000</td>
-<td align="right">227,236ms</td>
-<td align="right">1,003ms</td>
-<td align="right">254,338ms</td>
-<td align="right">191,631ms</td>
-<td align="right">69ms</td>
-</tr>
-</tbody>
-</table>
-
-
-<h2>まとめ</h2>
-
-<ul>
-<li>Create と Rename はファイル100個で約1.5秒、Delete は約×2 の時間がかかる。</li>
-<li>List はファイル数にあまり影響されない。</li>
-<li>DelDir は超早い。</li>
-<li>CPU 使用率は 40〜60% だった。</li>
-</ul>
-
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Java | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/java/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-10-06T21:12:05+09:00</updated>
+  <updated>2013-10-09T00:23:17+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,68 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[metersToEquatorPixels を Google Maps Android API v2 で]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2/"/>
+    <updated>2013-10-09T00:21:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2</id>
+    <content type="html"><![CDATA[<p>Google Map API v1 には、「地図上の距離(ｍ)を画面上の距離(ピクセル)に変換する」ためのメソッド <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) がありましたが、v2 ではなくなってしまいました。</p>
+
+<!--more-->
+
+
+<p>ので、以下のような代替関数を作ってみました。</p>
+
+<p>```java metersToEquatorPixels.java
+public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {</p>
+
+<pre><code>final double OFFSET_LON = 0.5d;
+
+Location baseLoc = new Location("");
+baseLoc.setLatitude(base.latitude);
+baseLoc.setLongitude(base.longitude);
+
+Location dest = new Location("");
+dest.setLatitude(base.latitude);
+dest.setLongitude(base.longitude + OFFSET_LON);
+
+double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
+double lonDistance = meters * degPerMeter; // m を度に変換
+
+Projection proj = map.getProjection();
+Point basePt = proj.toScreenLocation(base);
+Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
+
+return Math.abs(destPt.x - basePt.x);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>行っていることは単純で、基準となる緯度経度:<code>base</code> から、適当に(ここでは 0.5度)東へ移動した緯度経度を <code>Location.distanceTo</code> で求め、その結果から、「1ｍは何度か？」を求めます。あとは、この係数を使って 地図上の距離:<code>meters</code> を度に変換し、最後に、<code>base</code> と移動後の緯度経度それぞれを画面座標に変換して、画面上の距離を返す、というものです。</p>
+
+<p>「1ｍは何度か？」は、赤道上の値を使っても良いのですが、緯度によって値が大きく変わるので、このような手法を取りました。</p>
+
+<p>ただこれでも、求める距離の精度によっては、<code>OFFSET_LON</code> の値の調整が必要な気がします。また、経度:0 をまたぐような地域では正しく動かない気がします。(いずれも未検証)</p>
+
+<p>また、緯度方向にもそれなりに正確な数値を出すには、上記と同じことを緯度に対しても行う必要があります。(これは v1 の API にもなかった)</p>
+
+<p>v2 になって、描画系でピクセル座標を意識することはなくなったんであまり使うことも無いと思いますが、なにかで必要になったら思い出す程度で。</p>
+
+<h3>追記</h3>
+
+<p>あとで気づいたんですが、 v1 の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) は、赤道上の距離で算出してたんですね。それと比べるとちょっとオーバースペックでした。</p>
+
+<p> それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
+
+<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる]]></title>
@@ -761,131 +823,6 @@ new SimpleDateFormat("kk:mm").format(new Date(t));
 
 
 <p>よく見たら、ここの Top Vote にも 「kk 使え」って書いてあったorz</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[jUnit で非同期処理のテストがちょっと楽になるクラス作ってみた]]></title>
-    <link href="http://amay077.github.io/blog/2012/12/20/asynctest-on-junit/"/>
-    <updated>2012-12-20T19:07:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/12/20/asynctest-on-junit</id>
-    <content type="html"><![CDATA[<p>非同期メソッドのテストって、皆さんどうやってるんでしょう？
-ちょっとググってみたけど「<code>Object.wait</code> とか <code>CountDownLatch</code> とか <code>Future</code> で待て」とかあんまり良い答えが見つからなかったので、自分でユーティリティクラス作ってみた。</p>
-
-<!-- more -->
-
-
-<p>まあ CountDownLatch で待ってるだけなんですけども。</p>
-
-<p>2013.1.10 修正:メソッドに全部 <code>synchronized</code> つけたら動かんやん、恥ずかし…</p>
-
-<p>```java FutureResult.java
-/<em>*
- * success または error が呼ばれるまで get() で待ってる Future みたいなクラス
- *
- * @author @amay077
- </em>/
-public class FutureResult<T> {</p>
-
-<pre><code>private final int TIMEOUT = 10;
-private final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;
-
-private final CountDownLatch _latch = new CountDownLatch(1);
-private T _value;
-private Exception _error;
-
-public static class FutureResultException extends Exception {
-    private static final long serialVersionUID = 1L;
-
-    public FutureResultException(Exception detailException) {
-        super(detailException);
-    }
-}
-
-/**
- * 非同期処理が成功したら呼ぶメソッド
- */
-public synchronized void success(T value) {
-    _value = value;
-    _latch.countDown();
-}
-
-/**
- * 非同期処理が失敗したら呼ぶメソッド
- */
-public synchronized void error(Exception ex) {
-    _error = ex;
-    _latch.countDown();
-}
-
-/**
- * 非同期処理が終わるまで待って結果を返す。
- * エラーだったら例外を投げる。
- */
-public T get() throws Exception {
-    try {
-        if (!_latch.await(TIMEOUT, TIMEOUT_UNIT)) {
-            throw new FutureResultException(new TimeoutException());
-        }
-    } catch (Exception ex) {
-        throw new FutureResultException(ex);
-    }
-
-    if (_error != null) {
-        throw _error;
-    }
-
-    return _value;
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
-使い方はこんな感じ。</p>
-
-<p>```java AsyncMethodTest.java
-public void testAsyncMethod() {</p>
-
-<pre><code>final FutureResult&lt;Integer&gt; result = new FutureResult&lt;Integer&gt;();
-
-// 非同期なメソッドを実行
-hoge.asyncMethod(new OnReceiveListener() {
-    @Override
-    public void onReceive(Integer data) {
-        // 正そうな値を受信しtら success を呼ぶ
-        result.success(data);
-    }
-
-    @Override
-    public void onError(Exception ex) {
-        // エラーを受信した場合は error を呼ぶ
-        result.error(ex);
-    }
-});
-
-// 検証
-try {
-    // get で success か error かタイムアウトするまで待ってる。
-    Assert.assertEquals(0, result.get()); 
-} catch (Exception e) {
-    fail(e.getMessage());
-}
-</code></pre>
-
-<p>}</p>
-
-<p>```</p>
-
-<h2>参考</h2>
-
-<p>なんて記事を書いたあとにもっかいググってみたらこんなライブラリがあるようで。詳細はまだ見てない。</p>
-
-<ul>
-<li><a href="http://code.google.com/p/awaitility/">Awaitility</a> - Awaitility is a small Java-based DSL for synchronizing asynchronous operations. It makes it easy to test asynchronous code. - Google Project Hosting</li>
-</ul>
-
 ]]></content>
   </entry>
   

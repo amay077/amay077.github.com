@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-10-06T21:12:05+09:00</updated>
+  <updated>2013-10-09T00:23:17+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,68 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[metersToEquatorPixels を Google Maps Android API v2 で]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2/"/>
+    <updated>2013-10-09T00:21:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2</id>
+    <content type="html"><![CDATA[<p>Google Map API v1 には、「地図上の距離(ｍ)を画面上の距離(ピクセル)に変換する」ためのメソッド <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) がありましたが、v2 ではなくなってしまいました。</p>
+
+<!--more-->
+
+
+<p>ので、以下のような代替関数を作ってみました。</p>
+
+<p>```java metersToEquatorPixels.java
+public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {</p>
+
+<pre><code>final double OFFSET_LON = 0.5d;
+
+Location baseLoc = new Location("");
+baseLoc.setLatitude(base.latitude);
+baseLoc.setLongitude(base.longitude);
+
+Location dest = new Location("");
+dest.setLatitude(base.latitude);
+dest.setLongitude(base.longitude + OFFSET_LON);
+
+double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
+double lonDistance = meters * degPerMeter; // m を度に変換
+
+Projection proj = map.getProjection();
+Point basePt = proj.toScreenLocation(base);
+Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
+
+return Math.abs(destPt.x - basePt.x);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>行っていることは単純で、基準となる緯度経度:<code>base</code> から、適当に(ここでは 0.5度)東へ移動した緯度経度を <code>Location.distanceTo</code> で求め、その結果から、「1ｍは何度か？」を求めます。あとは、この係数を使って 地図上の距離:<code>meters</code> を度に変換し、最後に、<code>base</code> と移動後の緯度経度それぞれを画面座標に変換して、画面上の距離を返す、というものです。</p>
+
+<p>「1ｍは何度か？」は、赤道上の値を使っても良いのですが、緯度によって値が大きく変わるので、このような手法を取りました。</p>
+
+<p>ただこれでも、求める距離の精度によっては、<code>OFFSET_LON</code> の値の調整が必要な気がします。また、経度:0 をまたぐような地域では正しく動かない気がします。(いずれも未検証)</p>
+
+<p>また、緯度方向にもそれなりに正確な数値を出すには、上記と同じことを緯度に対しても行う必要があります。(これは v1 の API にもなかった)</p>
+
+<p>v2 になって、描画系でピクセル座標を意識することはなくなったんであまり使うことも無いと思いますが、なにかで必要になったら思い出す程度で。</p>
+
+<h3>追記</h3>
+
+<p>あとで気づいたんですが、 v1 の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) は、赤道上の距離で算出してたんですね。それと比べるとちょっとオーバースペックでした。</p>
+
+<p> それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
+
+<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる]]></title>
@@ -579,70 +641,6 @@ package="com.amay077.sample.googlemapv2sample"&gt;  &lt;--------※1
 <li>パワーマネジメントはなんかやってるぽい（計測してないけど）</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android で Fused Location Provider(など)を使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin/"/>
-    <updated>2013-05-27T21:24:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/05/27/fused-location-provider-on-xamarin</id>
-    <content type="html"><![CDATA[<p>Xamarin.Android は <a href="http://docs.xamarin.com/guides/android/advanced_topics/java_integration_overview/binding_a_java_library_(.jar">Java ライブラリから C# のラッパを生成する機能</a> がとっても強力(Binding というみたい)なので、Fused Location Provider や Geofencing など、Google I/O 2013 で発表された新機能が入った google-play-service.jar も使えるはずだ、と思い試してみました。</p>
-
-<!--more-->
-
-
-<h2>monodroid-samples をベースに</h2>
-
-<p>Xamarin.Android のサンプル集 <a href="https://github.com/xamarin/monodroid-samples">monodroid-samples</a> に、既に Google Map v2 を使うサンプルがあり、これが Google Play Service を使っているので、これを参考にします。</p>
-
-<p>これね → <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> 、使い方は、</p>
-
-<ul>
-<li><a href="http://amay077.github.io/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">Xamarin.Android で Google Maps Android API v2 を使う - Experiments Never Fail</a></li>
-</ul>
-
-
-<p>をどうぞ。</p>
-
-<h2>Binding の設定をいじる</h2>
-
-<p>Android SDK の Google Play Service をアップデートしても、Xamarin 側ですぐに <code>LocationClient</code> などが使えるわけではないです。
-プロジェクト GooglePlayServices で、ラップする package などを設定しているため。</p>
-
-<p>その設定は <code>Transform/Metadata.xml</code> にあるので、これを以下のように設定します。</p>
-
-<p>```xml Metadata.xml
-<metadata></p>
-
-<pre><code>&lt;remove-node path="/api/package[@name='com.google.android.gms.maps']/class[@name='GoogleMapOptionsCreator']" /&gt;
-&lt;remove-node path="/api/package[@name!='com.google.android.gms.maps' 
-    and @name != 'com.google.android.gms.maps.model' 
-    and @name != 'com.google.android.gms.common'
-    and @name != 'com.google.android.gms.location']" /&gt;
-&lt;remove-node path="/api/package[@name='com.google.android.gms.maps.model']/class[contains (@name, 'Creator')]" /&gt;
-&lt;remove-node path="/api/package[@name='com.google.android.gms.location']/class[contains (@name, 'Creator')]" /&gt;
-
-&lt;attr path="/api/package[@name='com.google.android.gms.maps']" name="managedName"&gt;Android.Gms.Maps&lt;/attr&gt;
-&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']" name="managedName"&gt;Android.Gms.Maps.Model&lt;/attr&gt;
-&lt;attr path="/api/package[@name='com.google.android.gms.common']" name="managedName"&gt;Android.Gms.Common&lt;/attr&gt;  
-&lt;attr path="/api/package[@name='com.google.android.gms.location']" name="managedName"&gt;Android.Gms.Location&lt;/attr&gt;  
-
-&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='position']" name="managedName"&gt;SetPosition&lt;/attr&gt;
-&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='snippet']" name="managedName"&gt;SetSnippet&lt;/attr&gt;
-&lt;attr path="/api/package[@name='com.google.android.gms.maps.model']/class[@name='MarkerOptions']/method[@name='title']" name="managedName"&gt;SetTitle&lt;/attr&gt;
-</code></pre>
-
-<p></metadata>
-```</p>
-
-<p><code>com.google.android.gms.location</code> を各所に追加しています。変更前は <a href="https://github.com/xamarin/monodroid-samples/blob/master/MapsAndLocationDemo_v2/GooglePlayServices/Transforms/Metadata.xml">こちら</a> 。</p>
-
-<p>これだけで OK。(がここにたどり着くまでに半日くらいかかったorz)</p>
-
-<h2>使う</h2>
-
-<p>これでリビルドすると、この GooglePlayServices を参照しているプロジェクトで、<code>Android.Gms.Location.LocationClient</code> などが使えるようになります。（Xamarin Studio を再起動しないとコード入力補完(Inteli先生 というのか？) に認識されないみたいですが。）</p>
 ]]></content>
   </entry>
   
