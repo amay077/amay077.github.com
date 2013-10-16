@@ -3,7 +3,7 @@ layout: post
 title: "Javascript 製のチャート描画ライブラリのメモ"
 date: 2013-07-17 19:39
 comments: true
-categories: [javascript, HTML5]
+categories: [JavaScript, HTML5]
 ---
 Javascript 製のチャート描画ライブラリをいくつか調べたので備忘録として残しておく。
 <!--more-->

@@ -3,7 +3,7 @@ layout: post
 title: "Googleマップ禁止令が出たのなら、電子国土地図をGoogleマップで使えばいいじゃない"
 date: 2013-10-11 13:55
 comments: true
-categories: [Geo, GoogleMapsAPI, Javascript, HTML]
+categories: [Geo, GoogleMapsAPI, JavaScript, HTML]
 ---
 「領土等が正しく表示されていない」として、国や自治体、国公立の機関に、「Google マップ禁止令」が出ているそうです。
 <!--more-->

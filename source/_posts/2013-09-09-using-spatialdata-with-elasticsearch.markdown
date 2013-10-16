@@ -3,7 +3,7 @@ layout: post
 title: "Elasticsearch で位置情報を検索する手順"
 date: 2013-09-09 21:08
 comments: true
-categories: [Elasticsearch, geo]
+categories: [Elasticsearch, Geo]
 ---
 Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。
 

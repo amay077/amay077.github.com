@@ -3,7 +3,7 @@ layout: post
 title: "総務省のデータを Elasticsearch にぶち込んで、緯度経度から市区町村の何丁目までを取り出す"
 date: 2013-09-10 21:13
 comments: true
-categories: [Elasticsearch, geo]
+categories: [Elasticsearch, Geo]
 ---
 いわゆる「逆ジオコーディング」と呼ばれる機能ですが、きっかけはこれら２つの記事です。
 <!--more-->
