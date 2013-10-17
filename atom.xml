@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-10-17T11:10:35+09:00</updated>
+  <updated>2013-10-17T21:19:20+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,111 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[TextView で、テキストの一部だけクリック可能にする]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/17/make-clickable-from-part-of-text/"/>
+    <updated>2013-10-17T21:16:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/17/make-clickable-from-part-of-text</id>
+    <content type="html"><![CDATA[<p>Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが <code>ClickableSpan</code> というのを使えばできそうだったので、やってみました。</p>
+
+<!--more-->
+
+
+<figure class='code'><figcaption><span>ClikcableSpanTestActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ClikcableSpanTestActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">data</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;&gt;();</span>
+</span><span class='line'>        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">&quot;りんご&quot;</span><span class="o">,</span> <span class="s">&quot;隠し味としてカレーに入れます&quot;</span><span class="o">));</span>
+</span><span class='line'>        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">&quot;みかん&quot;</span><span class="o">,</span> <span class="s">&quot;あぶりだしに使います&quot;</span><span class="o">));</span>
+</span><span class='line'>        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">&quot;すいか&quot;</span><span class="o">,</span> <span class="s">&quot;種を食べると盲腸になります（嘘）&quot;</span><span class="o">));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">SpannableStringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SpannableStringBuilder</span><span class="o">();</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">String</span> <span class="n">SEP</span> <span class="o">=</span> <span class="s">&quot;, &quot;</span><span class="o">;</span>
+</span><span class='line'>        <span class="kt">int</span> <span class="n">spanStart</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">:</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">SEP</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 追加した文字列を Span にする</span>
+</span><span class='line'>            <span class="n">sb</span><span class="o">.</span><span class="na">setSpan</span><span class="o">(</span><span class="k">new</span> <span class="n">ClickableSpan</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>              <span class="nd">@Override</span>
+</span><span class='line'>              <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">widget</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                  <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="n">getApplicationContext</span><span class="o">(),</span>
+</span><span class='line'>                      <span class="n">p</span><span class="o">.</span><span class="na">second</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">).</span><span class="na">show</span><span class="o">();</span>
+</span><span class='line'>              <span class="o">}</span>
+</span><span class='line'>          <span class="o">},</span> <span class="n">spanStart</span><span class="o">,</span> <span class="n">spanStart</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">.</span><span class="na">length</span><span class="o">(),</span> <span class="n">Spannable</span><span class="o">.</span><span class="na">SPAN_EXCLUSIVE_EXCLUSIVE</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">spanStart</span> <span class="o">+=</span> <span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">+</span> <span class="n">SEP</span><span class="o">.</span><span class="na">length</span><span class="o">());</span>
+</span><span class='line'>      <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">TextView</span> <span class="n">tv</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">tv</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">sb</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">tv</span><span class="o">.</span><span class="na">setMovementMethod</span><span class="o">(</span><span class="n">LinkMovementMethod</span><span class="o">.</span><span class="na">getInstance</span><span class="o">());</span> <span class="c1">// これ忘れるとクリックできなくて小一時間悩む</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>項目をカンマつなぎで表示して、項目のところだけリンクっぽくします。
+リンクをクリックすると Toast を表示します。（下図のように）
+また <code>URLSpan</code> というクラスもあり、クリックすると指定したURLに移動（ブラウザアプリが起動）します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_clickablespan_01.png" alt="" /></p>
+
+<h2>参考</h2>
+
+<p>装飾したり位置やサイズ変えたり、TextView でもいろいろできるんですねー。
+(VB6の)Label とは違うのだよ、Label とは！</p>
+
+<ul>
+<li><a href="http://y-anz-m.blogspot.com/2011/08/androidspannable.html">Y.A.M の 雑記帳: Android Spannable を使って文字列の一部を装飾する</a></li>
+<li><a href="http://d.hatena.ne.jp/androidprogram/20100529/1275086958">Tips TextView を使いこなそう ～表示編～ その4 - - Google Android - 雑記帳</a></li>
+<li><a href="http://developer.android.com/reference/android/text/style/package-summary.html">android.text.style | Android Developers</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[YAML Front-matter とかいうやつ]]></title>
@@ -3603,226 +3708,6 @@ Skype も意外と安いようですが、電話をかける度に「接続料�
 <p>これで、データ(Markdown)とプレゼンテーション部(HTML)を分離できて、なんか良さげな感じがする。</p>
 
 <p>Octopress とか、HTMLを生成しちゃうんじゃなくて、クライアントサイドで 「Markdown を描画する」できると、投稿の手間が減って良いかもですね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android での Google Map(というか Play Service) 利用が、本家より簡単になった件]]></title>
-    <link href="http://amay077.github.io/blog/2013/08/03/gmapv2-from-xamarin-component/"/>
-    <updated>2013-08-03T15:29:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/08/03/gmapv2-from-xamarin-component</id>
-    <content type="html"><![CDATA[<p>Xamarin Components に「Google Play Services」が追加されまして。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://blog.xamarin.com/introducing-the-google-play-services-component-for-xamarin-android/">Introducing the Google Play Services Component for Xamarin.Android | Xamarin Blog</a></li>
-</ul>
-
-
-<p>これが何を意味するかと言うと、これまで Google Play Service を利用するには、ライブラリプロジェクトを作って、アプリから参照するという煩わしい手順が必要でした。</p>
-
-<p>で、これは Android-Eclipse でも同じく面倒だったわけですが、Xamarin.Android  に新しく提供されるこのコンポーネントを使えば、その手間を省くことができます。この点で Eclipse での開発より簡単になりました。</p>
-
-<p>実際に、Play Services の一つである Google Map Android API v2 を使うアプリを作る手順を書いてみます。</p>
-
-<h2>手順</h2>
-
-<h3>1. Google API Console から API key を取得する</h3>
-
-<p>この手順は、これまでと変わらないので、以下のサイトなどを参考にしてください。
-package名が必要になるので、先に決めておきましょう。
-ここでは <code>com.amay077.sample.googlemapv2sample</code> とします。</p>
-
-<ul>
-<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
-</ul>
-
-
-<p>取得して API key はメモっておきます。</p>
-
-<h3>2. プロジェクト/ソリューションを作る</h3>
-
-<p>Xamarin Studio を起動します。
-ここでは Ice Cream Sandwich 用に作ります。(Android Application の方だと Support Library が要るので少し手順が増えるはず)</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_01.png" alt="img" /></p>
-
-<h3>3. プロジェクトに「Google Play Service」コンポーネントを追加する</h3>
-
-<p>メニュー → プロジェクト → Get More Components から、、、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_03.png" alt="img" /></p>
-
-<p>Google Play Services を検索して Add to App します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_04.png" alt="img" /></p>
-
-<p>すると、プロジェクトに Google Play Services が追加されます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_05.png" alt="img" /></p>
-
-<p>ここで一度、Xamarin Studio を再起動しておいた方が無難です。
-このまま継続したら、追加されたアセンブリがうまく読み込まれてない場合がありました。</p>
-
-<h3>4. 実装する</h3>
-
-<p><code>MainActivity.cs</code> は、最初の内容をごっそり削除して以下のようにします。</p>
-
-<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='c#'><span class='line'><span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">Android.OS</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">namespace</span> <span class="nn">GoogleMapV2Sample</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'><span class="na">    [Activity (Label = &quot;GoogleMapV2Sample&quot;, MainLauncher = true)]</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
-</span><span class='line'>            <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>画面定義である <code>Main.axml</code> も以下のように置き換えます。</p>
-
-<figure class='code'><figcaption><span>Resources/layout/Main.axml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;fragment</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
-</span><span class='line'>    <span class="na">android:id=</span><span class="s">&quot;@+id/map&quot;</span>
-</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
-</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span>
-</span><span class='line'>    <span class="na">class=</span><span class="s">&quot;com.google.android.gms.maps.MapFragment&quot;</span> <span class="nt">/&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>5. AndroidManifest.xml への設定いろいろ</h3>
-
-<p>たぶん一番面倒なところです。</p>
-
-<p>まず Xamarin.Android では、最初は AndroidManifest.xml が生成されていないので、メニュー → プロジェクト → xxx のオプション から、下図のように [Add Android manifest] します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_06.png" alt="img" /></p>
-
-<p>次に作成された AndroidManifest.xml を開いて、以下のようにします。</p>
-
-<p>※1 のところは、最初に決めた Package名に、※2 の時は、先に取得しておいた API key に置き換えてください。</p>
-
-<figure class='code'><figcaption><span>Properties/AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
-</span><span class='line'>  <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
-</span><span class='line'>  <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span>
-</span><span class='line'>  <span class="na">package=</span><span class="s">&quot;com.amay077.sample.googlemapv2sample&quot;</span><span class="nt">&gt;</span>  <span class="nt">&lt;--------</span><span class="err">※1</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>  <span class="err">&lt;uses-feature</span> <span class="na">android:glEsVersion=</span><span class="s">&quot;0x00020000&quot;</span> <span class="na">android:required=</span><span class="s">&quot;true&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.INTERNET&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;com.google.android.providers.gsf.permission.READ_GSERVICES&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.WRITE_EXTERNAL_STORAGE&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_NETWORK_STATE&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_COARSE_LOCATION&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.ACCESS_FINE_LOCATION&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'>  <span class="nt">&lt;uses-permission</span>
-</span><span class='line'>      <span class="na">android:name=</span><span class="s">&quot;com.amay077.sample.playservicesample.permission.MAPS_RECEIVE&quot;</span> <span class="nt">/&gt;</span>   <span class="nt">&lt;--------</span><span class="err">※1</span>
-</span><span class='line'>  <span class="err">&lt;permission</span>
-</span><span class='line'>      <span class="na">android:name=</span><span class="s">&quot;com.amay077.sample.playservicesample.permission.MAPS_RECEIVE&quot;</span>   <span class="err">&lt;--------※1</span>
-</span><span class='line'>      <span class="na">android:protectionLevel=</span><span class="s">&quot;signature&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nt">&lt;application</span> <span class="na">android:label=</span><span class="s">&quot;GoogleMapV2Sample&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>      <span class="nt">&lt;meta-data</span>
-</span><span class='line'>          <span class="na">android:name=</span><span class="s">&quot;com.google.android.maps.v2.API_KEY&quot;</span>
-</span><span class='line'>          <span class="na">android:value=</span><span class="s">&quot;AIzaByD1jiFER3le_HFrkOrEhaNIsemoNoDesuU&quot;</span> <span class="nt">/&gt;</span>  <span class="nt">&lt;--------</span><span class="err">※2</span>
-</span><span class='line'>  <span class="err">&lt;/application</span><span class="nt">&gt;</span>
-</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>6. 動かす</h3>
-
-<p>設定が正しくできていれば、地図が表示されるはずです。
-アプリが落ちるなら Main.cs や Main.axml が、地図が表示されないなら AndroidManifest.xml や Google API Console での設定が間違っていると思います。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/gmapv2_from_xamarin_component_07.png" alt="img" /></p>
-
-<h2>まとめなど</h2>
-
-<p>Google Play Service コンポーネントを使うことでライブラリプロジェクトをなくす事ができました。慣れた人にはどうってこと無い話ですが、説明する人には面倒で、始めて行う人には混乱の元になってたと思います。</p>
-
-<p>もう一つ特筆すべきは、このコンポーネントを Google 自身が開発、提供していることです。</p>
-
-<p>これだけでなく、<a href="http://components.xamarin.com/view/googlemapsios/">Google Map SDK for iOS</a> や <a href="http://components.xamarin.com/view/googleadmob/">Admob 用のコンポーネント</a>も Google 自身が提供しています。</p>
-
-<p>また Microsoft も <a href="http://components.xamarin.com/view/azure-mobile-services/">Azure Mobile Service</a> を自身が提供していますし、なんなんでしょうこのプラットフォーマーの Xamarin への参入ぶりは。</p>
-
-<p>このように本家が開発していることにより、信頼性、機能網羅性、新機能への追従などがとても充実しており、安心して使うことができます。</p>
-
-<p>最後に、</p>
-
-<blockquote class="twitter-tweet"><p>おおおお、すげえ！これでめんどいビルド手順必要なくなった！Google++！でも、Gmaps iOSの1.4アップデートと、Retina対応のため128dpタイルへの対応もしてください…。 / “Google Play Servi…” <a href="http://t.co/mjnN7sE0t7">http://t.co/mjnN7sE0t7</a></p>&mdash; Кочизуфан (@kochizufan) <a href="https://twitter.com/kochizufan/statuses/363116371351052290">August 2, 2013</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>とのことなのでよろしくおねがいします。</p>
 ]]></content>
   </entry>
   
