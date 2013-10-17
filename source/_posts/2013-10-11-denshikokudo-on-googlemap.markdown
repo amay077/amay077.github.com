@@ -7,6 +7,23 @@ categories: [Geo, GoogleMapsAPI, JavaScript, HTML]
 ---
 「領土等が正しく表示されていない」として、国や自治体、国公立の機関に、「Google マップ禁止令」が出ているそうです。
 <!--more-->
+
+----
+## 2013.10.17 追記
+
+[コメント](http://qiita.com/amay077/items/979dfc858a21c8bbb7a9#comment-6d0be86c2ba90df50808)で頂いていますが、現在は、 **「日本向けにローカライズされた」** Googleマップ側でも表記が修正されたようで、当初「問題がある」と言われていた地域は問題が解消されているように見えます。
+**ただし、下記のように Google Maps API で「region=JP」が指定されている場合に限ります。**
+
+* [Google Maps API v3 で 日本海（東海）と「東海」が併記されるのを避けるには - わからん](http://d.hatena.ne.jp/kitokitoki/20130415/p1)
+
+これによって「Google禁止令はもはや無用である」と考えることもできますし、「依然として国の制御下には無い」と考えることもできます。
+
+以下の情報は必要なくなるかも知れませんが、今後「Googleマップ以外の選択肢」の一つとして参考になれば幸いです。
+
+-- 追記ここまで --
+
+----
+
 * [グーグルマップの「利用禁止令」 竹島や北方領土が「日本名でない表記」 政府が自治体などに要請](http://www.huffingtonpost.jp/2013/09/29/google-map-forbidden_n_4011180.html)
 * [Googleマップ禁止令?! 制作会社の苦悩と対応を考える。 - NAVER まとめ](http://matome.naver.jp/odai/2138082171982287301)
 * [大学公式ページでのGoogleMap禁止令と彩雲 : ５号館のつぶやき](http://shinka3.exblog.jp/20690859/)
