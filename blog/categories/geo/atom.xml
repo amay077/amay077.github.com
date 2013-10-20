@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Geo | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/geo/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-10-18T13:29:36+09:00</updated>
+  <updated>2013-10-20T22:04:25+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,78 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[爆速エミュレータで Google Maps Android API v2 を動かす]]></title>
+    <link href="http://amay077.github.io/blog/2013/10/20/using-gmapv2-on-intel-emulator/"/>
+    <updated>2013-10-20T21:58:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/10/20/using-gmapv2-on-intel-emulator</id>
+    <content type="html"><![CDATA[<p>Google APIs のエミュレータで Google Map Android API v2 が動くようになったのですが、やっぱり遅い、使えん。
+という訳で、Intel の爆速エミュレータで GMapV2 を使う手順の備忘録です。(ご利用は自己責任で)</p>
+
+<!--more-->
+
+
+<h2>爆速エミュレータの導入</h2>
+
+<p>こちら等を参考にセットアップします。</p>
+
+<ul>
+<li><a href="http://qiita.com/gabu/items/8bc1a11f1382409f1d2a">Android再入門 - エミュレータの作成</a></li>
+</ul>
+
+
+<h2>エミュレータで Google Maps Android API v2 を動かす</h2>
+
+<p><code>com.google.android.gms.apk</code> と <code>com.android.vending.apk</code> が必要なのでどうにかして入手しインストールします。(ほとんど答えだけど下記参照)</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+</ul>
+
+
+<p>apk が古いとうまく動作しません。なるべく新しいものを探しましょう。(ﾎﾞｿ</p>
+
+<h2>AndroidManifest.xml から com.google.android.maps の定義を消す</h2>
+
+<p>意外とハマったのがコレ。</p>
+
+<p><code>AndroidManifest.xml</code> で</p>
+
+<p><code>
+&lt;uses-library android:name="com.google.android.maps" /&gt;
+</code></p>
+
+<p>が定義してあると、</p>
+
+<p><code>
+10-20 11:35:52.977: E/PackageManager(1178): Package xxxx requires unavailable shared library com.google.android.maps; failing!
+</code></p>
+
+<p>というエラーになります。</p>
+
+<p>この <code>com.google.android.maps</code> は Google Maps API v1 で必要だったもので、v2 では必要ありません。削除しましょう。</p>
+
+<p>v2 の使い方を説明するブログやサイトで、これが含まれてしまってるものがあるようです。(かくいう自分もそんなサイトからコピペしてきたまま使ってたのでエラーになりました（汗）</p>
+
+<h2>動かす</h2>
+
+<p>あとは、実機と変わりません。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gmapv2_on_intel_emulator_01.png" alt="img" /></p>
+
+<p>やばい、PC性能とネットワーク環境のおかげで実機より快適になったｗ</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/ria10/20121218/1355794748">AndroidでGoogle Maps v2 をエミュレータで動かしてしかも爆速 - リア充爆発日記</a></li>
+<li><a href="http://denshikousaku.net/how-to-make-android-google-maps-v2-work-in-android-emulator">エミュレータでGoogle Maps for Android V2を動かす方法 | アプリ開発とRaspberry PIとArduino実験</a></li>
+<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Googleマップ禁止令が出たのなら、電子国土地図をGoogleマップで使えばいいじゃない]]></title>
@@ -834,297 +906,6 @@ curl -XPOST 'http://localhost:9200/towns/town/_search' -d '{</p>
 
 <p>総務省でも国土交通省でもどちらでも良いのですが、
 <strong>「全国の大字境界＋属性データを一括入手する方法」</strong> を用意して欲しいものです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch で位置情報を検索する手順]]></title>
-    <link href="http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch/"/>
-    <updated>2013-09-09T21:08:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/09/09/using-spatialdata-with-elasticsearch</id>
-    <content type="html"><![CDATA[<p>Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。</p>
-
-<p>位置情報の検索機能も標準搭載しているとのことで、試しに使ってみました。</p>
-
-<!--more-->
-
-
-<h2>Elasticsearch の導入</h2>
-
-<p>下の情報が大変参考になりました。(環境は Mac。事前に Java と homebrew の導入が必要です）</p>
-
-<ul>
-<li><a href="http://qiita.com/Konboi@github/items/56f0aaca77db5df027af">elasticsearch - ElasitcSearch ことはじめ - Qiita [キータ]</a></li>
-</ul>
-
-
-<h2>試しに使ってみる</h2>
-
-<p>下のサイトが大変参考なりました。</p>
-
-<ul>
-<li><a href="http://inokara.hateblo.jp/entry/2013/09/07/153826">Elasticsearch を試してみる - ようへいの日々精進</a></li>
-</ul>
-
-
-<h2>位置情報を検索してみる</h2>
-
-<p>下のようなスキーマのデータを登録して検索する想定です。</p>
-
-<p>```javascript venue_example.json
-{</p>
-
-<pre><code>"name" : "Tokyo St",
-"pin" : {
-    "location" : {
-        "lat" : 35.68,
-        "lon" : 139.76
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h3>1. スキーマを登録する</h3>
-
-<p>Elasticsearch は基本的にはスキーマレスで動くのですが、位置情報を表す項目は、明確にスキーマを定義する必要があるようです。</p>
-
-<p>データ投入の前にそれを行います。</p>
-
-<p>```sh
-curl -XPUT 'http://localhost:9200/myvenues/'</p>
-
-<p>curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
-{</p>
-
-<pre><code>"venue" : {
-    "properties" : {
-        "pin" : { "type" : "geo_point" }
-    }
-}
-</code></pre>
-
-<p>}'
-```</p>
-
-<p>ここでは、<code>venue</code> のプロパティ群の内の <code>pin</code> 項目は、位置情報(geo_point)だよ、と定義しています。</p>
-
-<h3>2. データを投入する</h3>
-
-<p>2件ほど、テストデータを投入します。</p>
-
-<p>```sh
-curl -XPUT 'http://localhost:9200/myvenues/venue/1' -d '{</p>
-
-<pre><code>"name" : "Tokyo St",
-"tag" : ["station", "train"],
-"pin" : {
-    "location" : {
-        "lat" : 35.68,
-        "lon" : 139.76
-    }
-}
-</code></pre>
-
-<p>}'</p>
-
-<p>curl -XPUT 'http://localhost:9200/myvenues/venue/2' -d '{</p>
-
-<pre><code>"name" : "Nagoya St",
-"tag" : ["station", "train"],
-"pin" : {
-    "location" : {
-        "lat" : 35.17,
-        "lon" : 136.88
-    }
-}
-</code></pre>
-
-<p>}'
-```</p>
-
-<h3>3. 位置情報で検索する</h3>
-
-<h4>位置＋距離</h4>
-
-<p>緯度/経度:35.6/139.8 から 20km 周囲にあるデータを検索します。</p>
-
-<p>```sh
-curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
-
-<pre><code>"query": {
-    "filtered" : {
-        "query" : {
-            "match_all" : {}
-        },
-        "filter" : {
-            "geo_distance" : {
-                "distance" : "20km",
-                "venue.pin" : {
-                    "lat" : 35.6,
-                    "lon" : 139.8
-                }
-            }
-        }
-    }
-}
-</code></pre>
-
-<p>}'
-```</p>
-
-<h5>結果</h5>
-
-<p>Tokyo St だけがヒットしました。</p>
-
-<p>```javascript
-{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"1","<em>score":1.0, "</em>source" : {</p>
-
-<pre><code>"name" : "Tokyo St",
-"pin" : {
-    "location" : {
-        "lat" : 35.68,
-        "lon" : 139.76
-    }
-}
-</code></pre>
-
-<p>}}]}}
-```</p>
-
-<h4>範囲(矩形)</h4>
-
-<p>左上:35.2/136.8 〜 右下:35.1/136.9 にあるデータを検索します。緯度は上(北)の方が値が大きくなるので、上下関係に注意が必要です。</p>
-
-<p>```sh
-curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
-
-<pre><code>"query": {
-    "filtered" : {
-        "query" : {
-            "match_all" : {}
-        },
-        "filter" : {
-            "geo_bounding_box" : {
-                "venue.pin" : {
-                    "top_left" : {
-                        "lat" : 35.2,
-                        "lon" : 136.8
-                    },
-                    "bottom_right" : {
-                        "lat" : 35.1,
-                        "lon" : 136.9
-                    }
-                }
-            }
-        }
-    }
-}
-</code></pre>
-
-<p>}'
-```</p>
-
-<h5>結果</h5>
-
-<p>Nagoya St だけがヒットしました。</p>
-
-<p>```javascript
-{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"2","<em>score":1.0, "</em>source" : {</p>
-
-<pre><code>"name" : "Nagoya St",
-"pin" : {
-    "location" : {
-        "lat" : 35.17,
-        "lon" : 136.88
-    }
-}
-</code></pre>
-
-<p>}}]}}
-```</p>
-
-<h4>範囲(多角形)</h4>
-
-<p>任意の多角形領域にあるデータを検索します。</p>
-
-<p>ここでは GeoJSON 互換の記述方式で書いてます。経度が先なので注意。
-今までのような lat: lon: の配列でもかけますが、 GeoJSON 便利なので。</p>
-
-<p>```sh
-curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{</p>
-
-<pre><code>"query": {
-    "filtered" : {
-        "query" : {
-            "match_all" : {}
-        },
-        "filter" : {
-            "geo_polygon" : {
-                "venue.pin" : {
-                    "points" : [
-                        [139.7, 35.7],  // 経度が先！
-                        [139.8, 35.7],
-                        [139.8, 35.6],
-                        [139.7, 35.6],
-                        [139.7, 35.7]
-                    ]
-                }
-            }
-        }
-    }
-}
-</code></pre>
-
-<p>}'
-```</p>
-
-<h5>結果</h5>
-
-<p>Tokyo St だけがヒットしました。</p>
-
-<p>```javascript
-{"took":0,"timed_out":false,"<em>shards":{"total":5,"successful":5,"failed":0},"hits":{"total":1,"max_score":1.0,"hits":[{"</em>index":"myvenues","<em>type":"venue","</em>id":"1","<em>score":1.0, "</em>source" : {</p>
-
-<pre><code>"name" : "Tokyo St",
-"pin" : {
-    "location" : {
-        "lat" : 35.68,
-        "lon" : 139.76
-    }
-}
-</code></pre>
-
-<p>}}]}}
-```</p>
-
-<p>(ポリゴンの座標群が、右回りじゃないとダメかな？と思って恐る恐る左回りにしてみたら、問題なく検索できました！)</p>
-
-<h2>まとめ</h2>
-
-<p>最初 <code>geo_point</code> を明示的に指定しないといけないのに気づかなくてしばらくハマりましたが、それ意外はすんなりと動きました。</p>
-
-<p>機能を試しただけでパフォーマンスなどは計測できていませんが、なんか使えそうな気はします。</p>
-
-<p>位置情報関係の情報を探したい時は、公式サイトの GUIDE</p>
-
-<ul>
-<li><a href="http://www.elasticsearch.org/guide/">Reference Guide | Elasticsearch</a></li>
-</ul>
-
-
-<p>の検索バーで 「geo」で検索すると、有用な情報が得られます。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://www.elasticsearch.org/">Open Source Distributed Real Time Search &amp; Analytics | Elasticsearch</a></li>
-<li><a href="http://www.elasticsearch.org/blog/geo-location-and-search/">Geo Location And Search | Blog | Elasticsearch</a></li>
-<li><a href="http://www.elasticsearchtutorial.com/spatial-search-tutorial.html">Spatial Search ElasticSearch tutorial - ElasticSearch Tutorial.com</a></li>
-<li><a href="http://stackoverflow.com/questions/16113439/elasticsearch-geo-distance-filter-with-multiple-locations-in-array-possible">ElasticSearch geo distance filter with multiple locations in array - possible? - Stack Overflow</a></li>
-</ul>
-
 ]]></content>
   </entry>
   
