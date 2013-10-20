@@ -7,6 +7,15 @@ categories: [Bitcasa]
 ---
 [Bitcasa を使っていて「おや？」と思ったこと](http://amay077.github.com/blog/2013/03/25/bitcasa-tips-1/) や [だんだんと Bitcasa が嫌になってきたでござるよ](http://amay077.github.com/blog/2013/04/01/bitcasa-troubles-1/) でさまざまな Bitcasa の問題と対峙してきたわけですが、やっとそれらを克服する方法がわかりました。
 <!--more-->
+
+## 追記 2013.10.20
+
+より新しい情報(2013/7/30)として、以下の方法が Bitcasa のサポートに挙がっていました。
+
+* [How to delete the Bitcasa cache (Windows and Mac) : Help Center](https://support.bitcasa.com/entries/25056968-How-to-delete-the-Bitcasa-cache-Windows-and-Mac-)
+
+----
+
 問題が起こったら、アプリを終了させて下のコマンドを叩く！
 
 ```sh Bitcasa_clear_cache.sh
