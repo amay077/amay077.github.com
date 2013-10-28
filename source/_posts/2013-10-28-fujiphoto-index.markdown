@@ -38,7 +38,7 @@ categories: [Android, MA9]
 
 ## 技術的なアレ
 
-このアプリで [MashUpAward9](http://ma9.mashupaward.jp/) に応募してます。
+このアプリで [MashUpAward9](http://ma9.mashupaward.jp/works/348) に応募してます。
 使用した API は、
 
 * [Yahoo! Android マップ SDK](http://ma9.mashupaward.jp/apis/216) の MapView と雨雲タイルと ARナビ
