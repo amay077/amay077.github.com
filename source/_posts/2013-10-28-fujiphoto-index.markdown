@@ -9,7 +9,7 @@ categories: [Android, MA9]
 <!--more-->
 [![img1](https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_00.png)](https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto)
 
-撮影スポットは、静岡県が提供している「ふじのくにオープンデータ」の「[富士山ビューポイント](open-data.pref..jp/htdocs/index.php?action=pages_view_main&active_action=multidatabase_view_main_detail&content_id=33&multidatabase_id=2&block_id=15#_15)」を使用しています。
+撮影スポットは、静岡県が提供している「ふじのくにオープンデータ」の「[富士山ビューポイント](http://open-data.pref.shizuoka.jp/htdocs/index.php?action=pages_view_main&active_action=multidatabase_view_main_detail&content_id=33&multidatabase_id=2&block_id=15#_15)」を使用しています。
 
 以下のことができます。
 
@@ -51,7 +51,7 @@ categories: [Android, MA9]
 
 データは、冒頭で紹介した、
 
-* [富士山ビューポイント - ふじのくにオープンデータ](open-data.pref..jp/htdocs/index.php?action=pages_view_main&active_action=multidatabase_view_main_detail&content_id=33&multidatabase_id=2&block_id=15#_15)
+* [富士山ビューポイント - ふじのくにオープンデータ](http://open-data.pref.shizuoka.jp/htdocs/index.php?action=pages_view_main&active_action=multidatabase_view_main_detail&content_id=33&multidatabase_id=2&block_id=15#_15)
 
 を使っています。
 日頃アプリを開発したり、アイデアを練ったりしていて、どうしても行き詰まるのがコンテンツです。隣県でこのようなコンテンツを公開してくれる事はとてもありがたく、ぜひ活用してみたいと思って作りました。
