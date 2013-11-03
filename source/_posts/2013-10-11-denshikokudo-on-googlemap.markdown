@@ -1,14 +1,25 @@
 ---
 layout: post
-title: "Googleマップ禁止令が出たのなら、電子国土地図をGoogleマップで使えばいいじゃない"
+title: "Googleマップ禁止令が出たのなら、地理院地図をGoogleマップで使えばいいじゃない"
 date: 2013-10-11 13:55
 comments: true
 categories: [Geo, GoogleMapsAPI, JavaScript, HTML]
 ---
 「領土等が正しく表示されていない」として、国や自治体、国公立の機関に、「Google マップ禁止令」が出ているそうです。
 <!--more-->
+## 2013.11.03 追記
+
+電子国土Web.NEXT という名称で試験公開されていたものが、「地理院地図」「地理院タイル」として正式公開されました。
+
+* [地理院地図の公開について | 国土地理院](http://www.gsi.go.jp/johofukyu/johofukyu40032.html)
+* [地理院タイルを用いた開発 | 地理院地図](http://portal.cyberjapan.jp/help/development.html#siyou)
+
+地理院タイルは [従来版タイル](http://portal.cyberjapan.jp/help/development/oldScheme.html) と仕様が異なります。従来版タイルは **2013年度中に提供終了予定** との事ですし、新しい地理院タイルの方が大幅に仕様が簡略化されたので、こちらを使った方が良いです。
+
+このエントリも「電子国土」を「地理院地図（地理院タイル）」に修正しました。
 
 ----
+
 ## 2013.10.17 追記
 
 [コメント](http://qiita.com/amay077/items/979dfc858a21c8bbb7a9#comment-6d0be86c2ba90df50808)で頂いていますが、現在は、 **「日本向けにローカライズされた」** Googleマップ側でも表記が修正されたようで、当初「問題がある」と言われていた地域は問題が解消されているように見えます。
@@ -16,7 +27,7 @@ categories: [Geo, GoogleMapsAPI, JavaScript, HTML]
 
 * [Google Maps API v3 で 日本海（東海）と「東海」が併記されるのを避けるには - わからん](http://d.hatena.ne.jp/kitokitoki/20130415/p1)
 
-これによって「Google禁止令はもはや無用である」と考えることもできますし、「依然として国の制御下には無い」と考えることもできます。
+これによって「Googleマップ禁止令はもはや無用である」と考えることもできますし、「依然として国の制御下には無い」と考えることもできます。
 
 以下の情報は必要なくなるかも知れませんが、今後「Googleマップ以外の選択肢」の一つとして参考になれば幸いです。
 
@@ -54,13 +65,13 @@ categories: [Geo, GoogleMapsAPI, JavaScript, HTML]
 
 ## ではどうするか？
 
-[電子国土](http://portal.cyberjapan.jp/)という、国土交通省国土地理院が作って提供している地図データ、および地図システムがあります。
+[地理院地図](http://portal.cyberjapan.jp/)という、国土交通省国土地理院が作って提供している地図データ、および地図システムがあります。
 
 身内ならこれ使えよ、という話です。実際、大学などに送られた通知には、こちらを利用するための「相談窓口」が記載されているようです。
 
-ただし、Google Map API から電子国土の地図APIに移行することは、前述の通それなりのコストが発生します。
+ただし、Google Map API から地理院地図の地図APIに移行することは、前述の通り、それなりのコストが発生します。
 
-ので、ここでは、 **「Google Map API を使って電子国土地図を利用する方法」** を紹介します。
+ので、 **「Google Map API を使って地理院地図を利用する方法」** を紹介します。
 
 Google Map API には他の地図データを Overlay（重ねあわせ）する機能が備わっており、これを利用します。
 
@@ -69,7 +80,7 @@ Google Map API には他の地図データを Overlay（重ねあわせ）する
 * [Googleマップを使って国土地理院の地図を見る](http://user.numazu-ct.ac.jp/~tsato/webmap/map/gmap2.html?data=djws)
 * [y2blog » Google Maps APIを用いて電子国土V4背景地図を表示する](http://y2web.net/blog/computer/webmap/show_cj4_tiles_on_google_map_system-3355/)
 
-これらのサイトを参考にしてもよいですが、ここでは、Googleマップで電子国土地図を使う、 最もシンプルな実装例を紹介します。
+これらのサイトを参考にしてもよいですが、ここでは、Googleマップで地理院地図(地理院タイル)を使う、 最もシンプルな実装例を紹介します。
 
 ### 1. Googleマップを表示するページを用意する
 
@@ -112,20 +123,20 @@ HTML+Javascript のソースコードはこんな感じ([Geekなぺーじ:Google
 </html>
 ```
 
-### 2. 電子国土地図を表示するように置き換える
+### 2. 地理院地図(地理院タイル)を表示するように置き換える
 
-* [Google Maps Javascript API v3 での電子国土地図の表示例](http://jsdo.it/amay077/wFtJ)
+* [Google Maps Javascript API v3 での地理院地図の表示例](http://jsdo.it/amay077/wFtJ)
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/denshikokudo_on_googlemap_01.png)
 
-表示が電子国土の地図に置き換わっているのが確認できると思います。右上の地図タイプ切り替えは要らないので消してます。あと、「電子国土」のロゴの表示が必要なので、左下に置いています。
+表示が地理院地図に置き換わっているのが確認できると思います。右上の地図タイプ切り替えは要らないので消してます。あと、ロゴの表示が必要なので、左下に置いています。(地理院地図の正式なロゴが公開されたら置き換えてください)
 
 という処理を追加したのが、下のコード。
-変更が１行、追加行が６０行くらい（ちと長い?）です。
+変更が１行、追加行が30行くらいです。
 変更箇所は「←」で、追加箇所は「↓↓」「↑↑」で示しています。
 [gist](https://gist.github.com/amay077/6928205/revisions) でも diff を見られます。
 
-```html denshikokudo.html
+```html gsi_map.html
 <!DOCTYPE html>
 <html>
   <head>
@@ -134,32 +145,28 @@ HTML+Javascript のソースコードはこんな感じ([Geekなぺーじ:Google
       body { height: 100%; margin: 0px; padding: 0px }
       #map { height: 100% }
     </style>
- 
+
     <script src="http://maps.google.com/maps/api/js?v=3&sensor=false"
         type="text/javascript" charset="UTF-8"></script>
- 
+
     <script type="text/javascript">
     function init() {
       var opts = {
         zoom: 5,
-        mapTypeId: "DenshiKokudo",   // ← 電子国土を使うように変更
+        mapTypeId: "GsiMaps", // 地理院地図の英語表記は「GIS Maps」
         center: new google.maps.LatLng(39, 135)
       };
- 
+
       var map = new google.maps.Map(document.getElementById("map"), opts);
- 
-      // ↓↓電子国土地図を Overlay する↓↓
+
       map.setOptions({
         mapTypeControl: false // 右上の地図タイプ選択を消す
       });
- 
-      // via http://portal.cyberjapan.jp/portalsite/version/v4/index.html
-      var dataset = [null, null, null, null, null, "JAIS","JAIS","JAIS","JAIS", "BAFD1000K",
-        "BAFD1000K", "BAFD1000K", "BAFD200K","BAFD200K","BAFD200K", "DJBMM","DJBMM",
-        "DJBMM", "FGD"];
- 
-      map.mapTypes.set("DenshiKokudo", {
-        name:"電子国土",
+
+      // 地理院タイルを Overlay する
+      // via http://portal.cyberjapan.jp/help/development.html
+      map.mapTypes.set("GsiMaps", {
+        name:"地理院地図(GSI Maps)",
         tileSize:new google.maps.Size(256,256),
         minZoom:5,
         maxZoom:18, 
@@ -169,31 +176,23 @@ HTML+Javascript のソースコードはこんな感じ([Geekなぺーじ:Google
           img.style.height = "256px";
           var x = (tileCoord.x % Math.pow(2, zoom)).toString();
           var y = tileCoord.y.toString();
-          var tileX = "0000000".substr(0, (7 - x.length)) + x;
-          var tileY = "0000000".substr(0, (7 - y.length)) + y;
-          var dir = "";
-          for( var i = 0; i < 6; i++ ) {
-            dir += tileX.charAt(i) + tileY.charAt(i) + "/";
-          }
-          img.src = "http://cyberjapandata.gsi.go.jp/sqras/all/" + dataset[zoom] + "/latest/" + zoom + "/" + dir + tileX + tileY + ".png";
+          img.src = "http://cyberjapandata.gsi.go.jp/xyz/std/" + zoom +  "/" + x + "/" + y + ".png";
           return img;
         }
       });
- 
-      // 左下に電子国土ロゴを表示する
+
+       // 左下に電子国土ロゴを表示(TODO: 地理院地図の正式なロゴが公開されたら置き換える)
       var logo = document.createElement('DIV');
       logo.style.padding = '3px';
       map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(logo);
-      logo.innerHTML = '<a href="http://portal.cyberjapan.jp/portalsite/kiyaku/index.html" target="_blank"><img style="width:32px, height:32px" src="http://cyberjapan.jp/images/icon01.gif" alt="電子国土" /></a>';    
-      // ↑↑電子国土地図を Overlay する↑↑
-    }
+      logo.innerHTML = '<a href="http://portal.cyberjapan.jp/portalsite/kiyaku/index.html" target="_blank"><img style="width:32px, height:32px" src="http://cyberjapan.jp/images/icon01.gif" alt="電子国土" /></a>';    }
     </script>
   </head>
- 
+
   <body onload="init()">
     <div id="map"></div>
   </body>
- 
+
 </html>
 ```
 
@@ -205,23 +204,25 @@ HTML+Javascript のソースコードはこんな感じ([Geekなぺーじ:Google
 
 #### 「試験公開」ってなってるんですけど…
 
-なにが「試験公開」なのかよくわからないです。電子国土Web.NEXT が試験公開で、地図画像自体は「正式」公開なのでしょうか。。。
+地理院地図は「正式公開」になったので安心ですね。
 
-運用予定についてのページ [電子国土Webシステムの今後の予定について](http://portal.cyberjapan.jp/portalsite/version/djapan_yotei.html#v234) をチェックしておくと良さそうです。
+旧Verについては、2013年度中に運用停止とのことです。
+
+* [地理院地図｜旧版情報](http://portal.cyberjapan.jp/help/oldver.html)
 
 #### 利用規約とかどうなってるの？
 
-[電子国土Webシステムの利用に関するフロー](http://portal.cyberjapan.jp/portalsite/q_and_a/index.html) を見てください。
+[地理院地図｜利用規約](http://portal.cyberjapan.jp/help/termsofuse.html) を見てください。
 
 ## まとめ
 
 いかがでしょうか？
 
-現在の Google マップを使ったページに、２箇所の修正を加えるだけで、「問題のない」電子国土の地図に切り替える事ができます。これは今回の問題の一つの解決方法になるのではないでしょうか？
+現在の Google マップを使ったページに、２箇所の修正を加えるだけで、「問題のない」地理院地図に切り替える事ができます。これは今回の問題の一つの解決方法になるのではないでしょうか？
 
 個人的には、今回の「Googleマップ禁止令」は、国が所有する膨大な地図データを広く使ってもらえるチャンスだと思っています。
 
-電子国土地図の表示例を見てもらえれば分かりますが、地図としての見た目はともかく、データの量・精度については、Googleマップ（というかゼンリン）と肩を並べる（あるいは上回るところもある）と思っています。
+地理院地図の表示例を見てもらえれば分かりますが、地図としての見た目はともかく、データの量・精度については、Googleマップ（というかゼンリン）と肩を並べる（あるいは上回るところもある）と思っています。
 
 せっかく税金で作られている地図なんですから、上手に活用していけば日本全体の利益になるんじゃないかと思います。
 
