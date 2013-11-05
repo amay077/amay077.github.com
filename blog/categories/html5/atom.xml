@@ -4,7 +4,7 @@
   <title><![CDATA[Category: HTML5 | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/html5/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-11-03T17:11:13+09:00</updated>
+  <updated>2013-11-05T21:13:14+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,122 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[地理院地図の標高タイル(CSV)を描画してみた]]></title>
+    <link href="http://amay077.github.io/blog/2013/11/05/using-gsimap-dem-csv-api/"/>
+    <updated>2013-11-05T21:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/11/05/using-gsimap-dem-csv-api</id>
+    <content type="html"><![CDATA[<p>国土地理院が提供している API の一つに「標高タイル」というものがあります。</p>
+
+<!--more-->
+
+
+<p>タイルというと、Googleマップや OpenStreetMap などの Web地図では通常、画像を指しますが、標高タイルAPIでは <strong>「画素毎の高度(ｍ)」</strong> が取得できます。</p>
+
+<ul>
+<li><a href="http://portal.cyberjapan.jp/help/development/demtile.html">標高タイル仕様 - 地理院地図</a></li>
+<li><a href="http://cyberjapandata.gsi.go.jp/xyz/dem/14/14547/6463.txt">サンプルURL</a></li>
+</ul>
+
+
+<p>これは面白い、ということで使ってみました。</p>
+
+<h2>サンプル</h2>
+
+<ul>
+<li><a href="http://jsdo.it/amay077/jjod">地理院地図の標高タイル(CSV)を描画してみた - jsdo.it</a></li>
+</ul>
+
+
+<h3>Google Map</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gsimap_dem_csv_api_01.png" alt="img1" /></p>
+
+<h3>標高タイルAPI で取得した標高値を描画</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gsimap_dem_csv_api_02.png" alt="img1" /></p>
+
+<h2>何をしているか？</h2>
+
+<p>下は、このサンプルのコードの抜粋ですが、ポイントは２つ</p>
+
+<ul>
+<li>getTile で通常 img 要素を生成して返すが、代わりに canvas 要素に返す</li>
+<li>標高API をコールして得られた CSV をパースし、 高さに応じた色を計算して、canvas に矩形を描画する</li>
+</ul>
+
+
+<p>さすがに1ピクセル毎に描画すると重すぎるので、初期値では 16ピクセルずつに間引きしています(画面の DotSize で変更できます)。</p>
+
+<p>クライアント側でレンダリングしているので、色などが動的に変更できます。</p>
+
+<p>```javascript</p>
+
+<pre><code>map.mapTypes.set("GsiMaps", {
+  name:"標高タイル",
+  tileSize:new google.maps.Size(256,256),
+  minZoom:14, // 標高タイルは Lv:14 しか用意されてないので
+  maxZoom:14, 
+  getTile:function(tileCoord, zoom, ownerDocument) {
+
+    // 普通は img だけど、標高タイルは CSV で画素毎の標高値が取得できるので、
+    // クライアント側で描画するために Canvas を使う
+    var canvas = ownerDocument.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+
+    var x = (tileCoord.x % Math.pow(2, zoom)).toString();
+    var y = tileCoord.y.toString();
+
+    // 各画素の標高値を取得する
+    canvas.tileUrl = "http://cyberjapandata.gsi.go.jp/xyz/dem/" + zoom +  "/" + x + "/" + y + ".txt";
+    // 標高を描画する
+    renderDem(canvas);
+    renderedTiles[canvas.tileUrl] = canvas; // タイル再描画の為にとっておく
+    return canvas;
+  }
+});
+
+// 標高タイルを描画する
+function renderDem(canvas) {
+  var ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, 256, 256);
+
+  $.get(canvas.tileUrl, function(data) {
+    // CSV が得られるのでパース
+    var lines = data.split(/\r\n|\r|\n/);
+    for (var i = 0; i &lt; lines.length; i+=dotSize) {
+      var cols = lines[i].split(',');
+      for (var j = 0; j &lt; cols.length; j+=dotSize) {
+        if (cols[j] == 'e') { // エラーの画素には 'e' が入ってる
+          continue;
+        }
+
+        // 標高0ｍ を startColor、標高1000ｍを endColor としたグラデーション色を設定する。
+        ctx.fillStyle = $.xcolor
+        .gradientlevel(startColor, endColor, cols[j] / 1000.0 * 100.0, 100)
+        .getCSS();
+        ctx.fillRect(j, i, dotSize, dotSize);
+      }
+    }
+  });
+}
+</code></pre>
+
+<p>```</p>
+
+<h2>まとめ</h2>
+
+<p>ただの標高値を地図に表すなら画像でいいじゃん！とか言われそうですが、よいアイデアが浮かばなかったのでまずは素直に使ってみました。</p>
+
+<p>たとえば、移動手段による移動コストの違い(車だと坂道余裕だけど自転車だとキツい)みたいなのを視覚化するのに使えるような気がします。</p>
+
+<p>今回は、Canvas を使ったのでこの程度ですが、WebGL とかを使えば、Google Map の地形図に負けない、美しい3D地図が描画できるはずです。</p>
+
+<p>他に例を見ない、野心的な試みだと思うので、何か面白い使い方ができるといいなと思います。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Marked.js で Markdown をクライアント側でパースして表示する]]></title>
@@ -442,70 +558,6 @@ Windows Update を行なって最新の状態に、ウイルス対策は <a href
 
 <p>これで最低限の環境設定ができました。
 ではまた３ヶ月後にお会いしましょう。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Javascript 製のチャート描画ライブラリのメモ]]></title>
-    <link href="http://amay077.github.io/blog/2013/07/17/list-of-chart-library-for-javascript/"/>
-    <updated>2013-07-17T19:39:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/07/17/list-of-chart-library-for-javascript</id>
-    <content type="html"><![CDATA[<p>Javascript 製のチャート描画ライブラリをいくつか調べたので備忘録として残しておく。</p>
-
-<!--more-->
-
-
-<p>やりたいのは、ストリーミングで次々やってくるデータをリアルタイムに表示する事。しかも順方向だけじゃなくて過去方向にも戻りたい。</p>
-
-<h2>smoothiecharts</h2>
-
-<p>http://smoothiecharts.org/</p>
-
-<p>シンプルで、使うのも簡単。が、逆再生ができるのかよく分からなかったので保留。</p>
-
-<h2>Cubism.js</h2>
-
-<p>http://square.github.io/cubism/</p>
-
-<p>言わずと知れたビジュアライゼーションライブラリ <a href="http://d3js.org/">D3</a> のプラグイン。
-なんか見た目がクール。
-あまり突っ込んで調べてないので、要件を満たすかは不明。
-ちなみにモバイル決済の Square によるオープンソースプロジェクト。
-D3 自体でもいろいろなチャート描画ができるが、なんか勝手に Fat なイメージを持ってる。</p>
-
-<h2>Flot</h2>
-
-<p>http://www.flotcharts.org/</p>
-
-<p>こちらは jQuery のプラグイン。</p>
-
-<p>使い方が簡単で、配列を描画させてるだけだったので、配列操作で逆再生にも対応できそう。</p>
-
-<h2>Google Chart</h2>
-
-<p>https://developers.google.com/chart</p>
-
-<p>大御所。
-なんか "Connect to your data in realtime" って謡ってるので、できそうな感じもするが試してない。これも高機能であるが故にレスポンス大丈夫かなあと勝手に思っている。</p>
-
-<h2>amCharts</h2>
-
-<p>https://amcharts.zendesk.com/entries/22592917-Creating-charts-with-real-time-data</p>
-
-<p>amCharts というプロダクトで、リアルタイムなチャートが実現できる模様。参考程度に。</p>
-
-<h2>その他</h2>
-
-<p>やりたいことは株価チャートに近いのでそっち方面で探すとたくさんありそうだけど、株価に特化しちゃってて機能過多＆使いづらい感。</p>
-
-<h2>参考</h2>
-
-<p>タイムリーにも同じようなまとめをしてくださってる方が居たのでメモ</p>
-
-<ul>
-<li><a href="http://qiita.com/hurutoriya/items/727296839a2ec638fdc4">グラフ描画に良さげなJavaScriptライブラリ - Qiita</a></li>
-</ul>
-
 ]]></content>
   </entry>
   
