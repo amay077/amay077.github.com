@@ -1,0 +1,978 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,C#,XAC13,Xamarin,iOS,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-12-25T00:00:00+09:00" pubdate data-updated="true">Dec 25<span>th</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xac13/'>XAC13</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p><a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a> も最終日となりました。
+最後は、「実用的な」マルチプラットフォーム開発のツールを紹介します。</p>
+
+<!--more-->
+
+
+<p>MvvmCross ってやつを紹介したいのですが、まずは事前知識からさらりと。</p>
+
+<h2>MVVM パターンについて</h2>
+
+<p>MVVM は、 Model-View-ViewModel の頭文字を取ったものです。
+MVC パターンの派生で、Microsoft が WPF/Silverlight のために作ったそうですが、今では JavaScript の <a href="http://knockoutjs.com/">Knockout.js</a> などでも利用されています。</p>
+
+<p><img src="http://upload.wikimedia.org/wikipedia/commons/8/87/MVVMPattern.png" alt="" />
+(via <a href="http://ja.wikipedia.org/wiki/Model_View_ViewModel">Model View ViewModel - WikiPedia</a> CC-BY 3.0)</p>
+
+<ul>
+<li>Model - MVC の Model と一緒。ビジネスロジックはここに。</li>
+<li>View - WPF なら .xaml、iOS なら .storyboard、Android なら .xml それだけ。1行もコードを書かないのが理想。
+
+<ul>
+<li>DataBinding - ViewModel を監視して、ViewModel の情報を View に表示する。View でのユーザーからの入力を受け付けて ViewModel を変更したり、コマンドを実行する。</li>
+</ul>
+</li>
+<li>ViewModel - View の為の Model。状態管理と View の為の情報＆機能公開、およびその為の Model の利用。”ロジック” はここにも書いちゃダメ。</li>
+</ul>
+
+
+<p>いやもう絶対他のリソース読んだ方が分かりやすいですから(逃げ)。</p>
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/chushin/greatblogentry_02/greatblogentry_02_01.html">MVVMパターンの常識 ― 「M」「V」「VM」の役割とは？ － ＠IT</a></li>
+</ul>
+
+
+<h2>PCL(Portable Class Library) について</h2>
+
+<p>WPF, Silverlight, Windows Store App など、異なるプラットフォームでバイナリを共有できる “ポータブルな” クラスライブラリ。</p>
+
+<ul>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/windowsphone/develop/jj714086(v=vs.105">ポータブル クラス ライブラリを使用して機能を共有する</a>.aspx)</li>
+</ul>
+
+
+<p>そして、先日、Xamarin.Android と iOS でもポータルクラスライブラリが使える/作れるようになりました。</p>
+
+<ul>
+<li><a href="http://blog.xamarin.com/pcl-projects-and-vs2013/">PCL Projects and Visual Studio 2013 Support | Xamarin Blog</a></li>
+</ul>
+
+
+<p>ポータブルクラスライブラリとして作られた DLL は、WPF でも Store App でも Android でも iOS でも使いまわせる、という事です。</p>
+
+<h2>MvvmCross とは</h2>
+
+<p>さて本題。</p>
+
+<p>MvvmCross は、様々なプラットフォームに対応した MVVMフレームワークです。対応プラットフォームをざっと挙げると、</p>
+
+<ul>
+<li>Xamarin.iOS</li>
+<li>Xamarin.Android</li>
+<li>Windows Phone</li>
+<li>Windows Store App</li>
+<li>WPF</li>
+<li>Mac</li>
+</ul>
+
+
+<p>です。</p>
+
+<p>MvvmCross を使うと、MVVM パターンでいうところの Model, ViewModel を複数のプラットフォームで共通にできます。</p>
+
+<p>図にすると下のような感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_01.png" alt="" /></p>
+
+<p>「Model でプラットフォーム固有の機能使いたい場合もあるじゃん？」とかにも対応しているので、これが全てでは無いですが、最初の説明としてはこんなもんです。</p>
+
+<p>ホームページなどはこちら。
+Evolve セッションの Slides の 1〜10ページ が分かりやすいですかね。</p>
+
+<ul>
+<li><a href="https://github.com/MvvmCross/MvvmCross">MvvmCross/MvvmCross - github</a></li>
+<li><a href="http://xamarin.com/evolve/2013#session-dnoeeoarfj">Architecting Cross-Platform Apps with MvvmCross - Evolve 2013 Conference – Xamarin</a></li>
+</ul>
+
+
+<h2>Xamarin.Android Xamarin.iOS で、MvvmCross を使ったアプリを作ってみる</h2>
+
+<p>MvvmCross の現在 Stable なのは「v3」で、その Tutorials が</p>
+
+<ul>
+<li><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N plus 1 Videos Of MvvmCross · MvvmCross/MvvmCross Wiki</a></li>
+</ul>
+
+
+<p>にあります。これがまたドットインストールも真っ青の充実ぶり。
+この動画を順番に見ながら写経すれば使えるようになっちゃいます。</p>
+
+<p>という訳で、最初の１つ「N=0」をトレースしてみましょう。</p>
+
+<h3>動画と違うところ</h3>
+
+<ul>
+<li>Win でなく Mac、Visual Studio でなく Xamarin Studio を使います。Win+VS な人は動画をそのままトレースした方がよいでしょう。</li>
+<li>Nuget 使いません。Nuget から取得したらエラーになったので、マニュアルでアセンブリ追加します。Nuget で配信されるプロジェクトのスケルトンも使わずスクラッチで実装します。</li>
+<li>Windows Store App、Windows Phone は飛ばします。Mac なので。</li>
+<li>iOS での UI 作成について。動画ではコードでUI構築してますが、Storyboard を使いました。その影響で、少しコードが動画と変わっています。</li>
+</ul>
+
+
+<p>では、開始〜。</p>
+
+<h3>1. PCL プロジェクトを作る</h3>
+
+<p>Xamarin Studio にて、新しいソリューションと「Portable Library」プロジェクトを作ります。プロジェクト名は “FirstDemo.Core”、ソリューション名は “FirstDemo” とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_02.png" alt="" /></p>
+
+<h3>2. MvvmCross のバイナリをダウンロードする</h3>
+
+<p><a href="https://github.com/mvvmcross/MvvmCross-Binaries/tree/v3.1">MvvmCross/MvvmCross-Binaries の v3.1 branch</a> をダウンロードなり Clone なりします。</p>
+
+<h3>3. プロジェクトにアセンブリ参照を追加する</h3>
+
+<p>FirstDemo.Core プロジェクトに、先ほどダウンロードした <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable</code> の中の以下のファイルを参照追加します。</p>
+
+<ul>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
+</ul>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_03.png" alt="" /></p>
+
+<h3>4. FirstViewModel クラス、App クラスの実装</h3>
+
+<p>Nuget でインストールされるはずのクラスを実装します。</p>
+
+<p>まず、ViewModels というフォルダを作ってその中に <code>FirstViewModel</code> クラスを作ります。</p>
+
+<figure class='code'><figcaption><span>ViewModels/FirstViewModel.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Cirrious.MvvmCross.ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FirstDemo.Core.ViewModels</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstViewModel</span> <span class="p">:</span> <span class="n">MvxViewModel</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">private</span> <span class="kt">string</span> <span class="n">_firstName</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">public</span> <span class="kt">string</span> <span class="n">FirstName</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_firstName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="n">_firstName</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="n">RaisePropertyChanged</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">FullName</span><span class="p">);}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">private</span> <span class="kt">string</span> <span class="n">_lastName</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">public</span> <span class="kt">string</span> <span class="n">LastName</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_lastName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="n">_lastName</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span> <span class="n">RaisePropertyChanged</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">FullName</span><span class="p">);}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="kt">string</span> <span class="n">FullName</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">String</span><span class="p">.</span><span class="n">Format</span><span class="p">(</span><span class="s">&quot;{0} {1}&quot;</span><span class="p">,</span> <span class="n">_firstName</span><span class="p">,</span> <span class="n">_lastName</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>次に <code>App</code> クラスはルートに。</p>
+
+<figure class='code'><figcaption><span>App.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Cirrious.CrossCore.IoC</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">FirstDemo.Core.ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FirstDemo.Core</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">App</span> <span class="p">:</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">ViewModels</span><span class="p">.</span><span class="n">MvxApplication</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">Initialize</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">CreatableTypes</span><span class="p">()</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">EndingWith</span><span class="p">(</span><span class="s">&quot;Service&quot;</span><span class="p">)</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">AsInterfaces</span><span class="p">()</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">RegisterAsLazySingleton</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">RegisterAppStart</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>MyClass.cs</code> は使わないので削除します。</p>
+
+<p>ここまでが<a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=281">動画の 4:40</a> くらいです。</p>
+
+<h3>5. Android の UI を作る</h3>
+
+<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=671">11:11</a> から。</p>
+
+<p>ソリューションに Android Application プロジェクトを追加します。名前は “FirstDemo.Droid” とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_04.png" alt="" /></p>
+
+<h3>6. FirstDemo.Droid にアセンブリ参照を追加する</h3>
+
+<p>まず、FirstDemo.Core をプロジェクト参照で追加します。
+次に、MvvmCross 関連のアセンブリ群、以下を追加します。動画では Nuget でやってるところです。</p>
+
+<ul>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.CrossCore.Droid.dll *</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Droid.dll *</li>
+<li>Cirrious.MvvmCross.Binding.dll</li>
+<li>Cirrious.MvvmCross.Binding.Droid.dll *</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
+</ul>
+
+
+<p>「*」付きのアセンブリは <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Droid/</code> から、付いてないアセンブリは Core と同じく <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/</code> から追加します。後ろに “Droid” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_05.png" alt="" /></p>
+
+<h3>7. FirstView クラス、Setup クラスの実装</h3>
+
+<p>こちらも Nuget が使えれば〜 のところ。</p>
+
+<p><code>FirstView</code> は、MainView.cs をリファクタでリネーム＆ Views フォルダ移動して内容を下のように書き換えます。</p>
+
+<figure class='code'><figcaption><span>Views/FirstView.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Content</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Runtime</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Views</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Widget</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.OS</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Cirrious.MvvmCross.Droid.Views</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FirstDemo.Droid.Views</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [Activity(Label = &quot;FirstDemo.Droid&quot;, MainLauncher = true, Icon = &quot;@drawable/icon&quot;)]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstView</span> <span class="p">:</span> <span class="n">MvxActivity</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Setup.cs はルートに作ります。</p>
+
+<figure class='code'><figcaption><span>Setup.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Cirrious.MvvmCross.Droid.Platform</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Android.Content</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Cirrious.MvvmCross.ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FirstDemo.Droid</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">Setup</span> <span class="p">:</span> <span class="n">MvxAndroidSetup</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">Setup</span><span class="p">(</span><span class="n">Context</span> <span class="n">appContext</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span><span class="p">(</span><span class="n">appContext</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="n">IMvxApplication</span> <span class="nf">CreateApp</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="n">Core</span><span class="p">.</span><span class="n">App</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あ、 <code>SplashScreen</code> は省略します。説明が面倒なので。</p>
+
+<h3>8.  DataBinding の定義ファイルを作る</h3>
+
+<p>これも Nuget の代わりにやるところ。
+データバインディングを行うために必要なファイルです。この手順を忘れて、ビルドエラーでしばらくハマってました。</p>
+
+<p><code>Resource/values</code> フォルダ内に以下の xml ファイルを作成します。</p>
+
+<figure class='code'><figcaption><span>Resources/values/MvxBindingAttributes.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;resources&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MvxBinding&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxBind&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxLang&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MvxControl&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxTemplate&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MvxListView&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxItemTemplate&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxDropDownItemTemplate&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;item</span> <span class="na">type=</span><span class="s">&quot;id&quot;</span> <span class="na">name=</span><span class="s">&quot;MvxBindingTagUnique&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;declare-styleable</span> <span class="na">name=</span><span class="s">&quot;MvxImageView&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;attr</span> <span class="na">name=</span><span class="s">&quot;MvxSource&quot;</span> <span class="na">format=</span><span class="s">&quot;string&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;/declare-styleable&gt;</span>
+</span><span class='line'><span class="nt">&lt;/resources&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>9. 画面を作る</h3>
+
+<p>画面のレイアウトを作ります。
+Xamarin Studio の Android用 UI デザイナは強力なので、ここだけは Visual Studio に勝っていると言えます。</p>
+
+<p><code>Main.axml</code> を開いて、レイアウトされているボタンを削除し、「Plain Text」を2つと、Text(Mid) を1つ、縦に並べて配置します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_06.png" alt="" /></p>
+
+<h3>10. データバインディングを記述する</h3>
+
+<p><code>Main.axml</code> の「ソース」を開いて、データバインディングについての記述をします。完成形は下のようになります。</p>
+
+<figure class='code'><figcaption><span>Resources/layout/Main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;LinearLayout</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">xmlns:local=</span><span class="s">&quot;http://schemas.android.com/apk/res-auto&quot;</span>
+</span><span class='line'>    <span class="na">android:orientation=</span><span class="s">&quot;vertical&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;fill_parent&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;fill_parent&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;EditText</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>        <span class="na">local:MvxBind=</span><span class="s">&quot;Text FirstName&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;EditText</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>        <span class="na">local:MvxBind=</span><span class="s">&quot;Text LastName&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;TextView</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;Medium Text&quot;</span>
+</span><span class='line'>        <span class="na">android:textAppearance=</span><span class="s">&quot;?android:attr/textAppearanceMedium&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>        <span class="na">local:MvxBind=</span><span class="s">&quot;Text FullName&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/LinearLayout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これで Android UI の実装は終わり。動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=980">16:20</a> あたり。
+Android 側では、初期化を除けば <strong>何も実装してない</strong> のがミソ。</p>
+
+<h3>11. Android アプリを動かしてみる</h3>
+
+<p>エミュレータで実行してみると、こんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_07.gif" alt="" /></p>
+
+<p>Steve を痛恨のスペルミスしたけど、まあいいや。</p>
+
+<p>では続いて、iOS アプリの実装です。</p>
+
+<h3>12. iOS の UI を作る</h3>
+
+<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=1558">25:58</a> から。</p>
+
+<p>ソリューションに iPhone Application プロジェクトを追加します。Storyboard を使ってみましょう。名前は “FirstDemo.Touch” とします。(iOS 版の接尾辞に ”Touch” を使うのは、Xamarin.iOS の以前の名称である ”MonoTouch” からだと思いますが、大文字で始まる .NET 文化の中では “iOS” はとかく都合が悪いので、Touch という接尾辞は私も気に入っています。)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_08.png" alt="" /></p>
+
+<h3>13. FirstDemo.Touch にアセンブリ参照を追加する</h3>
+
+<p>Android の場合と同様、FirstDemo.Core をプロジェクト参照で追加します。
+次に、MvvmCross 関連のアセンブリ群、以下を追加します。</p>
+
+<ul>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.CrossCore.Touch.dll *</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Touch.dll *</li>
+<li>Cirrious.MvvmCross.Binding.dll</li>
+<li>Cirrious.MvvmCross.Binding.Touch.dll *</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
+</ul>
+
+
+<p>「*」付きのアセンブリは MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Touch/ から、付いてないアセンブリは Core と同じく MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/ から追加します。後ろに “Touch” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_09.png" alt="" /></p>
+
+<h3>14. Setup クラス, AppDelegate クラス、FirstView クラスの実装</h3>
+
+<p>とここまで書いておいて、MvvmCross は実は Storyboard で使う時は少し細工が必要な事に気づいた。。。</p>
+
+<p>MvvmCross の作者である slodge さんが下で回答されています。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/16323115">monotouch - MvvmCross and Xcode Storyboard - Stack Overflow</a></li>
+</ul>
+
+
+<p>という訳でここからのコードは、上記で示されている ‘eh’ もミックスしたもので、動画とは少し異なります。動作は同じです。</p>
+
+<p>まず、Setup.cs をルートに作成して以下のように実装します。</p>
+
+<figure class='code'><figcaption><span>Setup.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">using</span> <span class="n">System</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Touch</span><span class="p">.</span><span class="n">Platform</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Touch</span><span class="p">.</span><span class="n">Views</span><span class="p">.</span><span class="n">Presenters</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">namespace</span> <span class="n">FirstDemo</span><span class="p">.</span><span class="n">Touch</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">public</span> <span class="n">class</span> <span class="n">Setup</span> <span class="o">:</span> <span class="n">MvxTouchSetup</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">public</span> <span class="n">Setup</span><span class="p">(</span><span class="n">MvxApplicationDelegate</span> <span class="n">appDelegate</span><span class="p">,</span> <span class="n">IMvxTouchViewPresenter</span> <span class="n">presenter</span><span class="p">)</span>
+</span><span class='line'>            <span class="o">:</span> <span class="n">base</span><span class="p">(</span><span class="n">appDelegate</span><span class="p">,</span> <span class="n">presenter</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">protected</span> <span class="n">override</span> <span class="n">IMvxApplication</span> <span class="n">CreateApp</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">new</span> <span class="n">Core</span><span class="p">.</span><span class="n">App</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>既存の AppDelegate.cs を以下のように書き換えます。</p>
+
+<figure class='code'><figcaption><span>AppDelegate.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">using</span> <span class="n">MonoTouch</span><span class="p">.</span><span class="n">Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Touch</span><span class="p">.</span><span class="n">Platform</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">MonoTouch</span><span class="p">.</span><span class="n">UIKit</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Touch</span><span class="p">.</span><span class="n">Views</span><span class="p">.</span><span class="n">Presenters</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">namespace</span> <span class="n">FirstDemo</span><span class="p">.</span><span class="n">Touch</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">Register</span><span class="p">(</span><span class="s">&quot;AppDelegate&quot;</span><span class="p">)]</span>
+</span><span class='line'>    <span class="n">public</span> <span class="n">partial</span> <span class="n">class</span> <span class="n">AppDelegate</span> <span class="o">:</span> <span class="n">MvxApplicationDelegate</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">public</span> <span class="n">override</span> <span class="n">UIWindow</span> <span class="n">Window</span> <span class="p">{</span> <span class="n">get</span><span class="p">;</span> <span class="n">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">public</span> <span class="n">override</span> <span class="kt">void</span> <span class="n">FinishedLaunching</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">var</span> <span class="n">setup</span> <span class="o">=</span> <span class="n">new</span> <span class="n">Setup</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="n">new</span> <span class="n">MvxTouchViewPresenter</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="n">Window</span><span class="p">));</span>
+</span><span class='line'>            <span class="n">setup</span><span class="p">.</span><span class="n">Initialize</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>FirstView.cs は、FirstDemo.FirstDemoViewController.cs をリネームして作成します。Views フォルダを作って移動もしましょう。
+また、<code>MvxViewConroller</code> から派生させるように変更します。</p>
+
+<p> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_10.png" alt="" /></p>
+
+<h3>15. iOS の UI を作る</h3>
+
+<p>iOS 版の画面をレイアウトします。
+動画ではコードで <code>UITextField</code> などを配置していますが、 <strong>UI をコードで記述する事は万死に値する</strong> ので、Xamarin Studio の iOS デザイナもしくは Xcode の Interface Builder を使います。</p>
+
+<p>下の図は、Xamarin Studio α版の iOS デザイナ を使った例です。<a href="http://qiita.com/amay077/items/716742474bce343c5729">以前に紹介した</a>ものです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_11.png" alt="" /></p>
+
+<p>TextField 2つと、Label を、<code>textEditFirst</code>, <code>textEditLast</code>, <code>labelFull</code> という変数にしておきます。</p>
+
+<h3>16. データバインディングを記述する</h3>
+
+<p>MvvmCross を iOS で使う場合、残念ながら storyboard 側にバインディングを記述する事はできないので、<code>FirstView.cs</code>  にコードで記述します。</p>
+
+<p><code>ViewDidLoad</code> に以下のように追記します。</p>
+
+<figure class='code'><figcaption><span>Views/FirstView.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='objc'><span class='line'><span class="n">using</span> <span class="n">System</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Binding</span><span class="p">.</span><span class="n">BindingContext</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">Touch</span><span class="p">.</span><span class="n">Views</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">Cirrious</span><span class="p">.</span><span class="n">MvvmCross</span><span class="p">.</span><span class="n">ViewModels</span><span class="p">;</span>
+</span><span class='line'><span class="n">using</span> <span class="n">FirstDemo</span><span class="p">.</span><span class="n">Core</span><span class="p">.</span><span class="n">ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">namespace</span> <span class="n">FirstDemo</span><span class="p">.</span><span class="n">Touch</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">public</span> <span class="n">partial</span> <span class="n">class</span> <span class="n">FirstView</span> <span class="o">:</span> <span class="n">MvxViewController</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="cm">/* 省略 */</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">public</span> <span class="n">override</span> <span class="kt">void</span> <span class="n">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">this</span><span class="p">.</span><span class="n">Request</span> <span class="o">=</span> <span class="n">new</span> <span class="n">MvxViewModelRequest</span><span class="o">&lt;</span><span class="n">FirstViewModel</span><span class="o">&gt;</span><span class="p">(</span>
+</span><span class='line'>                <span class="n">null</span><span class="p">,</span> <span class="n">null</span><span class="p">,</span> <span class="n">new</span> <span class="n">MvxRequestedBy</span><span class="p">());</span>
+</span><span class='line'>            <span class="n">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">var</span> <span class="n">set</span> <span class="o">=</span> <span class="n">this</span><span class="p">.</span><span class="n">CreateBindingSet</span><span class="o">&lt;</span><span class="n">FirstView</span><span class="p">,</span> <span class="n">FirstViewModel</span><span class="o">&gt;</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">set</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">textEditFirst</span><span class="p">).</span><span class="n">To</span><span class="p">(</span><span class="n">vm</span> <span class="o">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">FirstName</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">set</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">textEditLast</span><span class="p">).</span><span class="n">To</span><span class="p">(</span><span class="n">vm</span> <span class="o">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">LastName</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">set</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">labelFull</span><span class="p">).</span><span class="n">To</span><span class="p">(</span><span class="n">vm</span> <span class="o">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">FullName</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">set</span><span class="p">.</span><span class="n">Apply</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="cm">/* 省略 */</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これで iOS 側も実装終了、動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=2020">33:40</a> まで来ました。</p>
+
+<h3>17. iOS アプリを動かしてみる</h3>
+
+<p>動画では、Windows であるため Mac にリモート接続して実行していますが、Mac+Xamarin Studio なら即実行できます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_12.gif" alt="" /></p>
+
+<h2>MvvmCross についてのまとめ</h2>
+
+<p>今日の完成版のコードは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/NPlus1DaysOfMvvmCrossWithXamarinStudio/tree/master/N-00-FirstDemo">NPlus1DaysOfMvvmCrossWithXamarinStudio / N-00-FirstDemo - github</a></li>
+</ul>
+
+
+<p>に置いておきました。</p>
+
+<p>ちょっと STEP が多くなっちゃいましたが、MvvmCross を使うと、複数のプラットフォームで ViewModel-Model を共通化できることが分かったと思います。</p>
+
+<p><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N+1 Days-</a> は、現在 39(!!) まであります。動画観てるだけでもわかった感じになります。（私は N=8 まで観た気がします。）</p>
+
+<p>また、 @MvvmCross にツイートすると、気さくに（英語ですが）回答してくれます。</p>
+
+<p>使いこなせば強力な武器になる MvvmCross 、今後も要チェックです。</p>
+
+<h2>Xamarin Advent Calendar 2013 まとめ</h2>
+
+<p>勢いに任せて作った XAC2013、なんとか完走できました。
+「全部俺」でもいいやと思っていましたが、私含め5名の方に参加して頂けました、ありがとうございました。</p>
+
+<p><a href="http://www.amazon.co.jp/gp/product/B00H2SBO4E?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=B00H2SBO4E&amp;linkCode=shr&amp;tag=oku2008-22&amp;=books&amp;qid=1387973043&amp;sr=1-1&amp;keywords=%E6%97%A5%E7%B5%8C%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A8%E3%82%A2+2014%E5%B9%B42%E6%9C%88%E5%8F%B7">日経ソフトウェア</a> によると、「2014年にブレークする技術」に Xamarin はありませんでしたが、MS と提携以後のプッシュぶりを見ていると、今後、来年のブレークに期待できそうです。</p>
+
+<p>昨日の @atsushieno さんの <a href="http://atsushieno.hatenablog.com/entry/2013/12/24/213950">Xamarin 創立からの苦労話</a> を知ると、安易に「ライセンス高ぇ！値下げPlz！」などとは言えませんが、ユーザ(デベロッパ)を増やしたいのもまた事実。α/β版だけでも 30days のトライアル期限なくしてもらえたいら嬉しいですね。</p>
+
+<p>Xamarin Advent Calendar 2013 はこれで終わりですが、今後もちまちまと Tips みたいなものを書いてくつもりですので、 <a href="http://qiita.com/tags/xamarin">Qiita のタグ</a> をチェックしてもらえると嬉しいです。</p>
+
+<p>そして Xamarin Advent Calendar 2014 でまたお会いしましょう。</p>
+
+
+      <h4>Ads</h4>
+      <script type="text/javascript"><!--
+      amazon_ad_tag = "oku2008-22"; amazon_ad_width = "728"; amazon_ad_height = "90"; amazon_ad_link_target = "new"; amazon_ad_border = "hide"; amazon_color_border = "3383E9"; amazon_color_text = "5A5E5F"; amazon_color_link = "3383E9"; amazon_color_price = "3383E9"; amazon_color_logo = "FDFDFD";//--></script>
+      <script type="text/javascript" src="http://ir-jp.amazon-adsystem.com/s/ads.js"></script>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/" title="Previous Post: Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる">&lt; Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる</a>
+          
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/';
+        var disqus_url = 'http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

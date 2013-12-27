@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ReactiveExtensions | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/reactiveextensions/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-12-18T20:28:29+09:00</updated>
+  <updated>2013-12-27T15:15:26+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,99 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin に Reactive Extensions を導入する]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/12/installing-rx-in-xamarin/"/>
+    <updated>2013-12-12T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/12/installing-rx-in-xamarin</id>
+    <content type="html"><![CDATA[<p>昨日の <a href="http://qiita.com/amay077/items/49681b2de5d8cf208112">ポスト</a> を使ったのに、肝心の導入部分を説明するのを忘れていました。まあ Components から追加するだけなのですが。他のアドベントカレンダーとの掛け持ちで疲れたので、今日は軽く書いて済ませます。</p>
+
+<!--more-->
+
+
+<h2>Reactive Extensions を導入する</h2>
+
+<p>Components で右クリック → Get more components → Reactive とかで検索 → 見つけたら Add to App で OK です。あ、この手順は .iOS でも .Android でも同じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_01.gif" alt="" /></p>
+
+<h2>使ってみましょうか</h2>
+
+<p>イベントを Stream に変換する例を示してお茶を濁します。</p>
+
+<p>まずこんな感じのどうでもいい画面を用意しまして、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_02.png" alt="" /></p>
+
+<p><code>UIButton.TouchUpInside</code> を <code>IObservable</code> に変換する拡張メソッドを用意します。</p>
+
+<p>```csharp UIButtonExtensions.cs
+public static class UIButtonExtensions
+{</p>
+
+<pre><code>public static IObservable&lt;string&gt; ClickAsObservable(this UIButton button)
+{
+    return Observable.FromEventPattern&lt;EventArgs&gt;(button, "TouchUpInside")
+            .Select(e =&gt; ((UIButton)e.Sender).TitleLabel.Text);
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>で、こんなコードを書きます。</p>
+
+<p>```csharp MainViewController_amb.cs
+public override void ViewDidLoad()
+{</p>
+
+<pre><code>base.ViewDidLoad();
+
+Button1.ClickAsObservable()
+    .Publish(_ =&gt; 
+        Button2.ClickAsObservable()
+        .Amb(
+            Button3.ClickAsObservable()))
+    .Subscribe(btnName =&gt; InvokeOnMainThread(() =&gt; 
+        Label1.Text = btnName + " Clicked"));
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>Observable.Amb (先にきた値を流す)</h3>
+
+<p>Button1 を押すと処理の開始です。
+Publish で分配して <strong>Amb</strong> は Button2 のクリックと Button3 のクリックで先に行われた方を Label1 に表示します。</p>
+
+<h3>Observable.Zip (どちらの値も待つ)</h3>
+
+<p>Amb を Zip に変えてみます。</p>
+
+<p>```csharp MainViewController_zip.cs</p>
+
+<pre><code>Button1.ClickAsObservable()
+    .Publish(_ =&gt; 
+        Button2.ClickAsObservable()
+        .Zip(
+            Button3.ClickAsObservable(), (l,r) =&gt; new {l, r}))
+    .Subscribe(p =&gt; InvokeOnMainThread(() =&gt; 
+        Label1.Text = p.l + " and " + p.r + "Clicked"));
+</code></pre>
+
+<p>```</p>
+
+<p>Zip は2つのシーケンスの結果を待ってから後続へ流します。
+なので、Button2 と Button3 の両方が押されると、Label1 に表示されます。</p>
+
+<p>どちらもフツーに書くとフラグ変数なんか使って実現すると思うんですけど、Rx を使うと読みやすいコードになると思います。</p>
+
+<p>あと、私は Android-Java の開発では <a href="https://code.google.com/p/reactive4java/">reactive4Java</a> を使ってるんですが、あれには <code>Observable.FromEventPattern</code> が無い(Java のイベントの Listener はイベントのマルチキャストに対応してないから仕方ない)ので、Xamarin にすることで「完全な」Rx を使うことができて、こりゃ勉強のしがいがあるなあと思ったのでした。</p>
+
+<p>何の記事でしたっけ？という感じですけど Xamarin なら Linq も Rx も使えてハッピーという事で、今日は以上です。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android で GPS を使う(Reactive Extensions版)]]></title>

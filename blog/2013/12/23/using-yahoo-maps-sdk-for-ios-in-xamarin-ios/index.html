@@ -1,0 +1,449 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="C#,Geo,XAC13,Xamarin,iOS,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-12-23T00:00:00+09:00" pubdate data-updated="true">Dec 23<span>rd</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/geo/'>Geo</a>, <a class='category' href='/blog/categories/xac13/'>XAC13</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>Xamarin.iOS では、既存の iOS用ライブラリが利用できます。
+今日は例として Yahoo Maps SDK for iOS を Xamarin.iOS から使ってみます。</p>
+
+<!--more-->
+
+
+<h2>Yahoo! iOSマップSDK とは</h2>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>Yahoo! Japan が提供する地図SDKです。Google Maps にはない魅力として、「雨雲レーダー」「経路探索/案内」「AR機能」が挙げられます。
+利用するには上記サイトから APIキー の発行が必要です。</p>
+
+<h2>Xamarin.iOS で Objective-C ライブラリを使う方法</h2>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
+</ul>
+
+
+<p>「Binding」と呼ばれます。
+Obj-Cライブラリを呼び出すラッパーのようなものを C# で記述し、それを Xamarin.iOS アプリケーションから使用することが出来ます。</p>
+
+<h2>Xamarin.iOS で Yahoo! iOSマップSDK を使う手順</h2>
+
+<h3>1. Yahoo! iOSマップSDK をダウンロードし、APIキー を発行する</h3>
+
+<p>SDK のダウンロードは、</p>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>です。APIキー の発行は、</p>
+
+<ul>
+<li><a href="https://e.developer.yahoo.co.jp/dashboard/">アプリケーションの管理：Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>です。手順は、</p>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">YOLP(地図):利用準備 - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>が分かりやすいです。</p>
+
+<h3>2. Xamarin.iOS で Binding プロジェクトを作る</h3>
+
+<p>Xamarin Studio で新しいソリューションを作ります。
+iOS → iOS Binding Project で、名前は 「YMapBinding」、ソリューション名は「YMapSample」とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_01.png" alt="" /></p>
+
+<h3>3. Yahoo! iOSマップSDK のライブラリファイルを Binding プロジェクトに入れる</h3>
+
+<p>ダウンロードした Yahoo! iOSマップSDK を解凍して、中に含まれる <code>YMapKit</code> ファイルを <code>libYMapKit.a</code> にリネームします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_02.png" alt="" /></p>
+
+<p>Xamarin Studio で、YMapBinding プロジェクトに <code>libYMapKit.a</code> を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_03.png" alt="" /></p>
+
+<h3>4. Yahoo! iOSマップSDK の API定義を C# で書く</h3>
+
+<p>Binding プロジェクトにある <code>ApiDefinition.cs</code> を以下のように書き換えます。</p>
+
+<figure class='code'><figcaption><span>ApiDefinition.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Drawing</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.ObjCRuntime</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">YMapBinding</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [BaseType (typeof (UIView))]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">partial</span> <span class="k">interface</span> <span class="n">YMKMapView</span> <span class="p">{</span>
+</span><span class='line'><span class="na">        [Export (&quot;initWithFrame:appid:&quot;)]</span>
+</span><span class='line'>        <span class="n">IntPtr</span> <span class="nf">Constructor</span> <span class="p">(</span><span class="n">RectangleF</span> <span class="n">frame</span><span class="p">,</span> <span class="kt">string</span> <span class="n">appid</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>よく目を凝らすと分かるんですが、これは iOS版ライブラリの <code>initWithFrame:appId:</code> というコンストラクタを C# で定義しています。
+他のメソッドやプロパティ、イベント(delegate)も同じように定義するのですが、ここでは省略します。</p>
+
+<p>次に <code>libYMapKit.linkwith.cs</code> を開いて、以下のように書き換えます。</p>
+
+<figure class='code'><figcaption><span>libYMapKit.linkwith.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.ObjCRuntime</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">[assembly: LinkWith (&quot;libYMapKit.a&quot;, LinkTarget.ArmV7 | LinkTarget.ArmV7s | LinkTarget.Simulator ,ForceLoad = true, </span>
+</span><span class='line'><span class="na">    Frameworks=&quot;UIKit SystemConfiguration CoreGraphics CoreLocation Foundation OpenGLES QuartzCore&quot;)]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Yahoo! iOSマップSDK が依存するライブラリを Frameworks に列挙しています。</p>
+
+<p>これでひとまず Binding プロジェクト 側は終わりです。</p>
+
+<h4>5. サンプルアプリケーションプロジェクトを作る</h4>
+
+<p>YMapSample ソリューションに 新しいプロジェクト を追加、iPhone の Single view Application 、名称は「YMapApp」とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_04.png" alt="" /></p>
+
+<p>YMapApp プロジェクトを右クリックして、スタートアッププロジェクトをこちらに変更しておきます。</p>
+
+<p>次に、参照設定で YMapBinding を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_05.png" alt="" /></p>
+
+<h4>6. Yahoo! iOSマップSDK を表示するコードを書く</h4>
+
+<p>YMapApp のビューコントローラ(たぶん YMapAppViewController)の<code>ViewDidLoad</code> に、以下のように追記します。</p>
+
+<figure class='code'><figcaption><span>YMapAppViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="k">new</span> <span class="n">YMKMapView</span><span class="p">(</span><span class="k">new</span> <span class="n">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="m">0f</span><span class="p">,</span> <span class="m">320f</span><span class="p">,</span> <span class="m">320f</span><span class="p">),</span>
+</span><span class='line'>        <span class="err">“</span><span class="p">&lt;</span><span class="n">your</span> <span class="n">app</span> <span class="n">key</span><span class="p">&gt;</span><span class="err">”</span><span class="p">);</span>  <span class="c1">// あなたが取得した APIキー</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">AddSubview</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ああ、 <code>using YMapBinding;</code> も必要ですね。</p>
+
+<p>アプリの方もとりあえずこれで OK。</p>
+
+<h4>7. 動かしてみる</h4>
+
+<p>YMapApp を iOSシミュレータで実行してみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_06.gif" alt="" /></p>
+
+<p>はい、このように「とりあえず」Yahoo! iOSマップSDK を Xamarin.iOS で動かすことができました。</p>
+
+<h2>この後（やること多いよ）</h2>
+
+<h3>API定義をちまちまと移植</h3>
+
+<p>この例ではコンストラクタ1つしか定義しませんでしたが、これを他のコンストラクタ、メソッド、プロパティ、イベントについて行う必要があります。これを助けるツールとして <a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/objective_sharpie/">Objective Sharpie</a> が公開されていますが、あまり期待しない方が良さそうです。Yahoo! iOSマップSDK をこのツールにかけてみましたが、出来上がった定義ファイルはエラーがたくさん出ました。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
+</ul>
+
+
+<p>を理解した上で、Objective Sharpie の結果を参考にして、作っていく必要がありそうです。</p>
+
+<h3>ApiDefinition.cs への定義は正しいのか？</h3>
+
+<p>「Frameworks に、Yahoo! iOSマップSDK が依存しているライブラリを列挙」してみましたが、<a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">チュートリアル</a> には <code>libxml2.2.dylib</code> も含まれています。が、 <code>ApiDefinition.cs</code> にはこれは記述していません。けど動いています。何かの機能を使った時に問題になるかもしれません。そしてこの .dylib という拡張子の場合にどう定義すれば良いのか不明です。</p>
+
+<h3>ライブラリが使用するリソースはどこに？</h3>
+
+<p>ダウンロードした Yahoo! iOSマップSDK には <code>image</code> ディレクトリがあり、これをアプリケーションプロジェクトに配置することで、ライブラリがリソースを使うことになっています。Xamarin.iOS Binding プロジェクトではこれはどこに配置すればよいか、未調査です。</p>
+
+<p>ということで Xamarin.iOS の Binding について紹介しました。
+.Android の Binding は jar を放り込めばある程度自動で定義を生成してくれていたのに対し、かなり面倒な感じです。アプリケーションに必要な機能だけを定義して使っていく感じかなあと感じました。</p>
+
+
+      <h4>Ads</h4>
+      <script type="text/javascript"><!--
+      amazon_ad_tag = "oku2008-22"; amazon_ad_width = "728"; amazon_ad_height = "90"; amazon_ad_link_target = "new"; amazon_ad_border = "hide"; amazon_color_border = "3383E9"; amazon_color_text = "5A5E5F"; amazon_color_link = "3383E9"; amazon_color_price = "3383E9"; amazon_color_logo = "FDFDFD";//--></script>
+      <script type="text/javascript" src="http://ir-jp.amazon-adsystem.com/s/ads.js"></script>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/12/22/about-githubs-xamarin-starter-apps/" title="Previous Post: GitHub's Xamarin starter apps  について">&lt; GitHub's Xamarin starter apps  について</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/" title="Next Post: マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う">マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/';
+        var disqus_url = 'http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

@@ -1,0 +1,454 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin で Windows Azure モバイルサービスを使う(その１) - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,Azure,BaaS,C#,XAC13,Xamarin,iOS,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin で Windows Azure モバイルサービスを使う(その１)
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-12-14T00:00:00+09:00" pubdate data-updated="true">Dec 14<span>th</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/azure/'>Azure</a>, <a class='category' href='/blog/categories/baas/'>BaaS</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xac13/'>XAC13</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>Xamarin で BaaS を使うことについて、 <a href="http://qiita.com/koji_yusa/items/a6878bef10577ee744b5">koji_yusa さん</a>や <a href="http://qiita.com/kochizufan/items/c91b3a59a56d8fc54bb7">kochizufan さん</a> が、Parse の使用方法について書いてくれました。</p>
+
+<!--more-->
+
+
+<p>BaaS の中では Parse が一番知名度が高いでしょう。しかし！Microsoft も BaaS を提供しています。</p>
+
+<p>Azure の名を冠しているため、「どうせ IaaS でしょ」とスルーする人が多いんじゃないかと思うので、今回は Microsoft の BaaS である「Azure モバイルサービス」について書きます。</p>
+
+<h2>Azureモバイルサービス vs Parse</h2>
+
+<ul>
+<li><a href="http://www.windowsazure.com/ja-jp/pricing/details/mobile-services/">Windows Azure モバイルサービス - 料金詳細</a></li>
+<li><a href="https://parse.com/plans">Parse - Pricing</a></li>
+</ul>
+
+
+<p>実際のところは、Parse に比べて Azure の方がスペックは低いです。無料版では、API呼び出し回数は、Azure が50万回に対して、Parse は100万回、ストレージは、Azyreが20MB(!)に対して Parse が1GB などです。</p>
+
+<p>唯一、Azure にのみある機能は「スケジュールされたジョブ」、いわゆる cron みたいなジョブの定期呼び出し機能です。無料版では1時間に1回の利用に限定されるようですが、日時処理には十分使えるでしょう。</p>
+
+<p><a href="http://mb.cloud.nifty.com/price.htm">Nifty の BaaS</a> と比べても劣勢ですね、あれれ？</p>
+
+<h2>Azure モバイルサービスを Xamarin から使う</h2>
+
+<p>Microsoft と Xamarin との提携により、Xamarin から Azure モバイルサービスは、簡単に利用することができます。提携前からライブラリの提供など対応は充実していましたが、提携により Microsoft のサイトでチュートリアルが公開されるなど、より充実しました。</p>
+
+<p>そのチュートリアルを辿ってみます。</p>
+
+<p>ちなみに環境は Mac + Xamarin Studio です。Win + Visual Studio でも同じ手順ですが、iOS 用のサンプルなので、iOS ならビルドと実行の為に Mac が必要です。Win しかないなら Android 用に置き換えて試せます。</p>
+
+<h3>1. Windows Azure にサインアップする</h3>
+
+<p>モバイルサービスを利用するには、まず Windows Azure に登録しなければなりません。本人確認のために、クレジットカードや携帯電話番号が必要になるのが煩わしいかもですが、勝手に請求されたりはしませんのでご安心を。</p>
+
+<p>手順は↓が詳しいので割愛します。</p>
+
+<ul>
+<li><a href="http://wordpress-web.azurewebsites.net/guide">Windows Azureに登録する | 初心者でも30分でできる　ビジネスで使える！WordPressでWebサイト</a></li>
+</ul>
+
+
+<h3>2. モバイルサービスを作成する</h3>
+
+<p>サインアップできたら Windows Azure マネージメントポータルを開きます。迷ったらここ。アドレスは、</p>
+
+<ul>
+<li>https://manage.windowsazure.com/</li>
+</ul>
+
+
+<p>です。</p>
+
+<p>下のような画面になるので、左メニューから モバイルサービス → 新しいモバイル サービスを作成する と進みます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_01.png" alt="" /></p>
+
+<p>URL に任意のIDを入力します(世界で一意になる必要があります)。また、地域を「東アジア」にします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_02.png" alt="" /></p>
+
+<p>続いて SQL Server の設定をします。ログイン名に任意のユーザー名、パスワードに任意のパスワードを設定します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_03.png" alt="" /></p>
+
+<p>ウィザードを終わると、マネージメントポータルに戻ります。しばらくの「作製中…」の後、状態が「準備完了」となり、これでモバイルサービスは作成完了です。</p>
+
+<h3>3. Xamarin.iOS アプリケーションからモバイルサービスを使ってみる</h3>
+
+<p>作成したモバイルサービスをクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_04.png" alt="" /></p>
+
+<p>ここから、一気です。</p>
+
+<ol>
+<li>まずプラットフォームで「Xamarin」を選択し、</li>
+<li>「新しい XAMARIN アプリケーションを作成する」を展開、</li>
+<li>「TodoItem テーブルを作成する」をクリックして「作成されました」となるまで待ち、</li>
+<li>Xamarin.iOS 用のサンプルアプリケーションをダウンロードします。</li>
+</ol>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_05.png" alt="" /></p>
+
+<p>ダウンロードした zip ファイルを解答し、Xamarin Studio で開きます。
+参照 や Components を見ると、Azure Mobile Service 用のライブラリが組み込まれている事が分かります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_06.png" alt="" /></p>
+
+<p>Debug で iPhone シミュレータで動かしてみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_07.gif" alt="" /></p>
+
+<p>上の動画のように適当なアイテムを追加した後、ブラウザのマネージメントポータルで追加したデータを確認してみます。</p>
+
+<p>上部のメニュー から データ → TodoItem と進むと、追加されたデータが確認できます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_1_08.gif" alt="" /></p>
+
+<p>以上です。Xamarin.iOS で Azure モバイルサービスにデータを登録するサンプルが手に入りました。</p>
+
+<h3>4. サンプルのコードを眺めてみる</h3>
+
+<p>これで終わってもアレなので、コードを見てみます。
+まず前述した Azure Mobile Service 用のライブラリが組みこまれていますが、これは、 Xamarin の Components ストアで提供されている、</p>
+
+<ul>
+<li><a href="http://components.xamarin.com/view/azure-mobile-services">Azure Mobile Services / Components / Xamarin</a></li>
+</ul>
+
+
+<p>です。これを主に使っているのは <code>QSTodoService.cs</code> です。</p>
+
+<p><code>QSTodoService.cs</code> を見てみると、まず NameSpace から。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">Microsoft.WindowsAzure.MobileServices</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>次にコンストラクタなど。</p>
+
+<p><code>MobileServiceClient</code> がメインクラスですが、これを使う前に <code>CurrentPlatform.Init()</code> が必要です(DI だか IoC だかですかね)。</p>
+
+<p>そして <code>MobileServiceClient.GetTable&lt;ToDoItem&gt;()</code> をすることで Azure 上のテーブルを取得しています。まだデータは読み込みません。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">MobileServiceClient</span> <span class="n">client</span><span class="p">;</span>
+</span><span class='line'><span class="n">IMobileServiceTable</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="n">todoTable</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="cm">/**省略*/</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">QSTodoService</span> <span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">CurrentPlatform</span><span class="p">.</span><span class="n">Init</span> <span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Initialize the Mobile Service client with your URL and key</span>
+</span><span class='line'>  <span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="n">MobileServiceClient</span> <span class="p">(</span><span class="n">applicationURL</span><span class="p">,</span> <span class="n">applicationKey</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Create an MSTable instance to allow us to work with the TodoItem table</span>
+</span><span class='line'>  <span class="n">todoTable</span> <span class="p">=</span> <span class="n">client</span><span class="p">.</span><span class="n">GetTable</span> <span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="p">();</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>データの読み込みは、<code>RefreshDataAsync</code> にて。さりげなく async で。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="n">Items</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">async</span> <span class="k">public</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;&gt;</span> <span class="n">RefreshDataAsync</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">try</span> <span class="p">{</span>
+</span><span class='line'>      <span class="c1">// This code refreshes the entries in the list view by querying the TodoItems table.</span>
+</span><span class='line'>      <span class="c1">// The query excludes completed TodoItems</span>
+</span><span class='line'>      <span class="n">Items</span> <span class="p">=</span> <span class="k">await</span> <span class="n">todoTable</span>
+</span><span class='line'>          <span class="p">.</span><span class="n">Where</span> <span class="p">(</span><span class="n">todoItem</span> <span class="p">=&gt;</span> <span class="n">todoItem</span><span class="p">.</span><span class="n">Complete</span> <span class="p">==</span> <span class="k">false</span><span class="p">).</span><span class="n">ToListAsync</span> <span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">MobileServiceInvalidOperationException</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>      <span class="n">Console</span><span class="p">.</span><span class="n">Error</span><span class="p">.</span><span class="n">WriteLine</span> <span class="p">(</span><span class="s">@&quot;ERROR {0}&quot;</span><span class="p">,</span> <span class="n">e</span><span class="p">.</span><span class="n">Message</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="k">null</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">return</span> <span class="n">Items</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今回はこんなところで。</p>
+
+<p>次回は、 Azure モバイルサービスの続きで、このサンプルに認証周りの機能を実装してみます。</p>
+
+
+      <h4>Ads</h4>
+      <script type="text/javascript"><!--
+      amazon_ad_tag = "oku2008-22"; amazon_ad_width = "728"; amazon_ad_height = "90"; amazon_ad_link_target = "new"; amazon_ad_border = "hide"; amazon_color_border = "3383E9"; amazon_color_text = "5A5E5F"; amazon_color_link = "3383E9"; amazon_color_price = "3383E9"; amazon_color_logo = "FDFDFD";//--></script>
+      <script type="text/javascript" src="http://ir-jp.amazon-adsystem.com/s/ads.js"></script>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/12/13/rename-viewcontroller-with-xamarin-ios/" title="Previous Post: Xamarin.iOS で ViewController の名称を変える">&lt; Xamarin.iOS で ViewController の名称を変える</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev/" title="Next Post: FOSS4G 開発者の為の、図形演算ライブラリガイド">FOSS4G 開発者の為の、図形演算ライブラリガイド &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/';
+        var disqus_url = 'http://amay077.github.io/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

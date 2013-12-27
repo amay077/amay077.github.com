@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-12-18T20:28:29+09:00</updated>
+  <updated>2013-12-27T15:15:26+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -14,357 +14,1353 @@
 
   
   <entry>
-    <title type="html"><![CDATA[Google API Console の API Access って…]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/30/multi-apps-in-google-api-console/"/>
-    <updated>2013-10-30T20:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/30/multi-apps-in-google-api-console</id>
-    <content type="html"><![CDATA[<p><a href="https://code.google.com/apis/console/">Google API Console</a> の API Access って、複数のアプリを登録できたんですね。気づかなかった。。。</p>
+    <title type="html"><![CDATA[マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/"/>
+    <updated>2013-12-25T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a> も最終日となりました。
+最後は、「実用的な」マルチプラットフォーム開発のツールを紹介します。</p>
 
 <!--more-->
 
 
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/multi_apps_in_google_api_console_01.png" alt="img1" /></p>
+<p>MvvmCross ってやつを紹介したいのですが、まずは事前知識からさらりと。</p>
 
-<blockquote><p>&lt;SHA1フィンガープリント>;&lt;アプリのパッケージ名>&lt;改行><br/>
-&lt;SHA1フィンガープリント>;&lt;アプリのパッケージ名></p></blockquote>
+<h2>MVVM パターンについて</h2>
 
-<p>って書けばよかったんだ。</p>
+<p>MVVM は、 Model-View-ViewModel の頭文字を取ったものです。
+MVC パターンの派生で、Microsoft が WPF/Silverlight のために作ったそうですが、今では JavaScript の <a href="http://knockoutjs.com/">Knockout.js</a> などでも利用されています。</p>
 
-<p>新しくなった <a href="https://cloud.google.com/console">Cloud Console</a> では、 +/- ボタンが付いて分かりやすい。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/multi_apps_in_google_api_console_02.png" alt="img1" /></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[富士フォトというアプリをリリースしました]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/28/fujiphoto-index/"/>
-    <updated>2013-10-28T18:22:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/28/fujiphoto-index</id>
-    <content type="html"><![CDATA[<p>富士山の撮影スポットを探して、そこへ案内するアプリです。</p>
-
-<!--more-->
-
-
-<p><a href="https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto"><img src="https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_00.png" alt="img1" /></a></p>
-
-<p>撮影スポットは、静岡県が提供している「ふじのくにオープンデータ」の「<a href="http://open-data.pref.shizuoka.jp/htdocs/index.php?action=pages_view_main&amp;active_action=multidatabase_view_main_detail&amp;content_id=33&amp;multidatabase_id=2&amp;block_id=15#_15">富士山ビューポイント</a>」を使用しています。</p>
-
-<p>以下のことができます。</p>
+<p><img src="http://upload.wikimedia.org/wikipedia/commons/8/87/MVVMPattern.png" alt="" />
+(via <a href="http://ja.wikipedia.org/wiki/Model_View_ViewModel">Model View ViewModel - WikiPedia</a> CC-BY 3.0)</p>
 
 <ul>
-<li>GPS を使って、現在地付近にある撮影スポットを検索</li>
-<li>スポットで撮影された富士山の写真を表示</li>
-<li>現在地と撮影スポット、富士山の位置関係を地図で確認</li>
-<li>撮影スポットと富士山付近の(雨)雲の状況を地図に表示</li>
-<li>現在地から撮影スポットへ行くまでを AR で案内(Googleマップナビも使用できます)
+<li>Model - MVC の Model と一緒。ビジネスロジックはここに。</li>
+<li>View - WPF なら .xaml、iOS なら .storyboard、Android なら .xml それだけ。1行もコードを書かないのが理想。
 
 <ul>
-<li>AR は単純に富士山の方向を確認するのにも使えます。</li>
+<li>DataBinding - ViewModel を監視して、ViewModel の情報を View に表示する。View でのユーザーからの入力を受け付けて ViewModel を変更したり、コマンドを実行する。</li>
 </ul>
 </li>
+<li>ViewModel - View の為の Model。状態管理と View の為の情報＆機能公開、およびその為の Model の利用。”ロジック” はここにも書いちゃダメ。</li>
 </ul>
 
 
-<h2>使い方</h2>
-
-<h3>近くの撮影スポット</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_01.png" alt="img1" /></p>
-
-<h3>撮影スポットの詳細</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_02.png" alt="img1" /></p>
-
-<h3>ARナビ</h3>
-
-<p>田舎すぎるだろ…</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_03.png" alt="img1" /></p>
-
-<h2>技術的なアレ</h2>
-
-<p>このアプリで <a href="http://ma9.mashupaward.jp/works/348">MashUpAward9</a> に応募してます。
-使用した API は、</p>
+<p>いやもう絶対他のリソース読んだ方が分かりやすいですから(逃げ)。</p>
 
 <ul>
-<li><a href="http://ma9.mashupaward.jp/apis/216">Yahoo! Android マップ SDK</a> の MapView と雨雲タイルと ARナビ</li>
-<li><a href="http://ma9.mashupaward.jp/apis/218">Yahoo! Open Local Platform</a> のリバースジオコーダ</li>
-<li><a href="http://ma9.mashupaward.jp/apis/145">datastore API</a></li>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/chushin/greatblogentry_02/greatblogentry_02_01.html">MVVMパターンの常識 ― 「M」「V」「VM」の役割とは？ － ＠IT</a></li>
 </ul>
 
 
-<p>です。本当は Googleマップの代わりに <a href="http://ma9.mashupaward.jp/apis/36">Mapion</a> の「3D風地図」を使いたかったのですが、時間がなくてあきらめました。(ピンチズームとかを自前実装しなければならなさそうだったので)</p>
+<h2>PCL(Portable Class Library) について</h2>
 
-<p>「datastore API」 は <a href="http://www.appiaries.com/jp/">appiaries さんの BaaS</a> のひとつの機能です。この BaaS は位置情報にも対応していて、範囲検索なども行ってくれるのですが、こちらも今回時間がなくて、他のコードを使いまわして自力実装しました。</p>
-
-<p>データは、冒頭で紹介した、</p>
+<p>WPF, Silverlight, Windows Store App など、異なるプラットフォームでバイナリを共有できる “ポータブルな” クラスライブラリ。</p>
 
 <ul>
-<li><a href="http://open-data.pref.shizuoka.jp/htdocs/index.php?action=pages_view_main&amp;active_action=multidatabase_view_main_detail&amp;content_id=33&amp;multidatabase_id=2&amp;block_id=15#_15">富士山ビューポイント - ふじのくにオープンデータ</a></li>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/windowsphone/develop/jj714086(v=vs.105">ポータブル クラス ライブラリを使用して機能を共有する</a>.aspx)</li>
 </ul>
 
 
-<p>を使っています。
-日頃アプリを開発したり、アイデアを練ったりしていて、どうしても行き詰まるのがコンテンツです。隣県でこのようなコンテンツを公開してくれる事はとてもありがたく、ぜひ活用してみたいと思って作りました。</p>
-
-<p>まだまだ不安定な感じ（メモリ不足でたびたび落ちる(汗)）ですが、ちまちまブラッシュアップしていきたいと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[フラットな感じのボタンを作ってみた]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/23/android-flat-button-sample/"/>
-    <updated>2013-10-23T01:53:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/23/android-flat-button-sample</id>
-    <content type="html"><![CDATA[<p>Foursquare の Android 版をマネて、XML だけで作ってみた。
-仕組みをすぐ忘れるので、ここにメモしておく。</p>
-
-<!--more-->
-
-
-<p>```xml flat_panel.xml
-&lt;?xml version="1.0" encoding="utf-8"?>
-<layer-list xmlns:android="http://schemas.android.com/apk/res/android" ></p>
-
-<pre><code>&lt;item android:id="@+id/padding"&gt;
-    &lt;shape&gt;
-        &lt;solid android:color="#00FFFFFF" /&gt;
-        &lt;padding android:bottom="8dp" android:left="8dp"
-            android:right="8dp" android:top="8dp" /&gt;
-    &lt;/shape&gt;
-&lt;/item&gt;
-&lt;item android:id="@+id/shadow"&gt;
-    &lt;shape&gt;
-        &lt;solid android:color="#D3CEC7" /&gt;
-        &lt;padding android:bottom="2px" /&gt;
-    &lt;/shape&gt;
-&lt;/item&gt;
-&lt;item android:id="@+id/face"&gt;
-    &lt;shape&gt;
-        &lt;stroke android:width="1px" android:color="#AEA8A3" /&gt;
-        &lt;solid android:color="#FFFFFF" /&gt;
-    &lt;/shape&gt;
-&lt;/item&gt;
-&lt;item android:id="@+id/state"&gt;
-    &lt;selector&gt;
-        &lt;item android:state_pressed="true"&gt;
-            &lt;shape android:shape="rectangle"&gt;
-                &lt;solid android:color="#FF82DEFF" /&gt;
-            &lt;/shape&gt;
-        &lt;/item&gt;
-        &lt;item android:state_focused="true"&gt;
-            &lt;shape android:shape="rectangle" &gt;
-                &lt;solid android:color="#4082DEFF" /&gt;
-            &lt;/shape&gt;
-        &lt;/item&gt;
-      &lt;/selector&gt;
-&lt;/item&gt;
-&lt;item android:id="@+id/child"&gt;
-    &lt;shape&gt;
-        &lt;solid android:color="#00FFFFFF" /&gt;
-        &lt;padding android:bottom="8dp" android:left="8dp"
-            android:right="8dp" android:top="8dp" /&gt;
-    &lt;/shape&gt;
-&lt;/item&gt;
-</code></pre>
-
-<p></layer-list>
-```</p>
-
-<h2>使い方</h2>
-
-<p>上のファイル <code>flat_panel.xml</code> を、<code>res/drawable</code> ディレクトリに入れて、適用したい Button などに↓のように設定。</p>
-
-<p>```xml part_of_activity_main.xml</p>
-
-<pre><code>&lt;Button
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:background="@drawable/flat_panel"
-    android:text="フラットなボタン" /&gt;
-</code></pre>
-
-<p>```</p>
-
-<p>Theme とかにまとめたいけど、今日は割愛。</p>
-
-<h2>ボタンに適用した結果</h2>
-
-<h3>通常</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/android_flat_button_sample_01.png" alt="img1" /></p>
-
-<h3>押した時</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/android_flat_button_sample_02.png" alt="img1" /></p>
-
-<h2>仕組み</h2>
-
-<p><code>&lt;layer-list&gt;</code> タグの中の要素は、上から順に描画される。また、下位(手前)の要素は、上位(奥)の要素の入れ子になるみたい。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/android_flat_button_sample_03.png" alt="img1" /></p>
-
-<p>（図の id は flat_panel.xml と対応してます。）</p>
-
-<ol>
-<li>padding - ボタンの周りに少し余白を付ける役割（要らないなら消してもOK）</li>
-<li>shadow - ボタンの下部にちょっとだけ見えてる影の部分。大部分が face によって隠れてるけど、実際はほとんど同じ領域を持つ。ここで padding bottom を 2px としているので、face の高さが 2px 縮んで、影っぽく見える仕組み。つまり影の強さはここで調整。</li>
-<li>face - ボタンの「面」に該当。stroke でフチを、solid で面を塗りつぶしている。</li>
-<li>state - ボタンの状態によって色などを変える役割。ここでは state_pressed=true（押された状態）と、state_focused=true（フォーカスを持ってる状態）だけ対応してる。face を描画した「後」で評価されるので、face の色を置き換えるものではない事に注意（透過時）。あと、状態は上から評価される。</li>
-<li>child - LinearLayout など Group な View にこのスタイルを適用した時、子View への余白となる。</li>
-</ol>
-
-
-<p>みんなの大好きな方眼紙EXCEL とオートシェイプで再現してみた → <a href="https://dl.dropboxusercontent.com/u/264530/qiita/flat_panel.xlsx">DL</a></p>
-
-<p>Activity の背景が白だと、あんまり映えない。。。</p>
-
-<p>色の定義を、別の xml に分けて、アプリ毎に変えれば、それっぽくなるのかなーと。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[爆速エミュレータで Google Maps Android API v2 を動かす]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/20/using-gmapv2-on-intel-emulator/"/>
-    <updated>2013-10-20T21:58:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/20/using-gmapv2-on-intel-emulator</id>
-    <content type="html"><![CDATA[<p>Google APIs のエミュレータで Google Map Android API v2 が動くようになったのですが、やっぱり遅い、使えん。
-という訳で、Intel の爆速エミュレータで GMapV2 を使う手順の備忘録です。(ご利用は自己責任で)</p>
-
-<!--more-->
-
-
-<h2>爆速エミュレータの導入</h2>
-
-<p>こちら等を参考にセットアップします。</p>
+<p>そして、先日、Xamarin.Android と iOS でもポータルクラスライブラリが使える/作れるようになりました。</p>
 
 <ul>
-<li><a href="http://qiita.com/gabu/items/8bc1a11f1382409f1d2a">Android再入門 - エミュレータの作成</a></li>
+<li><a href="http://blog.xamarin.com/pcl-projects-and-vs2013/">PCL Projects and Visual Studio 2013 Support | Xamarin Blog</a></li>
 </ul>
 
 
-<h2>エミュレータで Google Maps Android API v2 を動かす</h2>
+<p>ポータブルクラスライブラリとして作られた DLL は、WPF でも Store App でも Android でも iOS でも使いまわせる、という事です。</p>
 
-<p><code>com.google.android.gms.apk</code> と <code>com.android.vending.apk</code> が必要なのでどうにかして入手しインストールします。(ほとんど答えだけど下記参照)</p>
+<h2>MvvmCross とは</h2>
+
+<p>さて本題。</p>
+
+<p>MvvmCross は、様々なプラットフォームに対応した MVVMフレームワークです。対応プラットフォームをざっと挙げると、</p>
 
 <ul>
-<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+<li>Xamarin.iOS</li>
+<li>Xamarin.Android</li>
+<li>Windows Phone</li>
+<li>Windows Store App</li>
+<li>WPF</li>
+<li>Mac</li>
 </ul>
 
 
-<p>apk が古いとうまく動作しません。なるべく新しいものを探しましょう。(ﾎﾞｿ</p>
+<p>です。</p>
 
-<h2>AndroidManifest.xml から com.google.android.maps の定義を消す</h2>
+<p>MvvmCross を使うと、MVVM パターンでいうところの Model, ViewModel を複数のプラットフォームで共通にできます。</p>
 
-<p>意外とハマったのがコレ。</p>
+<p>図にすると下のような感じです。</p>
 
-<p><code>AndroidManifest.xml</code> で</p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_01.png" alt="" /></p>
 
-<p><code>
-&lt;uses-library android:name="com.google.android.maps" /&gt;
-</code></p>
+<p>「Model でプラットフォーム固有の機能使いたい場合もあるじゃん？」とかにも対応しているので、これが全てでは無いですが、最初の説明としてはこんなもんです。</p>
 
-<p>が定義してあると、</p>
-
-<p><code>
-10-20 11:35:52.977: E/PackageManager(1178): Package xxxx requires unavailable shared library com.google.android.maps; failing!
-</code></p>
-
-<p>というエラーになります。</p>
-
-<p>この <code>com.google.android.maps</code> は Google Maps API v1 で必要だったもので、v2 では必要ありません。削除しましょう。</p>
-
-<p>v2 の使い方を説明するブログやサイトで、これが含まれてしまってるものがあるようです。(かくいう自分もそんなサイトからコピペしてきたまま使ってたのでエラーになりました（汗）</p>
-
-<h2>動かす</h2>
-
-<p>あとは、実機と変わりません。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gmapv2_on_intel_emulator_01.png" alt="img" /></p>
-
-<p>やばい、PC性能とネットワーク環境のおかげで実機より快適になったｗ</p>
-
-<h2>参考</h2>
+<p>ホームページなどはこちら。
+Evolve セッションの Slides の 1〜10ページ が分かりやすいですかね。</p>
 
 <ul>
-<li><a href="http://d.hatena.ne.jp/ria10/20121218/1355794748">AndroidでGoogle Maps v2 をエミュレータで動かしてしかも爆速 - リア充爆発日記</a></li>
-<li><a href="http://denshikousaku.net/how-to-make-android-google-maps-v2-work-in-android-emulator">エミュレータでGoogle Maps for Android V2を動かす方法 | アプリ開発とRaspberry PIとArduino実験</a></li>
-<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+<li><a href="https://github.com/MvvmCross/MvvmCross">MvvmCross/MvvmCross - github</a></li>
+<li><a href="http://xamarin.com/evolve/2013#session-dnoeeoarfj">Architecting Cross-Platform Apps with MvvmCross - Evolve 2013 Conference – Xamarin</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[TextView で、テキストの一部だけクリック可能にする]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/17/make-clickable-from-part-of-text/"/>
-    <updated>2013-10-17T21:16:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/17/make-clickable-from-part-of-text</id>
-    <content type="html"><![CDATA[<p>Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが <code>ClickableSpan</code> というのを使えばできそうだったので、やってみました。</p>
 
-<!--more-->
+<h2>Xamarin.Android Xamarin.iOS で、MvvmCross を使ったアプリを作ってみる</h2>
+
+<p>MvvmCross の現在 Stable なのは「v3」で、その Tutorials が</p>
+
+<ul>
+<li><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N plus 1 Videos Of MvvmCross · MvvmCross/MvvmCross Wiki</a></li>
+</ul>
 
 
-<p>```java ClikcableSpanTestActivity.java
-public class ClikcableSpanTestActivity extends Activity {</p>
+<p>にあります。これがまたドットインストールも真っ青の充実ぶり。
+この動画を順番に見ながら写経すれば使えるようになっちゃいます。</p>
 
-<pre><code>@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
+<p>という訳で、最初の１つ「N=0」をトレースしてみましょう。</p>
 
-    final List&lt;Pair&lt;String, String&gt;&gt; data = new ArrayList&lt;Pair&lt;String,String&gt;&gt;();
-    data.add(new Pair&lt;String, String&gt;("りんご", "隠し味としてカレーに入れます"));
-    data.add(new Pair&lt;String, String&gt;("みかん", "あぶりだしに使います"));
-    data.add(new Pair&lt;String, String&gt;("すいか", "種を食べると盲腸になります（嘘）"));
+<h3>動画と違うところ</h3>
 
-    final SpannableStringBuilder sb = new SpannableStringBuilder();
-    final String SEP = ", ";
-    int spanStart = 0;
+<ul>
+<li>Win でなく Mac、Visual Studio でなく Xamarin Studio を使います。Win+VS な人は動画をそのままトレースした方がよいでしょう。</li>
+<li>Nuget 使いません。Nuget から取得したらエラーになったので、マニュアルでアセンブリ追加します。Nuget で配信されるプロジェクトのスケルトンも使わずスクラッチで実装します。</li>
+<li>Windows Store App、Windows Phone は飛ばします。Mac なので。</li>
+<li>iOS での UI 作成について。動画ではコードでUI構築してますが、Storyboard を使いました。その影響で、少しコードが動画と変わっています。</li>
+</ul>
 
-    for (final Pair&lt;String, String&gt; p : data) {
-        sb.append(p.first);
-        sb.append(SEP);
 
-        // 追加した文字列を Span にする
-        sb.setSpan(new ClickableSpan() {
-            @Override
-            public void onClick(View widget) {
-                Toast.makeText(getApplicationContext(), 
-                    p.second, Toast.LENGTH_SHORT).show();
-            }
-        }, spanStart, spanStart + p.first.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+<p>では、開始〜。</p>
 
-        spanStart += (p.first.length() + SEP.length());
+<h3>1. PCL プロジェクトを作る</h3>
+
+<p>Xamarin Studio にて、新しいソリューションと「Portable Library」プロジェクトを作ります。プロジェクト名は “FirstDemo.Core”、ソリューション名は “FirstDemo” とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_02.png" alt="" /></p>
+
+<h3>2. MvvmCross のバイナリをダウンロードする</h3>
+
+<p><a href="https://github.com/mvvmcross/MvvmCross-Binaries/tree/v3.1">MvvmCross/MvvmCross-Binaries の v3.1 branch</a> をダウンロードなり Clone なりします。</p>
+
+<h3>3. プロジェクトにアセンブリ参照を追加する</h3>
+
+<p>FirstDemo.Core プロジェクトに、先ほどダウンロードした <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable</code> の中の以下のファイルを参照追加します。</p>
+
+<ul>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
+</ul>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_03.png" alt="" /></p>
+
+<h3>4. FirstViewModel クラス、App クラスの実装</h3>
+
+<p>Nuget でインストールされるはずのクラスを実装します。</p>
+
+<p>まず、ViewModels というフォルダを作ってその中に <code>FirstViewModel</code> クラスを作ります。</p>
+
+<p>```csharp ViewModels/FirstViewModel.cs
+using System;
+using Cirrious.MvvmCross.ViewModels;</p>
+
+<p>namespace FirstDemo.Core.ViewModels
+{</p>
+
+<pre><code>public class FirstViewModel : MvxViewModel
+{
+    private string _firstName;
+    public string FirstName
+    {
+        get { return _firstName; }
+        set { _firstName = value; RaisePropertyChanged(() =&gt; FullName);}
     }
 
-    TextView tv = (TextView)findViewById(R.id.text);
-    tv.setText(sb);
-    tv.setMovementMethod(LinkMovementMethod.getInstance()); // これ忘れるとクリックできなくて小一時間悩む
+    private string _lastName;
+    public string LastName
+    {
+        get { return _lastName; }
+        set { _lastName = value; RaisePropertyChanged(() =&gt; FullName);}
+    }
+
+    public string FullName
+    {
+        get { return String.Format("{0} {1}", _firstName, _lastName); }
+    }
 }
 </code></pre>
 
 <p>}
 ```</p>
 
-<p>項目をカンマつなぎで表示して、項目のところだけリンクっぽくします。
-リンクをクリックすると Toast を表示します。（下図のように）
-また <code>URLSpan</code> というクラスもあり、クリックすると指定したURLに移動（ブラウザアプリが起動）します。</p>
+<p>次に <code>App</code> クラスはルートに。</p>
 
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_clickablespan_01.png" alt="" /></p>
+<p>```csharp App.cs
+using System;
+using Cirrious.CrossCore.IoC;
+using FirstDemo.Core.ViewModels;</p>
 
-<h2>参考</h2>
+<p>namespace FirstDemo.Core
+{</p>
 
-<p>装飾したり位置やサイズ変えたり、TextView でもいろいろできるんですねー。
-(VB6の)Label とは違うのだよ、Label とは！</p>
+<pre><code>public class App : Cirrious.MvvmCross.ViewModels.MvxApplication
+{
+    public override void Initialize()
+    {
+        CreatableTypes()
+            .EndingWith("Service")
+            .AsInterfaces()
+            .RegisterAsLazySingleton();
+
+        RegisterAppStart&lt;FirstViewModel&gt;();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>MyClass.cs</code> は使わないので削除します。</p>
+
+<p>ここまでが<a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=281">動画の 4:40</a> くらいです。</p>
+
+<h3>5. Android の UI を作る</h3>
+
+<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=671">11:11</a> から。</p>
+
+<p>ソリューションに Android Application プロジェクトを追加します。名前は “FirstDemo.Droid” とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_04.png" alt="" /></p>
+
+<h3>6. FirstDemo.Droid にアセンブリ参照を追加する</h3>
+
+<p>まず、FirstDemo.Core をプロジェクト参照で追加します。
+次に、MvvmCross 関連のアセンブリ群、以下を追加します。動画では Nuget でやってるところです。</p>
 
 <ul>
-<li><a href="http://y-anz-m.blogspot.com/2011/08/androidspannable.html">Y.A.M の 雑記帳: Android Spannable を使って文字列の一部を装飾する</a></li>
-<li><a href="http://d.hatena.ne.jp/androidprogram/20100529/1275086958">Tips TextView を使いこなそう ～表示編～ その4 - - Google Android - 雑記帳</a></li>
-<li><a href="http://developer.android.com/reference/android/text/style/package-summary.html">android.text.style | Android Developers</a></li>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.CrossCore.Droid.dll *</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Droid.dll *</li>
+<li>Cirrious.MvvmCross.Binding.dll</li>
+<li>Cirrious.MvvmCross.Binding.Droid.dll *</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
 </ul>
 
+
+<p>「*」付きのアセンブリは <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Droid/</code> から、付いてないアセンブリは Core と同じく <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/</code> から追加します。後ろに “Droid” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_05.png" alt="" /></p>
+
+<h3>7. FirstView クラス、Setup クラスの実装</h3>
+
+<p>こちらも Nuget が使えれば〜 のところ。</p>
+
+<p><code>FirstView</code> は、MainView.cs をリファクタでリネーム＆ Views フォルダ移動して内容を下のように書き換えます。</p>
+
+<p>```csharp Views/FirstView.cs
+using System;
+using Android.App;
+using Android.Content;
+using Android.Runtime;
+using Android.Views;
+using Android.Widget;
+using Android.OS;
+using Cirrious.MvvmCross.Droid.Views;</p>
+
+<p>namespace FirstDemo.Droid.Views
+{</p>
+
+<pre><code>[Activity(Label = "FirstDemo.Droid", MainLauncher = true, Icon = "@drawable/icon")]
+public class FirstView : MvxActivity
+{
+    protected override void OnCreate(Bundle bundle)
+    {
+        base.OnCreate(bundle);
+        SetContentView(Resource.Layout.Main);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Setup.cs はルートに作ります。</p>
+
+<p>```csharp Setup.cs
+using System;
+using Cirrious.MvvmCross.Droid.Platform;
+using Android.Content;
+using Cirrious.MvvmCross.ViewModels;</p>
+
+<p>namespace FirstDemo.Droid
+{</p>
+
+<pre><code>public class Setup : MvxAndroidSetup
+{
+    public Setup(Context appContext) : base(appContext) { }
+
+    protected override IMvxApplication CreateApp()
+    {
+        return new Core.App();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>あ、 <code>SplashScreen</code> は省略します。説明が面倒なので。</p>
+
+<h3>8.  DataBinding の定義ファイルを作る</h3>
+
+<p>これも Nuget の代わりにやるところ。
+データバインディングを行うために必要なファイルです。この手順を忘れて、ビルドエラーでしばらくハマってました。</p>
+
+<p><code>Resource/values</code> フォルダ内に以下の xml ファイルを作成します。</p>
+
+<p>```xml Resources/values/MvxBindingAttributes.xml
+&lt;?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <declare-styleable name="MvxBinding"></p>
+
+<pre><code>&lt;attr name="MvxBind" format="string"/&gt;
+&lt;attr name="MvxLang" format="string"/&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+  <declare-styleable name="MvxControl"></p>
+
+<pre><code>&lt;attr name="MvxTemplate" format="string"/&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+  <declare-styleable name="MvxListView"></p>
+
+<pre><code>&lt;attr name="MvxItemTemplate" format="string"/&gt;
+&lt;attr name="MvxDropDownItemTemplate" format="string"/&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+  <item type="id" name="MvxBindingTagUnique"/>
+  <declare-styleable name="MvxImageView"></p>
+
+<pre><code>&lt;attr name="MvxSource" format="string"/&gt;
+</code></pre>
+
+<p>  </declare-styleable>
+</resources>
+```</p>
+
+<h3>9. 画面を作る</h3>
+
+<p>画面のレイアウトを作ります。
+Xamarin Studio の Android用 UI デザイナは強力なので、ここだけは Visual Studio に勝っていると言えます。</p>
+
+<p><code>Main.axml</code> を開いて、レイアウトされているボタンを削除し、「Plain Text」を2つと、Text(Mid) を1つ、縦に並べて配置します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_06.png" alt="" /></p>
+
+<h3>10. データバインディングを記述する</h3>
+
+<p><code>Main.axml</code> の「ソース」を開いて、データバインディングについての記述をします。完成形は下のようになります。</p>
+
+<p>```xml Resources/layout/Main.xml
+&lt;?xml version="1.0" encoding="utf-8"?>
+&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"</p>
+
+<pre><code>xmlns:local="http://schemas.android.com/apk/res-auto"
+android:orientation="vertical"
+android:layout_width="fill_parent"
+android:layout_height="fill_parent"&gt;
+&lt;EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    local:MvxBind="Text FirstName" /&gt;
+&lt;EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    local:MvxBind="Text LastName" /&gt;
+&lt;TextView
+    android:text="Medium Text"
+    android:textAppearance="?android:attr/textAppearanceMedium"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    local:MvxBind="Text FullName" /&gt;
+</code></pre>
+
+<p></LinearLayout>
+```</p>
+
+<p>これで Android UI の実装は終わり。動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=980">16:20</a> あたり。
+Android 側では、初期化を除けば <strong>何も実装してない</strong> のがミソ。</p>
+
+<h3>11. Android アプリを動かしてみる</h3>
+
+<p>エミュレータで実行してみると、こんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_07.gif" alt="" /></p>
+
+<p>Steve を痛恨のスペルミスしたけど、まあいいや。</p>
+
+<p>では続いて、iOS アプリの実装です。</p>
+
+<h3>12. iOS の UI を作る</h3>
+
+<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=1558">25:58</a> から。</p>
+
+<p>ソリューションに iPhone Application プロジェクトを追加します。Storyboard を使ってみましょう。名前は “FirstDemo.Touch” とします。(iOS 版の接尾辞に ”Touch” を使うのは、Xamarin.iOS の以前の名称である ”MonoTouch” からだと思いますが、大文字で始まる .NET 文化の中では “iOS” はとかく都合が悪いので、Touch という接尾辞は私も気に入っています。)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_08.png" alt="" /></p>
+
+<h3>13. FirstDemo.Touch にアセンブリ参照を追加する</h3>
+
+<p>Android の場合と同様、FirstDemo.Core をプロジェクト参照で追加します。
+次に、MvvmCross 関連のアセンブリ群、以下を追加します。</p>
+
+<ul>
+<li>Cirrious.CrossCore.dll</li>
+<li>Cirrious.CrossCore.Touch.dll *</li>
+<li>Cirrious.MvvmCross.dll</li>
+<li>Cirrious.MvvmCross.Touch.dll *</li>
+<li>Cirrious.MvvmCross.Binding.dll</li>
+<li>Cirrious.MvvmCross.Binding.Touch.dll *</li>
+<li>Cirrious.MvvmCross.Localization.dll</li>
+</ul>
+
+
+<p>「*」付きのアセンブリは MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Touch/ から、付いてないアセンブリは Core と同じく MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/ から追加します。後ろに “Touch” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_09.png" alt="" /></p>
+
+<h3>14. Setup クラス, AppDelegate クラス、FirstView クラスの実装</h3>
+
+<p>とここまで書いておいて、MvvmCross は実は Storyboard で使う時は少し細工が必要な事に気づいた。。。</p>
+
+<p>MvvmCross の作者である slodge さんが下で回答されています。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/16323115">monotouch - MvvmCross and Xcode Storyboard - Stack Overflow</a></li>
+</ul>
+
+
+<p>という訳でここからのコードは、上記で示されている ‘eh’ もミックスしたもので、動画とは少し異なります。動作は同じです。</p>
+
+<p>まず、Setup.cs をルートに作成して以下のように実装します。</p>
+
+<p>```objc Setup.cs
+using System;
+using Cirrious.MvvmCross.Touch.Platform;
+using Cirrious.MvvmCross.Touch.Views.Presenters;
+using Cirrious.MvvmCross.ViewModels;</p>
+
+<p>namespace FirstDemo.Touch
+{</p>
+
+<pre><code>public class Setup : MvxTouchSetup
+{
+    public Setup(MvxApplicationDelegate appDelegate, IMvxTouchViewPresenter presenter)
+        : base(appDelegate, presenter) { }
+
+    protected override IMvxApplication CreateApp()
+    {
+        return new Core.App();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>既存の AppDelegate.cs を以下のように書き換えます。</p>
+
+<p>```objc AppDelegate.cs
+using MonoTouch.Foundation;
+using Cirrious.MvvmCross.Touch.Platform;
+using MonoTouch.UIKit;
+using Cirrious.MvvmCross.Touch.Views.Presenters;</p>
+
+<p>namespace FirstDemo.Touch
+{</p>
+
+<pre><code>[Register("AppDelegate")]
+public partial class AppDelegate : MvxApplicationDelegate
+{
+    public override UIWindow Window { get; set; }
+
+    public override void FinishedLaunching(UIApplication application)
+    {
+        var setup = new Setup(this, new MvxTouchViewPresenter(this, Window));
+        setup.Initialize();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>FirstView.cs は、FirstDemo.FirstDemoViewController.cs をリネームして作成します。Views フォルダを作って移動もしましょう。
+また、<code>MvxViewConroller</code> から派生させるように変更します。</p>
+
+<p> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_10.png" alt="" /></p>
+
+<h3>15. iOS の UI を作る</h3>
+
+<p>iOS 版の画面をレイアウトします。
+動画ではコードで <code>UITextField</code> などを配置していますが、 <strong>UI をコードで記述する事は万死に値する</strong> ので、Xamarin Studio の iOS デザイナもしくは Xcode の Interface Builder を使います。</p>
+
+<p>下の図は、Xamarin Studio α版の iOS デザイナ を使った例です。<a href="http://qiita.com/amay077/items/716742474bce343c5729">以前に紹介した</a>ものです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_11.png" alt="" /></p>
+
+<p>TextField 2つと、Label を、<code>textEditFirst</code>, <code>textEditLast</code>, <code>labelFull</code> という変数にしておきます。</p>
+
+<h3>16. データバインディングを記述する</h3>
+
+<p>MvvmCross を iOS で使う場合、残念ながら storyboard 側にバインディングを記述する事はできないので、<code>FirstView.cs</code>  にコードで記述します。</p>
+
+<p><code>ViewDidLoad</code> に以下のように追記します。</p>
+
+<p>```objc Views/FirstView.cs
+using System;
+using Cirrious.MvvmCross.Binding.BindingContext;
+using Cirrious.MvvmCross.Touch.Views;
+using Cirrious.MvvmCross.ViewModels;
+using FirstDemo.Core.ViewModels;</p>
+
+<p>namespace FirstDemo.Touch
+{</p>
+
+<pre><code>public partial class FirstView : MvxViewController
+{
+    /* 省略 */
+
+    public override void ViewDidLoad()
+    {
+        this.Request = new MvxViewModelRequest&lt;FirstViewModel&gt;(
+            null, null, new MvxRequestedBy());           
+        base.ViewDidLoad();
+
+        var set = this.CreateBindingSet&lt;FirstView, FirstViewModel&gt;();
+        set.Bind(textEditFirst).To(vm =&gt; vm.FirstName);
+        set.Bind(textEditLast).To(vm =&gt; vm.LastName);
+        set.Bind(labelFull).To(vm =&gt; vm.FullName);
+        set.Apply();
+    }
+
+    /* 省略 */
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これで iOS 側も実装終了、動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=2020">33:40</a> まで来ました。</p>
+
+<h3>17. iOS アプリを動かしてみる</h3>
+
+<p>動画では、Windows であるため Mac にリモート接続して実行していますが、Mac+Xamarin Studio なら即実行できます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_12.gif" alt="" /></p>
+
+<h2>MvvmCross についてのまとめ</h2>
+
+<p>今日の完成版のコードは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/NPlus1DaysOfMvvmCrossWithXamarinStudio/tree/master/N-00-FirstDemo">NPlus1DaysOfMvvmCrossWithXamarinStudio / N-00-FirstDemo - github</a></li>
+</ul>
+
+
+<p>に置いておきました。</p>
+
+<p>ちょっと STEP が多くなっちゃいましたが、MvvmCross を使うと、複数のプラットフォームで ViewModel-Model を共通化できることが分かったと思います。</p>
+
+<p><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N+1 Days-</a> は、現在 39(!!) まであります。動画観てるだけでもわかった感じになります。（私は N=8 まで観た気がします。）</p>
+
+<p>また、 @MvvmCross にツイートすると、気さくに（英語ですが）回答してくれます。</p>
+
+<p>使いこなせば強力な武器になる MvvmCross 、今後も要チェックです。</p>
+
+<h2>Xamarin Advent Calendar 2013 まとめ</h2>
+
+<p>勢いに任せて作った XAC2013、なんとか完走できました。
+「全部俺」でもいいやと思っていましたが、私含め5名の方に参加して頂けました、ありがとうございました。</p>
+
+<p><a href="http://www.amazon.co.jp/gp/product/B00H2SBO4E?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=B00H2SBO4E&amp;linkCode=shr&amp;tag=oku2008-22&amp;=books&amp;qid=1387973043&amp;sr=1-1&amp;keywords=%E6%97%A5%E7%B5%8C%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A8%E3%82%A2+2014%E5%B9%B42%E6%9C%88%E5%8F%B7">日経ソフトウェア</a> によると、「2014年にブレークする技術」に Xamarin はありませんでしたが、MS と提携以後のプッシュぶりを見ていると、今後、来年のブレークに期待できそうです。</p>
+
+<p>昨日の @atsushieno さんの <a href="http://atsushieno.hatenablog.com/entry/2013/12/24/213950">Xamarin 創立からの苦労話</a> を知ると、安易に「ライセンス高ぇ！値下げPlz！」などとは言えませんが、ユーザ(デベロッパ)を増やしたいのもまた事実。α/β版だけでも 30days のトライアル期限なくしてもらえたいら嬉しいですね。</p>
+
+<p>Xamarin Advent Calendar 2013 はこれで終わりですが、今後もちまちまと Tips みたいなものを書いてくつもりですので、 <a href="http://qiita.com/tags/xamarin">Qiita のタグ</a> をチェックしてもらえると嬉しいです。</p>
+
+<p>そして Xamarin Advent Calendar 2014 でまたお会いしましょう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[GitHub's Xamarin starter apps  について]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/22/about-githubs-xamarin-starter-apps/"/>
+    <updated>2013-12-22T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/22/about-githubs-xamarin-starter-apps</id>
+    <content type="html"><![CDATA[<p>Github社は、割と Xamarin に熱心で、<a href="http://xamarin.com/evolve/2013#session-zm59b5yptf">Xamarin Evolve というイベントでセッション</a>を行ったり、その時の資料が日本の速報系サイトで 「<a href="http://blog.livedoor.jp/itsoku/archives/33671593.html">Ruby を捨てて C# と MVVM に完全移行</a>」なんてヒドい扱い受けちゃったりしてます。</p>
+
+<!--more-->
+
+
+<p>でその Github 社が Xamarin でアプリ開発するならこれ使うといいよ、的なアプリケーションのひな形？を公開しています。</p>
+
+<ul>
+<li><a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub's Xamarin starter apps</a></li>
+</ul>
+
+
+<p>Github社は、自前の MVVM フレームワーク「ReactiveUI」、非同期KVS の 「Akavache」を作ってますので、それを利用したものになっています。</p>
+
+<ul>
+<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
+<li><a href="https://github.com/akavache/Akavache">Akavache</a></li>
+</ul>
+
+
+<p>Starter Apps を Xamarin Studio で開くとこんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_startup_apps_by_github_01.png" alt="" /></p>
+
+<p>アプリケーション自体は MVVM で作られていて、前述の RectiveUI によって、View 以外は極力プラットフォームに依存しないように作ることができます。</p>
+
+<p>Starter-Core-Android と Starter-Core-iOS が、「View以外」の部分に相当します。(ここ PCL化 できれば１プロジェクトで済みそうですが)</p>
+
+<p>Starter-Android と Starter-iOS は、各プラットフォームの View に相当します。</p>
+
+<p>かくいう私もまだソースをじっくり読んでないのですが、クロスプラットフォームで開発する時の教材になるかなーと思います。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin で Windows Azure モバイルサービスを使う(その3:プッシュ通知編)]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/19/using-azure-mobile-services-in-xamarin-3/"/>
+    <updated>2013-12-19T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/19/using-azure-mobile-services-in-xamarin-3</id>
+    <content type="html"><![CDATA[<p>たぶん最終回です。<a href="http://qiita.com/amay077/items/ea510071bee85569dc18">前回</a> は、OAuth認証を実装しました。
+今回は、前回のサンプルの続きとして、Xamarin.iOS + Azure Mobile Service によるプッシュ通知を実装してみます。</p>
+
+<!--more-->
+
+
+<p>プッシュ通知を組み込むためのチュートリアルはこちら</p>
+
+<ul>
+<li><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">Get started with push notifications (Xamarin iOS) | Mobile Dev Center</a></li>
+</ul>
+
+
+<p>では、早速いってみましょう。</p>
+
+<h2>プッシュ通知用の証明書ファイルを作成する</h2>
+
+<blockquote><ol>
+<li>Generate the Certificate Signing Request file</li>
+<li>Register your app and enable push notifications</li>
+<li>Create a provisioning profile for the app</li>
+</ol>
+</blockquote>
+
+<p>についてです。</p>
+
+<p>iOS でプッシュ通知を行うには Apple Push Notification Service(APNS) を使用しますので、その準備から始まります。
+「もう知ってるよ」という人は 「4. Configure Mobile Services」から読んでも良いかと思います。</p>
+
+<p>初めて行う人は、こちら↓の説明の方が日本語で分かりやすいかと思います。</p>
+
+<ul>
+<li><a href="http://blog.katty.in/4040">iPhoneのプッシュ通知(APNS)の証明書の作り方 | 三度の飯とエレクトロン</a></li>
+</ul>
+
+
+<p>この手順で最後に必要なのは「p12ファイル」です。パスワードはかかっていても問題ありません。</p>
+
+<h2>Azure モバイルサービスにプッシュの設定をする</h2>
+
+<blockquote><p>4 Configure Mobile Services</p></blockquote>
+
+<p>についてです。</p>
+
+<p>まず、Azure マネージメントポータル (https://manage.windowsazure.com/) から、モバイルサービス → 項目 → を選んで、上部にある「プッシュ」を選択します。
+次に「apple プッシュ通知の設定」の証明書に、先に手順で入手した 「.p12ファイル」をアップロードします。パスワードはその時決めたものを入力します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_02.png" alt="" /></p>
+
+<h2>アプリケーションにプッシュ通知を実装する</h2>
+
+<blockquote><p>5 Add push notifications to your app</p></blockquote>
+
+<p>について。ここ、ハマりどころ多いです。</p>
+
+<p>Xamarin Studio で、前回のサンプルを開いてコードを追加していきます。</p>
+
+<p><code>AppDelegate.cs</code> に、端末を識別するためのIDを保持するプロパティを作ります。</p>
+
+<p><code>csharp AppDelegate.cs
+public string DeviceToken { get; set; }
+</code></p>
+
+<p><code>ToDoItem.cs</code> にも同じく DeviceToken を追加します。
+が、説明にある <code>[DataMember…</code> は間違いです。正しくは <code>[JsonProperty…</code> です。</p>
+
+<p><code>csharp ToDoItem.cs
+×[DataMember(Name = "deviceToken")]
+[JsonProperty(PropertyName = "deviceToken")]
+public string DeviceToken { get; set; }
+</code></p>
+
+<p>再び <code>AppDelegate.cs</code> に戻って、アプリが起動完了した時に、APNS サーバにアプリを登録するコードを追加します。</p>
+
+<p>```csharp AppDelegate.cs
+public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions)
+{</p>
+
+<pre><code>UIRemoteNotificationType notificationTypes = UIRemoteNotificationType.Alert | 
+    UIRemoteNotificationType.Badge | UIRemoteNotificationType.Sound;
+UIApplication.SharedApplication.RegisterForRemoteNotificationTypes(notificationTypes); 
+
+return true;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に同じく  <code>AppDelegate.cs</code> に、アプリ登録完了時にデバイストークンを受け取るコールバックを実装します。</p>
+
+<p><strong>ここが2つ目のハマりポイントです。</strong>
+<code>deviceToken.Description</code> を使用していますが、これは iOSネイティブと異なり <strong>空白入りの文字列を返す</strong> ようです。そのためそのまま DeviceToken として利用すると、通知が来ません。エラーにもならないので原因究明に数時間要しました…。<code>Replace</code> で空白も取り除きます。</p>
+
+<p>```csharp AppDelegate.cs
+public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)
+{</p>
+
+<pre><code>string trimmedDeviceToken = deviceToken.Description;
+if (!string.IsNullOrWhiteSpace(trimmedDeviceToken))
+{
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&lt;');
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&gt;');
+    trimmedDeviceToken = trimmedDeviceToken.Replcae(“ “, “”); // ←追加
+}
+DeviceToken = trimmedDeviceToken;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>そして、<code>AppDelegate.cs</code> に、プッシュ通知受信時のコードを書きます。</p>
+
+<p>```csharp AppDelegate.cs
+public override void ReceivedRemoteNotification(UIApplication application, NSDictionary userInfo)
+{</p>
+
+<pre><code>Debug.WriteLine(userInfo.ToString());
+NSObject inAppMessage;
+
+bool success = userInfo.TryGetValue(new NSString("inAppMessage"), out inAppMessage);
+
+if (success)
+{
+    var alert = new UIAlertView("Got push notification", inAppMessage.ToString(), null, "OK", null);
+    alert.Show();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>最後に <code>QSTodoListViewController.cs</code> の <code>OnAdd</code> を次のように変更して、追加するデータに DeviceToken を含めるようにします。この値を使って、Azure 側でプッシュ通知を送ります。</p>
+
+<p>```csharp QSTodoListViewController.cs
+var deviceToken = ((AppDelegate)UIApplication.SharedApplication.Delegate).DeviceToken;</p>
+
+<p>var newItem = new ToDoItem()
+{</p>
+
+<pre><code>Text = itemText.Text, 
+Complete = false,
+DeviceToken = deviceToken
+</code></pre>
+
+<p>};
+```</p>
+
+<p>コードの記述はこれで終わりですが、Xamarin Studio から、iOS アプリを実機で動かしたことがない人は、iOS Developer Account の設定をしておきましょう。</p>
+
+<p>システムメニュー → Preferences、Environment → Developer Accounts から追加しておきます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_03.png" alt="" /></p>
+
+<h2>マネージメントポータルで、データの追加時のスクリプトを登録する</h2>
+
+<blockquote><p>6 Update the registered insert script in the Management Portal</p></blockquote>
+
+<p>についてです。</p>
+
+<p>まず、マネージメントポータル https://manage.windowsazure.com/ を開き、モバイルサービス → サービス名 → データ → テーブル名 と選択します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_04.png" alt="" /></p>
+
+<p>次に、スクリプト を選択し、ドロップダウンから「挿入」を選択します。テーブルにデータが追加された時に実行するスクリプトが表示されます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_05.png" alt="" /></p>
+
+<p>スクリプトを以下に置き換えます。</p>
+
+<p>```js
+function insert(item, user, request) {</p>
+
+<pre><code>request.execute();
+// Set timeout to delay the notification, to provide time for the 
+// app to be closed on the device to demonstrate toast notifications
+setTimeout(function() {
+    push.apns.send(item.deviceToken, {
+        alert: "Toast: " + item.text,
+        payload: {
+            inAppMessage: "Hey, a new item arrived: '" + item.text + "'"
+        }
+    });
+}, 2500);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これにより、データの追加から 2.5秒後に、APNS にプッシュ通知のリクエストを投げます。</p>
+
+<h2>動かす</h2>
+
+<blockquote><p>7 Test push notifications in your app</p></blockquote>
+
+<p>やっと試せます。</p>
+
+<p>Xamarin Studio から、実機で実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_06.png" alt="" /></p>
+
+<p>アプリ起動直後、通知の受信を許可するかどうかを尋ねられますので「Yes」で。(一度答えると二度と出ないのでしょうか？なのでチュートリアルの画像で。)</p>
+
+<p><img src="http://www.windowsazure.com/media/devcenter/mobile/mobile-quickstart-push1-ios.png" alt="" /></p>
+
+<p>Twitter 認証後、適当に項目を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_07.png" alt="" /></p>
+
+<p>しばらく待っていると…</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_08.png" alt="" /></p>
+
+<p>無事、プッシュ通知を受信できましたー。
+(実はここに辿り着くまで数十回試しているので最初に通知を受け取った時の感激と言ったら…)</p>
+
+<p>まあ、たぶんどっかでハマるだろうなーと思いながら、やっぱりハマった！という感じでしたので、皆さんも最初はどこかでハマるんじゃないかと。</p>
+
+<p>ハマりどころは文中にも書きましたが、下にもトラブルシューティングとして書きました。何かのお役に立てば。</p>
+
+<h2>トラブルシューティング</h2>
+
+<h3>iOS Dev Center で Bundle ID 入力したらエラーになった</h3>
+
+<p>プロジェクト名に アンダースコア が含まれてるとダメです。
+Xamarin Studio のプロジェクト プロパティ → iOS Application で直しましょう。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_09.png" alt="" /></p>
+
+<h3>アプリが起動直後(認証を通過した後)に落ちるようになった</h3>
+
+<p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
+
+<p><code>csharp
+[DataMember(Name = "deviceToken")]
+public string DeviceToken { get; set; }
+</code></p>
+
+<p>は間違いです。下記が正しいです。</p>
+
+<p><code>csharp
+[JsonProperty(PropertyName = "deviceToken")]
+public string DeviceToken { get; set; }
+</code></p>
+
+<h3>クライアントで「追加」しても、プッシュ通知が来ません</h3>
+
+<p>まずは、Azure マネージメントポータルで「ログ」を見てみましょう。
+下記からアクセスできます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_01.png" alt="" /></p>
+
+<p>データ挿入時のスクリプトでエラーが出ていれば、ここに出力されるはずです。スクリプト内で <code>console.log</code> した内容もここに出力されます。</p>
+
+<h3>それでもまだ、プッシュ通知が来ません</h3>
+
+<p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
+
+<p>```csharp
+public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)
+{</p>
+
+<pre><code>string trimmedDeviceToken = deviceToken.Description;
+if (!string.IsNullOrWhiteSpace(trimmedDeviceToken))
+{
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&lt;');
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&gt;');
+}
+DeviceToken = trimmedDeviceToken;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>は、コードが足りません。これでは <code>trimmedDeviceToken</code> の文字列内に空白が含まれてしまい、正しい DeviceToken にならないようです。</p>
+
+<p>```csharp
+public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)
+{</p>
+
+<pre><code>string trimmedDeviceToken = deviceToken.Description;
+if (!string.IsNullOrWhiteSpace(trimmedDeviceToken))
+{
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&lt;');
+    trimmedDeviceToken = trimmedDeviceToken.Trim('&gt;');
+    trimmedDeviceToken = trimmedDeviceToken.Replcae(“ “, “”); // ←追加
+}
+DeviceToken = trimmedDeviceToken;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>と、空白を除去する必要があります。</p>
+
+<h3>しかしそれでもまだ、プッシュ通知が来ません</h3>
+
+<p>最初の手順、キーチェーンアクセスで CSR を作る時、「ユーザーのメールアドレス」「通称」を iOS Developer Center に登録しているものと同じにする必要があるみたいです。これが間違っていると、.p12 ファイルを書き出す時に選択すべき「Apple Development IOS Push Services: net.azure-mobile.amay077-baas-test」という鍵が見つからない(文字化けしてる)はずです。</p>
+
+<p>また、iOS Developer Center に .p12 ファイルを再登録するとプロビジョニングファイルを再作成→端末に更新する必要があります。</p>
+
+<p>これらを忘れると通知が来ません。そしてエラーにもならないので厄介です。</p>
+
+<h2>雑感</h2>
+
+<p>しかし <a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp#add-push">Azure のチュートリアル</a>、これ一度も試してないんじゃないの？</p>
+
+<p>クラス名の接頭辞や大文字小文字の間違いはまだかわいいものだけど、ここミスると致命的という点が２つも。一度辿れば気づくと思うんだけどなあ。
+最後にある completed example project ではちゃっかり正しいコードだったりするので、コンテンツの修正漏れなんだろうか。。。</p>
+
+<p>それはともかく、何かトラブルがあると Xamarin のようなネイティブに皮を被せてるプラットフォームは途端に不安になります。どこに原因があるのか追求しづらいから。</p>
+
+<p>今回も、コードの修正後、いきなりアプリが落ちるようになって、まずα版を使っていたのでそれを疑って stable に戻して、次に実機が悪いのかとシミュレータで動かしてみたり、いろいろ試行錯誤してやっとチュートリアルの誤記だと分かったり。まだノウハウが無いといえばそれまで、α版が自己責任なのはその通りですが、イレギュラー時のリスクはあるなあと思いました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin で Windows Azure モバイルサービスを使う(その2:認証編)]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/"/>
+    <updated>2013-12-18T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/40bd5918284fd40d0edc">前回</a> は、Microsoft の BaaS である Azureモバイルサービスをとりあえず使ってみる所まで紹介しました。</p>
+
+<p>今回は、OAuth による認証、Twitter や Facebook でログインする機能について触れてみます。</p>
+
+<!--more-->
+
+
+<p>前回用意したサンプルの続きとして進めます。</p>
+
+<p>認証を組み込むためのチュートリアルはこちら</p>
+
+<ul>
+<li><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-users-xamarin-ios/">Get started with authentication (Xamarin iOS) | Mobile Dev Center</a></li>
+</ul>
+
+
+<p>英語版だからと謝罪してくれるのは Microsoft だけですね。</p>
+
+<h2>1. モバイルサービスに認証を設定する</h2>
+
+<blockquote><p>Register your app for authentication and configure Mobile Services</p></blockquote>
+
+<p>のところです。</p>
+
+<p>まずは https://manage.windowsazure.com にアクセスし、モバイル サービス から、前回作った名前をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_01.png" alt="" /></p>
+
+<p>次に上部メニューからダッシュボードを選択します。表示されるページの左下の方にある「モバイルサービスURL」の値をコピーしておきます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_02.png" alt="" /></p>
+
+<p>次に、どのサービスの認証を利用するかを決めます（Microsoft, Facebook, Twitter, Google）。この説明では Twitter を使うことにします。</p>
+
+<p>Twitter での操作方法は下を開きます。</p>
+
+<ul>
+<li><a href="http://www.windowsazure.com/ja-jp/develop/mobile/how-to-guides/register-for-twitter-authentication/">モバイル サービスでの Twitter ログイン用のアプリケーションの登録</a></li>
+</ul>
+
+
+<p>説明が充実してるので上記に従ってください。要は「コンシューマ キー」と「コンシューマー シークレット」が得られれば OK です。</p>
+
+<p>ではマネージメントポータルの説明に戻ります。</p>
+
+<blockquote><ol>
+<li>Back in the Management Portal</li>
+</ol>
+</blockquote>
+
+<p>です。</p>
+
+<p>上部メニューの ID をクリック、その後、「twitter 設定」に先ほど取得した コンシューマ キー とコンシューマ シークレット を貼り付けて、一番下にある「保存」をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_03.png" alt="" /></p>
+
+<p>続いて、テーブルに権限を与えます</p>
+
+<blockquote><p>Restrict permissions to authenticated users</p></blockquote>
+
+<p>のところ。</p>
+
+<p>まず上部メニューの データ → TodoItem をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_04.png" alt="" /></p>
+
+<p>次に、アクセス許可 をクリックし、全ての項目で「認証されたユーザーのみ」を選択します。その後「保存」します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_05.png" alt="" /></p>
+
+<p>マネージメントポータル側の設定は以上です。
+Twitter での認証設定を追加し、またテーブルには、認証されたユーザーでしかアクセスできない権限を設定しました。</p>
+
+<p>結果、前回動かしたサンプルプログラムはこの設定を行う事で動作しなくなります。(401エラー)</p>
+
+<p>次に Xamarin Studio でコードを変更していきます。</p>
+
+<h2>2. アプリケーションに認証を追加する</h2>
+
+<blockquote><p>Add authentication to the app</p></blockquote>
+
+<p>のところです。</p>
+
+<ol>
+<li>〜 7. まであります。流れは説明通りですが、クラス名や大文字小文字が微妙に違うので注意が必要です。(<code>TodoService</code> は <code>QSTodoService</code> と読み替える必要があるなど)</li>
+</ol>
+
+
+<p>これらを修正したソース２つ <code>QSTodoService.cs</code> と <code>QSTodoListViewController.cs</code> を gist に貼り付けました。</p>
+
+<ul>
+<li><a href="https://gist.github.com/amay077/7960424">gist - QSTodoListViewController.cs and QSTodoService.cs</a></li>
+</ul>
+
+
+<p>修正前との差分が見たい方は <a href="https://gist.github.com/amay077/7960424/revisions">Revisions</a> で見られます。</p>
+
+<p>あ、今回は Twitter なので、
+<code>MobileServiceAuthenticationProvider.MicrosoftAccount</code> を忘れずに
+<code>MobileServiceAuthenticationProvider.Twitter</code> に置き換えてくださいね。</p>
+
+<p>これでコードの修正は終わりです。</p>
+
+<ol>
+<li>動かしてみる</li>
+</ol>
+
+
+<p>さて、iOS シミュレータ で動かしてみましょう。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_06.gif" alt="" /></p>
+
+<p>こんな感じで、Twitter による認証機能をアプリに組み込むことができました。</p>
+
+<p>今日は以上です。次回は Push 通知を行ってみます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FOSS4G 開発者の為の、図形演算ライブラリガイド]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev/"/>
+    <updated>2013-12-16T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev</id>
+    <content type="html"><![CDATA[<p>これは <a href="http://atnd.org/events/45511">FOSS4G Advent Calendar 2013</a> と、<a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a>  のクロスポストになります。</p>
+
+<p>地図に関するシステムを作っていますと、必ず必要になるのが図形と図形の演算です。(結合 とか、分割とか、そういうの）</p>
+
+<!--more-->
+
+
+<p>私にとっては自分で実装するのは、とても大変な部類なのですが、今日では、いろいろなオープンソースライブラリが存在していて、それを使わせて頂いています。</p>
+
+<p>今日は、それらの紹介をします。</p>
+
+<h2>図形演算ライブラリ達</h2>
+
+<h3>JTS Topology Suite (JTS)</h3>
+
+<ul>
+<li>http://sourceforge.net/projects/jts-topo-suite/</li>
+<li>言語：Java</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>これがなければ死んでいた案件多し。いろいろな言語に移植され、事実上標準のライブラリ。LGPL ということだけが要注意であり少し残念。</p>
+
+<h3>GEOS</h3>
+
+<ul>
+<li>http://trac.osgeo.org/geos/</li>
+<li>言語：C++</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>JTS を C++ に移植したライブラリ。なので機能、ライセンスともに JTS とほとんど一緒。osgeo のツールをビルドする時に出てくること多い。</p>
+
+<h3>Net Topology Suite (NTS)</h3>
+
+<ul>
+<li>https://code.google.com/p/nettopologysuite/</li>
+<li>言語：C#</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>JTS を .NET に移植したライブラリ。最初見た頃は、Not Implemented  な機能が多かったけど、だいぶ揃ってきたのかな。</p>
+
+<h3>Esri Geometry API for Java</h3>
+
+<ul>
+<li>https://github.com/Esri/geometry-api-java</li>
+<li>言語：Java</li>
+<li>ライセンス：Apache 2.0</li>
+</ul>
+
+
+<p>この間の FOSS4GJ 2013 Tokyo で教えてもらった、Yet Another 図形演算ライブラリ。GIS の世界シェアトップである ESRI社がオープンソースで公開しています。だから品質は折り紙つき（のハズだ）。Apache ライセンスなのも嬉しい。</p>
+
+<h3>Clipper</h3>
+
+<ul>
+<li>http://www.angusj.com/delphi/clipper.php</li>
+<li>言語：Delphi、C++、C#、Python、Perl、Ruby、Haskell</li>
+<li>ライセンス：Boost Software License</li>
+</ul>
+
+
+<p>名前の通り Clip(つまり AND(Intersection)演算)と Offset(Buffer の片側だけ)に特化したライブラリ。</p>
+
+<h3>Boost:Geometry</h3>
+
+<ul>
+<li>http://www.boost.org/doc/libs/1_55_0/libs/geometry/doc/html/index.html</li>
+<li>言語：C++</li>
+<li>ライセンス：Boost Software License</li>
+</ul>
+
+
+<p>そういえば、C++ の拡張ライブラリである Boost にも Geometry が入ったのでしたね。Screenshot がなかなか圧巻です。</p>
+
+<h3>DotSpatial</h3>
+
+<ul>
+<li>http://dotspatial.codeplex.com/</li>
+<li>言語：C#</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>ライブラリというよりはアプリケーションなのかな？ソースコードの中に <code>DotSpatial.Topology</code> などが見えます。</p>
+
+<h3>JSTS Topology Suite</h3>
+
+<ul>
+<li>https://github.com/bjornharrtell/jsts</li>
+<li>言語：JavaScript</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>探してみたらやっぱりあった JTS の JavaScript への移植版。ライセンスは(ry</p>
+
+<h3>GeoScript</h3>
+
+<ul>
+<li>http://geoscript.org/</li>
+<li>言語：JavaScript</li>
+<li>ライセンス：MIT</li>
+</ul>
+
+
+<p>JavaScript製のライブラリ。最近は D3.js による視覚表現が流行ってきたので、内部ではこのようなライブラリが使われているのでしょうか。</p>
+
+<h2>試しに使ってみよう</h2>
+
+<p>Xamarin Advent Calendar と絡めるために無理やり Xamarin Studio で、という事は必然的に Net Topology Suite を使ってみます。</p>
+
+<p>Xamarin Studio は、Android/iOS アプリを作るためだけじゃなくて、コンソールアプリとかも作ることができますよ、と言いたいだけです。</p>
+
+<h3>準備</h3>
+
+<p>まず Xamarin Studio で C# → コンソールアプリのプロジェクトを作ります。</p>
+
+<p>次に、まず NTS を参照に追加しますが、Nuget という仕組みを使います。
+Xamarin Studio に Nuget を導入する手順は、</p>
+
+<ul>
+<li><a href="https://github.com/mrward/monodevelop-nuget-addin">mrward / monodevelop-nuget-addin</a></li>
+</ul>
+
+
+<p>を参考にしてください。</p>
+
+<h3>コードを書く</h3>
+
+<p>こんな感じです。</p>
+
+<p>```csharp Program.cs
+using System;
+using GeoAPI.Geometries;
+using NetTopologySuite;</p>
+
+<p>namespace TopologyTest
+{</p>
+
+<pre><code>class MainClass
+{
+    public static void Main(string[] args)
+    {
+        var service = NtsGeometryServices.Instance;
+        var gf = service.CreateGeometryFactory();
+
+        var polygonA = gf.CreatePolygon(new Coordinate[]
+            {
+                new Coordinate(34.0, 136.0),
+                new Coordinate(34.0, 138.0),
+                new Coordinate(37.0, 138.0),
+                new Coordinate(37.0, 136.0),
+                new Coordinate(34.0, 136.0)
+            });
+
+        var polygonB = gf.CreatePolygon(new Coordinate[]
+            {
+                new Coordinate(36.0, 137.0),
+                new Coordinate(35.0, 137.0),
+                new Coordinate(35.0, 140.0),
+                new Coordinate(36.0, 137.0)
+            });
+
+        polygonA.Intersection(polygonB).ToConsole("Intersection");
+        polygonA.Union(polygonB).ToConsole("Union");
+        polygonA.SymmetricDifference(polygonB).ToConsole("SymmetricDifference");
+        polygonA.Difference(polygonB).ToConsole("Difference");
+        polygonB.Buffer(0.5).ToConsole("Buffer");
+    }
+
+}
+
+public static class GeomExtensions
+{
+    public static void ToConsole(this IGeometry geom, string tag) {
+        Console.WriteLine(tag + " - " + geom.ToString());
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Intersection(AND)、Union(OR)、SymmeticDifference(XOR)、Difference(A - B)、Buffer(ふくらます)について試しています。</p>
+
+<p>実行すると、コンソールに結果の座標群がずらーと出力されます。</p>
+
+<h2>見える化してよ</h2>
+
+<p>プログラムによる視覚化は、、、ごめんなさい面倒だったので作りませんでした。</p>
+
+<p>その代わり、GeoJSON 化して GitHub にアップして視覚化しました。</p>
+
+<p>まず演算対象の <code>geometryA</code> と <code>geometryB</code> です。(外側の枠は気にしないでください)</p>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/01_polygonA.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/01_polygonA.geojson"></script>
+
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/02_polygonB.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/02_polygonB.geojson"></script>
+
+
+<h3>Intersection(AND)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/03_polygonA_intersection_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/03_polygonA_intersection_B.geojson"></script>
+
+
+<h3>Union(OR)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/04_polygonA_union_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/04_polygonA_union_B.geojson"></script>
+
+
+<h3>SymmetricDifference(XOR)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/05_polygonA_symmetricdifference_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/05_polygonA_symmetricdifference_B.geojson"></script>
+
+
+<h3>Difference(A - B)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/06_polygonA_difference_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/06_polygonA_difference_B.geojson"></script>
+
+
+<h3>Buffer(Bを膨らます)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/07_geometryB_buffer.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/07_geometryB_buffer.geojson"></script>
+
+
+<p>いやー 便利ですね GitHub 。大量のマーカーは自動的にクラスター化までしてくれるそうですよ。</p>
+
+<ul>
+<li><a href="https://github.com/blog/1541-geojson-rendering-improvements">GeoJSON rendering improvements</a>。</li>
+</ul>
+
+
+<p>こちらは、 Leaflet.js、OpenStreetMap、<a href="https://www.mapbox.com/maki/">Maki Project</a> などの FOSS4G が使われています。いいですね。</p>
+
+<p>さて、なんの話か分からなくなってきたので、こちらからは以上です。</p>
 ]]></content>
   </entry>
   

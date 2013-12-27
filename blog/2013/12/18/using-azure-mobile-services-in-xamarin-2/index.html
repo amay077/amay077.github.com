@@ -1,0 +1,367 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin で Windows Azure モバイルサービスを使う(その2:認証編) - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,Azure,BaaS,C#,XAC13,Xamarin,iOS,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin で Windows Azure モバイルサービスを使う(その2:認証編)
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2013-12-18T00:00:00+09:00" pubdate data-updated="true">Dec 18<span>th</span>, 2013</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/azure/'>Azure</a>, <a class='category' href='/blog/categories/baas/'>BaaS</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/xac13/'>XAC13</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p><a href="http://qiita.com/amay077/items/40bd5918284fd40d0edc">前回</a> は、Microsoft の BaaS である Azureモバイルサービスをとりあえず使ってみる所まで紹介しました。</p>
+
+<p>今回は、OAuth による認証、Twitter や Facebook でログインする機能について触れてみます。</p>
+
+<!--more-->
+
+
+<p>前回用意したサンプルの続きとして進めます。</p>
+
+<p>認証を組み込むためのチュートリアルはこちら</p>
+
+<ul>
+<li><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-users-xamarin-ios/">Get started with authentication (Xamarin iOS) | Mobile Dev Center</a></li>
+</ul>
+
+
+<p>英語版だからと謝罪してくれるのは Microsoft だけですね。</p>
+
+<h2>1. モバイルサービスに認証を設定する</h2>
+
+<blockquote><p>Register your app for authentication and configure Mobile Services</p></blockquote>
+
+<p>のところです。</p>
+
+<p>まずは https://manage.windowsazure.com にアクセスし、モバイル サービス から、前回作った名前をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_01.png" alt="" /></p>
+
+<p>次に上部メニューからダッシュボードを選択します。表示されるページの左下の方にある「モバイルサービスURL」の値をコピーしておきます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_02.png" alt="" /></p>
+
+<p>次に、どのサービスの認証を利用するかを決めます（Microsoft, Facebook, Twitter, Google）。この説明では Twitter を使うことにします。</p>
+
+<p>Twitter での操作方法は下を開きます。</p>
+
+<ul>
+<li><a href="http://www.windowsazure.com/ja-jp/develop/mobile/how-to-guides/register-for-twitter-authentication/">モバイル サービスでの Twitter ログイン用のアプリケーションの登録</a></li>
+</ul>
+
+
+<p>説明が充実してるので上記に従ってください。要は「コンシューマ キー」と「コンシューマー シークレット」が得られれば OK です。</p>
+
+<p>ではマネージメントポータルの説明に戻ります。</p>
+
+<blockquote><ol>
+<li>Back in the Management Portal</li>
+</ol>
+</blockquote>
+
+<p>です。</p>
+
+<p>上部メニューの ID をクリック、その後、「twitter 設定」に先ほど取得した コンシューマ キー とコンシューマ シークレット を貼り付けて、一番下にある「保存」をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_03.png" alt="" /></p>
+
+<p>続いて、テーブルに権限を与えます</p>
+
+<blockquote><p>Restrict permissions to authenticated users</p></blockquote>
+
+<p>のところ。</p>
+
+<p>まず上部メニューの データ → TodoItem をクリックします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_04.png" alt="" /></p>
+
+<p>次に、アクセス許可 をクリックし、全ての項目で「認証されたユーザーのみ」を選択します。その後「保存」します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_05.png" alt="" /></p>
+
+<p>マネージメントポータル側の設定は以上です。
+Twitter での認証設定を追加し、またテーブルには、認証されたユーザーでしかアクセスできない権限を設定しました。</p>
+
+<p>結果、前回動かしたサンプルプログラムはこの設定を行う事で動作しなくなります。(401エラー)</p>
+
+<p>次に Xamarin Studio でコードを変更していきます。</p>
+
+<h2>2. アプリケーションに認証を追加する</h2>
+
+<blockquote><p>Add authentication to the app</p></blockquote>
+
+<p>のところです。</p>
+
+<ol>
+<li>〜 7. まであります。流れは説明通りですが、クラス名や大文字小文字が微妙に違うので注意が必要です。(<code>TodoService</code> は <code>QSTodoService</code> と読み替える必要があるなど)</li>
+</ol>
+
+
+<p>これらを修正したソース２つ <code>QSTodoService.cs</code> と <code>QSTodoListViewController.cs</code> を gist に貼り付けました。</p>
+
+<ul>
+<li><a href="https://gist.github.com/amay077/7960424">gist - QSTodoListViewController.cs and QSTodoService.cs</a></li>
+</ul>
+
+
+<p>修正前との差分が見たい方は <a href="https://gist.github.com/amay077/7960424/revisions">Revisions</a> で見られます。</p>
+
+<p>あ、今回は Twitter なので、
+<code>MobileServiceAuthenticationProvider.MicrosoftAccount</code> を忘れずに
+<code>MobileServiceAuthenticationProvider.Twitter</code> に置き換えてくださいね。</p>
+
+<p>これでコードの修正は終わりです。</p>
+
+<ol>
+<li>動かしてみる</li>
+</ol>
+
+
+<p>さて、iOS シミュレータ で動かしてみましょう。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_06.gif" alt="" /></p>
+
+<p>こんな感じで、Twitter による認証機能をアプリに組み込むことができました。</p>
+
+<p>今日は以上です。次回は Push 通知を行ってみます。</p>
+
+
+      <h4>Ads</h4>
+      <script type="text/javascript"><!--
+      amazon_ad_tag = "oku2008-22"; amazon_ad_width = "728"; amazon_ad_height = "90"; amazon_ad_link_target = "new"; amazon_ad_border = "hide"; amazon_color_border = "3383E9"; amazon_color_text = "5A5E5F"; amazon_color_link = "3383E9"; amazon_color_price = "3383E9"; amazon_color_logo = "FDFDFD";//--></script>
+      <script type="text/javascript" src="http://ir-jp.amazon-adsystem.com/s/ads.js"></script>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev/" title="Previous Post: FOSS4G 開発者の為の、図形演算ライブラリガイド">&lt; FOSS4G 開発者の為の、図形演算ライブラリガイド</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2013/12/18/report-of-oyako-robot-kyoshitsu/" title="Next Post: 家族ロボット教室に参加してきました">家族ロボット教室に参加してきました &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2013 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/';
+        var disqus_url = 'http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

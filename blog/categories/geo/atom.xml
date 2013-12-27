@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Geo | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/geo/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2013-12-18T20:28:29+09:00</updated>
+  <updated>2013-12-27T15:15:26+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,477 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/"/>
+    <updated>2013-12-23T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS では、既存の iOS用ライブラリが利用できます。
+今日は例として Yahoo Maps SDK for iOS を Xamarin.iOS から使ってみます。</p>
+
+<!--more-->
+
+
+<h2>Yahoo! iOSマップSDK とは</h2>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>Yahoo! Japan が提供する地図SDKです。Google Maps にはない魅力として、「雨雲レーダー」「経路探索/案内」「AR機能」が挙げられます。
+利用するには上記サイトから APIキー の発行が必要です。</p>
+
+<h2>Xamarin.iOS で Objective-C ライブラリを使う方法</h2>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
+</ul>
+
+
+<p>「Binding」と呼ばれます。
+Obj-Cライブラリを呼び出すラッパーのようなものを C# で記述し、それを Xamarin.iOS アプリケーションから使用することが出来ます。</p>
+
+<h2>Xamarin.iOS で Yahoo! iOSマップSDK を使う手順</h2>
+
+<h3>1. Yahoo! iOSマップSDK をダウンロードし、APIキー を発行する</h3>
+
+<p>SDK のダウンロードは、</p>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>です。APIキー の発行は、</p>
+
+<ul>
+<li><a href="https://e.developer.yahoo.co.jp/dashboard/">アプリケーションの管理：Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>です。手順は、</p>
+
+<ul>
+<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">YOLP(地図):利用準備 - Yahoo!デベロッパーネットワーク</a></li>
+</ul>
+
+
+<p>が分かりやすいです。</p>
+
+<h3>2. Xamarin.iOS で Binding プロジェクトを作る</h3>
+
+<p>Xamarin Studio で新しいソリューションを作ります。
+iOS → iOS Binding Project で、名前は 「YMapBinding」、ソリューション名は「YMapSample」とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_01.png" alt="" /></p>
+
+<h3>3. Yahoo! iOSマップSDK のライブラリファイルを Binding プロジェクトに入れる</h3>
+
+<p>ダウンロードした Yahoo! iOSマップSDK を解凍して、中に含まれる <code>YMapKit</code> ファイルを <code>libYMapKit.a</code> にリネームします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_02.png" alt="" /></p>
+
+<p>Xamarin Studio で、YMapBinding プロジェクトに <code>libYMapKit.a</code> を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_03.png" alt="" /></p>
+
+<h3>4. Yahoo! iOSマップSDK の API定義を C# で書く</h3>
+
+<p>Binding プロジェクトにある <code>ApiDefinition.cs</code> を以下のように書き換えます。</p>
+
+<p>```csharp ApiDefinition.cs
+using System;
+using System.Drawing;
+using MonoTouch.ObjCRuntime;
+using MonoTouch.Foundation;
+using MonoTouch.UIKit;</p>
+
+<p>namespace YMapBinding
+{</p>
+
+<pre><code>[BaseType (typeof (UIView))]
+public partial interface YMKMapView {
+    [Export ("initWithFrame:appid:")]
+    IntPtr Constructor (RectangleF frame, string appid);
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>よく目を凝らすと分かるんですが、これは iOS版ライブラリの <code>initWithFrame:appId:</code> というコンストラクタを C# で定義しています。
+他のメソッドやプロパティ、イベント(delegate)も同じように定義するのですが、ここでは省略します。</p>
+
+<p>次に <code>libYMapKit.linkwith.cs</code> を開いて、以下のように書き換えます。</p>
+
+<p>```csharp libYMapKit.linkwith.cs
+using System;
+using MonoTouch.ObjCRuntime;</p>
+
+<p>[assembly: LinkWith ("libYMapKit.a", LinkTarget.ArmV7 | LinkTarget.ArmV7s | LinkTarget.Simulator ,ForceLoad = true,</p>
+
+<pre><code>Frameworks="UIKit SystemConfiguration CoreGraphics CoreLocation Foundation OpenGLES QuartzCore")]
+</code></pre>
+
+<p>```</p>
+
+<p>Yahoo! iOSマップSDK が依存するライブラリを Frameworks に列挙しています。</p>
+
+<p>これでひとまず Binding プロジェクト 側は終わりです。</p>
+
+<h4>5. サンプルアプリケーションプロジェクトを作る</h4>
+
+<p>YMapSample ソリューションに 新しいプロジェクト を追加、iPhone の Single view Application 、名称は「YMapApp」とします。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_04.png" alt="" /></p>
+
+<p>YMapApp プロジェクトを右クリックして、スタートアッププロジェクトをこちらに変更しておきます。</p>
+
+<p>次に、参照設定で YMapBinding を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_05.png" alt="" /></p>
+
+<h4>6. Yahoo! iOSマップSDK を表示するコードを書く</h4>
+
+<p>YMapApp のビューコントローラ(たぶん YMapAppViewController)の<code>ViewDidLoad</code> に、以下のように追記します。</p>
+
+<p>```csharp YMapAppViewController.cs
+public override void ViewDidLoad()
+{</p>
+
+<pre><code>base.ViewDidLoad();
+
+var v = new YMKMapView(new RectangleF(0f, 0f, 320f, 320f), 
+    “&lt;your app key&gt;”);  // あなたが取得した APIキー
+this.View.AddSubview(v);
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ああ、 <code>using YMapBinding;</code> も必要ですね。</p>
+
+<p>アプリの方もとりあえずこれで OK。</p>
+
+<h4>7. 動かしてみる</h4>
+
+<p>YMapApp を iOSシミュレータで実行してみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_06.gif" alt="" /></p>
+
+<p>はい、このように「とりあえず」Yahoo! iOSマップSDK を Xamarin.iOS で動かすことができました。</p>
+
+<h2>この後（やること多いよ）</h2>
+
+<h3>API定義をちまちまと移植</h3>
+
+<p>この例ではコンストラクタ1つしか定義しませんでしたが、これを他のコンストラクタ、メソッド、プロパティ、イベントについて行う必要があります。これを助けるツールとして <a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/objective_sharpie/">Objective Sharpie</a> が公開されていますが、あまり期待しない方が良さそうです。Yahoo! iOSマップSDK をこのツールにかけてみましたが、出来上がった定義ファイルはエラーがたくさん出ました。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
+</ul>
+
+
+<p>を理解した上で、Objective Sharpie の結果を参考にして、作っていく必要がありそうです。</p>
+
+<h3>ApiDefinition.cs への定義は正しいのか？</h3>
+
+<p>「Frameworks に、Yahoo! iOSマップSDK が依存しているライブラリを列挙」してみましたが、<a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">チュートリアル</a> には <code>libxml2.2.dylib</code> も含まれています。が、 <code>ApiDefinition.cs</code> にはこれは記述していません。けど動いています。何かの機能を使った時に問題になるかもしれません。そしてこの .dylib という拡張子の場合にどう定義すれば良いのか不明です。</p>
+
+<h3>ライブラリが使用するリソースはどこに？</h3>
+
+<p>ダウンロードした Yahoo! iOSマップSDK には <code>image</code> ディレクトリがあり、これをアプリケーションプロジェクトに配置することで、ライブラリがリソースを使うことになっています。Xamarin.iOS Binding プロジェクトではこれはどこに配置すればよいか、未調査です。</p>
+
+<p>ということで Xamarin.iOS の Binding について紹介しました。
+.Android の Binding は jar を放り込めばある程度自動で定義を生成してくれていたのに対し、かなり面倒な感じです。アプリケーションに必要な機能だけを定義して使っていく感じかなあと感じました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[FOSS4G 開発者の為の、図形演算ライブラリガイド]]></title>
+    <link href="http://amay077.github.io/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev/"/>
+    <updated>2013-12-16T00:00:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2013/12/16/guide-of-geomety-libraries-for-foss4g-dev</id>
+    <content type="html"><![CDATA[<p>これは <a href="http://atnd.org/events/45511">FOSS4G Advent Calendar 2013</a> と、<a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a>  のクロスポストになります。</p>
+
+<p>地図に関するシステムを作っていますと、必ず必要になるのが図形と図形の演算です。(結合 とか、分割とか、そういうの）</p>
+
+<!--more-->
+
+
+<p>私にとっては自分で実装するのは、とても大変な部類なのですが、今日では、いろいろなオープンソースライブラリが存在していて、それを使わせて頂いています。</p>
+
+<p>今日は、それらの紹介をします。</p>
+
+<h2>図形演算ライブラリ達</h2>
+
+<h3>JTS Topology Suite (JTS)</h3>
+
+<ul>
+<li>http://sourceforge.net/projects/jts-topo-suite/</li>
+<li>言語：Java</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>これがなければ死んでいた案件多し。いろいろな言語に移植され、事実上標準のライブラリ。LGPL ということだけが要注意であり少し残念。</p>
+
+<h3>GEOS</h3>
+
+<ul>
+<li>http://trac.osgeo.org/geos/</li>
+<li>言語：C++</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>JTS を C++ に移植したライブラリ。なので機能、ライセンスともに JTS とほとんど一緒。osgeo のツールをビルドする時に出てくること多い。</p>
+
+<h3>Net Topology Suite (NTS)</h3>
+
+<ul>
+<li>https://code.google.com/p/nettopologysuite/</li>
+<li>言語：C#</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>JTS を .NET に移植したライブラリ。最初見た頃は、Not Implemented  な機能が多かったけど、だいぶ揃ってきたのかな。</p>
+
+<h3>Esri Geometry API for Java</h3>
+
+<ul>
+<li>https://github.com/Esri/geometry-api-java</li>
+<li>言語：Java</li>
+<li>ライセンス：Apache 2.0</li>
+</ul>
+
+
+<p>この間の FOSS4GJ 2013 Tokyo で教えてもらった、Yet Another 図形演算ライブラリ。GIS の世界シェアトップである ESRI社がオープンソースで公開しています。だから品質は折り紙つき（のハズだ）。Apache ライセンスなのも嬉しい。</p>
+
+<h3>Clipper</h3>
+
+<ul>
+<li>http://www.angusj.com/delphi/clipper.php</li>
+<li>言語：Delphi、C++、C#、Python、Perl、Ruby、Haskell</li>
+<li>ライセンス：Boost Software License</li>
+</ul>
+
+
+<p>名前の通り Clip(つまり AND(Intersection)演算)と Offset(Buffer の片側だけ)に特化したライブラリ。</p>
+
+<h3>Boost:Geometry</h3>
+
+<ul>
+<li>http://www.boost.org/doc/libs/1_55_0/libs/geometry/doc/html/index.html</li>
+<li>言語：C++</li>
+<li>ライセンス：Boost Software License</li>
+</ul>
+
+
+<p>そういえば、C++ の拡張ライブラリである Boost にも Geometry が入ったのでしたね。Screenshot がなかなか圧巻です。</p>
+
+<h3>DotSpatial</h3>
+
+<ul>
+<li>http://dotspatial.codeplex.com/</li>
+<li>言語：C#</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>ライブラリというよりはアプリケーションなのかな？ソースコードの中に <code>DotSpatial.Topology</code> などが見えます。</p>
+
+<h3>JSTS Topology Suite</h3>
+
+<ul>
+<li>https://github.com/bjornharrtell/jsts</li>
+<li>言語：JavaScript</li>
+<li>ライセンス：LGPL</li>
+</ul>
+
+
+<p>探してみたらやっぱりあった JTS の JavaScript への移植版。ライセンスは(ry</p>
+
+<h3>GeoScript</h3>
+
+<ul>
+<li>http://geoscript.org/</li>
+<li>言語：JavaScript</li>
+<li>ライセンス：MIT</li>
+</ul>
+
+
+<p>JavaScript製のライブラリ。最近は D3.js による視覚表現が流行ってきたので、内部ではこのようなライブラリが使われているのでしょうか。</p>
+
+<h2>試しに使ってみよう</h2>
+
+<p>Xamarin Advent Calendar と絡めるために無理やり Xamarin Studio で、という事は必然的に Net Topology Suite を使ってみます。</p>
+
+<p>Xamarin Studio は、Android/iOS アプリを作るためだけじゃなくて、コンソールアプリとかも作ることができますよ、と言いたいだけです。</p>
+
+<h3>準備</h3>
+
+<p>まず Xamarin Studio で C# → コンソールアプリのプロジェクトを作ります。</p>
+
+<p>次に、まず NTS を参照に追加しますが、Nuget という仕組みを使います。
+Xamarin Studio に Nuget を導入する手順は、</p>
+
+<ul>
+<li><a href="https://github.com/mrward/monodevelop-nuget-addin">mrward / monodevelop-nuget-addin</a></li>
+</ul>
+
+
+<p>を参考にしてください。</p>
+
+<h3>コードを書く</h3>
+
+<p>こんな感じです。</p>
+
+<p>```csharp Program.cs
+using System;
+using GeoAPI.Geometries;
+using NetTopologySuite;</p>
+
+<p>namespace TopologyTest
+{</p>
+
+<pre><code>class MainClass
+{
+    public static void Main(string[] args)
+    {
+        var service = NtsGeometryServices.Instance;
+        var gf = service.CreateGeometryFactory();
+
+        var polygonA = gf.CreatePolygon(new Coordinate[]
+            {
+                new Coordinate(34.0, 136.0),
+                new Coordinate(34.0, 138.0),
+                new Coordinate(37.0, 138.0),
+                new Coordinate(37.0, 136.0),
+                new Coordinate(34.0, 136.0)
+            });
+
+        var polygonB = gf.CreatePolygon(new Coordinate[]
+            {
+                new Coordinate(36.0, 137.0),
+                new Coordinate(35.0, 137.0),
+                new Coordinate(35.0, 140.0),
+                new Coordinate(36.0, 137.0)
+            });
+
+        polygonA.Intersection(polygonB).ToConsole("Intersection");
+        polygonA.Union(polygonB).ToConsole("Union");
+        polygonA.SymmetricDifference(polygonB).ToConsole("SymmetricDifference");
+        polygonA.Difference(polygonB).ToConsole("Difference");
+        polygonB.Buffer(0.5).ToConsole("Buffer");
+    }
+
+}
+
+public static class GeomExtensions
+{
+    public static void ToConsole(this IGeometry geom, string tag) {
+        Console.WriteLine(tag + " - " + geom.ToString());
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Intersection(AND)、Union(OR)、SymmeticDifference(XOR)、Difference(A - B)、Buffer(ふくらます)について試しています。</p>
+
+<p>実行すると、コンソールに結果の座標群がずらーと出力されます。</p>
+
+<h2>見える化してよ</h2>
+
+<p>プログラムによる視覚化は、、、ごめんなさい面倒だったので作りませんでした。</p>
+
+<p>その代わり、GeoJSON 化して GitHub にアップして視覚化しました。</p>
+
+<p>まず演算対象の <code>geometryA</code> と <code>geometryB</code> です。(外側の枠は気にしないでください)</p>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/01_polygonA.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/01_polygonA.geojson"></script>
+
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/02_polygonB.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/02_polygonB.geojson"></script>
+
+
+<h3>Intersection(AND)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/03_polygonA_intersection_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/03_polygonA_intersection_B.geojson"></script>
+
+
+<h3>Union(OR)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/04_polygonA_union_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/04_polygonA_union_B.geojson"></script>
+
+
+<h3>SymmetricDifference(XOR)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/05_polygonA_symmetricdifference_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/05_polygonA_symmetricdifference_B.geojson"></script>
+
+
+<h3>Difference(A - B)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/06_polygonA_difference_B.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/06_polygonA_difference_B.geojson"></script>
+
+
+<h3>Buffer(Bを膨らます)</h3>
+
+<ul>
+<li>https://github.com/amay077/geojsontest/blob/master/07_geometryB_buffer.geojson</li>
+</ul>
+
+
+<script src="https://embed.github.com/view/geojson/amay077/geojsontest/master/07_geometryB_buffer.geojson"></script>
+
+
+<p>いやー 便利ですね GitHub 。大量のマーカーは自動的にクラスター化までしてくれるそうですよ。</p>
+
+<ul>
+<li><a href="https://github.com/blog/1541-geojson-rendering-improvements">GeoJSON rendering improvements</a>。</li>
+</ul>
+
+
+<p>こちらは、 Leaflet.js、OpenStreetMap、<a href="https://www.mapbox.com/maki/">Maki Project</a> などの FOSS4G が使われています。いいですね。</p>
+
+<p>さて、なんの話か分からなくなってきたので、こちらからは以上です。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[地理院地図の標高タイル(CSV)を描画してみた]]></title>
@@ -473,254 +944,6 @@ function init() {
 <p>せっかく税金で作られている地図なんですから、上手に活用していけば日本全体の利益になるんじゃないかと思います。</p>
 
 <p>最後にお約束で、本件のご利用は自己責任でお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[metersToEquatorPixels を Google Maps Android API v2 で]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2/"/>
-    <updated>2013-10-09T00:21:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2</id>
-    <content type="html"><![CDATA[<p>Google Map API v1 には、「地図上の距離(ｍ)を画面上の距離(ピクセル)に変換する」ためのメソッド <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) がありましたが、v2 ではなくなってしまいました。</p>
-
-<!--more-->
-
-
-<p>ので、以下のような代替関数を作ってみました。</p>
-
-<p>```java metersToEquatorPixels.java
-public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {</p>
-
-<pre><code>final double OFFSET_LON = 0.5d;
-
-Location baseLoc = new Location("");
-baseLoc.setLatitude(base.latitude);
-baseLoc.setLongitude(base.longitude);
-
-Location dest = new Location("");
-dest.setLatitude(base.latitude);
-dest.setLongitude(base.longitude + OFFSET_LON);
-
-double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
-double lonDistance = meters * degPerMeter; // m を度に変換
-
-Projection proj = map.getProjection();
-Point basePt = proj.toScreenLocation(base);
-Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
-
-return Math.abs(destPt.x - basePt.x);
-</code></pre>
-
-<p>}
-```</p>
-
-<p>行っていることは単純で、基準となる緯度経度:<code>base</code> から、適当に(ここでは 0.5度)東へ移動した緯度経度を <code>Location.distanceTo</code> で求め、その結果から、「1ｍは何度か？」を求めます。あとは、この係数を使って 地図上の距離:<code>meters</code> を度に変換し、最後に、<code>base</code> と移動後の緯度経度それぞれを画面座標に変換して、画面上の距離を返す、というものです。</p>
-
-<p>「1ｍは何度か？」は、赤道上の値を使っても良いのですが、緯度によって値が大きく変わるので、このような手法を取りました。</p>
-
-<p>ただこれでも、求める距離の精度によっては、<code>OFFSET_LON</code> の値の調整が必要な気がします。また、経度:0 をまたぐような地域では正しく動かない気がします。(いずれも未検証)</p>
-
-<p>また、緯度方向にもそれなりに正確な数値を出すには、上記と同じことを緯度に対しても行う必要があります。(これは v1 の API にもなかった)</p>
-
-<p>v2 になって、描画系でピクセル座標を意識することはなくなったんであまり使うことも無いと思いますが、なにかで必要になったら思い出す程度で。</p>
-
-<h3>追記</h3>
-
-<p>あとで気づいたんですが、 v1 の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) は、赤道上の距離で算出してたんですね。それと比べるとちょっとオーバースペックでした。</p>
-
-<p> それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
-
-<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Longitude の略し方。lng 派と lon 派の終わらない争い]]></title>
-    <link href="http://amay077.github.io/blog/2013/09/25/the-battle-of-abbreviation-lat-vs-lng/"/>
-    <updated>2013-09-25T21:08:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/09/25/the-battle-of-abbreviation-lat-vs-lng</id>
-    <content type="html"><![CDATA[<p>地図上での位置は「緯度経度」で表します。英語だと「latitude, longitude」ですね。
-これらの単語、コーディングする際は短縮したいわけです。latitude は <code>lat</code> で全会一致です。問題は longitude 。</p>
-
-<!--more-->
-
-
-<p>業界？の中では、longitude の略し方についての議論が度々沸き起こります。</p>
-
-<p>例えば、、、</p>
-
-<p>初めは、タイトルの議論で推移していましたが、次第に略し方の議論に。。。</p>
-
-<ul>
-<li><a href="http://togetter.com/li/85864">latitudeとlongitude，どっちが緯度でどっちが経度？ - Togetter</a></li>
-</ul>
-
-
-<p><code>lon</code> 派の方の意見。</p>
-
-<blockquote class="twitter-tweet"><p>そういえば緯度経度のうち経度（longitude）をlong, lon, lngなどと書く場合があるんだけど、longは長整数型のために予約語になってる場合があるのと、lngだと「イング」と読めてしまうからという理由でlonにしてる。</p>&mdash; Masaki Ohashi (@ohashimasaki) <a href="https://twitter.com/ohashimasaki/statuses/308895891308294144">March 5, 2013</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p><code>lng</code> 支持？な方々</p>
-
-<blockquote class="twitter-tweet"><p>longitudeの省略形を何にするか迷ってる。lon or lng 今のところlngが優勢。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/28848028079">October 27, 2010</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-
-<blockquote class="twitter-tweet"><p>最近Google Maps APIを触っていたので、CHINTAIの地図で経度(longitude)のパラメータがlngじゃなくてlonなのが新鮮に思えた</p>&mdash; Ryusuke SEKIYAMA (@rsky) <a href="https://twitter.com/rsky/statuses/25312333134">September 23, 2010</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>振り回されてる方々</p>
-
-<blockquote class="twitter-tweet"><p>lngとlonで５分ハマったー</p>&mdash; ばん↓どう↑さん↓ (@netartjp) <a href="https://twitter.com/netartjp/statuses/379923672632266752">September 17, 2013</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-
-<blockquote class="twitter-tweet"><p>lonとlngのミスで1時間無駄にした</p>&mdash; カメキチ (@kamekiti) <a href="https://twitter.com/kamekiti/statuses/186149216492589056">March 31, 2012</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-
-<blockquote class="twitter-tweet"><p>YahooのローカルサーチAPIのパラメーターの経度情報って、「lon」から始まる値なんですね。他の多くが「lng」な気がするので、始め何でエラーが出るのは分かりませんでした。ということで、ほぼ出来たピョン吉。</p>&mdash; 星野邦敏 (@khoshino) <a href="https://twitter.com/khoshino/statuses/149640555092131842">December 22, 2011</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>おいマジか Yahoo!（笑</p>
-
-<blockquote class="twitter-tweet"><p>「Y.LatLngオブジェクトのメソッドはlat、lngですが、ローカルサーチAPIのパラメータ名はlat、lonなので注意してください」YOLPで挑戦～「マクドナルドはどこだ」アプリをHTML5で作る！ <a href="http://t.co/QX8yiyvT">http://t.co/QX8yiyvT</a></p>&mdash; NI-Lab. (@nilab) <a href="https://twitter.com/nilab/statuses/189537270347472896">April 10, 2012</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>とこのように、一つの企業内でも「揺れ」が生じてしまう程度にはバラバラな感じです。</p>
-
-<h2>調べてみた</h2>
-
-<p>で、デファクトスタンダードはどれなのよ？をいろんな地図に関する Web API の仕様から一覧化してみました。</p>
-
-<h3>Lng 派</h3>
-
-<p>Google は神！Google 先生について行きます！</p>
-
-<ul>
-<li>Google - https://developers.google.com/maps/documentation/javascript/reference?hl=ja#LatLng</li>
-<li>Mapion - http://labs.mapion.co.jp/api/asdoc/index.html</li>
-<li>ロケタッチ - http://tou.ch/developer/api_all?uri=spots%2Fsearch</li>
-<li>Leaflet - http://leafletjs.com/reference.html#latlng</li>
-<li>Yahoo(地図API) - http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/js/#index6-2</li>
-<li>mapquest - http://www.mapquestapi.com/staticmap/#getmap</li>
-</ul>
-
-
-<h3>Lon 派</h3>
-
-<p>頭から３文字取ったら普通これだろjk</p>
-
-<ul>
-<li>Yahoo(ローカルサーチ) - http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/localsearch.html</li>
-<li>OpenStreetMap - http://wiki.openstreetmap.org/wiki/API_v0.6#Create_a_new_note:<em>Create:</em>POST_.2Fapi.2F0.6.2Fnotes</li>
-<li>OpenLayers - http://dev.openlayers.org/docs/files/OpenLayers/BaseTypes/LonLat-js.html ※LonLat！</li>
-<li>電子国土Web - http://portal.cyberjapan.jp/site/mapuse4/#zoom=5&amp;lat=35.99989&amp;lon=138.75&amp;layers=BTTT</li>
-<li>Elasticsearch - http://www.elasticsearch.org/guide/reference/mapping/geo-point-type/</li>
-<li>MongoDB - http://myadventuresincoding.wordpress.com/2011/10/02/mongodb-geospatial-queries/</li>
-<li>ゼンリンデータコム(いつもNavi) - http://support.e-map.ne.jp/manuals/V20/index.html?%A5%AF%A5%E9%A5%B9%A5%EA%A5%D5%A5%A1%A5%EC%A5%F3%A5%B9%2FZDC.LatLon</li>
-<li>簡易逆ジオコーディングサービス / Finds.jp - http://www.finds.jp/wsdocs/rgeocode/index.html.ja#PARAMS</li>
-<li>ジオどす - http://geodosu.com/</li>
-<li>モバイラーズオアシスAPI - http://oasis.mogya.com/blog/API</li>
-<li>GeOAP(東京ガス) - http://dev.geoap.jp/GeOAP_Course/GeOAP_Trial.asmx?op=CourseLineOfLLToLL</li>
-<li>はてなココ - http://c.hatena.ne.jp/s/nearby?lat=36.2648177777778&amp;lon=137.910003611111</li>
-<li>Nokia - http://developer.here.com/rest-apis/documentation/enterprise-map-image</li>
-</ul>
-
-
-<h3>Long 派</h3>
-
-<p>「〜itude」は同じなんだから、それより前の部分を省略形にすべきだろ（でっち上げの根拠ですｗ</p>
-
-<ul>
-<li>LatLongLab(Yahoo) - http://latlonglab.yahoo.co.jp/</li>
-<li>はてなココ - http://developer.hatena.ne.jp/ja/documents/coco/apis/v1/spots#spots</li>
-</ul>
-
-
-<h3>Longitude(略さない)派</h3>
-
-<p>こんなに迷うなら、いっそ省略形など要らぬ！</p>
-
-<ul>
-<li>Apple - https://developer.apple.com/library/ios/documentation/CoreLocation/Reference/CoreLocationDataTypesRef/Reference/reference.html</li>
-<li>Bing Maps - http://msdn.microsoft.com/en-us/library/gg427612.aspx</li>
-<li>Facebook -  https://developers.facebook.com/docs/reference/fql/location_post</li>
-<li>Amazon - https://developer.amazon.com/sdk/maps/api-reference.html</li>
-<li>Evernote - http://dev.evernote.com/doc/reference/Types.html#Struct_NoteAttributes</li>
-<li>Path - https://path.com/developers#tags</li>
-</ul>
-
-
-<h3>緯度経度ペアに名前付けちゃう派</h3>
-
-<p>だってペアじゃないと意味ないじゃん？</p>
-
-<ul>
-<li>Twitter(geocode) - https://dev.twitter.com/docs/api/1/get/search (緯度、経度)</li>
-<li>Foursquare(ll) - https://developer.foursquare.com/docs/venues/search (緯度、経度)</li>
-<li>カーリル図書館情報取得API(geocode) - http://calil.jp/doc/api_ref.html (経度、緯度)</li>
-</ul>
-
-
-<h3>X/Y と同じじゃん派</h3>
-
-<p>所詮座標でしょ？(ﾎｼﾞﾎｼﾞ</p>
-
-<ul>
-<li>Solr(pt) - http://docs.lucidworks.com/display/solr/Spatial+Search</li>
-<li>Oracle Spatial - http://otndnld.oracle.co.jp/document/products/oracle10g/102/doc_cd/appdev.102/B19243-02/sdo_cs_concepts.htm</li>
-<li>PostGIS - http://postgis.net/docs/manual-2.1/using_postgis_dbmanagement.html#RefObject</li>
-<li>PlaceEngine - http://www.placeengine.com/doc/tut</li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>数では <code>lon</code> 派が優勢。しかし開発者の目に触れる機会では Google が居る <code>lng</code> の方が多いのかも。
-MS、Facebook など、割と巨大企業が 略さない を選択してるのも面白いですね。</p>
-
-<p>ペアに名前を付けるやり方は、座標の順番が 緯度→経度 なのか、経度→緯度 なのか揺れるのであまり好きじゃないですね。</p>
-
-<p>XY と同じ概念で扱うのは、そもそも地図以外での利用を想定していたり、地図でも投影されたXY座標を想定しているものが多いですが、XY と LatLon って、これまた混乱するんですよね。Lat って Y なの？順番逆なの？って。</p>
-
-<p>個人的には 略さない派 だったのですが、そうは言っても短く書きたいので、最近は <code>lon</code> 派です。理由は、</p>
-
-<p><strong>「オレオレ緯度経度クラスを使いたいが、Google に <code>LatLng</code> を取られちゃってるから」</strong></p>
-
-<p>クラス名が衝突すると、いろいろ面倒だし、クラス名に Prefix 付けるのもダサいし。。。</p>
-
-<p>というわけで、終わらない争いと知りつつまとめてみました。
-上記に載っていない情報があったら教えてもらえると嬉しいです。</p>
 ]]></content>
   </entry>
   
