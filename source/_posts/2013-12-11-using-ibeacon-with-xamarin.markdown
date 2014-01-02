@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.iOS と Rx で iBeacon を使ってみる(つもり)"
 date: 2013-12-11 00:12
 comments: true
-categories: [Xamarin, iBeacon, iOS]
+categories: [Xamarin, iBeacon, iOS, C#, XAC13]
 ---
 こちらは、[iBeacon Advent Calendar 2013](http://qiita.com/advent-calendar/2013/ibeacon) と [Xamarin Advent Calendar 2013](http://qiita.com/advent-calendar/2013/xamarin) とのクロスポストになります。
 <!--more-->
