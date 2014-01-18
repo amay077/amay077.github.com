@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-01-02T11:29:16+09:00</updated>
+  <updated>2014-01-18T18:21:27+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,224 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ViewController の ViewDidLoad で this が nil になった件]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload/"/>
+    <updated>2014-01-18T18:18:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload</id>
+    <content type="html"><![CDATA[<p>Xamarin Studio + Xcode で Storyboard でアプリを作っていた。複数ある画面の内、ある一つの画面に遷移すると落ちる現象に見舞われていろいろ調べていた。</p>
+
+<!--more-->
+
+
+<p>Xamarin Studio で該当画面の ViewController の ViewDidLoad にブレークポイントを仕掛けて停止させ、ウォッチしてみたところ、なんと this が「nil」になっていた。</p>
+
+<p>これのおかげで、ViewController に配置した UILabel などにもアクセスできない。</p>
+
+<p>ViewController を作りなおしてみたり、呼び出し方法を変えてみたりいろいろやってみたけど解消せず。</p>
+
+<p>30分ほど悪戦苦闘した後、実機にインストールされている該当アプリを一旦削除し、Xamarin Studio も終了させた後に再起動、ソリューションをクリーンして再ビルドして実行してみたところ、問題が解消した。</p>
+
+<p>なにがしかのトラブルが起きた時は、まずは端末内のアプリを消してみると良いのかも知れない。（これまでの経験的に）</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Component for iOS の CoordinateBounds について]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk/"/>
+    <updated>2014-01-16T18:05:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk</id>
+    <content type="html"><![CDATA[<p>すごくニッチな話ですけど、Xamarin Components にある Google Maps を Xamarin.iOS で使った。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://components.xamarin.com/view/googlemapsios">Google Maps /Components</a></li>
+</ul>
+
+
+<p>このライブラリの中に <code>CoordinateBounds</code> という「領域」を表すクラスがある。これは <a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja">GMSCoordinateBounds</a> の Binding だ。</p>
+
+<p>で、CoordinateBounds には <code>Including</code> (<a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja#a63cffdf310ca19c6bab74c9a4034aadd">includingCoordinate</a>) というメソッドがあって、これを呼ぶと指定した座標が入るように領域を拡幅してくれる、便利だ。</p>
+
+<p>で、最初はこのクラスをこう使っていた。</p>
+
+<p><code>csharp
+var bounds = new CoordinateBounds();
+bounds.Including(new CLLocationCoordinate2D(34d, 134d));
+bounds.Including(new CLLocationCoordinate2D(33d, 133d));
+bounds.Including(new CLLocationCoordinate2D(35d, 135d));
+</code></p>
+
+<p>動かしてみて、この使い方だと <code>bounds</code> から期待した結果が得られないことに気づいた。範囲が -180〜+180 になってしまった。</p>
+
+<p>正しくはこう。</p>
+
+<p>```csharp
+var bounds = new CoordinateBounds(</p>
+
+<pre><code>new CLLocationCoordinate2D(34d, 134d),
+new CLLocationCoordinate2D(33d, 133d));
+</code></pre>
+
+<p>bounds.Including(new CLLocationCoordinate2D(35d, 135d));
+```</p>
+
+<p>これだと結果は、正しく [33,133 - 35,135] を返す。</p>
+
+<p>処理上、生成時に２つの座標が揃ってないケースだったので、「あ、デフォルトコンストラクタあるじゃん」と使ってたらハマった。本家 iOS 版の方には引数無しの initXXX は無かった。</p>
+
+<p>Objective-C の仕様上 alloc して init しないのを防げない、んだっけ？
+だから、Xamarin.iOS の Binding でデフォルトコンストラクタを隠せないのかな？
+突っ込んで調べてないけど、Binding ライブラリを使う時は注意しましょう、ちゃんと本家のAPIリファレンスを見ましょう、というお話でした。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でエラー “Failed to load AOT module ... in aot-only mode”]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode/"/>
+    <updated>2014-01-16T15:14:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
+
+<!--more-->
+
+
+<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
+
+<p>ログには、</p>
+
+<blockquote><p>Failed to load AOT module ‘/xxx/Hoge.dll.dylib' in aot-only mode.</p></blockquote>
+
+<p>というエラーが出ていた。</p>
+
+<p>実機からアプリを削除して、
+ソリューションを「再ビルド」したら直った。小ネタ過ぎる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://monotouch.2284126.n4.nabble.com/Failed-to-load-AOT-module-in-aot-only-mode-td4602614.html">MonoTouch - Failed to load AOT module ... in aot-only mode</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で特定の画面だけ向きを固定する時ハマったこと]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller/"/>
+    <updated>2014-01-07T18:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller</id>
+    <content type="html"><![CDATA[<p>画面A,B があって B だけ横向き固定にしたい。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/12588038">uiviewcontroller - iOS 6 ViewController is rotating but shouldn't - Stack Overflow</a></li>
+<li><a href="http://qiita.com/yusuga_/items/8cc82376edb40e09f0e7">iPhone - UIViewController iOS6での画面回転への対応 - Qiita [キータ]</a></li>
+</ul>
+
+
+<p>これを Xamarin.iOS でやりたい。</p>
+
+<!--more-->
+
+
+<p>Storyboard を Interface Builder で開いて、NavigationController のカスタムクラスを <code>MyNavigationController</code> とした。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/viewcontroller_orientaion_lock_in_xamarin_ios_01.png" alt="" /></p>
+
+<p>すると、Xamarin Studio 側にも <code>MyNavigationController.cs</code> ができるので、Stackoverflow の通り、以下のように実装した。</p>
+
+<p>```csharp MyNavigationController.cs
+// This file has been autogenerated from a class added in the UI designer.</p>
+
+<p>using System;
+using MonoTouch.Foundation;
+using MonoTouch.UIKit;
+using System.Linq;</p>
+
+<p>namespace MyApp
+{</p>
+
+<pre><code>public partial class MyNavigationController : UINavigationController
+{
+    public MyNavigationController (IntPtr handle) : base (handle) { }
+
+    public override UIInterfaceOrientation PreferredInterfaceOrientationForPresentation()
+    {
+        return this.ViewControllers.Last().PreferredInterfaceOrientationForPresentation();
+    }
+
+    public override UIInterfaceOrientationMask GetSupportedInterfaceOrientations()
+    {
+        return this.ViewControllers.Last().GetSupportedInterfaceOrientations();
+    }
+
+    public override bool ShouldAutorotate()
+    {
+        return this.ViewControllers.Last().ShouldAutorotate();
+    }
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に、横固定にしたい画面Bを以下のように実装。</p>
+
+<p>```csharp BViewController.cs
+// This file has been autogenerated from a class added in the UI designer.</p>
+
+<p>using System;</p>
+
+<p>using MonoTouch.Foundation;
+using MonoTouch.UIKit;</p>
+
+<p>namespace MyApp
+{</p>
+
+<pre><code>public partial class BViewController : UIViewController
+{
+    public PhotoPreviewViewController (IntPtr handle) : base (handle)
+    {
+    }
+
+    public override UIInterfaceOrientation PreferredInterfaceOrientationForPresentation()
+    {
+        return UIInterfaceOrientation.LandscapeLeft;
+    }
+
+    public override UIInterfaceOrientationMask GetSupportedInterfaceOrientations()
+    {
+        return UIInterfaceOrientationMask.LandscapeLeft;
+    }
+
+    public override bool ShouldAutorotate()
+    {
+        return false;
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これで動かしてみたものの、一向に画面が固定されない。
+しばらく悩んだ後、<code>MyNavigationController</code> のコンストラクタにブレークポイントを仕掛けてデバッグしてみたとても止まらない。
+よくよくアプリケーション出力のコンソールを見てみると、</p>
+
+<blockquote><p>Unknown class MyNavigationController in InterfaceBuilder file."</p></blockquote>
+
+<p>と出力されていることに気づいた。
+なんか、.storyboard と C# クラスの関連付けがうまくいってないらしい。</p>
+
+<p>ソリューションをクリアして、再ビルドしたらこのエラーは消え、画面Bの向きが固定されるようになった！</p>
+
+<p>(ただ、縦画面のまま画面Bに遷移すると縦画面で固定されてしまう。これは実装が何か足りない気がする。)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NHK紅白の Android/iPhone アプリが .NET/Xamarin 製だったということ]]></title>
@@ -155,903 +373,6 @@
 アプリの性質上、期間限定となる可能性もあります。できればこのまま公開しつづけて欲しいですが、Xamarin を上司や提案先に紹介されたい場合は、お早めに、またキャプチャを多く撮っておかれる事をおすすめします。</p>
 
 <p>最後に、今年が Xamarin 普及元年とならん事を近くの神社にお祈りして、新年最初のエントリの締めとします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[マルチプラットフォーム MVVMフレームワーク「MvvmCross」を使う]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/"/>
-    <updated>2013-12-25T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a> も最終日となりました。
-最後は、「実用的な」マルチプラットフォーム開発のツールを紹介します。</p>
-
-<!--more-->
-
-
-<p>MvvmCross ってやつを紹介したいのですが、まずは事前知識からさらりと。</p>
-
-<h2>MVVM パターンについて</h2>
-
-<p>MVVM は、 Model-View-ViewModel の頭文字を取ったものです。
-MVC パターンの派生で、Microsoft が WPF/Silverlight のために作ったそうですが、今では JavaScript の <a href="http://knockoutjs.com/">Knockout.js</a> などでも利用されています。</p>
-
-<p><img src="http://upload.wikimedia.org/wikipedia/commons/8/87/MVVMPattern.png" alt="" />
-(via <a href="http://ja.wikipedia.org/wiki/Model_View_ViewModel">Model View ViewModel - WikiPedia</a> CC-BY 3.0)</p>
-
-<ul>
-<li>Model - MVC の Model と一緒。ビジネスロジックはここに。</li>
-<li>View - WPF なら .xaml、iOS なら .storyboard、Android なら .xml それだけ。1行もコードを書かないのが理想。
-
-<ul>
-<li>DataBinding - ViewModel を監視して、ViewModel の情報を View に表示する。View でのユーザーからの入力を受け付けて ViewModel を変更したり、コマンドを実行する。</li>
-</ul>
-</li>
-<li>ViewModel - View の為の Model。状態管理と View の為の情報＆機能公開、およびその為の Model の利用。”ロジック” はここにも書いちゃダメ。</li>
-</ul>
-
-
-<p>いやもう絶対他のリソース読んだ方が分かりやすいですから(逃げ)。</p>
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/chushin/greatblogentry_02/greatblogentry_02_01.html">MVVMパターンの常識 ― 「M」「V」「VM」の役割とは？ － ＠IT</a></li>
-</ul>
-
-
-<h2>PCL(Portable Class Library) について</h2>
-
-<p>WPF, Silverlight, Windows Store App など、異なるプラットフォームでバイナリを共有できる “ポータブルな” クラスライブラリ。</p>
-
-<ul>
-<li><a href="http://msdn.microsoft.com/ja-jp/library/windowsphone/develop/jj714086(v=vs.105">ポータブル クラス ライブラリを使用して機能を共有する</a>.aspx)</li>
-</ul>
-
-
-<p>そして、先日、Xamarin.Android と iOS でもポータルクラスライブラリが使える/作れるようになりました。</p>
-
-<ul>
-<li><a href="http://blog.xamarin.com/pcl-projects-and-vs2013/">PCL Projects and Visual Studio 2013 Support | Xamarin Blog</a></li>
-</ul>
-
-
-<p>ポータブルクラスライブラリとして作られた DLL は、WPF でも Store App でも Android でも iOS でも使いまわせる、という事です。</p>
-
-<h2>MvvmCross とは</h2>
-
-<p>さて本題。</p>
-
-<p>MvvmCross は、様々なプラットフォームに対応した MVVMフレームワークです。対応プラットフォームをざっと挙げると、</p>
-
-<ul>
-<li>Xamarin.iOS</li>
-<li>Xamarin.Android</li>
-<li>Windows Phone</li>
-<li>Windows Store App</li>
-<li>WPF</li>
-<li>Mac</li>
-</ul>
-
-
-<p>です。</p>
-
-<p>MvvmCross を使うと、MVVM パターンでいうところの Model, ViewModel を複数のプラットフォームで共通にできます。</p>
-
-<p>図にすると下のような感じです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_01.png" alt="" /></p>
-
-<p>「Model でプラットフォーム固有の機能使いたい場合もあるじゃん？」とかにも対応しているので、これが全てでは無いですが、最初の説明としてはこんなもんです。</p>
-
-<p>ホームページなどはこちら。
-Evolve セッションの Slides の 1〜10ページ が分かりやすいですかね。</p>
-
-<ul>
-<li><a href="https://github.com/MvvmCross/MvvmCross">MvvmCross/MvvmCross - github</a></li>
-<li><a href="http://xamarin.com/evolve/2013#session-dnoeeoarfj">Architecting Cross-Platform Apps with MvvmCross - Evolve 2013 Conference – Xamarin</a></li>
-</ul>
-
-
-<h2>Xamarin.Android Xamarin.iOS で、MvvmCross を使ったアプリを作ってみる</h2>
-
-<p>MvvmCross の現在 Stable なのは「v3」で、その Tutorials が</p>
-
-<ul>
-<li><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N plus 1 Videos Of MvvmCross · MvvmCross/MvvmCross Wiki</a></li>
-</ul>
-
-
-<p>にあります。これがまたドットインストールも真っ青の充実ぶり。
-この動画を順番に見ながら写経すれば使えるようになっちゃいます。</p>
-
-<p>という訳で、最初の１つ「N=0」をトレースしてみましょう。</p>
-
-<h3>動画と違うところ</h3>
-
-<ul>
-<li>Win でなく Mac、Visual Studio でなく Xamarin Studio を使います。Win+VS な人は動画をそのままトレースした方がよいでしょう。</li>
-<li>Nuget 使いません。Nuget から取得したらエラーになったので、マニュアルでアセンブリ追加します。Nuget で配信されるプロジェクトのスケルトンも使わずスクラッチで実装します。</li>
-<li>Windows Store App、Windows Phone は飛ばします。Mac なので。</li>
-<li>iOS での UI 作成について。動画ではコードでUI構築してますが、Storyboard を使いました。その影響で、少しコードが動画と変わっています。</li>
-</ul>
-
-
-<p>では、開始〜。</p>
-
-<h3>1. PCL プロジェクトを作る</h3>
-
-<p>Xamarin Studio にて、新しいソリューションと「Portable Library」プロジェクトを作ります。プロジェクト名は “FirstDemo.Core”、ソリューション名は “FirstDemo” とします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_02.png" alt="" /></p>
-
-<h3>2. MvvmCross のバイナリをダウンロードする</h3>
-
-<p><a href="https://github.com/mvvmcross/MvvmCross-Binaries/tree/v3.1">MvvmCross/MvvmCross-Binaries の v3.1 branch</a> をダウンロードなり Clone なりします。</p>
-
-<h3>3. プロジェクトにアセンブリ参照を追加する</h3>
-
-<p>FirstDemo.Core プロジェクトに、先ほどダウンロードした <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable</code> の中の以下のファイルを参照追加します。</p>
-
-<ul>
-<li>Cirrious.CrossCore.dll</li>
-<li>Cirrious.MvvmCross.dll</li>
-<li>Cirrious.MvvmCross.Localization.dll</li>
-</ul>
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_03.png" alt="" /></p>
-
-<h3>4. FirstViewModel クラス、App クラスの実装</h3>
-
-<p>Nuget でインストールされるはずのクラスを実装します。</p>
-
-<p>まず、ViewModels というフォルダを作ってその中に <code>FirstViewModel</code> クラスを作ります。</p>
-
-<p>```csharp ViewModels/FirstViewModel.cs
-using System;
-using Cirrious.MvvmCross.ViewModels;</p>
-
-<p>namespace FirstDemo.Core.ViewModels
-{</p>
-
-<pre><code>public class FirstViewModel : MvxViewModel
-{
-    private string _firstName;
-    public string FirstName
-    {
-        get { return _firstName; }
-        set { _firstName = value; RaisePropertyChanged(() =&gt; FullName);}
-    }
-
-    private string _lastName;
-    public string LastName
-    {
-        get { return _lastName; }
-        set { _lastName = value; RaisePropertyChanged(() =&gt; FullName);}
-    }
-
-    public string FullName
-    {
-        get { return String.Format("{0} {1}", _firstName, _lastName); }
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>次に <code>App</code> クラスはルートに。</p>
-
-<p>```csharp App.cs
-using System;
-using Cirrious.CrossCore.IoC;
-using FirstDemo.Core.ViewModels;</p>
-
-<p>namespace FirstDemo.Core
-{</p>
-
-<pre><code>public class App : Cirrious.MvvmCross.ViewModels.MvxApplication
-{
-    public override void Initialize()
-    {
-        CreatableTypes()
-            .EndingWith("Service")
-            .AsInterfaces()
-            .RegisterAsLazySingleton();
-
-        RegisterAppStart&lt;FirstViewModel&gt;();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>MyClass.cs</code> は使わないので削除します。</p>
-
-<p>ここまでが<a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=281">動画の 4:40</a> くらいです。</p>
-
-<h3>5. Android の UI を作る</h3>
-
-<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=671">11:11</a> から。</p>
-
-<p>ソリューションに Android Application プロジェクトを追加します。名前は “FirstDemo.Droid” とします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_04.png" alt="" /></p>
-
-<h3>6. FirstDemo.Droid にアセンブリ参照を追加する</h3>
-
-<p>まず、FirstDemo.Core をプロジェクト参照で追加します。
-次に、MvvmCross 関連のアセンブリ群、以下を追加します。動画では Nuget でやってるところです。</p>
-
-<ul>
-<li>Cirrious.CrossCore.dll</li>
-<li>Cirrious.CrossCore.Droid.dll *</li>
-<li>Cirrious.MvvmCross.dll</li>
-<li>Cirrious.MvvmCross.Droid.dll *</li>
-<li>Cirrious.MvvmCross.Binding.dll</li>
-<li>Cirrious.MvvmCross.Binding.Droid.dll *</li>
-<li>Cirrious.MvvmCross.Localization.dll</li>
-</ul>
-
-
-<p>「*」付きのアセンブリは <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Droid/</code> から、付いてないアセンブリは Core と同じく <code>MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/</code> から追加します。後ろに “Droid” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_05.png" alt="" /></p>
-
-<h3>7. FirstView クラス、Setup クラスの実装</h3>
-
-<p>こちらも Nuget が使えれば〜 のところ。</p>
-
-<p><code>FirstView</code> は、MainView.cs をリファクタでリネーム＆ Views フォルダ移動して内容を下のように書き換えます。</p>
-
-<p>```csharp Views/FirstView.cs
-using System;
-using Android.App;
-using Android.Content;
-using Android.Runtime;
-using Android.Views;
-using Android.Widget;
-using Android.OS;
-using Cirrious.MvvmCross.Droid.Views;</p>
-
-<p>namespace FirstDemo.Droid.Views
-{</p>
-
-<pre><code>[Activity(Label = "FirstDemo.Droid", MainLauncher = true, Icon = "@drawable/icon")]
-public class FirstView : MvxActivity
-{
-    protected override void OnCreate(Bundle bundle)
-    {
-        base.OnCreate(bundle);
-        SetContentView(Resource.Layout.Main);
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>Setup.cs はルートに作ります。</p>
-
-<p>```csharp Setup.cs
-using System;
-using Cirrious.MvvmCross.Droid.Platform;
-using Android.Content;
-using Cirrious.MvvmCross.ViewModels;</p>
-
-<p>namespace FirstDemo.Droid
-{</p>
-
-<pre><code>public class Setup : MvxAndroidSetup
-{
-    public Setup(Context appContext) : base(appContext) { }
-
-    protected override IMvxApplication CreateApp()
-    {
-        return new Core.App();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>あ、 <code>SplashScreen</code> は省略します。説明が面倒なので。</p>
-
-<h3>8.  DataBinding の定義ファイルを作る</h3>
-
-<p>これも Nuget の代わりにやるところ。
-データバインディングを行うために必要なファイルです。この手順を忘れて、ビルドエラーでしばらくハマってました。</p>
-
-<p><code>Resource/values</code> フォルダ内に以下の xml ファイルを作成します。</p>
-
-<p>```xml Resources/values/MvxBindingAttributes.xml
-&lt;?xml version="1.0" encoding="utf-8"?>
-<resources>
-  <declare-styleable name="MvxBinding"></p>
-
-<pre><code>&lt;attr name="MvxBind" format="string"/&gt;
-&lt;attr name="MvxLang" format="string"/&gt;
-</code></pre>
-
-<p>  </declare-styleable>
-  <declare-styleable name="MvxControl"></p>
-
-<pre><code>&lt;attr name="MvxTemplate" format="string"/&gt;
-</code></pre>
-
-<p>  </declare-styleable>
-  <declare-styleable name="MvxListView"></p>
-
-<pre><code>&lt;attr name="MvxItemTemplate" format="string"/&gt;
-&lt;attr name="MvxDropDownItemTemplate" format="string"/&gt;
-</code></pre>
-
-<p>  </declare-styleable>
-  <item type="id" name="MvxBindingTagUnique"/>
-  <declare-styleable name="MvxImageView"></p>
-
-<pre><code>&lt;attr name="MvxSource" format="string"/&gt;
-</code></pre>
-
-<p>  </declare-styleable>
-</resources>
-```</p>
-
-<h3>9. 画面を作る</h3>
-
-<p>画面のレイアウトを作ります。
-Xamarin Studio の Android用 UI デザイナは強力なので、ここだけは Visual Studio に勝っていると言えます。</p>
-
-<p><code>Main.axml</code> を開いて、レイアウトされているボタンを削除し、「Plain Text」を2つと、Text(Mid) を1つ、縦に並べて配置します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_06.png" alt="" /></p>
-
-<h3>10. データバインディングを記述する</h3>
-
-<p><code>Main.axml</code> の「ソース」を開いて、データバインディングについての記述をします。完成形は下のようになります。</p>
-
-<p>```xml Resources/layout/Main.xml
-&lt;?xml version="1.0" encoding="utf-8"?>
-&lt;LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"</p>
-
-<pre><code>xmlns:local="http://schemas.android.com/apk/res-auto"
-android:orientation="vertical"
-android:layout_width="fill_parent"
-android:layout_height="fill_parent"&gt;
-&lt;EditText
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    local:MvxBind="Text FirstName" /&gt;
-&lt;EditText
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    local:MvxBind="Text LastName" /&gt;
-&lt;TextView
-    android:text="Medium Text"
-    android:textAppearance="?android:attr/textAppearanceMedium"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    local:MvxBind="Text FullName" /&gt;
-</code></pre>
-
-<p></LinearLayout>
-```</p>
-
-<p>これで Android UI の実装は終わり。動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=980">16:20</a> あたり。
-Android 側では、初期化を除けば <strong>何も実装してない</strong> のがミソ。</p>
-
-<h3>11. Android アプリを動かしてみる</h3>
-
-<p>エミュレータで実行してみると、こんな感じです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_07.gif" alt="" /></p>
-
-<p>Steve を痛恨のスペルミスしたけど、まあいいや。</p>
-
-<p>では続いて、iOS アプリの実装です。</p>
-
-<h3>12. iOS の UI を作る</h3>
-
-<p>動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=1558">25:58</a> から。</p>
-
-<p>ソリューションに iPhone Application プロジェクトを追加します。Storyboard を使ってみましょう。名前は “FirstDemo.Touch” とします。(iOS 版の接尾辞に ”Touch” を使うのは、Xamarin.iOS の以前の名称である ”MonoTouch” からだと思いますが、大文字で始まる .NET 文化の中では “iOS” はとかく都合が悪いので、Touch という接尾辞は私も気に入っています。)</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_08.png" alt="" /></p>
-
-<h3>13. FirstDemo.Touch にアセンブリ参照を追加する</h3>
-
-<p>Android の場合と同様、FirstDemo.Core をプロジェクト参照で追加します。
-次に、MvvmCross 関連のアセンブリ群、以下を追加します。</p>
-
-<ul>
-<li>Cirrious.CrossCore.dll</li>
-<li>Cirrious.CrossCore.Touch.dll *</li>
-<li>Cirrious.MvvmCross.dll</li>
-<li>Cirrious.MvvmCross.Touch.dll *</li>
-<li>Cirrious.MvvmCross.Binding.dll</li>
-<li>Cirrious.MvvmCross.Binding.Touch.dll *</li>
-<li>Cirrious.MvvmCross.Localization.dll</li>
-</ul>
-
-
-<p>「*」付きのアセンブリは MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Touch/ から、付いてないアセンブリは Core と同じく MvvmCross-Binaries-3.1/VS2012/bin/Release/Mvx/Portable/ から追加します。後ろに “Touch” と付いているものは、プラットフォーム用のフォルダから持ってきましょうという事ですね。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_09.png" alt="" /></p>
-
-<h3>14. Setup クラス, AppDelegate クラス、FirstView クラスの実装</h3>
-
-<p>とここまで書いておいて、MvvmCross は実は Storyboard で使う時は少し細工が必要な事に気づいた。。。</p>
-
-<p>MvvmCross の作者である slodge さんが下で回答されています。</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/a/16323115">monotouch - MvvmCross and Xcode Storyboard - Stack Overflow</a></li>
-</ul>
-
-
-<p>という訳でここからのコードは、上記で示されている ‘eh’ もミックスしたもので、動画とは少し異なります。動作は同じです。</p>
-
-<p>まず、Setup.cs をルートに作成して以下のように実装します。</p>
-
-<p>```objc Setup.cs
-using System;
-using Cirrious.MvvmCross.Touch.Platform;
-using Cirrious.MvvmCross.Touch.Views.Presenters;
-using Cirrious.MvvmCross.ViewModels;</p>
-
-<p>namespace FirstDemo.Touch
-{</p>
-
-<pre><code>public class Setup : MvxTouchSetup
-{
-    public Setup(MvxApplicationDelegate appDelegate, IMvxTouchViewPresenter presenter)
-        : base(appDelegate, presenter) { }
-
-    protected override IMvxApplication CreateApp()
-    {
-        return new Core.App();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>既存の AppDelegate.cs を以下のように書き換えます。</p>
-
-<p>```objc AppDelegate.cs
-using MonoTouch.Foundation;
-using Cirrious.MvvmCross.Touch.Platform;
-using MonoTouch.UIKit;
-using Cirrious.MvvmCross.Touch.Views.Presenters;</p>
-
-<p>namespace FirstDemo.Touch
-{</p>
-
-<pre><code>[Register("AppDelegate")]
-public partial class AppDelegate : MvxApplicationDelegate
-{
-    public override UIWindow Window { get; set; }
-
-    public override void FinishedLaunching(UIApplication application)
-    {
-        var setup = new Setup(this, new MvxTouchViewPresenter(this, Window));
-        setup.Initialize();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>FirstView.cs は、FirstDemo.FirstDemoViewController.cs をリネームして作成します。Views フォルダを作って移動もしましょう。
-また、<code>MvxViewConroller</code> から派生させるように変更します。</p>
-
-<p> <img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_10.png" alt="" /></p>
-
-<h3>15. iOS の UI を作る</h3>
-
-<p>iOS 版の画面をレイアウトします。
-動画ではコードで <code>UITextField</code> などを配置していますが、 <strong>UI をコードで記述する事は万死に値する</strong> ので、Xamarin Studio の iOS デザイナもしくは Xcode の Interface Builder を使います。</p>
-
-<p>下の図は、Xamarin Studio α版の iOS デザイナ を使った例です。<a href="http://qiita.com/amay077/items/716742474bce343c5729">以前に紹介した</a>ものです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_11.png" alt="" /></p>
-
-<p>TextField 2つと、Label を、<code>textEditFirst</code>, <code>textEditLast</code>, <code>labelFull</code> という変数にしておきます。</p>
-
-<h3>16. データバインディングを記述する</h3>
-
-<p>MvvmCross を iOS で使う場合、残念ながら storyboard 側にバインディングを記述する事はできないので、<code>FirstView.cs</code>  にコードで記述します。</p>
-
-<p><code>ViewDidLoad</code> に以下のように追記します。</p>
-
-<p>```objc Views/FirstView.cs
-using System;
-using Cirrious.MvvmCross.Binding.BindingContext;
-using Cirrious.MvvmCross.Touch.Views;
-using Cirrious.MvvmCross.ViewModels;
-using FirstDemo.Core.ViewModels;</p>
-
-<p>namespace FirstDemo.Touch
-{</p>
-
-<pre><code>public partial class FirstView : MvxViewController
-{
-    /* 省略 */
-
-    public override void ViewDidLoad()
-    {
-        this.Request = new MvxViewModelRequest&lt;FirstViewModel&gt;(
-            null, null, new MvxRequestedBy());           
-        base.ViewDidLoad();
-
-        var set = this.CreateBindingSet&lt;FirstView, FirstViewModel&gt;();
-        set.Bind(textEditFirst).To(vm =&gt; vm.FirstName);
-        set.Bind(textEditLast).To(vm =&gt; vm.LastName);
-        set.Bind(labelFull).To(vm =&gt; vm.FullName);
-        set.Apply();
-    }
-
-    /* 省略 */
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これで iOS 側も実装終了、動画では <a href="http://www.youtube.com/watch?v=_DHDMNB_IeY#t=2020">33:40</a> まで来ました。</p>
-
-<h3>17. iOS アプリを動かしてみる</h3>
-
-<p>動画では、Windows であるため Mac にリモート接続して実行していますが、Mac+Xamarin Studio なら即実行できます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_mvvmcross_2_12.gif" alt="" /></p>
-
-<h2>MvvmCross についてのまとめ</h2>
-
-<p>今日の完成版のコードは</p>
-
-<ul>
-<li><a href="https://github.com/amay077/NPlus1DaysOfMvvmCrossWithXamarinStudio/tree/master/N-00-FirstDemo">NPlus1DaysOfMvvmCrossWithXamarinStudio / N-00-FirstDemo - github</a></li>
-</ul>
-
-
-<p>に置いておきました。</p>
-
-<p>ちょっと STEP が多くなっちゃいましたが、MvvmCross を使うと、複数のプラットフォームで ViewModel-Model を共通化できることが分かったと思います。</p>
-
-<p><a href="https://github.com/MvvmCross/MvvmCross/wiki/N-plus-1-Videos-Of-MvvmCross">N+1 Days-</a> は、現在 39(!!) まであります。動画観てるだけでもわかった感じになります。（私は N=8 まで観た気がします。）</p>
-
-<p>また、 @MvvmCross にツイートすると、気さくに（英語ですが）回答してくれます。</p>
-
-<p>使いこなせば強力な武器になる MvvmCross 、今後も要チェックです。</p>
-
-<h2>Xamarin Advent Calendar 2013 まとめ</h2>
-
-<p>勢いに任せて作った XAC2013、なんとか完走できました。
-「全部俺」でもいいやと思っていましたが、私含め5名の方に参加して頂けました、ありがとうございました。</p>
-
-<p><a href="http://www.amazon.co.jp/gp/product/B00H2SBO4E?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=B00H2SBO4E&amp;linkCode=shr&amp;tag=oku2008-22&amp;=books&amp;qid=1387973043&amp;sr=1-1&amp;keywords=%E6%97%A5%E7%B5%8C%E3%82%BD%E3%83%95%E3%83%88%E3%82%A6%E3%82%A8%E3%82%A2+2014%E5%B9%B42%E6%9C%88%E5%8F%B7">日経ソフトウェア</a> によると、「2014年にブレークする技術」に Xamarin はありませんでしたが、MS と提携以後のプッシュぶりを見ていると、今後、来年のブレークに期待できそうです。</p>
-
-<p>昨日の @atsushieno さんの <a href="http://atsushieno.hatenablog.com/entry/2013/12/24/213950">Xamarin 創立からの苦労話</a> を知ると、安易に「ライセンス高ぇ！値下げPlz！」などとは言えませんが、ユーザ(デベロッパ)を増やしたいのもまた事実。α/β版だけでも 30days のトライアル期限なくしてもらえたいら嬉しいですね。</p>
-
-<p>Xamarin Advent Calendar 2013 はこれで終わりですが、今後もちまちまと Tips みたいなものを書いてくつもりですので、 <a href="http://qiita.com/tags/xamarin">Qiita のタグ</a> をチェックしてもらえると嬉しいです。</p>
-
-<p>そして Xamarin Advent Calendar 2014 でまたお会いしましょう。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で Yahoo! iOSマップSDK を使ってみる]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios/"/>
-    <updated>2013-12-23T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/23/using-yahoo-maps-sdk-for-ios-in-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>Xamarin.iOS では、既存の iOS用ライブラリが利用できます。
-今日は例として Yahoo Maps SDK for iOS を Xamarin.iOS から使ってみます。</p>
-
-<!--more-->
-
-
-<h2>Yahoo! iOSマップSDK とは</h2>
-
-<ul>
-<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
-</ul>
-
-
-<p>Yahoo! Japan が提供する地図SDKです。Google Maps にはない魅力として、「雨雲レーダー」「経路探索/案内」「AR機能」が挙げられます。
-利用するには上記サイトから APIキー の発行が必要です。</p>
-
-<h2>Xamarin.iOS で Objective-C ライブラリを使う方法</h2>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
-</ul>
-
-
-<p>「Binding」と呼ばれます。
-Obj-Cライブラリを呼び出すラッパーのようなものを C# で記述し、それを Xamarin.iOS アプリケーションから使用することが出来ます。</p>
-
-<h2>Xamarin.iOS で Yahoo! iOSマップSDK を使う手順</h2>
-
-<h3>1. Yahoo! iOSマップSDK をダウンロードし、APIキー を発行する</h3>
-
-<p>SDK のダウンロードは、</p>
-
-<ul>
-<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/">YOLP(地図):Yahoo! iOSマップSDK - Yahoo!デベロッパーネットワーク</a></li>
-</ul>
-
-
-<p>です。APIキー の発行は、</p>
-
-<ul>
-<li><a href="https://e.developer.yahoo.co.jp/dashboard/">アプリケーションの管理：Yahoo!デベロッパーネットワーク</a></li>
-</ul>
-
-
-<p>です。手順は、</p>
-
-<ul>
-<li><a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">YOLP(地図):利用準備 - Yahoo!デベロッパーネットワーク</a></li>
-</ul>
-
-
-<p>が分かりやすいです。</p>
-
-<h3>2. Xamarin.iOS で Binding プロジェクトを作る</h3>
-
-<p>Xamarin Studio で新しいソリューションを作ります。
-iOS → iOS Binding Project で、名前は 「YMapBinding」、ソリューション名は「YMapSample」とします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_01.png" alt="" /></p>
-
-<h3>3. Yahoo! iOSマップSDK のライブラリファイルを Binding プロジェクトに入れる</h3>
-
-<p>ダウンロードした Yahoo! iOSマップSDK を解凍して、中に含まれる <code>YMapKit</code> ファイルを <code>libYMapKit.a</code> にリネームします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_02.png" alt="" /></p>
-
-<p>Xamarin Studio で、YMapBinding プロジェクトに <code>libYMapKit.a</code> を追加します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_03.png" alt="" /></p>
-
-<h3>4. Yahoo! iOSマップSDK の API定義を C# で書く</h3>
-
-<p>Binding プロジェクトにある <code>ApiDefinition.cs</code> を以下のように書き換えます。</p>
-
-<p>```csharp ApiDefinition.cs
-using System;
-using System.Drawing;
-using MonoTouch.ObjCRuntime;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;</p>
-
-<p>namespace YMapBinding
-{</p>
-
-<pre><code>[BaseType (typeof (UIView))]
-public partial interface YMKMapView {
-    [Export ("initWithFrame:appid:")]
-    IntPtr Constructor (RectangleF frame, string appid);
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>よく目を凝らすと分かるんですが、これは iOS版ライブラリの <code>initWithFrame:appId:</code> というコンストラクタを C# で定義しています。
-他のメソッドやプロパティ、イベント(delegate)も同じように定義するのですが、ここでは省略します。</p>
-
-<p>次に <code>libYMapKit.linkwith.cs</code> を開いて、以下のように書き換えます。</p>
-
-<p>```csharp libYMapKit.linkwith.cs
-using System;
-using MonoTouch.ObjCRuntime;</p>
-
-<p>[assembly: LinkWith ("libYMapKit.a", LinkTarget.ArmV7 | LinkTarget.ArmV7s | LinkTarget.Simulator ,ForceLoad = true,</p>
-
-<pre><code>Frameworks="UIKit SystemConfiguration CoreGraphics CoreLocation Foundation OpenGLES QuartzCore")]
-</code></pre>
-
-<p>```</p>
-
-<p>Yahoo! iOSマップSDK が依存するライブラリを Frameworks に列挙しています。</p>
-
-<p>これでひとまず Binding プロジェクト 側は終わりです。</p>
-
-<h4>5. サンプルアプリケーションプロジェクトを作る</h4>
-
-<p>YMapSample ソリューションに 新しいプロジェクト を追加、iPhone の Single view Application 、名称は「YMapApp」とします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_04.png" alt="" /></p>
-
-<p>YMapApp プロジェクトを右クリックして、スタートアッププロジェクトをこちらに変更しておきます。</p>
-
-<p>次に、参照設定で YMapBinding を追加します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_05.png" alt="" /></p>
-
-<h4>6. Yahoo! iOSマップSDK を表示するコードを書く</h4>
-
-<p>YMapApp のビューコントローラ(たぶん YMapAppViewController)の<code>ViewDidLoad</code> に、以下のように追記します。</p>
-
-<p>```csharp YMapAppViewController.cs
-public override void ViewDidLoad()
-{</p>
-
-<pre><code>base.ViewDidLoad();
-
-var v = new YMKMapView(new RectangleF(0f, 0f, 320f, 320f), 
-    “&lt;your app key&gt;”);  // あなたが取得した APIキー
-this.View.AddSubview(v);
-</code></pre>
-
-<p>}
-```</p>
-
-<p>ああ、 <code>using YMapBinding;</code> も必要ですね。</p>
-
-<p>アプリの方もとりあえずこれで OK。</p>
-
-<h4>7. 動かしてみる</h4>
-
-<p>YMapApp を iOSシミュレータで実行してみます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_06.gif" alt="" /></p>
-
-<p>はい、このように「とりあえず」Yahoo! iOSマップSDK を Xamarin.iOS で動かすことができました。</p>
-
-<h2>この後（やること多いよ）</h2>
-
-<h3>API定義をちまちまと移植</h3>
-
-<p>この例ではコンストラクタ1つしか定義しませんでしたが、これを他のコンストラクタ、メソッド、プロパティ、イベントについて行う必要があります。これを助けるツールとして <a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/objective_sharpie/">Objective Sharpie</a> が公開されていますが、あまり期待しない方が良さそうです。Yahoo! iOSマップSDK をこのツールにかけてみましたが、出来上がった定義ファイルはエラーがたくさん出ました。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/binding_objective-c/">Binding Objective-C | Xamarin</a></li>
-</ul>
-
-
-<p>を理解した上で、Objective Sharpie の結果を参考にして、作っていく必要がありそうです。</p>
-
-<h3>ApiDefinition.cs への定義は正しいのか？</h3>
-
-<p>「Frameworks に、Yahoo! iOSマップSDK が依存しているライブラリを列挙」してみましたが、<a href="http://developer.yahoo.co.jp/webapi/map/openlocalplatform/v1/iphonesdk/tutorial1.html">チュートリアル</a> には <code>libxml2.2.dylib</code> も含まれています。が、 <code>ApiDefinition.cs</code> にはこれは記述していません。けど動いています。何かの機能を使った時に問題になるかもしれません。そしてこの .dylib という拡張子の場合にどう定義すれば良いのか不明です。</p>
-
-<h3>ライブラリが使用するリソースはどこに？</h3>
-
-<p>ダウンロードした Yahoo! iOSマップSDK には <code>image</code> ディレクトリがあり、これをアプリケーションプロジェクトに配置することで、ライブラリがリソースを使うことになっています。Xamarin.iOS Binding プロジェクトではこれはどこに配置すればよいか、未調査です。</p>
-
-<p>ということで Xamarin.iOS の Binding について紹介しました。
-.Android の Binding は jar を放り込めばある程度自動で定義を生成してくれていたのに対し、かなり面倒な感じです。アプリケーションに必要な機能だけを定義して使っていく感じかなあと感じました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[GitHub's Xamarin starter apps  について]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/22/about-githubs-xamarin-starter-apps/"/>
-    <updated>2013-12-22T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/22/about-githubs-xamarin-starter-apps</id>
-    <content type="html"><![CDATA[<p>Github社は、割と Xamarin に熱心で、<a href="http://xamarin.com/evolve/2013#session-zm59b5yptf">Xamarin Evolve というイベントでセッション</a>を行ったり、その時の資料が日本の速報系サイトで 「<a href="http://blog.livedoor.jp/itsoku/archives/33671593.html">Ruby を捨てて C# と MVVM に完全移行</a>」なんてヒドい扱い受けちゃったりしてます。</p>
-
-<!--more-->
-
-
-<p>でその Github 社が Xamarin でアプリ開発するならこれ使うといいよ、的なアプリケーションのひな形？を公開しています。</p>
-
-<ul>
-<li><a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub's Xamarin starter apps</a></li>
-</ul>
-
-
-<p>Github社は、自前の MVVM フレームワーク「ReactiveUI」、非同期KVS の 「Akavache」を作ってますので、それを利用したものになっています。</p>
-
-<ul>
-<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
-<li><a href="https://github.com/akavache/Akavache">Akavache</a></li>
-</ul>
-
-
-<p>Starter Apps を Xamarin Studio で開くとこんな感じです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_startup_apps_by_github_01.png" alt="" /></p>
-
-<p>アプリケーション自体は MVVM で作られていて、前述の RectiveUI によって、View 以外は極力プラットフォームに依存しないように作ることができます。</p>
-
-<p>Starter-Core-Android と Starter-Core-iOS が、「View以外」の部分に相当します。(ここ PCL化 できれば１プロジェクトで済みそうですが)</p>
-
-<p>Starter-Android と Starter-iOS は、各プラットフォームの View に相当します。</p>
-
-<p>かくいう私もまだソースをじっくり読んでないのですが、クロスプラットフォームで開発する時の教材になるかなーと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で UIWebView から C# のコードを呼び出す方法]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/20/calling-cs-code-from-uiwebview/"/>
-    <updated>2013-12-20T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/20/calling-cs-code-from-uiwebview</id>
-    <content type="html"><![CDATA[<p>まあ、</p>
-
-<ul>
-<li><a href="http://i26.jp/html5dev/webview-%e3%81%a7-javascript-%e3%81%a8-objective-c-%e3%81%ae%e3%82%b3%e3%83%bc%e3%83%89%e3%82%92%e7%9b%b8%e4%ba%92%e3%81%ab%e5%91%bc%e3%81%b3%e5%87%ba%e3%81%99%e6%96%b9%e6%b3%95/">WebView で Javascript と Objective-C のコードを相互に呼び出す方法 | 【スマホ×HTML5】Web&amp;ハイブリッドアプリ開発者ブログ</a></li>
-</ul>
-
-
-<p>を Xamarin.iOS でやってみたという話なだけです。</p>
-
-<!--more-->
-
-
-<h2>サンプル</h2>
-
-<p>```csharp MainViewController.cs</p>
-
-<p>/<em> in MainViewController.designer.cs
-[Outlet]
-[GeneratedCodeAttribute ("iOS Designer", "1.0")]
-MonoTouch.UIKit.UIWebView MyWebView { get; set; }
-</em>/</p>
-
-<p>public override void ViewDidLoad()
-{</p>
-
-<pre><code>base.ViewDidLoad();
-
-MyWebView.LoadRequest(NSUrlRequest.FromUrl(NSUrl.FromString("http://www.hatena.ne.jp/")));
-
-// LoadFinished はイベント
-MyWebView.LoadFinished += (sender, e) =&gt; {
-    if (String.Equals(MyWebView.Request.Url.Host, "b.hatena.ne.jp"))
-    {
-        new UIAlertView("Load Finished", "ページが表示されました", null, "Close").Show();
-    }
-};
-
-// ShouldStartLoad は Delegate
-MyWebView.ShouldStartLoad = (webView, req, navType) =&gt;
-{
-    var permited = !String.Equals(req.Url.Host, "hatenablog.com");
-    if (!permited)
-    {
-        new UIAlertView("ShouldStartLoad", “はてなブログは見ちゃダメ！", null, "Close").Show();
-    } 
-
-    return permited;
-};
-</code></pre>
-
-<p>}
-```</p>
-
-<p>画面に UIWebView を一つ貼り付けて、 www.hatena.ne.jp を表示してます。</p>
-
-<p>はてなブックマーク(b.hatena.ne.jp) へ移動すると、ページ読み込み後に「ページが表示されました」とポップアップします。
-はてなブログ(hatenablog.com) へ移動しようとすると、「はてなブログは見ちゃダメ！」とポップアップし、移動はキャンセルされます。</p>
-
-<p>Objective-C の、<code>webViewDidFinishLoad</code> , <code>shouldStartLoadWithRequest</code> デリゲートが、Xamarin.iOS では、 <code>LoadFinished</code> , <code>ShouldStartLoad</code> に対応します。</p>
-
-<p>注意点は、<code>LoadFinished</code> はイベントであるのに、 <code>ShouldStartLoad</code> は delegate であるという事です。</p>
-
-<p>Obj-C のデリゲートは、Xamarin.iOS では全てイベントになっているのかなーと思っていましたが、 <code>ShouldStartLoad</code> のように「値を返す」必要があるものについては delegate になっているようです。</p>
-
-<p>Xamarin.iOS の APIデザインについては、公式サイトに説明があります。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/api_design/">API Design | Xamarin</a></li>
-</ul>
-
-
-<p>ガッツリ熟読した方がよさそうですねえ。</p>
-
-<p>最後に、作ったサンプルを動かしてみます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/calling_csharp_from_webview_01.gif" alt="" /></p>
-
-<p>なんか <code>LoadFinished</code> が２回呼ばれてる。重複チェックしなきゃダメですね</p>
 ]]></content>
   </entry>
   

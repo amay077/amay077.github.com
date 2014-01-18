@@ -4,7 +4,7 @@
   <title><![CDATA[Category: GoogleMapsAPI | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/googlemapsapi/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-01-02T11:29:16+09:00</updated>
+  <updated>2014-01-18T18:21:27+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,58 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Component for iOS の CoordinateBounds について]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk/"/>
+    <updated>2014-01-16T18:05:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk</id>
+    <content type="html"><![CDATA[<p>すごくニッチな話ですけど、Xamarin Components にある Google Maps を Xamarin.iOS で使った。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://components.xamarin.com/view/googlemapsios">Google Maps /Components</a></li>
+</ul>
+
+
+<p>このライブラリの中に <code>CoordinateBounds</code> という「領域」を表すクラスがある。これは <a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja">GMSCoordinateBounds</a> の Binding だ。</p>
+
+<p>で、CoordinateBounds には <code>Including</code> (<a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja#a63cffdf310ca19c6bab74c9a4034aadd">includingCoordinate</a>) というメソッドがあって、これを呼ぶと指定した座標が入るように領域を拡幅してくれる、便利だ。</p>
+
+<p>で、最初はこのクラスをこう使っていた。</p>
+
+<p><code>csharp
+var bounds = new CoordinateBounds();
+bounds.Including(new CLLocationCoordinate2D(34d, 134d));
+bounds.Including(new CLLocationCoordinate2D(33d, 133d));
+bounds.Including(new CLLocationCoordinate2D(35d, 135d));
+</code></p>
+
+<p>動かしてみて、この使い方だと <code>bounds</code> から期待した結果が得られないことに気づいた。範囲が -180〜+180 になってしまった。</p>
+
+<p>正しくはこう。</p>
+
+<p>```csharp
+var bounds = new CoordinateBounds(</p>
+
+<pre><code>new CLLocationCoordinate2D(34d, 134d),
+new CLLocationCoordinate2D(33d, 133d));
+</code></pre>
+
+<p>bounds.Including(new CLLocationCoordinate2D(35d, 135d));
+```</p>
+
+<p>これだと結果は、正しく [33,133 - 35,135] を返す。</p>
+
+<p>処理上、生成時に２つの座標が揃ってないケースだったので、「あ、デフォルトコンストラクタあるじゃん」と使ってたらハマった。本家 iOS 版の方には引数無しの initXXX は無かった。</p>
+
+<p>Objective-C の仕様上 alloc して init しないのを防げない、んだっけ？
+だから、Xamarin.iOS の Binding でデフォルトコンストラクタを隠せないのかな？
+突っ込んで調べてないけど、Binding ライブラリを使う時は注意しましょう、ちゃんと本家のAPIリファレンスを見ましょう、というお話でした。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[地理院地図の標高タイル(CSV)を描画してみた]]></title>
@@ -496,68 +548,6 @@ function init() {
 <p>せっかく税金で作られている地図なんですから、上手に活用していけば日本全体の利益になるんじゃないかと思います。</p>
 
 <p>最後にお約束で、本件のご利用は自己責任でお願いします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[metersToEquatorPixels を Google Maps Android API v2 で]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2/"/>
-    <updated>2013-10-09T00:21:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/09/meterstoequatorpixels-in-gmap-v2</id>
-    <content type="html"><![CDATA[<p>Google Map API v1 には、「地図上の距離(ｍ)を画面上の距離(ピクセル)に変換する」ためのメソッド <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) がありましたが、v2 ではなくなってしまいました。</p>
-
-<!--more-->
-
-
-<p>ので、以下のような代替関数を作ってみました。</p>
-
-<p>```java metersToEquatorPixels.java
-public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {</p>
-
-<pre><code>final double OFFSET_LON = 0.5d;
-
-Location baseLoc = new Location("");
-baseLoc.setLatitude(base.latitude);
-baseLoc.setLongitude(base.longitude);
-
-Location dest = new Location("");
-dest.setLatitude(base.latitude);
-dest.setLongitude(base.longitude + OFFSET_LON);
-
-double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
-double lonDistance = meters * degPerMeter; // m を度に変換
-
-Projection proj = map.getProjection();
-Point basePt = proj.toScreenLocation(base);
-Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
-
-return Math.abs(destPt.x - basePt.x);
-</code></pre>
-
-<p>}
-```</p>
-
-<p>行っていることは単純で、基準となる緯度経度:<code>base</code> から、適当に(ここでは 0.5度)東へ移動した緯度経度を <code>Location.distanceTo</code> で求め、その結果から、「1ｍは何度か？」を求めます。あとは、この係数を使って 地図上の距離:<code>meters</code> を度に変換し、最後に、<code>base</code> と移動後の緯度経度それぞれを画面座標に変換して、画面上の距離を返す、というものです。</p>
-
-<p>「1ｍは何度か？」は、赤道上の値を使っても良いのですが、緯度によって値が大きく変わるので、このような手法を取りました。</p>
-
-<p>ただこれでも、求める距離の精度によっては、<code>OFFSET_LON</code> の値の調整が必要な気がします。また、経度:0 をまたぐような地域では正しく動かない気がします。(いずれも未検証)</p>
-
-<p>また、緯度方向にもそれなりに正確な数値を出すには、上記と同じことを緯度に対しても行う必要があります。(これは v1 の API にもなかった)</p>
-
-<p>v2 になって、描画系でピクセル座標を意識することはなくなったんであまり使うことも無いと思いますが、なにかで必要になったら思い出す程度で。</p>
-
-<h3>追記</h3>
-
-<p>あとで気づいたんですが、 v1 の <a href="https://developers.google.com/maps/documentation/android/v1/reference/com/google/android/maps/Projection#metersToEquatorPixels(float">Projection.metersToEquatorPixels</a>) は、赤道上の距離で算出してたんですね。それと比べるとちょっとオーバースペックでした。</p>
-
-<p> それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
-
-<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-01-02T11:29:16+09:00</updated>
+  <updated>2014-01-18T18:21:27+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,284 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ViewController の ViewDidLoad で this が nil になった件]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload/"/>
+    <updated>2014-01-18T18:18:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload</id>
+    <content type="html"><![CDATA[<p>Xamarin Studio + Xcode で Storyboard でアプリを作っていた。複数ある画面の内、ある一つの画面に遷移すると落ちる現象に見舞われていろいろ調べていた。</p>
+
+<!--more-->
+
+
+<p>Xamarin Studio で該当画面の ViewController の ViewDidLoad にブレークポイントを仕掛けて停止させ、ウォッチしてみたところ、なんと this が「nil」になっていた。</p>
+
+<p>これのおかげで、ViewController に配置した UILabel などにもアクセスできない。</p>
+
+<p>ViewController を作りなおしてみたり、呼び出し方法を変えてみたりいろいろやってみたけど解消せず。</p>
+
+<p>30分ほど悪戦苦闘した後、実機にインストールされている該当アプリを一旦削除し、Xamarin Studio も終了させた後に再起動、ソリューションをクリーンして再ビルドして実行してみたところ、問題が解消した。</p>
+
+<p>なにがしかのトラブルが起きた時は、まずは端末内のアプリを消してみると良いのかも知れない。（これまでの経験的に）</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Google Maps Component for iOS の CoordinateBounds について]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk/"/>
+    <updated>2014-01-16T18:05:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk</id>
+    <content type="html"><![CDATA[<p>すごくニッチな話ですけど、Xamarin Components にある Google Maps を Xamarin.iOS で使った。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://components.xamarin.com/view/googlemapsios">Google Maps /Components</a></li>
+</ul>
+
+
+<p>このライブラリの中に <code>CoordinateBounds</code> という「領域」を表すクラスがある。これは <a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja">GMSCoordinateBounds</a> の Binding だ。</p>
+
+<p>で、CoordinateBounds には <code>Including</code> (<a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja#a63cffdf310ca19c6bab74c9a4034aadd">includingCoordinate</a>) というメソッドがあって、これを呼ぶと指定した座標が入るように領域を拡幅してくれる、便利だ。</p>
+
+<p>で、最初はこのクラスをこう使っていた。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">bounds</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CoordinateBounds</span><span class="p">();</span>
+</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">34d</span><span class="p">,</span> <span class="m">134d</span><span class="p">));</span>
+</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">33d</span><span class="p">,</span> <span class="m">133d</span><span class="p">));</span>
+</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">35d</span><span class="p">,</span> <span class="m">135d</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>動かしてみて、この使い方だと <code>bounds</code> から期待した結果が得られないことに気づいた。範囲が -180〜+180 になってしまった。</p>
+
+<p>正しくはこう。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">bounds</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CoordinateBounds</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">new</span> <span class="nf">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">34d</span><span class="p">,</span> <span class="m">134d</span><span class="p">),</span>
+</span><span class='line'>    <span class="k">new</span> <span class="nf">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">33d</span><span class="p">,</span> <span class="m">133d</span><span class="p">));</span>
+</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">35d</span><span class="p">,</span> <span class="m">135d</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これだと結果は、正しく [33,133 - 35,135] を返す。</p>
+
+<p>処理上、生成時に２つの座標が揃ってないケースだったので、「あ、デフォルトコンストラクタあるじゃん」と使ってたらハマった。本家 iOS 版の方には引数無しの initXXX は無かった。</p>
+
+<p>Objective-C の仕様上 alloc して init しないのを防げない、んだっけ？
+だから、Xamarin.iOS の Binding でデフォルトコンストラクタを隠せないのかな？
+突っ込んで調べてないけど、Binding ライブラリを使う時は注意しましょう、ちゃんと本家のAPIリファレンスを見ましょう、というお話でした。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でエラー “Failed to load AOT module ... in aot-only mode”]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode/"/>
+    <updated>2014-01-16T15:14:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
+
+<!--more-->
+
+
+<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
+
+<p>ログには、</p>
+
+<blockquote><p>Failed to load AOT module ‘/xxx/Hoge.dll.dylib&#8217; in aot-only mode.</p></blockquote>
+
+<p>というエラーが出ていた。</p>
+
+<p>実機からアプリを削除して、
+ソリューションを「再ビルド」したら直った。小ネタ過ぎる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://monotouch.2284126.n4.nabble.com/Failed-to-load-AOT-module-in-aot-only-mode-td4602614.html">MonoTouch - Failed to load AOT module &#8230; in aot-only mode</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で特定の画面だけ向きを固定する時ハマったこと]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller/"/>
+    <updated>2014-01-07T18:11:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller</id>
+    <content type="html"><![CDATA[<p>画面A,B があって B だけ横向き固定にしたい。</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/a/12588038">uiviewcontroller - iOS 6 ViewController is rotating but shouldn&#8217;t - Stack Overflow</a></li>
+<li><a href="http://qiita.com/yusuga_/items/8cc82376edb40e09f0e7">iPhone - UIViewController iOS6での画面回転への対応 - Qiita [キータ]</a></li>
+</ul>
+
+
+<p>これを Xamarin.iOS でやりたい。</p>
+
+<!--more-->
+
+
+<p>Storyboard を Interface Builder で開いて、NavigationController のカスタムクラスを <code>MyNavigationController</code> とした。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/viewcontroller_orientaion_lock_in_xamarin_ios_01.png" alt="" /></p>
+
+<p>すると、Xamarin Studio 側にも <code>MyNavigationController.cs</code> ができるので、Stackoverflow の通り、以下のように実装した。</p>
+
+<figure class='code'><figcaption><span>MyNavigationController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// This file has been autogenerated from a class added in the UI designer.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Linq</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">MyApp</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">MyNavigationController</span> <span class="p">:</span> <span class="n">UINavigationController</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span> <span class="nf">MyNavigationController</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">handle</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="n">handle</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientation</span> <span class="nf">PreferredInterfaceOrientationForPresentation</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">PreferredInterfaceOrientationForPresentation</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientationMask</span> <span class="nf">GetSupportedInterfaceOrientations</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">GetSupportedInterfaceOrientations</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">ShouldAutorotate</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">ShouldAutorotate</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>次に、横固定にしたい画面Bを以下のように実装。</p>
+
+<figure class='code'><figcaption><span>BViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// This file has been autogenerated from a class added in the UI designer.</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">MyApp</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">BViewController</span> <span class="p">:</span> <span class="n">UIViewController</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>      <span class="k">public</span> <span class="nf">PhotoPreviewViewController</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">handle</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="n">handle</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">{</span>
+</span><span class='line'>      <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientation</span> <span class="nf">PreferredInterfaceOrientationForPresentation</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">UIInterfaceOrientation</span><span class="p">.</span><span class="n">LandscapeLeft</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientationMask</span> <span class="nf">GetSupportedInterfaceOrientations</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">UIInterfaceOrientationMask</span><span class="p">.</span><span class="n">LandscapeLeft</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">ShouldAutorotate</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これで動かしてみたものの、一向に画面が固定されない。
+しばらく悩んだ後、<code>MyNavigationController</code> のコンストラクタにブレークポイントを仕掛けてデバッグしてみたとても止まらない。
+よくよくアプリケーション出力のコンソールを見てみると、</p>
+
+<blockquote><p>Unknown class MyNavigationController in InterfaceBuilder file.&#8221;</p></blockquote>
+
+<p>と出力されていることに気づいた。
+なんか、.storyboard と C# クラスの関連付けがうまくいってないらしい。</p>
+
+<p>ソリューションをクリアして、再ビルドしたらこのエラーは消え、画面Bの向きが固定されるようになった！</p>
+
+<p>(ただ、縦画面のまま画面Bに遷移すると縦画面で固定されてしまう。これは実装が何か足りない気がする。)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NHK紅白の Android/iPhone アプリが .NET/Xamarin 製だったということ]]></title>
@@ -3444,546 +3722,6 @@ Android の <code>AsyncTask</code> とか、iOS の GCD とか、ほぼ捨てら
 
 <p>とりあえずこんなところで。
 他にも、気づいたら書きます。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin vs 他のクロスプラットフォーム開発ツール]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/05/xamarin-vs-some-x-platform-framework/"/>
-    <updated>2013-12-05T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/05/xamarin-vs-some-x-platform-framework</id>
-    <content type="html"><![CDATA[<p>Xamarin は、クロスプラットフォーム開発ツールとして紹介されることが多いので、他の同類のツールと比較してみたいと思います。</p>
-
-<p>対象は Android と iOS に絞ります。
-速度がーとか、メモリ使用量がー、とか言った話はナシで、仕組みとかを淡々と述べます。</p>
-
-<p>ゲーム系は分からないのでナシで。業務アプリつくるレベルだと思ってください。</p>
-
-<p>あ、いずれもガッツリ使ったことはないので、間違ってたらツッコミお願いします。</p>
-
-<h2>1. まず <a href="http://xamarin.com/">Xamarin</a> についておさらい</h2>
-
-<h3>開発言語</h3>
-
-<p>C#、F# などの .NET 言語を使います。VB.NET は…プロジェクトテンプレートが無いだけですかね？</p>
-
-<h3>実行モデル</h3>
-
-<p>Android では、パッケージ(apk) として Monoランタイムと.NET中間言語がパッケージングされ、アプリ実行時にネイティブコードにコンパイルされて実行されます、いわゆる JIT。</p>
-
-<p>iOS では、 .NET言語は パッケージ(ipa) 作成時にネイティブコードにコンパイルされ、アプリ実行時にはネイティブコードが実行されます。事前コンパイル AOT(Ahead-Of-Time)コンパイルと呼ばれます。</p>
-
-<p>UIパーツについては Android も iOS もネイティブのものが使われます。</p>
-
-<h3>共通にできる所とできない所</h3>
-
-<p>コアロジックは共通化できます。</p>
-
-<p>画面、GPSやカメラなどプラットフォーム毎にAPIが異なる箇所は共通化できません。</p>
-
-<h3>ネイティブ機能の呼び出し</h3>
-
-<p>※ここでいう「ネイティブ」とは、iOS なら Objective-C、Android なら Java で開発された部品、の意です。C言語のガチなやつじゃないです。</p>
-
-<p>各PF製の外部ライブラリは Binding という仕組みで呼び出すことができます。</p>
-
-<h2>2. <a href="http://www.appcelerator.com/titanium/">Titanium Mobile</a></h2>
-
-<p>思えばクロスプラットフォーム開発ツールでもっとも先に普及しましたね。</p>
-
-<h3>開発言語</h3>
-
-<p>JavaScript を使います。</p>
-
-<h3>実行モデル</h3>
-
-<p>Android, iOS ともにパッケージには、Javascriptコードが含まれます。実行時にそれは、Javascriptエンジン(V8など)で解釈され、ネイティブAPIにブリッジされて実行されます。(あってる？</p>
-
-<p>UIパーツについては Android も iOS もネイティブのものが使われます。</p>
-
-<h3>共通にできる所、できない所</h3>
-
-<p>コアロジック、および GPS やセンサーなど、Titanium によって共通APIが用意されている機能は共通化ができます。UI も Label や EditBox など、簡素なものは共通になります。</p>
-
-<p>PF固有の UIパーツ は共通化できません。CoverFlowView は iOS でしか使えません。</p>
-
-<h3>ネイティブ機能の呼び出し</h3>
-
-<p>各PF製の外部ライブラリは Module という仕組みで呼び出すことができます。</p>
-
-<h2>3. <a href="http://help.adobe.com/ja_JP/air/build/WSfffb011ac560372f-5d0f4f25128cc9cd0cb-8000.html">Adobe AIR for モバイル</a></h2>
-
-<p>正式名称なんですか？いわゆる Flash の AIR のモバイル版です。</p>
-
-<h3>開発言語</h3>
-
-<p>ActionScript を使います。</p>
-
-<h3>実行モデル</h3>
-
-<p>Android では、パッケージ(apk) として AIRランタイムとActionScript言語がパッケージングされ、アプリ実行時にネイティブコードにコンパイルされて実行されます。(AIRランタイムは別アプリとして切り離すこともできます)</p>
-
-<p>iOS では、 ActionScript言語は パッケージ(ipa) 作成時にネイティブコードにコンパイルされ、アプリ実行時にはネイティブコードが実行されます。</p>
-
-<p>UIパーツについては、Android/iOS のネイティブUIは使わず、AIR で用意されたパーツを使います。</p>
-
-<h3>共通にできる所、できない所</h3>
-
-<p>基本的に全てのロジック、UI が共通化できます。(機種依存や特定端末への最適化を除けば)</p>
-
-<p>その替り AIR に用意されていない機能（例えば Android の Toast など）を使いたい場合、ネイティブ機能の呼び出しに頼ることになります。</p>
-
-<h3>ネイティブ機能の呼び出し</h3>
-
-<p>各PF製の外部ライブラリは Native Extensions という仕組みで呼び出すことができます。</p>
-
-<h2>4. <a href="http://www.embarcadero.com/jp/products/delphi">Delphi XE</a></h2>
-
-<p>2010年あたりから Delphi &#8220;XE(X-platform Edition)&#8221; として、クロスプラットフォーム対応が可能になっています。(Android は最近対応しました)</p>
-
-<h3>開発言語</h3>
-
-<p>Delphi を使います。</p>
-
-<h3>実行モデル</h3>
-
-<p>Android/iOS ともにパッケージングの際にネイティブコードにコンパイルされます。</p>
-
-<p>UIパーツについては、Android/iOS のネイティブUIは使わず、Delphi(というか FireMonkey）で用意されたパーツを使います。</p>
-
-<h3>共通にできる所、できない所</h3>
-
-<p>基本的に全てのロジック、UI が共通化できます。(機種依存や特定端末への最適化を除けば)</p>
-
-<p>その替り Delphi(FireMonkey) に用意されていない機能（何があるのだろう？）を使いたい場合、ネイティブ機能の呼び出しに頼ることになります。</p>
-
-<h3>ネイティブ機能の呼び出し</h3>
-
-<p>iOSapi.Foundation や、Androidapi.Log, Macapi.AppKit などの「Unit」を &#8220;uses  して使うことができます。
-(<a href="http://qiita.com/amay077/items/01917ef1be3da9259348#comment-eeefbb22b5318dede221">コメント</a>にて教えて頂きました)</p>
-
-<h2>5. <a href="http://phonegap.com/">PhoneGap</a></h2>
-
-<p>認知度高いので、一応。</p>
-
-<h3>開発環境</h3>
-
-<p>JavaScript を使います。</p>
-
-<h3>実行モデル</h3>
-
-<p>Android/iOS とも、アプリに見えて実際は WebView の上で JavaScript コードが動いてます。</p>
-
-<h3>共通にできる所、できない所</h3>
-
-<p>WebView 上で動くので基本共通なはずです。細かい所はよく分かってません。</p>
-
-<h3>ネイティブ機能の呼び出し</h3>
-
-<p>Plugin というのを自作することで実現可能なようです。</p>
-
-<h2>6. <a href="http://qt.digia.com/Qtmobileedition">Qt(キュート) Mobile</a></h2>
-
-<p>C++ で書くんですよね？ってくらいしか分かりませんすいません。</p>
-
-<h2>参考</h2>
-
-<h3>Xamarin</h3>
-
-<ul>
-<li><a href="http://xamarin.com/how-it-works">How it Works - Xamarin</a></li>
-<li><a href="http://ufcpp.wordpress.com/2013/02/24/xamarin-2-0/">Xamarin 2.0 | ++C++; // 未確認飛行 C ブログ</a></li>
-<li><a href="https://docs.google.com/presentation/d/1QS9gWRGIzTiXqD9GK3X4JsskskHp2NcNBQJBly96Eis">How Xamarin.Android works [ja]</a></li>
-</ul>
-
-
-<h3>Titanium Mobile</h3>
-
-<ul>
-<li><a href="http://www.slideshare.net/MoriShingo/titanium-mobile-13081280">福井スマートフォンハッカソン Titanium Mobileの紹介</a></li>
-<li><a href="http://titanium_seminar.soracid.com/219">Titanium Seminar » 種々のアプリ開発手法とTitaniumの優位性</a></li>
-</ul>
-
-
-<h3>Adobe AIR for Mobile</h3>
-
-<ul>
-<li><a href="http://help.adobe.com/ja_JP/flex/mobileapps/WS4bebcd66a74275c3-416562ab12ee52291fa-8000.html">Adobe Flex 4.6 * モバイルアプリケーションのパッケージ化とオンラインストアへの書き出し</a></li>
-<li><a href="http://www.atmarkit.co.jp/fsmart/articles/air_int/01.html">ネイティブへ拡張し続けるAIRは“3”でどうなるのか - ＠IT</a></li>
-</ul>
-
-
-<h3>Delphi XE</h3>
-
-<ul>
-<li><a href="http://togetter.com/li/598248">Delphi XE と FireMonkey について教えてもらった - Togetter</a></li>
-<li><a href="http://www.embarcadero.com/jp/technical-papers-japanese">エンバカデロ技術文書ライブラリ</a> の 「ホワイトペーパー: モバイル開発のためのDelphi言語」</li>
-</ul>
-
-
-<h3>PhoneGap</h3>
-
-<ul>
-<li><a href="http://docs.phonegap.com/en/3.2.0/index.html">PhoneGap API Documentation</a></li>
-</ul>
-
-
-<h3>Qt Mobile</h3>
-
-<ul>
-<li><a href="http://qt.digia.com/Qtmobileedition">Qt Mobile Edition</a></li>
-</ul>
-
-
-<h2>まとめ</h2>
-
-<p>言語はまあそれぞれ違いますよね当然。</p>
-
-<p>実行モデルは、iOS はその規約上全て AOT(Titanium を除く)、事前コンパイル方式です。
-Android の方は、JIT型が Xamarin と AIR、AOT型が DelphiXE 、Titanium は何ていうの、iOS でも Androide でもインタプリタ？</p>
-
-<p>画面を構成するパーツについては、各PFのネイティブUIを使うのが Xamarin、Titanium で、開発ツール側で頑張って全部レンダリングするのが AIR と DelphiXE 。DelphiXE は &#8220;Pixel Perfect&#8221; という技術でネイティブと寸分たがわない見た目を実現してるそうです。</p>
-
-<p>ネイティブ機能の呼び出しは各社、なんらかの手段を用意してます（そりゃそうだ</p>
-
-<p>これらの仕組みの違いが、それぞれメリット・デメリットを生み出します。
-「使用上の注意をよく読み用法、用量を守り正しくお使いください」と言いたいところですが「それならはじめからネイティブでやるよ！」と突っ込まれそうですね。</p>
-
-<p><a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar</a> で、Xamarin の特徴を一つでも伝えられたら、と思います。</p>
-
-<p>以上、文字だらけの記事にお付き合い頂きありがとうございました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin(ザマリン) とはなんぞや]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/01/what-is-xamarin/"/>
-    <updated>2013-12-01T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/01/what-is-xamarin</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a> 始まりました。</p>
-
-<p>先は長いので、初日は Xamarin(ザマリンと読みます) とはなんぞや、個人開発者として使う時にどうなるの、的な事をさらっと書いてみようと思います。</p>
-
-<!--more-->
-
-
-<p>Xamarin 自体は企業名であり、その歴史は .NET の Linux 版を開発していた Ximian という企業が Novell に買収されて、その後レイオフされて作った企業です。</p>
-
-<ul>
-<li><a href="http://ja.wikipedia.org/wiki/Xamarin">Xamarin - Wikipedia</a></li>
-<li><a href="http://xamarin.com/">Xamarin - Official site</a></li>
-</ul>
-
-
-<p>で、同社が開発した、 .NET技術で iOS や Android アプリが作成できる SDK が、Xamarin.iOS だったり、Xamarin.Android だったりするわけですが、それらに Mac アプリを開発できる Xamarin.Mac や、Xamarin Studio という統合開発環境を加えたツール群をまるごとひっくるめて Xamarin と呼んでいます。</p>
-
-<h2>Mono, iOS, Android, Mac アプリ、.NET でも使える DLL が作れますよ</h2>
-
-<p>.NET の OSS 実装である Mono を利用したソフトウェアは無償で作成できます。
-Xamarin.Android/iOS/Mac による各PF用のアプリが作成できます。</p>
-
-<p>Windows 用の .NETアプリ(Windows.Forms や WPF)は、Xamarin 自体では作成できません。それは Visual Studio の役割です。ただ、PCL(Portable Class Library)と呼ばれる、PFを問わず動作するアセンブリ(DLL) を作成できますし、そもそも Mono と .NET の API はほとんど同じなので、書いたコードは Windows でも流用できます。</p>
-
-<h2>クロスプラットフォームで共通にできるのは「コア」な部分だけですよ</h2>
-
-<p>いわゆる幻想を壊しておきます。</p>
-
-<p>Xamarin.XXX が提供するのは、</p>
-
-<p><strong>各PF版の.NET API ＋ 各PFのAPIの.NETラッパクラス</strong></p>
-
-<p>です。</p>
-
-<p>「各PF版の.NET API」とは、いわゆる基本クラスで、基本的な型だったり、文字列処理だったり LINQ だったりその他もろもろです。</p>
-
-<p>一方、「各PFのAPIの.NETラッパクラス」とは、Android なら Android SDK、iOS なら CocoaTouch の API を .NET で記述できるラッパーです。ここにPF間の互換性はありません。</p>
-
-<p>なので、画面を作るのに Xamarin.Android なら <code>Activity</code> クラスを使いますし、Xamarin.iOS なら <code>ViewController</code> クラスを使います。
-GPS を使うのに、.Android なら <code>LocationManager</code> を使いますし、.iOS なら <code>CLLocationManager</code> を使います。</p>
-
-<p>つまり、「画面」と「各PF固有の機能」は共通化することができません。従って、各PF の API は理解しておく必要があります。それから .NET Framework の基本クラスライブラリも。</p>
-
-<p>上司に言うと「なんだその程度か」と返されると思いますが、 <strong>Objective-C を書かないで良い</strong> という事だけで十分に価値があると思うんですよね僕は。(お宅の(SI)会社に iOS技術者何名居ます？)</p>
-
-<p>ほかのクロスプラットフォーム開発可能な SDK（Titanium とか Abobe AIR とか）との比較は後日書こうと思います。</p>
-
-<h2>Xamarin Studio もしくは Visual Studio で開発しますよ</h2>
-
-<p>Mac の人は Xamarin Studio 一択、Win な人は Xamarin Studio もしくは Xamarin のアドインにより Visual Studio で開発ができます。
-ただし BUSINESS エディション以上が必要です。</p>
-
-<p>また iOS アプリを開発する場合は ビルドやデバッグのために Mac が必要なので、現実的には Mac 必須という感じです。</p>
-
-<p>なら Xamarin Studio に慣れようよ、というのが個人的なスタンスですが、Visual Studio 強力ですもんねぇ…。</p>
-
-<h2>プロプライエタリな、有償の製品ですよ</h2>
-
-<p>Mono はオープンソースですが、 Xamarin.Android、 Xamarin.iOS、Xamarin.Mac は有償プロダクトです。
-.Android と .iOS はソースも公開されていません。
-.Mac については、「MonoMac というOSSのライセンスが GPL/LGPL なため用意された商用ライセンスである」と説明されています。</p>
-
-<ul>
-<li><a href="http://monobook.org/wiki/MonoMac#.E3.83.A9.E3.82.A4.E3.82.BB.E3.83.B3.E3.82.B9">MonoMac - MonoBook</a></li>
-</ul>
-
-
-<p>Xamarin Studio はオープンソースな IDE です。(元は MonoDevelop) なので、純粋な Mono アプリケーションを作成するのにも使用されます。Unity での開発にも使えるみたいです（詳しくないですが…）</p>
-
-<ul>
-<li><a href="http://anchan828.hatenablog.jp/entry/2013/02/21/160836">UnityのためにXamarin Studioのセットアップ - けいごのなんとか</a></li>
-</ul>
-
-
-<h2>価格 - 開発者毎、プラットフォーム毎、年毎に料金頂きますよ</h2>
-
-<p>まあ、個人では高い部類に入ると思います。企業ユースでは、先日発表された Microsoft との提携により実現されたサブスクリプションがありますが、それはまた別の機会に。</p>
-
-<ul>
-<li><a href="https://store.xamarin.com/">Store - Xamarin</a></li>
-</ul>
-
-
-<p>SDK をダウンロードすると、まずは無償の STARTER エディションから始まりますが、これは作成できるアプリケーションのバイナリサイズに限界があり、ちょっと外部ライブラリを使おうとするとすぐに制限を超えます。私は Json.NET を使おうとしたら超えました。つまり実質無意味です。</p>
-
-<p>次に BUSINESS エディションのトライアル(30日間)が始まります。この時は Xamarin へのユーザー登録が必要です(要メアド)。このトライアル期間中に作成したアプリは、ビルドから24時間以内しか動作しない時間制限付きです。しかし機能的な制約はありません。
-また前述のとおり、 Visual Studio での開発をしたい場合は、このエディションが必要です。</p>
-
-<p>もっとも注意すべき点は、価格は、 <strong>「プラットフォーム毎」の年間ライセンス</strong> だということです。
-うっかり 「INDIE エディションで $299 だせば、iOS/Android/Mac アプリ作って公開できるぜ〜」と勘違いしてしまうと後で激しく落胆します。(誰？</p>
-
-<h3>学割があるよ</h3>
-
-<ul>
-<li><a href="http://xamarin.com/faq#q32">Do you have any student or academic pricing? Frequently Asked Questions - Xamarin</a></li>
-</ul>
-
-
-<p>にて、アカデミックライセンスについて <strong>「BUSINESS エディションを $99/PF/Year で提供」</strong> と記述されています。</p>
-
-<p>日本では エクセルソフトさんが、窓口になってくれるそうです。</p>
-
-<ul>
-<li>[Xamarin 価格 - シンプルで分かりやすい価格体系 : XLsoft エクセルソフト] (http://www.xlsoft.com/jp/products/xamarin/price.html) - アカデミック割引はありますか？</li>
-</ul>
-
-
-<p>エクセルソフトの中の人によりますと、</p>
-
-<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>. <a href="https://twitter.com/amay077">@amay077</a> こんにちは。Xamarin の学割販売、できますよ。 <a href="http://t.co/yM1xHEi8A0">http://t.co/yM1xHEi8A0</a> の アカデミック割引はありますか？をご覧ください。確認事項が少々あるのと、ドル建てより割高感が凄いかもしれませんが、2万円弱でサポートなしです。</p>&mdash; 田淵 義人 (@ytabuchi) <a href="https://twitter.com/ytabuchi/statuses/405997166352543744">2013, 11月 28</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>との事です。</p>
-
-<h2>日本語情報について</h2>
-
-<p>公式サイトの日本語化については、前出のエクセルソフトさんが鋭意翻訳中とのことです。
-エクセルソフトの中の人である <a href="https://twitter.com/ytabuchi">@ytabuchi</a> さんに希望を伝えると、その箇所の翻訳が優先されるかもしれないとのことでした。</p>
-
-<ul>
-<li><a href="http://www.xlsoft.com/jp/products/xamarin/index.html">Xamarin (ザマリン) ホーム : XLsoft エクセルソフト</a></li>
-<li><a href="http://www.wisdomsoft.jp/615.html">コラム/C#で作れる！ iOS &amp; Android クロス開発環境 Xamarin を試す - WisdomSoft</a></li>
-<li><a href="http://atsushieno.hatenablog.com/">ものがたり</a> - Xamarin の中の人である <a href="https://twitter.com/atsushieno">@atsushieno</a> 氏のブログ</li>
-</ul>
-
-
-<p>あとこちら、Qiita の Xamarin タグにも、勝手ながら私めが頑張って連投しております。</p>
-
-<ul>
-<li><a href="http://qiita.com/tags/xamarin/items">Xamarinに関する新着投稿 - Qiita</a></li>
-</ul>
-
-
-<p>Microsoft との提携をきっかけに、日本でも Xamarin が流行ってくれるといいなと期待しています。</p>
-
-<p>Advent Calendar 初日はこんなもんで。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[地理院地図の標高タイル(CSV)を描画してみた]]></title>
-    <link href="http://amay077.github.io/blog/2013/11/05/using-gsimap-dem-csv-api/"/>
-    <updated>2013-11-05T21:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/11/05/using-gsimap-dem-csv-api</id>
-    <content type="html"><![CDATA[<p>国土地理院が提供している API の一つに「標高タイル」というものがあります。</p>
-
-<!--more-->
-
-
-<p>タイルというと、Googleマップや OpenStreetMap などの Web地図では通常、画像を指しますが、標高タイルAPIでは <strong>「画素毎の高度(ｍ)」</strong> が取得できます。</p>
-
-<ul>
-<li><a href="http://portal.cyberjapan.jp/help/development/demtile.html">標高タイル仕様 - 地理院地図</a></li>
-<li><a href="http://cyberjapandata.gsi.go.jp/xyz/dem/14/14547/6463.txt">サンプルURL</a></li>
-</ul>
-
-
-<p>これは面白い、ということで使ってみました。</p>
-
-<h2>サンプル</h2>
-
-<ul>
-<li><a href="http://jsdo.it/amay077/jjod">地理院地図の標高タイル(CSV)を描画してみた - jsdo.it</a></li>
-</ul>
-
-
-<h3>Google Map</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gsimap_dem_csv_api_01.png" alt="img1" /></p>
-
-<h3>標高タイルAPI で取得した標高値を描画</h3>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_gsimap_dem_csv_api_02.png" alt="img1" /></p>
-
-<h2>何をしているか？</h2>
-
-<p>下は、このサンプルのコードの抜粋ですが、ポイントは２つ</p>
-
-<ul>
-<li>getTile で通常 img 要素を生成して返すが、代わりに canvas 要素に返す</li>
-<li>標高API をコールして得られた CSV をパースし、 高さに応じた色を計算して、canvas に矩形を描画する</li>
-</ul>
-
-
-<p>さすがに1ピクセル毎に描画すると重すぎるので、初期値では 16ピクセルずつに間引きしています(画面の DotSize で変更できます)。</p>
-
-<p>クライアント側でレンダリングしているので、色などが動的に変更できます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">map</span><span class="p">.</span><span class="nx">mapTypes</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="s2">&quot;GsiMaps&quot;</span><span class="p">,</span> <span class="p">{</span>
-</span><span class='line'>  <span class="nx">name</span><span class="o">:</span><span class="s2">&quot;標高タイル&quot;</span><span class="p">,</span>
-</span><span class='line'>  <span class="nx">tileSize</span><span class="o">:</span><span class="k">new</span> <span class="nx">google</span><span class="p">.</span><span class="nx">maps</span><span class="p">.</span><span class="nx">Size</span><span class="p">(</span><span class="mi">256</span><span class="p">,</span><span class="mi">256</span><span class="p">),</span>
-</span><span class='line'>  <span class="nx">minZoom</span><span class="o">:</span><span class="mi">14</span><span class="p">,</span> <span class="c1">// 標高タイルは Lv:14 しか用意されてないので</span>
-</span><span class='line'>  <span class="nx">maxZoom</span><span class="o">:</span><span class="mi">14</span><span class="p">,</span>
-</span><span class='line'>  <span class="nx">getTile</span><span class="o">:</span><span class="kd">function</span><span class="p">(</span><span class="nx">tileCoord</span><span class="p">,</span> <span class="nx">zoom</span><span class="p">,</span> <span class="nx">ownerDocument</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// 普通は img だけど、標高タイルは CSV で画素毎の標高値が取得できるので、</span>
-</span><span class='line'>    <span class="c1">// クライアント側で描画するために Canvas を使う</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">canvas</span> <span class="o">=</span> <span class="nx">ownerDocument</span><span class="p">.</span><span class="nx">createElement</span><span class="p">(</span><span class="s2">&quot;canvas&quot;</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">canvas</span><span class="p">.</span><span class="nx">width</span> <span class="o">=</span> <span class="mi">256</span><span class="p">;</span>
-</span><span class='line'>    <span class="nx">canvas</span><span class="p">.</span><span class="nx">height</span> <span class="o">=</span> <span class="mi">256</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">x</span> <span class="o">=</span> <span class="p">(</span><span class="nx">tileCoord</span><span class="p">.</span><span class="nx">x</span> <span class="o">%</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">pow</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="nx">zoom</span><span class="p">)).</span><span class="nx">toString</span><span class="p">();</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">y</span> <span class="o">=</span> <span class="nx">tileCoord</span><span class="p">.</span><span class="nx">y</span><span class="p">.</span><span class="nx">toString</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// 各画素の標高値を取得する</span>
-</span><span class='line'>    <span class="nx">canvas</span><span class="p">.</span><span class="nx">tileUrl</span> <span class="o">=</span> <span class="s2">&quot;http://cyberjapandata.gsi.go.jp/xyz/dem/&quot;</span> <span class="o">+</span> <span class="nx">zoom</span> <span class="o">+</span>  <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="nx">x</span> <span class="o">+</span> <span class="s2">&quot;/&quot;</span> <span class="o">+</span> <span class="nx">y</span> <span class="o">+</span> <span class="s2">&quot;.txt&quot;</span><span class="p">;</span>
-</span><span class='line'>    <span class="c1">// 標高を描画する</span>
-</span><span class='line'>    <span class="nx">renderDem</span><span class="p">(</span><span class="nx">canvas</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">renderedTiles</span><span class="p">[</span><span class="nx">canvas</span><span class="p">.</span><span class="nx">tileUrl</span><span class="p">]</span> <span class="o">=</span> <span class="nx">canvas</span><span class="p">;</span> <span class="c1">// タイル再描画の為にとっておく</span>
-</span><span class='line'>    <span class="k">return</span> <span class="nx">canvas</span><span class="p">;</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// 標高タイルを描画する</span>
-</span><span class='line'><span class="kd">function</span> <span class="nx">renderDem</span><span class="p">(</span><span class="nx">canvas</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>  <span class="kd">var</span> <span class="nx">ctx</span> <span class="o">=</span> <span class="nx">canvas</span><span class="p">.</span><span class="nx">getContext</span><span class="p">(</span><span class="s1">&#39;2d&#39;</span><span class="p">);</span>
-</span><span class='line'>  <span class="nx">ctx</span><span class="p">.</span><span class="nx">clearRect</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nx">$</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="nx">canvas</span><span class="p">.</span><span class="nx">tileUrl</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>    <span class="c1">// CSV が得られるのでパース</span>
-</span><span class='line'>    <span class="kd">var</span> <span class="nx">lines</span> <span class="o">=</span> <span class="nx">data</span><span class="p">.</span><span class="nx">split</span><span class="p">(</span><span class="sr">/\r\n|\r|\n/</span><span class="p">);</span>
-</span><span class='line'>    <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="nx">lines</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">i</span><span class="o">+=</span><span class="nx">dotSize</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>      <span class="kd">var</span> <span class="nx">cols</span> <span class="o">=</span> <span class="nx">lines</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">);</span>
-</span><span class='line'>      <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">j</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">j</span> <span class="o">&lt;</span> <span class="nx">cols</span><span class="p">.</span><span class="nx">length</span><span class="p">;</span> <span class="nx">j</span><span class="o">+=</span><span class="nx">dotSize</span><span class="p">)</span> <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="nx">cols</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;e&#39;</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// エラーの画素には &#39;e&#39; が入ってる</span>
-</span><span class='line'>          <span class="k">continue</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// 標高0ｍ を startColor、標高1000ｍを endColor としたグラデーション色を設定する。</span>
-</span><span class='line'>        <span class="nx">ctx</span><span class="p">.</span><span class="nx">fillStyle</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">xcolor</span>
-</span><span class='line'>        <span class="p">.</span><span class="nx">gradientlevel</span><span class="p">(</span><span class="nx">startColor</span><span class="p">,</span> <span class="nx">endColor</span><span class="p">,</span> <span class="nx">cols</span><span class="p">[</span><span class="nx">j</span><span class="p">]</span> <span class="o">/</span> <span class="mf">1000.0</span> <span class="o">*</span> <span class="mf">100.0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">.</span><span class="nx">getCSS</span><span class="p">();</span>
-</span><span class='line'>        <span class="nx">ctx</span><span class="p">.</span><span class="nx">fillRect</span><span class="p">(</span><span class="nx">j</span><span class="p">,</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">dotSize</span><span class="p">,</span> <span class="nx">dotSize</span><span class="p">);</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>    <span class="p">}</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>まとめ</h2>
-
-<p>ただの標高値を地図に表すなら画像でいいじゃん！とか言われそうですが、よいアイデアが浮かばなかったのでまずは素直に使ってみました。</p>
-
-<p>たとえば、移動手段による移動コストの違い(車だと坂道余裕だけど自転車だとキツい)みたいなのを視覚化するのに使えるような気がします。</p>
-
-<p>今回は、Canvas を使ったのでこの程度ですが、WebGL とかを使えば、Google Map の地形図に負けない、美しい3D地図が描画できるはずです。</p>
-
-<p>他に例を見ない、野心的な試みだと思うので、何か面白い使い方ができるといいなと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google API Console の API Access って…]]></title>
-    <link href="http://amay077.github.io/blog/2013/10/30/multi-apps-in-google-api-console/"/>
-    <updated>2013-10-30T20:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/10/30/multi-apps-in-google-api-console</id>
-    <content type="html"><![CDATA[<p><a href="https://code.google.com/apis/console/">Google API Console</a> の API Access って、複数のアプリを登録できたんですね。気づかなかった。。。</p>
-
-<!--more-->
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/multi_apps_in_google_api_console_01.png" alt="img1" /></p>
-
-<blockquote><p>&lt;SHA1フィンガープリント>;&lt;アプリのパッケージ名>&lt;改行><br/>
-&lt;SHA1フィンガープリント>;&lt;アプリのパッケージ名></p></blockquote>
-
-<p>って書けばよかったんだ。</p>
-
-<p>新しくなった <a href="https://cloud.google.com/console">Cloud Console</a> では、 +/- ボタンが付いて分かりやすい。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/multi_apps_in_google_api_console_02.png" alt="img1" /></p>
 ]]></content>
   </entry>
   
