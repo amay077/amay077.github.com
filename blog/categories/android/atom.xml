@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-01-18T18:21:27+09:00</updated>
+  <updated>2014-02-02T16:00:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,196 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS と Android で画面表示時のコールバックを比較する]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android/"/>
+    <updated>2014-01-29T15:55:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android</id>
+    <content type="html"><![CDATA[<p>モバイル開発における画面のライフサイクル、重要ですね。
+iOS と Android で「ざっくりとは同じでしょ？」などと思っていましたが、調べてみたら結構違ってました。</p>
+
+<!--more-->
+
+
+<p>と言うのも、こちら</p>
+
+<ul>
+<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
+</ul>
+
+
+<p>のエントリが大変参考になったので、「Android と比べるとどうか？」と興味が沸いたのです。</p>
+
+<h2>画面が表示される時</h2>
+
+<p>iOS/Android の <code>UIViewController</code>, <code>Activity</code> に備わってるコールバックの、画面表示時での発生順をそれぞれ調べて発生順に並べてみました。同じような意味のコールバックは横に並べて書きました。</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>順番</th>
+<th>イベント</th>
+<th>iOS(UIViewController)</th>
+<th>Android(Activity)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td>クラスが生成された時</td>
+<td>init</td>
+<td>ctor(コンストラクタ)</td>
+</tr>
+<tr>
+<td></td>
+<td>2</td>
+<td>画面がロードされる前</td>
+<td>loadView</td>
+<td>onCreate</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>(画面が再度開始される前)</td>
+<td></td>
+<td>onRestart ※停止状態(onStop)から復帰する時のみ</td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>画面が開始される前</td>
+<td></td>
+<td>onStart</td>
+</tr>
+<tr>
+<td></td>
+<td>5</td>
+<td>画面がロードされた後</td>
+<td>viewDidLoad</td>
+<td>onPostCreate</td>
+</tr>
+<tr>
+<td></td>
+<td>6</td>
+<td>画面が表示され始める前</td>
+<td></td>
+<td>onResume ※一時停止(Pause)からの復帰はここから</td>
+</tr>
+<tr>
+<td></td>
+<td>7</td>
+<td>画面が表示され始めた後</td>
+<td></td>
+<td>onPostResume</td>
+</tr>
+<tr>
+<td></td>
+<td>8</td>
+<td>UIの配置が行われる前</td>
+<td>viewWillLayoutSubviews</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>9</td>
+<td>UIの配置が行われた後</td>
+<td>viewDidLayoutSubviews</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>10</td>
+<td>画面が表示される直前</td>
+<td> viewWillAppear </td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>11</td>
+<td>画面が表示された直後</td>
+<td>viewDidAppear</td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>12</td>
+<td>画面にフォーカスが移った直後</td>
+<td></td>
+<td>onWindowFocusChanged(true) ※表示される度に呼ばれる</td>
+</tr>
+</tbody>
+</table>
+
+
+<h3>onCreate は生成前？後？</h3>
+
+<p>iOS というか CocoaTouch の命名文化って、will とか did とか、時系列が明確に分かるものが多いので良いですね。
+それに比べて Android は…。 onCreate は前？後？ onPostCreate があるので「前」ですね。</p>
+
+<h3>UIパーツのサイズはいつ決まるのか？</h3>
+
+<p>iOS の方は 9. <code>viewDidLayoutSubviews</code> の時です。
+冒頭で紹介したエントリにも以下のように書かれています。</p>
+
+<blockquote><p>self.view の subviews.frame の調整、すなわちレイアウト処理は全てここで記述するべきです。</p></blockquote>
+
+<p>Android の方は問題です。
+<code>Button</code> などの生成は <code>onCreate</code> で行うのが一般的ですが、この時点では、まだレイアウトされていません。なので大抵の場合 <code>button1.Height = 0</code> です。
+では、いつのタイミングで <code>button1.Height</code> に適切な値が格納されるかと言うと…、 12. <code>onWindowFocusChanged(true)</code> まで待たないといけません。しかもこのコールバックは、Focus が変わる度に呼ばれるので、「最初の１回」だけを取得しようと思ったら別のフラグが必要になります、あーめんどい。</p>
+
+<p>続きは</p>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+
+
+<p>で。私は <code>View.post</code> する方法が一番簡単だと思いました。</p>
+
+<h3>onResume/onPostResume の命名が...</h3>
+
+<p>「画面が表示され始める前/画面が表示され始めた後」なんて無理やりな名前を付けてしまいました。
+特に <code>onPostResume</code> は無理がありすぎ。
+名前からは <code>viewDidAppear</code> に相当するとも捉えられますが、まだこの時点ではレイアウトが完了していないという、中途半端なタイミングです。何のために使えば良いのでしょう？</p>
+
+<h3>回転したらどうなるの？</h3>
+
+<p>iOS の場合は、8.<code>viewWillLayoutSubviews</code> からやり直しです。つまり、ここに適切に縦横対応のレイアウト処理を記述しておけば、<code>didRotateFromInterfaceOrientation</code>など、他のコールバックでの処理は通常必要ないと思います。</p>
+
+<p>Android の場合は、AndroidManifest.xml への設定なしだと、なんと 1.コンストラクタ からやりなおしです。とその前に当然 <code>onDestroy</code> や <code>OnSaveInstanceState</code> が呼ばれるわけですが、、、それはまた別の機会に。</p>
+
+<h2>まとめっぽいもの</h2>
+
+<p>iOS プログラミングでは今まで <code>viewDidLoad</code> で、UIパーツを生成してレイアウト処理してるプログラムが多いように思いますが、それは間違いで、「loadView で生成して、viewDidLayoutSubviews でレイアウト」とするのが最も効率的なようです。</p>
+
+<p>Android でも、onCreate でレイアウト処理するとハマることがありそうです(<a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">実際ありました</a>)。ちょっと注意しといた方がよさそうです。</p>
+
+<p>「画面が破棄される時」「メモリが足りなくなった時」「回転した時」とか、書くこと沢山あるんですけど、ありすぎてもうダメです。</p>
+
+<h2>参考</h2>
+
+<h3>iOS</h3>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/Documentation/UIKit/Reference/UIViewController_Class/Reference/Reference.html#//apple_ref/occ/instm/UIViewController">UIViewController Class Reference</a></li>
+<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
+<li><a href="https://gist.github.com/shinyaohira/6482235">iOS View Controllerプログラミングガイド</a></li>
+</ul>
+
+
+<h3>Android</h3>
+
+<ul>
+<li><a href="http://developer.android.com/training/basics/activity-lifecycle/starting.html">Starting an Activity | Android Developers</a></li>
+<li><a href="http://developer.android.com/reference/android/app/Activity.html">Activity | Android Developers</a></li>
+<li><a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[NHK紅白の Android/iPhone アプリが .NET/Xamarin 製だったということ]]></title>
@@ -1099,129 +1289,6 @@ DeviceToken = trimmedDeviceToken;
 <p>それはともかく、何かトラブルがあると Xamarin のようなネイティブに皮を被せてるプラットフォームは途端に不安になります。どこに原因があるのか追求しづらいから。</p>
 
 <p>今回も、コードの修正後、いきなりアプリが落ちるようになって、まずα版を使っていたのでそれを疑って stable に戻して、次に実機が悪いのかとシミュレータで動かしてみたり、いろいろ試行錯誤してやっとチュートリアルの誤記だと分かったり。まだノウハウが無いといえばそれまで、α版が自己責任なのはその通りですが、イレギュラー時のリスクはあるなあと思いました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin で Windows Azure モバイルサービスを使う(その2:認証編)]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/"/>
-    <updated>2013-12-18T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/40bd5918284fd40d0edc">前回</a> は、Microsoft の BaaS である Azureモバイルサービスをとりあえず使ってみる所まで紹介しました。</p>
-
-<p>今回は、OAuth による認証、Twitter や Facebook でログインする機能について触れてみます。</p>
-
-<!--more-->
-
-
-<p>前回用意したサンプルの続きとして進めます。</p>
-
-<p>認証を組み込むためのチュートリアルはこちら</p>
-
-<ul>
-<li><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-users-xamarin-ios/">Get started with authentication (Xamarin iOS) | Mobile Dev Center</a></li>
-</ul>
-
-
-<p>英語版だからと謝罪してくれるのは Microsoft だけですね。</p>
-
-<h2>1. モバイルサービスに認証を設定する</h2>
-
-<blockquote><p>Register your app for authentication and configure Mobile Services</p></blockquote>
-
-<p>のところです。</p>
-
-<p>まずは https://manage.windowsazure.com にアクセスし、モバイル サービス から、前回作った名前をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_01.png" alt="" /></p>
-
-<p>次に上部メニューからダッシュボードを選択します。表示されるページの左下の方にある「モバイルサービスURL」の値をコピーしておきます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_02.png" alt="" /></p>
-
-<p>次に、どのサービスの認証を利用するかを決めます（Microsoft, Facebook, Twitter, Google）。この説明では Twitter を使うことにします。</p>
-
-<p>Twitter での操作方法は下を開きます。</p>
-
-<ul>
-<li><a href="http://www.windowsazure.com/ja-jp/develop/mobile/how-to-guides/register-for-twitter-authentication/">モバイル サービスでの Twitter ログイン用のアプリケーションの登録</a></li>
-</ul>
-
-
-<p>説明が充実してるので上記に従ってください。要は「コンシューマ キー」と「コンシューマー シークレット」が得られれば OK です。</p>
-
-<p>ではマネージメントポータルの説明に戻ります。</p>
-
-<blockquote><ol>
-<li>Back in the Management Portal</li>
-</ol>
-</blockquote>
-
-<p>です。</p>
-
-<p>上部メニューの ID をクリック、その後、「twitter 設定」に先ほど取得した コンシューマ キー とコンシューマ シークレット を貼り付けて、一番下にある「保存」をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_03.png" alt="" /></p>
-
-<p>続いて、テーブルに権限を与えます</p>
-
-<blockquote><p>Restrict permissions to authenticated users</p></blockquote>
-
-<p>のところ。</p>
-
-<p>まず上部メニューの データ → TodoItem をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_04.png" alt="" /></p>
-
-<p>次に、アクセス許可 をクリックし、全ての項目で「認証されたユーザーのみ」を選択します。その後「保存」します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_05.png" alt="" /></p>
-
-<p>マネージメントポータル側の設定は以上です。
-Twitter での認証設定を追加し、またテーブルには、認証されたユーザーでしかアクセスできない権限を設定しました。</p>
-
-<p>結果、前回動かしたサンプルプログラムはこの設定を行う事で動作しなくなります。(401エラー)</p>
-
-<p>次に Xamarin Studio でコードを変更していきます。</p>
-
-<h2>2. アプリケーションに認証を追加する</h2>
-
-<blockquote><p>Add authentication to the app</p></blockquote>
-
-<p>のところです。</p>
-
-<ol>
-<li>〜 7. まであります。流れは説明通りですが、クラス名や大文字小文字が微妙に違うので注意が必要です。(<code>TodoService</code> は <code>QSTodoService</code> と読み替える必要があるなど)</li>
-</ol>
-
-
-<p>これらを修正したソース２つ <code>QSTodoService.cs</code> と <code>QSTodoListViewController.cs</code> を gist に貼り付けました。</p>
-
-<ul>
-<li><a href="https://gist.github.com/amay077/7960424">gist - QSTodoListViewController.cs and QSTodoService.cs</a></li>
-</ul>
-
-
-<p>修正前との差分が見たい方は <a href="https://gist.github.com/amay077/7960424/revisions">Revisions</a> で見られます。</p>
-
-<p>あ、今回は Twitter なので、
-<code>MobileServiceAuthenticationProvider.MicrosoftAccount</code> を忘れずに
-<code>MobileServiceAuthenticationProvider.Twitter</code> に置き換えてくださいね。</p>
-
-<p>これでコードの修正は終わりです。</p>
-
-<ol>
-<li>動かしてみる</li>
-</ol>
-
-
-<p>さて、iOS シミュレータ で動かしてみましょう。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_06.gif" alt="" /></p>
-
-<p>こんな感じで、Twitter による認証機能をアプリに組み込むことができました。</p>
-
-<p>今日は以上です。次回は Push 通知を行ってみます。</p>
 ]]></content>
   </entry>
   

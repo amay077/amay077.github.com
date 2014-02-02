@@ -4,7 +4,7 @@
   <title><![CDATA[Category: C# | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/c-/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-01-18T18:21:27+09:00</updated>
+  <updated>2014-02-02T16:00:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,167 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C と Java と C# でクロージャ的な書き方の比較]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp/"/>
+    <updated>2014-01-29T15:52:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp</id>
+    <content type="html"><![CDATA[<p>クロージャとかラムダとか匿名** とか名前はいろいろですけど、各言語の書き方と動き（特に変数の扱い）について比べてみました。</p>
+
+<p>ついでに非同期処理の例にもなってしまいました。</p>
+
+<!--more-->
+
+
+<h3>Objective-C</h3>
+
+<p>Blocks を使います。</p>
+
+<p>```objc Obj-C
+int x = 1;
+__block int y = 2;</p>
+
+<p>dispatch_queue_t q_global = dispatch_get_global_queue(0, 0);
+dispatch_async(q_global, ^{</p>
+
+<pre><code>x = 10; // できない(コンパイルエラー
+y = 20; // できる
+
+int z = x + y;
+
+[self dispValue:z]; // self の参照カウンタが+1される
+</code></pre>
+
+<p>});
+```</p>
+
+<p>普通に宣言した変数を Block の中で使うと、自動的に「キャプチャ」され、変数の複製される。この変数には、 Block 内では代入できずコンパイルエラーとなる。
+<code>__block</code> を付けた変数は、Block 内外で同じ実体を参照でき、代入もできる。
+<code>self</code> やプロパティを Block 内で使用すると参照カウンタがインクリメントされ、明示的に release しないとリークする。
+あるいは、Block 外で <code>__weak</code> を付けた変数に代入しておくと、これは参照カウンタがインクリメントされない。</p>
+
+<h3>Java 6 (Android ベースなので…)</h3>
+
+<p>匿名クラスです。</p>
+
+<p>```java Java
+int x = 1;
+final int y = 2;</p>
+
+<p>ExecutorService executor = Executors.newSingleThreadExecutor();
+executor.submit(new Runnable() {</p>
+
+<pre><code>@Override
+public void run() {
+    y = 20; // できない(コンパイルエラー
+    int z = x + y; // できない(コンパイルエラー
+
+    String typeName = this.getClass().getInterfaces()[0].getName(); // Runnable になる
+}
+</code></pre>
+
+<p>});
+```</p>
+
+<p>Java は匿名クラスの実装中に使える変数はかなり制限がある。
+普通に宣言した変数は、匿名クラス内では使えない(コンパイルエラー)。
+<code>final</code> を付けて宣言した変数は、匿名クラス内では参照のみ可能。ちょうど Objective-C の通常変数を Block 内で使った時と同じ。
+Obj-C の <code>self</code> にあたる <code>this</code> は匿名クラス内では、その匿名クラスを示す。</p>
+
+<h3>C＃</h3>
+
+<p>ラムダ式です。</p>
+
+<p>```csharp C#
+int x = 1;
+const int y = 2;
+Task.Factory.StartNew(() =>
+{</p>
+
+<pre><code>x = 10; // OK
+y = 20; // これはダメ、const だから。
+var z = x + y;
+
+var typeName = this.GetType().Name;
+</code></pre>
+
+<p>});
+```</p>
+
+<p>C# はかなりゆる〜い印象。
+普通に宣言した変数を、ラムダ式の中でも自由に read/write できてしまう。write できちゃうのはこわい。
+<code>this</code> は、ラムダ式の外側のクラスを示す。
+　</p>
+
+<h2>所感</h2>
+
+<p>個人的には、Java のガチガチなのが好きかも。できる事が限定されているのでミスしにくい。
+Objective-C は、ローカル変数は良いけど、self とか使っちゃうミス起こしそう。
+C# は、普通に書き換えられて超不安、という感じ。なるべく const 使うようにしたい。
+　
+　
+　</p>
+
+<p>しかし記述量は C# が一番少ないですね、Xamarin いいよ Xamarin。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Objective-C の Dictionary は、キーに基本データ型が使えないのね ]]></title>
+    <link href="http://amay077.github.io/blog/2014/01/28/cannot-using-int-type-in-objc-dictionary/"/>
+    <updated>2014-01-28T15:49:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/01/28/cannot-using-int-type-in-objc-dictionary</id>
+    <content type="html"><![CDATA[<p>Obj-C 慣れないもので、こんな所でハマってた。
+くやしいので他の言語と比較しておく。
+当然ながら Dictionary に限った話でない（はず）。</p>
+
+<!--more-->
+
+
+<h3>Objective-C</h3>
+
+<p><code>obj-c Objective-C
+NSMutableDictionary* dic = [[NSMutableDictionary alloc] init];
+[dic setObject:@"hoge" forKey:[NSNumber numberWithInt:1]]; // これは OK
+[dic setObject:@"huga" forKey:@1]; // これも OK (@1 は NSNumber のリテラル構文なので)
+[dic setObject:@"piyo" forKey:2]; // これはダメ（落ちる
+</code></p>
+
+<p>キーと値が他の言語と逆なのにまずハマって、
+キーに int型 の値を入れてたのに気づかずまたハマった。
+せめてコンパイルエラーにして欲しいよ。
+言語仕様上、型指定できないのでキーも値もどんな型でも突っ込めちゃう、こわい。</p>
+
+<h3>Java</h3>
+
+<p><code>java Java
+Map&lt;Integer, String&gt; dic = new HashMap&lt;Integer, String&gt;();
+Map&lt;int, String&gt; dic = new HashMap&lt;int, String&gt;(); // これはダメ(コンパイルできない)
+dic.put(Integer.valueOf(1), "hoge"); // OK
+dic.put(2, "piyo"); // これも OK（へー
+</code></p>
+
+<p>int と Integer ってのがあって、int を使って HashMap を宣言できない。
+これはコンパイル時に分かるので良いけど、int と Integer の変換が必要なことがしばしば。</p>
+
+<h3>C＃</h3>
+
+<p><code>csharp C#
+var dic = new Dictionary&lt;int, string&gt;(); // 型推論＆Generic
+dic.Add(1, "hoge"); // OK
+dic.Add(2, "piyo");
+dic.Add(3, "huga");
+</code></p>
+
+<p>一番スッキリ書けますね。
+　
+　
+　</p>
+
+<p>…Xamarin いいよ、Xamarin</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ViewController の ViewDidLoad で this が nil になった件]]></title>
@@ -114,265 +275,6 @@ new CLLocationCoordinate2D(33d, 133d));
 <li><a href="http://monotouch.2284126.n4.nabble.com/Failed-to-load-AOT-module-in-aot-only-mode-td4602614.html">MonoTouch - Failed to load AOT module ... in aot-only mode</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で特定の画面だけ向きを固定する時ハマったこと]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller/"/>
-    <updated>2014-01-07T18:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller</id>
-    <content type="html"><![CDATA[<p>画面A,B があって B だけ横向き固定にしたい。</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/a/12588038">uiviewcontroller - iOS 6 ViewController is rotating but shouldn't - Stack Overflow</a></li>
-<li><a href="http://qiita.com/yusuga_/items/8cc82376edb40e09f0e7">iPhone - UIViewController iOS6での画面回転への対応 - Qiita [キータ]</a></li>
-</ul>
-
-
-<p>これを Xamarin.iOS でやりたい。</p>
-
-<!--more-->
-
-
-<p>Storyboard を Interface Builder で開いて、NavigationController のカスタムクラスを <code>MyNavigationController</code> とした。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/viewcontroller_orientaion_lock_in_xamarin_ios_01.png" alt="" /></p>
-
-<p>すると、Xamarin Studio 側にも <code>MyNavigationController.cs</code> ができるので、Stackoverflow の通り、以下のように実装した。</p>
-
-<p>```csharp MyNavigationController.cs
-// This file has been autogenerated from a class added in the UI designer.</p>
-
-<p>using System;
-using MonoTouch.Foundation;
-using MonoTouch.UIKit;
-using System.Linq;</p>
-
-<p>namespace MyApp
-{</p>
-
-<pre><code>public partial class MyNavigationController : UINavigationController
-{
-    public MyNavigationController (IntPtr handle) : base (handle) { }
-
-    public override UIInterfaceOrientation PreferredInterfaceOrientationForPresentation()
-    {
-        return this.ViewControllers.Last().PreferredInterfaceOrientationForPresentation();
-    }
-
-    public override UIInterfaceOrientationMask GetSupportedInterfaceOrientations()
-    {
-        return this.ViewControllers.Last().GetSupportedInterfaceOrientations();
-    }
-
-    public override bool ShouldAutorotate()
-    {
-        return this.ViewControllers.Last().ShouldAutorotate();
-    }
-
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>次に、横固定にしたい画面Bを以下のように実装。</p>
-
-<p>```csharp BViewController.cs
-// This file has been autogenerated from a class added in the UI designer.</p>
-
-<p>using System;</p>
-
-<p>using MonoTouch.Foundation;
-using MonoTouch.UIKit;</p>
-
-<p>namespace MyApp
-{</p>
-
-<pre><code>public partial class BViewController : UIViewController
-{
-    public PhotoPreviewViewController (IntPtr handle) : base (handle)
-    {
-    }
-
-    public override UIInterfaceOrientation PreferredInterfaceOrientationForPresentation()
-    {
-        return UIInterfaceOrientation.LandscapeLeft;
-    }
-
-    public override UIInterfaceOrientationMask GetSupportedInterfaceOrientations()
-    {
-        return UIInterfaceOrientationMask.LandscapeLeft;
-    }
-
-    public override bool ShouldAutorotate()
-    {
-        return false;
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これで動かしてみたものの、一向に画面が固定されない。
-しばらく悩んだ後、<code>MyNavigationController</code> のコンストラクタにブレークポイントを仕掛けてデバッグしてみたとても止まらない。
-よくよくアプリケーション出力のコンソールを見てみると、</p>
-
-<blockquote><p>Unknown class MyNavigationController in InterfaceBuilder file."</p></blockquote>
-
-<p>と出力されていることに気づいた。
-なんか、.storyboard と C# クラスの関連付けがうまくいってないらしい。</p>
-
-<p>ソリューションをクリアして、再ビルドしたらこのエラーは消え、画面Bの向きが固定されるようになった！</p>
-
-<p>(ただ、縦画面のまま画面Bに遷移すると縦画面で固定されてしまう。これは実装が何か足りない気がする。)</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NHK紅白の Android/iPhone アプリが .NET/Xamarin 製だったということ]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/02/nhk-kouhaku-utagassen-apps-made-by-xamarin/"/>
-    <updated>2014-01-02T11:27:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/02/nhk-kouhaku-utagassen-apps-made-by-xamarin</id>
-    <content type="html"><![CDATA[<p>新年あけましておめでとうございます。
-今年も Xamarin 推しで参ります、よろしくお願いします。</p>
-
-<!--more-->
-
-
-<p>2013年大晦日の紅白歌合戦、NHK が iPhone/Android 用のアプリを配信していました。</p>
-
-<ul>
-<li><a href="http://www1.nhk.or.jp/kouhaku/app/">紅白アプリ｜第64回NHK紅白歌合戦</a></li>
-<li><a href="http://weekly.ascii.jp/elem/000/000/192/192769/">紅白で「イェーガー！」と叫ぶために曲を見逃さないiPhoneアプリ、NHK紅白</a></li>
-</ul>
-
-
-<p>なんとこのアプリ、Xamarin 製だったとのこと。
-紅白あんまり興味なかったのでノーチェックでしたわー。</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p>紅白アプリXamarinなんか</p>&mdash; ゆたか (@tmyt) <a href="https://twitter.com/tmyt/statuses/413092620567470080">2013, 12月 17</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-
-<blockquote class="twitter-tweet" lang="ja"><p>iPhoneの紅白アプリ、MvvmCross使ってるってことは、Xamarinで作ってるってこと？！ <a href="http://t.co/cTWPz2cp9E">pic.twitter.com/cTWPz2cp9E</a></p>&mdash; 菊池紘 (@kikuchy) <a href="https://twitter.com/kikuchy/statuses/417977438597959680">2013, 12月 31</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>このツイートを RT した後、ソッコーで Android 版を入れてみましたら、確かにクレジットに MvvmCross やら ActionBarSherlock for Xamarin やらならんでいました。</p>
-
-<h2>開発してるのは…</h2>
-
-<p>開発は、<a href="http://www.fenrir-inc.com/">スレイプニル</a> で有名なフェンリルさんのようですね。</p>
-
-<ul>
-<li><a href="http://biz.fenrir-inc.com/application_development/casestudy_app/nhk_kouhaku.html">フェンリル株式会社 | スマートフォンアプリ開発 実績 NHK 紅白</a></li>
-</ul>
-
-
-<p>2年連続で作っておられるようですが、おととしから Mono(MonoTouch/Mono for Android) 製だったのかな？いやスゴいです！</p>
-
-<h2>使われているライブラリ</h2>
-
-<p>せっかくなので、Android/iOSアプリ両方の著作権表示から、使われている OSS ライブラリを列挙してみます。(<a href="http://nkzn.hatenablog.jp/entry/2013/12/30/010956">こちらのエントリ</a>にインスパイアされました)
-当然ですが、すべて .NET/Mono で動作するライブラリばかりです。(ActionBar と Nimbus を除く)</p>
-
-<h3>MvvmCross</h3>
-
-<ul>
-<li>https://github.com/MvvmCross/MvvmCross</li>
-<li>クロスプラットフォームMVVMフレームワーク。<a href="http://qiita.com/amay077/items/c4227663b5a5e540dc13">こちらでも</a> 紹介しました</li>
-</ul>
-
-
-<h3>Json.NET</h3>
-
-<ul>
-<li>http://james.newtonking.com/json</li>
-<li>.NET/Mono で JSON を扱うための事実上標準ライブラリ</li>
-</ul>
-
-
-<h3>SocketIO4Net.Client</h3>
-
-<ul>
-<li>http://socketio4net.codeplex.com/</li>
-<li>WebSocket4Net と組み合わせて使うっぽい？ライブラリ</li>
-</ul>
-
-
-<h3>WebSocket4Net</h3>
-
-<ul>
-<li>http://websocket4net.codeplex.com/</li>
-<li>.NET で WebSocket 使うためのライブラリ。</li>
-</ul>
-
-
-<h3>SuperSocket.ClientEngine</h3>
-
-<ul>
-<li>http://clientengine.codeplex.com/</li>
-<li>ソケット通信用ライブラリっぽい。</li>
-</ul>
-
-
-<h3>MvxSettings</h3>
-
-<ul>
-<li>https://github.com/jamesmontemagno/Mvx.Plugins.Settings かな？</li>
-<li>設定情報をストアするための、MvvmCross のプラグイン</li>
-</ul>
-
-
-<h3>ActionBarSherlock for Xamarin</h3>
-
-<ul>
-<li>http://components.xamarin.com/view/XamarinActionBarSherlock</li>
-<li>スライドメニュー(NavigationDrawer) を実現するライブラリ。そういえばちょっと変わったスライドメニューでしたね。</li>
-</ul>
-
-
-<h3>AsyncOAuth</h3>
-
-<ul>
-<li>http://neue.cc/2013/02/27_398.html</li>
-<li>C#/LINQ の神であらせられる <a href="http://neue.cc/2013/02/27_398.html">@neuecc</a> さん作の 非同期OAuthライブラリ</li>
-</ul>
-
-
-<h3>Nimbus</h3>
-
-<ul>
-<li>http://nimbuskit.info/</li>
-<li>iOS の UIパーツがいろいろ拡張されてる的なライブラリ？Xamarin.iOS で Binding して使ってるのかなあ？</li>
-</ul>
-
-
-<h3>Html Agility Pack</h3>
-
-<ul>
-<li>http://htmlagilitypack.codeplex.com/</li>
-<li>HTMLパーサライブラリ</li>
-</ul>
-
-
-<p>生放送のテレビ番組向けアプリということで、リアルタイム通信に注力された様子が、使用されたと思われるライブラリからも伺えます。</p>
-
-<h2>これは強力すぎる Xamarin 導入事例ですね</h2>
-
-<p>日本の最も有名なテレビ番組のスマホアプリに Xamarin が使われていたというのは大きな導入事例になること必至です。
-アプリの性質上、期間限定となる可能性もあります。できればこのまま公開しつづけて欲しいですが、Xamarin を上司や提案先に紹介されたい場合は、お早めに、またキャプチャを多く撮っておかれる事をおすすめします。</p>
-
-<p>最後に、今年が Xamarin 普及元年とならん事を近くの神社にお祈りして、新年最初のエントリの締めとします。</p>
 ]]></content>
   </entry>
   
