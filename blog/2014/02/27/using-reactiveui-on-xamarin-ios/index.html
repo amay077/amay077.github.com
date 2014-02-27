@@ -1,0 +1,546 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="posterous がお亡くなりになったので、引っ越して来ました。">
+  
+  <meta name="keywords" content="Android,C#,MVVM,Xamarin,iOS,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2014-02-27T21:34:00+09:00" pubdate data-updated="true">Feb 27<span>th</span>, 2014</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>Android</a>, <a class='category' href='/blog/categories/c-/'>C#</a>, <a class='category' href='/blog/categories/mvvm/'>MVVM</a>, <a class='category' href='/blog/categories/xamarin/'>Xamarin</a>, <a class='category' href='/blog/categories/ios/'>iOS</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>ReactiveUI は、Reactive Extensions を全面的に取り入れた クロスプラットフォームな MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
+</ul>
+
+
+<p>作者は GitHub の中の人 <a href="http://twitter.com/xpaulbettsx">Paul Betts</a> 氏、<a href="http://xamarin.com/mvp">Xamarin の MVP</a> でもあります。</p>
+
+<p>元々は WPF, Silverlight, WinRT, Windows Phone に対応していましたが、Xamarin.iOS や Xamarin.Android, Xamarin.Mac にも <a href="http://blog.paulbetts.org/index.php/2013/03/12/reactiveui-4-5-is-released/">対応が進んで来た</a> ので、使ってみる事にしました。</p>
+
+<p>Visual Studio + WPF 等なら、nuget から取得できて楽なんでしょうけども、なにせ Mac なので、Xamarin Studio のみでいきます。</p>
+
+<h2>とりあえず使ってみる</h2>
+
+<p>Github が公開した <a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub&#8217;s Xamarin starter apps</a>, これに ReactiveUI も含まれているので、こちらを Clone して Xamarin Studio で開いてビルド、すぐ動きます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_01.png" alt="" /></p>
+
+<p>これ、ViewModel側で UUID を生成して、View側の Label にバインドしているのですが、何ともシンプル過ぎて…。</p>
+
+<p>それでもこのフレームワークの構成を知るには十分です。</p>
+
+<h2>ReactiveUI に必要なもの</h2>
+
+<p>ソリューションツリーを見ると次の4つのプロジェクトがあります。</p>
+
+<ul>
+<li>Starter-Core-Android</li>
+<li>Starter-Core-iOS</li>
+<li>Starter-Android</li>
+<li>Starter-iOS</li>
+</ul>
+
+
+<h3>ViewModel-Model層</h3>
+
+<p>Starter-Core-xxx は、ディレクトリ的には同じ場所にあり、Android用とiOS用のプロジェクトファイル(.csproj)が用意してあるだけです。ここはアプリケーションの ViewModel-Model層になります。PCL化はされていないようですね(その内、とサイトに書いてありました)。</p>
+
+<p>サンプルで用意されてる ViewModel を見てみます。</p>
+
+<figure class='code'><figcaption><span>TestViewModel.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">ReactiveUI</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Runtime.Serialization</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">Starter.Core.ViewModels</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [DataContract]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">TestViewModel</span> <span class="p">:</span> <span class="n">ReactiveObject</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">string</span> <span class="n">_TheGuid</span><span class="p">;</span>
+</span><span class='line'><span class="na">        [DataMember]</span> <span class="k">public</span> <span class="kt">string</span> <span class="n">TheGuid</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_TheGuid</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="n">RaiseAndSetIfChanged</span><span class="p">(</span><span class="k">ref</span> <span class="n">_TheGuid</span><span class="p">,</span> <span class="k">value</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">TestViewModel</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">TheGuid</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">NewGuid</span><span class="p">().</span><span class="n">ToString</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>MvvmCross とか、他の MVVM-FW とだいたい同じですね(そりゃそうだ)。
+基底クラスの <code>ReactiveObject</code> が、BaseViewModel的な役割をします。(が、Reactive を冠しているだけに、随所で Rx の力が発揮される、はずです←まだ分かってない)</p>
+
+<p>このコードでは、TestViewModel の生成と同時に、Guid を生成して、<code>TheGuid</code> プロパティに設定しています。</p>
+
+<h3>View層</h3>
+
+<p>Starter-Android, Starter-iOS はそれぞれの View層になります。</p>
+
+<p>Starter-iOS の TestViewController.cs を見てみます。</p>
+
+<figure class='code'><figcaption><span>TestViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">namespace</span> <span class="nn">Starter.Views</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">TestViewController</span> <span class="p">:</span> <span class="n">ReactiveViewController</span><span class="p">,</span> <span class="n">IViewFor</span><span class="p">&lt;</span><span class="n">TestViewModel</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'><span class="na">     [省略]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">OneWayBind</span><span class="p">(</span><span class="n">ViewModel</span><span class="p">,</span> <span class="n">vm</span> <span class="p">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">TheGuid</span><span class="p">,</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">TheGuid</span><span class="p">.</span><span class="n">Text</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">ViewModel</span> <span class="p">=</span> <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">GetOrCreateObject</span><span class="p">(</span><span class="s">&quot;TestViewModel&quot;</span><span class="p">,</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="nf">TestViewModel</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">TestViewModel</span> <span class="n">_ViewModel</span><span class="p">;</span>
+</span><span class='line'>        <span class="k">public</span> <span class="n">TestViewModel</span> <span class="n">ViewModel</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_ViewModel</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="n">RaiseAndSetIfChanged</span><span class="p">(</span><span class="k">ref</span> <span class="n">_ViewModel</span><span class="p">,</span> <span class="k">value</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">     [省略]</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>UIViewController</code> ではなく <code>ReactiveViewController</code> から派生させてます。この辺もよくあるやり方。<code>IViewFor</code> は、今はスルーで。</p>
+
+<p>バインドは <code>this.OneWayBind</code> で。
+ViewModel の TheGuid プロパティを、View の TheGuidラベルの Text プロパティへ単方向(OneWay)バインドしてます。</p>
+
+<p>TestViewModel の生成は、ここでは Akavache というストレージライブラリの生成を待ってから行っていますが、Akavache を使わない場合は普通に <code>this.ViewModel = new TestViewModel()</code> で OK でしょう。</p>
+
+<p>これで、TestViewModelの生成 → Guidの生成 → vm.TheGuidプロパティへ設定 → vm より TheGuid の変更が通知される → View側のBindingが変更を検知 → Viewのラベルを書き換える、という流れになります。</p>
+
+<h2>ちょっと拡張してみる</h2>
+
+<h3>双方向バインディング</h3>
+
+<p>ViewModel→View だけでなく、View→ViewModel もやってみましょう。</p>
+
+<p>まず TestViewModel にプロパティを追加します。
+プロパティは <code>MyName</code> とします。
+初期値として &#8220;Enter your name&#8221; とでも設定しましょうか。</p>
+
+<figure class='code'><figcaption><span>TestViewModel.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">namespace</span> <span class="nn">Starter.Core.ViewModels</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'><span class="na">    [DataContract]</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">TestViewModel</span> <span class="p">:</span> <span class="n">ReactiveObject</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">string</span> <span class="n">_TheGuid</span><span class="p">;</span>
+</span><span class='line'><span class="na">        [DataMember]</span> <span class="k">public</span> <span class="kt">string</span> <span class="n">TheGuid</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_TheGuid</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="n">RaiseAndSetIfChanged</span><span class="p">(</span><span class="k">ref</span> <span class="n">_TheGuid</span><span class="p">,</span> <span class="k">value</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">string</span> <span class="n">_myName</span><span class="p">;</span>
+</span><span class='line'><span class="na">        [DataMember]</span> <span class="k">public</span> <span class="kt">string</span> <span class="n">MyName</span> <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_myName</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>            <span class="k">set</span> <span class="p">{</span> <span class="k">this</span><span class="p">.</span><span class="n">RaiseAndSetIfChanged</span><span class="p">(</span><span class="k">ref</span> <span class="n">_myName</span><span class="p">,</span> <span class="k">value</span><span class="p">);</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">TestViewModel</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">TheGuid</span> <span class="p">=</span> <span class="n">Guid</span><span class="p">.</span><span class="n">NewGuid</span><span class="p">().</span><span class="n">ToString</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">MyName</span> <span class="p">=</span> <span class="s">&quot;Enter your name&quot;</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>次に Interface Builder で TestViewController に、UITextField と UILabel を追加し、Outlet を &#8220;MyText&#8221;, &#8220;MyLabel&#8221; とします。これで Xamarin.iOS から <code>MyText</code>, <code>MyLabel</code> でインスタンスにアクセスできるはず、ですよね。</p>
+
+<p><code>MyText</code>, <code>MyLabel</code> に、vm.MyName をバインドします。</p>
+
+<figure class='code'><figcaption><span>TestViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">namespace</span> <span class="nn">Starter.Views</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">TestViewController</span> <span class="p">:</span> <span class="n">ReactiveViewController</span><span class="p">,</span> <span class="n">IViewFor</span><span class="p">&lt;</span><span class="n">TestViewModel</span><span class="p">&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'><span class="na">     [省略]</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">OneWayBind</span><span class="p">(</span><span class="n">ViewModel</span><span class="p">,</span> <span class="n">vm</span> <span class="p">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">TheGuid</span><span class="p">,</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">TheGuid</span><span class="p">.</span><span class="n">Text</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Bind</span><span class="p">(</span><span class="n">ViewModel</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">MyName</span><span class="p">,</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">MyText</span><span class="p">.</span><span class="n">Text</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">OneWayBind</span><span class="p">(</span><span class="n">ViewModel</span><span class="p">,</span> <span class="n">vm</span> <span class="p">=&gt;</span> <span class="n">vm</span><span class="p">.</span><span class="n">MyName</span><span class="p">,</span> <span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">MyLabel</span><span class="p">.</span><span class="n">Text</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="n">ViewModel</span> <span class="p">=</span> <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">GetOrCreateObject</span><span class="p">(</span><span class="s">&quot;TestViewModel&quot;</span><span class="p">,</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="k">new</span> <span class="nf">TestViewModel</span><span class="p">();</span>
+</span><span class='line'>            <span class="p">});</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">     [省略]</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>編集できる <code>MyText</code> は <code>this.Bind</code> を使って双方向バインドします。プロパティの値を表示するだけの <code>MyLabel</code> は、 <code>this.OneWayBind</code> で。</p>
+
+<p>これで動かしてみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_02.gif" alt="" /></p>
+
+<p>UITextField への入力が、vm.MyName へ適用され、その変更を MyLabel に表示させる、という流れです。</p>
+
+<p>今日はこの辺で。まだ全然 Reactive じゃないですが、次回以降、Command の実装やバインディングについて試してみようと思います。</p>
+
+<p>ここまでのコードは、</p>
+
+<ul>
+<li>https://github.com/amay077/starter-mobile/tree/N_plus_1</li>
+</ul>
+
+
+<p>に置いておきます。徐々に進化させていこうと思います。</p>
+
+
+      <h4>Ads</h4>
+      <script type="text/javascript"><!--
+      amazon_ad_tag = "oku2008-22"; amazon_ad_width = "728"; amazon_ad_height = "90"; amazon_ad_link_target = "new"; amazon_ad_border = "hide"; amazon_color_border = "3383E9"; amazon_color_text = "5A5E5F"; amazon_color_link = "3383E9"; amazon_color_price = "3383E9"; amazon_color_logo = "FDFDFD";//--></script>
+      <script type="text/javascript" src="http://ir-jp.amazon-adsystem.com/s/ads.js"></script>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/" data-via="amay077" data-counturl="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/02/11/introduce-quickcross/" title="Previous Post: MvvmCross だけじゃない！クロスプラットフォームMVVMフレームワーク「QuickCross」を試す">&lt; MvvmCross だけじゃない！クロスプラットフォームMVVMフレームワーク「QuickCross」を試す</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2014/02/27/make-shoddy-colorpicker/" title="Next Post: 手抜きカラー選択ダイアログを作る">手抜きカラー選択ダイアログを作る &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2014 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/';
+        var disqus_url = 'http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

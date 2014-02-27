@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: MVVM | Experiments Never Fail]]></title>
+  <link href="http://amay077.github.io/blog/categories/mvvm/atom.xml" rel="self"/>
+  <link href="http://amay077.github.io/"/>
+  <updated>2014-02-27T21:43:13+09:00</updated>
+  <id>http://amay077.github.io/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる]]></title>
+    <link href="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/"/>
+    <updated>2014-02-27T21:34:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>ReactiveUI は、Reactive Extensions を全面的に取り入れた クロスプラットフォームな MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
+</ul>
+
+
+<p>作者は GitHub の中の人 <a href="http://twitter.com/xpaulbettsx">Paul Betts</a> 氏、<a href="http://xamarin.com/mvp">Xamarin の MVP</a> でもあります。</p>
+
+<p>元々は WPF, Silverlight, WinRT, Windows Phone に対応していましたが、Xamarin.iOS や Xamarin.Android, Xamarin.Mac にも <a href="http://blog.paulbetts.org/index.php/2013/03/12/reactiveui-4-5-is-released/">対応が進んで来た</a> ので、使ってみる事にしました。</p>
+
+<p>Visual Studio + WPF 等なら、nuget から取得できて楽なんでしょうけども、なにせ Mac なので、Xamarin Studio のみでいきます。</p>
+
+<h2>とりあえず使ってみる</h2>
+
+<p>Github が公開した <a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub's Xamarin starter apps</a>, これに ReactiveUI も含まれているので、こちらを Clone して Xamarin Studio で開いてビルド、すぐ動きます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_01.png" alt="" /></p>
+
+<p>これ、ViewModel側で UUID を生成して、View側の Label にバインドしているのですが、何ともシンプル過ぎて…。</p>
+
+<p>それでもこのフレームワークの構成を知るには十分です。</p>
+
+<h2>ReactiveUI に必要なもの</h2>
+
+<p>ソリューションツリーを見ると次の4つのプロジェクトがあります。</p>
+
+<ul>
+<li>Starter-Core-Android</li>
+<li>Starter-Core-iOS</li>
+<li>Starter-Android</li>
+<li>Starter-iOS</li>
+</ul>
+
+
+<h3>ViewModel-Model層</h3>
+
+<p>Starter-Core-xxx は、ディレクトリ的には同じ場所にあり、Android用とiOS用のプロジェクトファイル(.csproj)が用意してあるだけです。ここはアプリケーションの ViewModel-Model層になります。PCL化はされていないようですね(その内、とサイトに書いてありました)。</p>
+
+<p>サンプルで用意されてる ViewModel を見てみます。</p>
+
+<p>```csharp TestViewModel.cs
+using System;
+using ReactiveUI;
+using System.Runtime.Serialization;</p>
+
+<p>namespace Starter.Core.ViewModels
+{</p>
+
+<pre><code>[DataContract]
+public class TestViewModel : ReactiveObject
+{
+    string _TheGuid;
+    [DataMember] public string TheGuid {
+        get { return _TheGuid; }
+        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
+    }
+
+    public TestViewModel()
+    {
+        TheGuid = Guid.NewGuid().ToString();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>MvvmCross とか、他の MVVM-FW とだいたい同じですね(そりゃそうだ)。
+基底クラスの <code>ReactiveObject</code> が、BaseViewModel的な役割をします。(が、Reactive を冠しているだけに、随所で Rx の力が発揮される、はずです←まだ分かってない)</p>
+
+<p>このコードでは、TestViewModel の生成と同時に、Guid を生成して、<code>TheGuid</code> プロパティに設定しています。</p>
+
+<h3>View層</h3>
+
+<p>Starter-Android, Starter-iOS はそれぞれの View層になります。</p>
+
+<p>Starter-iOS の TestViewController.cs を見てみます。</p>
+
+<p>```csharp TestViewController.cs
+namespace Starter.Views
+{</p>
+
+<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
+{
+    [省略]
+
+    public override async void ViewDidLoad()
+    {
+        base.ViewDidLoad();
+        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
+
+        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
+            return new TestViewModel();
+        });
+    }
+
+    TestViewModel _ViewModel;
+    public TestViewModel ViewModel {
+        get { return _ViewModel; }
+        set { this.RaiseAndSetIfChanged(ref _ViewModel, value); }
+    }
+
+    [省略]
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>UIViewController</code> ではなく <code>ReactiveViewController</code> から派生させてます。この辺もよくあるやり方。<code>IViewFor</code> は、今はスルーで。</p>
+
+<p>バインドは <code>this.OneWayBind</code> で。
+ViewModel の TheGuid プロパティを、View の TheGuidラベルの Text プロパティへ単方向(OneWay)バインドしてます。</p>
+
+<p>TestViewModel の生成は、ここでは Akavache というストレージライブラリの生成を待ってから行っていますが、Akavache を使わない場合は普通に <code>this.ViewModel = new TestViewModel()</code> で OK でしょう。</p>
+
+<p>これで、TestViewModelの生成 → Guidの生成 → vm.TheGuidプロパティへ設定 → vm より TheGuid の変更が通知される → View側のBindingが変更を検知 → Viewのラベルを書き換える、という流れになります。</p>
+
+<h2>ちょっと拡張してみる</h2>
+
+<h3>双方向バインディング</h3>
+
+<p>ViewModel→View だけでなく、View→ViewModel もやってみましょう。</p>
+
+<p>まず TestViewModel にプロパティを追加します。
+プロパティは <code>MyName</code> とします。
+初期値として "Enter your name" とでも設定しましょうか。</p>
+
+<p>```csharp TestViewModel.cs
+namespace Starter.Core.ViewModels
+{</p>
+
+<pre><code>[DataContract]
+public class TestViewModel : ReactiveObject
+{
+    string _TheGuid;
+    [DataMember] public string TheGuid {
+        get { return _TheGuid; }
+        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
+    }
+
+    string _myName;
+    [DataMember] public string MyName {
+        get { return _myName; }
+        set { this.RaiseAndSetIfChanged(ref _myName, value); }
+    }
+
+    public TestViewModel()
+    {
+        TheGuid = Guid.NewGuid().ToString();
+
+        this.MyName = "Enter your name";
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に Interface Builder で TestViewController に、UITextField と UILabel を追加し、Outlet を "MyText", "MyLabel" とします。これで Xamarin.iOS から <code>MyText</code>, <code>MyLabel</code> でインスタンスにアクセスできるはず、ですよね。</p>
+
+<p><code>MyText</code>, <code>MyLabel</code> に、vm.MyName をバインドします。</p>
+
+<p>```csharp TestViewController.cs
+namespace Starter.Views
+{</p>
+
+<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
+{
+    [省略]
+
+    public override async void ViewDidLoad()
+    {
+        base.ViewDidLoad();
+        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
+
+        this.Bind(ViewModel, vm=&gt; vm.MyName, v =&gt; v.MyText.Text);
+        this.OneWayBind(ViewModel, vm =&gt; vm.MyName, v =&gt; v.MyLabel.Text);
+
+        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
+            return new TestViewModel();
+        });
+    }
+
+    [省略]
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>編集できる <code>MyText</code> は <code>this.Bind</code> を使って双方向バインドします。プロパティの値を表示するだけの <code>MyLabel</code> は、 <code>this.OneWayBind</code> で。</p>
+
+<p>これで動かしてみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_02.gif" alt="" /></p>
+
+<p>UITextField への入力が、vm.MyName へ適用され、その変更を MyLabel に表示させる、という流れです。</p>
+
+<p>今日はこの辺で。まだ全然 Reactive じゃないですが、次回以降、Command の実装やバインディングについて試してみようと思います。</p>
+
+<p>ここまでのコードは、</p>
+
+<ul>
+<li>https://github.com/amay077/starter-mobile/tree/N_plus_1</li>
+</ul>
+
+
+<p>に置いておきます。徐々に進化させていこうと思います。</p>
+]]></content>
+  </entry>
+  
+</feed>
