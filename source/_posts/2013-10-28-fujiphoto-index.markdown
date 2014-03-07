@@ -3,11 +3,35 @@ layout: post
 title: "富士フォトというアプリをリリースしました"
 date: 2013-10-28 18:22
 comments: true
-categories: [Android, MA9]
+categories: [Android, iOS, MA9]
 ---
 富士山の撮影スポットを探して、そこへ案内するアプリです。
 <!--more-->
+
+### Android 版はこちら
+
 [![img1](https://dl.dropboxusercontent.com/u/264530/qiita/fujiphoto_00.png)](https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto)
+
+### iPhone版はこちら
+
+<iframe src="http://spsns.net/tools/app.php?url=https://itunes.apple.com/jp/app/fu-shifoto/id806913229" frameborder="0" width="450" height="250"></iframe>
+
+## 受賞しました！
+
+[マッシュアップアワード9(MA9)](http://ma9.mashupaward.jp/) にて
+
+* [ピーシーフェーズ株式会社賞](http://mashupawards.tumblr.com/post/67725217749/3-ma9)
+* [いのしし一頭（finder）賞](http://fin.der.jp/2013/11/ma9/)
+
+を受賞しました。
+
+[アーバンデータチャレンジ東京2013](http://aigid.jp/GIS/udct/2013/) にて、
+
+* [自治体特別賞](http://internet.watch.impress.co.jp/docs/column/chizu/20140306_638357.html)
+
+を受賞しました。
+
+## 概要
 
 撮影スポットは、静岡県が提供している「ふじのくにオープンデータ」の「[富士山ビューポイント](http://open-data.pref.shizuoka.jp/htdocs/index.php?action=pages_view_main&active_action=multidatabase_view_main_detail&content_id=33&multidatabase_id=2&block_id=15#_15)」を使用しています。
 
