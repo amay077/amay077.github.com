@@ -4,7 +4,7 @@
   <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-07T16:25:20+09:00</updated>
+  <updated>2014-03-10T22:12:07+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
+    <link href="http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin/"/>
+    <updated>2014-03-10T22:09:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin</id>
+    <content type="html"><![CDATA[<p>なんか割とニーズがあるみたいで。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://teapipin.blog10.fc2.com/blog-entry-224.html">【Objective-C】アラート（UIAlertView）でボタンを押すまで次の処理を待つ方法 - creativi.tea</a></li>
+<li><a href="http://cocoadays.blogspot.jp/2011/05/ios.html">Cocoaの日々: [iOS] 非同期処理を同期処理に変える</a></li>
+<li><a href="http://qiita.com/edo_m18/items/cb1d9061d91e572b58eb">[Objective-C] UIAlertViewを同期処理する - Qiita </a></li>
+</ul>
+
+
+<h2>Objective-C の場合</h2>
+
+<p><code>UIAlertView</code> は、結果を受け取るのが deletgate で、 Objective-C では、(Blocks を使わなければ) 受け取りが別メソッドになってしまう、しかも複数のアラートの結果が同じメソッドに飛んでくるので、tag値で分岐…とかいろいろで、ホントに使うのが面倒ですね。</p>
+
+<p>さらに、「アラートの結果を受け取ってから、次の処理を行う」という処理を素直に記述したいと思うと、上で示したような「アラートを表示して、結果が得られるまで while で待つ」というなんとも不格好なコードになってしまいます。下にも書いてみました。（あ、メンバ変数も使わざるを得ないし。）</p>
+
+<p>```objective-c HogeViewController.m
+@implementation HogeViewController {</p>
+
+<pre><code>NSInteger _buttonIndex;
+</code></pre>
+
+<p>}</p>
+
+<ul>
+<li>(IBAction)buttonTouchUp:(id)sender
+{
+  UIAlertView *alert = [[UIAlertView alloc] initWithTitle:nil
+
+<pre><code>                          message:NSLocalizedString(@"なにか押して",@"")
+                         delegate:self
+                cancelButtonTitle:@"Cancel"
+                otherButtonTitles:@"OK", nil];
+</code></pre>
+
+<p>  [alert show];</p>
+
+<p>  // ボタンが押されるまで待つ
+  <em>buttonIndex = -1;
+  while (</em>buttonIndex == -1) {</p>
+
+<pre><code>  [[NSRunLoop currentRunLoop]
+   runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5f]]; // 0.5秒
+</code></pre>
+
+<p>  }</p>
+
+<p>  label1.text = [NSString stringWithFormat:@"%d 番目のボタンを押したね", (int)_buttonIndex];
+}</p></li>
+</ul>
+
+
+<p>-(void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{</p>
+
+<pre><code>_buttonIndex = buttonIndex;
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>[NSRunLoop runUntilDate]</code> なんて VB6 の <code>DoEvents</code> ですもんねなつかしい。</p>
+
+<h2>Xamarin.iOS(C#) の場合</h2>
+
+<p>Objective-C ではややこしかった「アラートを出す→ボタンを押す→次の処理へ」という流れ、 Xamarin.iOS と C# ならこんなにシンプルに書けます。</p>
+
+<p>```csharp HogeViewController.cs
+async void OnButtonTouch(object sender, EventArgs e)
+{</p>
+
+<pre><code>var buttonIndex = await MsgBox("", "なにか押して", "Cancel", "OK");
+label1.Text = buttonIndex.ToString() + "番目を押したね";  
+</code></pre>
+
+<p>}</p>
+
+<p>static Task<int> MsgBox(string title, string message,</p>
+
+<pre><code>string cancelButtonTitle, params string[] buttons)
+</code></pre>
+
+<p>{</p>
+
+<pre><code>var comp = new TaskCompletionSource&lt;int&gt;();
+
+var alert = new UIAlertView(title, message, null, cancelButtonTitle, buttons);
+alert.Clicked += (_, e) =&gt; comp.TrySetResult(e.ButtonIndex);
+alert.Show();
+
+return comp.Task;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>VB6 が懐かしくて <code>MsgBox</code> ってメソッドにしちゃいましたよ。</p>
+
+<p><code>MsgBox</code> は、Task を返す <strong>非同期な</strong> メソッドです。この非同期処理が終了するのは、<code>TaskCompletionSource.TrySetResult</code> が呼び出された時、つまりアラートのボタンが押された時です。この非同期処理の戻り値はもちろん押したボタンのインデックスです。</p>
+
+<p>非同期メソッドである <code>MsgBox</code> を呼び出す側には、キーワード <code>await</code> が付いています。
+これをつけると、次行以降の処理は、非同期の MsgBox が完了した後、順次実行されます、つまり待っているわけではなく、どちらかというと、 <strong>処理を後続に付け足す</strong> 感じ。
+さらに、この後続処理はUIスレッドで実行されるので、UIパーツへのアクセスも問題ありません。</p>
+
+<p><code>async</code> はメソッド内で <code>await</code> を使うときにつけるお約束。</p>
+
+<p>async/await は一見、ただの同期処理に見えるので理解して使う必要がありますが、Objective-C のコードに比べて、とても簡潔に、流れるように書くことができるのが分かると思います。</p>
+
+<p><strong>C# の非常に強力な言語機能は、<a href="https://xamarin.com/">Xamarin</a> を選択する大きな理由の一つです。</strong></p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4613071/messagebox-show-and-dialogresult-equivalent-in-monotouch">c# - Messagebox.Show and DialogResult equivalent in MonoTouch - Stack Overflow</a></li>
+<li><a href="http://ufcpp.wordpress.com/2012/11/12/asyncawait%e3%81%a8%e5%90%8c%e6%99%82%e5%ae%9f%e8%a1%8c%e5%88%b6%e5%be%a1/">async/awaitと同時実行制御 | ++C++; // 未確認飛行 C ブログ</a></li>
+<li><a href="http://www.slideshare.net/bleistift/asyncawait2">async/await不要論</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
@@ -558,62 +686,6 @@ iOS と Android で「ざっくりとは同じでしょ？」などと思って�
 <li><a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Objective-C の Dictionary は、キーに基本データ型が使えないのね ]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/28/cannot-using-int-type-in-objc-dictionary/"/>
-    <updated>2014-01-28T15:49:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/28/cannot-using-int-type-in-objc-dictionary</id>
-    <content type="html"><![CDATA[<p>Obj-C 慣れないもので、こんな所でハマってた。
-くやしいので他の言語と比較しておく。
-当然ながら Dictionary に限った話でない（はず）。</p>
-
-<!--more-->
-
-
-<h3>Objective-C</h3>
-
-<p><code>obj-c Objective-C
-NSMutableDictionary* dic = [[NSMutableDictionary alloc] init];
-[dic setObject:@"hoge" forKey:[NSNumber numberWithInt:1]]; // これは OK
-[dic setObject:@"huga" forKey:@1]; // これも OK (@1 は NSNumber のリテラル構文なので)
-[dic setObject:@"piyo" forKey:2]; // これはダメ（落ちる
-</code></p>
-
-<p>キーと値が他の言語と逆なのにまずハマって、
-キーに int型 の値を入れてたのに気づかずまたハマった。
-せめてコンパイルエラーにして欲しいよ。
-言語仕様上、型指定できないのでキーも値もどんな型でも突っ込めちゃう、こわい。</p>
-
-<h3>Java</h3>
-
-<p><code>java Java
-Map&lt;Integer, String&gt; dic = new HashMap&lt;Integer, String&gt;();
-Map&lt;int, String&gt; dic = new HashMap&lt;int, String&gt;(); // これはダメ(コンパイルできない)
-dic.put(Integer.valueOf(1), "hoge"); // OK
-dic.put(2, "piyo"); // これも OK（へー
-</code></p>
-
-<p>int と Integer ってのがあって、int を使って HashMap を宣言できない。
-これはコンパイル時に分かるので良いけど、int と Integer の変換が必要なことがしばしば。</p>
-
-<h3>C＃</h3>
-
-<p><code>csharp C#
-var dic = new Dictionary&lt;int, string&gt;(); // 型推論＆Generic
-dic.Add(1, "hoge"); // OK
-dic.Add(2, "piyo");
-dic.Add(3, "huga");
-</code></p>
-
-<p>一番スッキリ書けますね。
-　
-　
-　</p>
-
-<p>…Xamarin いいよ、Xamarin</p>
 ]]></content>
   </entry>
   

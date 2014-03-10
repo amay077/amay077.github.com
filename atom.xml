@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-07T16:25:20+09:00</updated>
+  <updated>2014-03-10T22:12:07+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,154 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
+    <link href="http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin/"/>
+    <updated>2014-03-10T22:09:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin</id>
+    <content type="html"><![CDATA[<p>なんか割とニーズがあるみたいで。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://teapipin.blog10.fc2.com/blog-entry-224.html">【Objective-C】アラート（UIAlertView）でボタンを押すまで次の処理を待つ方法 - creativi.tea</a></li>
+<li><a href="http://cocoadays.blogspot.jp/2011/05/ios.html">Cocoaの日々: [iOS] 非同期処理を同期処理に変える</a></li>
+<li><a href="http://qiita.com/edo_m18/items/cb1d9061d91e572b58eb">[Objective-C] UIAlertViewを同期処理する - Qiita </a></li>
+</ul>
+
+
+<h2>Objective-C の場合</h2>
+
+<p><code>UIAlertView</code> は、結果を受け取るのが deletgate で、 Objective-C では、(Blocks を使わなければ) 受け取りが別メソッドになってしまう、しかも複数のアラートの結果が同じメソッドに飛んでくるので、tag値で分岐…とかいろいろで、ホントに使うのが面倒ですね。</p>
+
+<p>さらに、「アラートの結果を受け取ってから、次の処理を行う」という処理を素直に記述したいと思うと、上で示したような「アラートを表示して、結果が得られるまで while で待つ」というなんとも不格好なコードになってしまいます。下にも書いてみました。（あ、メンバ変数も使わざるを得ないし。）</p>
+
+<figure class='code'><figcaption><span>HogeViewController.m</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='objective-c'><span class='line'><span class="k">@implementation</span> <span class="nc">HogeViewController</span> <span class="p">{</span>
+</span><span class='line'>    <span class="n">NSInteger</span> <span class="n">_buttonIndex</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">-</span> <span class="p">(</span><span class="kt">IBAction</span><span class="p">)</span><span class="nl">buttonTouchUp:</span><span class="p">(</span><span class="kt">id</span><span class="p">)</span><span class="n">sender</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="n">UIAlertView</span> <span class="o">*</span><span class="n">alert</span> <span class="o">=</span> <span class="p">[[</span><span class="n">UIAlertView</span> <span class="n">alloc</span><span class="p">]</span> <span class="nl">initWithTitle:</span><span class="nb">nil</span>
+</span><span class='line'>                                <span class="nl">message:</span><span class="n">NSLocalizedString</span><span class="p">(</span><span class="s">@&quot;なにか押して&quot;</span><span class="p">,</span><span class="s">@&quot;&quot;</span><span class="p">)</span>
+</span><span class='line'>                               <span class="nl">delegate:</span><span class="n">self</span>
+</span><span class='line'>                      <span class="nl">cancelButtonTitle:</span><span class="s">@&quot;Cancel&quot;</span>
+</span><span class='line'>                      <span class="nl">otherButtonTitles:</span><span class="s">@&quot;OK&quot;</span><span class="p">,</span> <span class="nb">nil</span><span class="p">];</span>
+</span><span class='line'>    <span class="p">[</span><span class="n">alert</span> <span class="n">show</span><span class="p">];</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// ボタンが押されるまで待つ</span>
+</span><span class='line'>    <span class="n">_buttonIndex</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="n">_buttonIndex</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>        <span class="p">[[</span><span class="n">NSRunLoop</span> <span class="n">currentRunLoop</span><span class="p">]</span>
+</span><span class='line'>         <span class="nl">runUntilDate:</span><span class="p">[</span><span class="n">NSDate</span> <span class="nl">dateWithTimeIntervalSinceNow:</span><span class="mf">0.5f</span><span class="p">]];</span> <span class="c1">// 0.5秒</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">label1</span><span class="p">.</span><span class="n">text</span> <span class="o">=</span> <span class="p">[</span><span class="n">NSString</span> <span class="nl">stringWithFormat:</span><span class="s">@&quot;%d 番目のボタンを押したね&quot;</span><span class="p">,</span> <span class="p">(</span><span class="kt">int</span><span class="p">)</span><span class="n">_buttonIndex</span><span class="p">];</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">-</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nl">alertView:</span><span class="p">(</span><span class="n">UIAlertView</span><span class="o">*</span><span class="p">)</span><span class="n">alertView</span> <span class="nl">clickedButtonAtIndex:</span><span class="p">(</span><span class="n">NSInteger</span><span class="p">)</span><span class="n">buttonIndex</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">_buttonIndex</span> <span class="o">=</span> <span class="n">buttonIndex</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>[NSRunLoop runUntilDate]</code> なんて VB6 の <code>DoEvents</code> ですもんねなつかしい。</p>
+
+<h2>Xamarin.iOS(C#) の場合</h2>
+
+<p>Objective-C ではややこしかった「アラートを出す→ボタンを押す→次の処理へ」という流れ、 Xamarin.iOS と C# ならこんなにシンプルに書けます。</p>
+
+<figure class='code'><figcaption><span>HogeViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">async</span> <span class="k">void</span> <span class="nf">OnButtonTouch</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">buttonIndex</span> <span class="p">=</span> <span class="k">await</span> <span class="n">MsgBox</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;なにか押して&quot;</span><span class="p">,</span> <span class="s">&quot;Cancel&quot;</span><span class="p">,</span> <span class="s">&quot;OK&quot;</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">buttonIndex</span><span class="p">.</span><span class="n">ToString</span><span class="p">()</span> <span class="p">+</span> <span class="s">&quot;番目を押したね&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">static</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">MsgBox</span><span class="p">(</span><span class="kt">string</span> <span class="n">title</span><span class="p">,</span> <span class="kt">string</span> <span class="n">message</span><span class="p">,</span>
+</span><span class='line'>    <span class="kt">string</span> <span class="n">cancelButtonTitle</span><span class="p">,</span> <span class="k">params</span> <span class="kt">string</span><span class="p">[]</span> <span class="n">buttons</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">comp</span> <span class="p">=</span> <span class="k">new</span> <span class="n">TaskCompletionSource</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="k">new</span> <span class="n">UIAlertView</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="n">cancelButtonTitle</span><span class="p">,</span> <span class="n">buttons</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">comp</span><span class="p">.</span><span class="n">TrySetResult</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">ButtonIndex</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">Show</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">comp</span><span class="p">.</span><span class="n">Task</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>VB6 が懐かしくて <code>MsgBox</code> ってメソッドにしちゃいましたよ。</p>
+
+<p><code>MsgBox</code> は、Task を返す <strong>非同期な</strong> メソッドです。この非同期処理が終了するのは、<code>TaskCompletionSource.TrySetResult</code> が呼び出された時、つまりアラートのボタンが押された時です。この非同期処理の戻り値はもちろん押したボタンのインデックスです。</p>
+
+<p>非同期メソッドである <code>MsgBox</code> を呼び出す側には、キーワード <code>await</code> が付いています。
+これをつけると、次行以降の処理は、非同期の MsgBox が完了した後、順次実行されます、つまり待っているわけではなく、どちらかというと、 <strong>処理を後続に付け足す</strong> 感じ。
+さらに、この後続処理はUIスレッドで実行されるので、UIパーツへのアクセスも問題ありません。</p>
+
+<p><code>async</code> はメソッド内で <code>await</code> を使うときにつけるお約束。</p>
+
+<p>async/await は一見、ただの同期処理に見えるので理解して使う必要がありますが、Objective-C のコードに比べて、とても簡潔に、流れるように書くことができるのが分かると思います。</p>
+
+<p><strong>C# の非常に強力な言語機能は、<a href="https://xamarin.com/">Xamarin</a> を選択する大きな理由の一つです。</strong></p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://stackoverflow.com/questions/4613071/messagebox-show-and-dialogresult-equivalent-in-monotouch">c# - Messagebox.Show and DialogResult equivalent in MonoTouch - Stack Overflow</a></li>
+<li><a href="http://ufcpp.wordpress.com/2012/11/12/asyncawait%e3%81%a8%e5%90%8c%e6%99%82%e5%ae%9f%e8%a1%8c%e5%88%b6%e5%be%a1/">async/awaitと同時実行制御 | ++C++; // 未確認飛行 C ブログ</a></li>
+<li><a href="http://www.slideshare.net/bleistift/asyncawait2">async/await不要論</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
@@ -3194,129 +3342,6 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 <p>スタッフの方も地元社員の方が中心だったようですが、特に不慣れな様子もなく、子供を常にサポートしてくれました。どうもありがとうございました。</p>
 
 <p>全国に広げられるのかは分かりませんが、小学生(３年以上)のお子さんがおられる方にはおすすめです。近くで開催されたら参加されると良いと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin で Windows Azure モバイルサービスを使う(その2:認証編)]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2/"/>
-    <updated>2013-12-18T00:00:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/18/using-azure-mobile-services-in-xamarin-2</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/40bd5918284fd40d0edc">前回</a> は、Microsoft の BaaS である Azureモバイルサービスをとりあえず使ってみる所まで紹介しました。</p>
-
-<p>今回は、OAuth による認証、Twitter や Facebook でログインする機能について触れてみます。</p>
-
-<!--more-->
-
-
-<p>前回用意したサンプルの続きとして進めます。</p>
-
-<p>認証を組み込むためのチュートリアルはこちら</p>
-
-<ul>
-<li><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-users-xamarin-ios/">Get started with authentication (Xamarin iOS) | Mobile Dev Center</a></li>
-</ul>
-
-
-<p>英語版だからと謝罪してくれるのは Microsoft だけですね。</p>
-
-<h2>1. モバイルサービスに認証を設定する</h2>
-
-<blockquote><p>Register your app for authentication and configure Mobile Services</p></blockquote>
-
-<p>のところです。</p>
-
-<p>まずは https://manage.windowsazure.com にアクセスし、モバイル サービス から、前回作った名前をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_01.png" alt="" /></p>
-
-<p>次に上部メニューからダッシュボードを選択します。表示されるページの左下の方にある「モバイルサービスURL」の値をコピーしておきます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_02.png" alt="" /></p>
-
-<p>次に、どのサービスの認証を利用するかを決めます（Microsoft, Facebook, Twitter, Google）。この説明では Twitter を使うことにします。</p>
-
-<p>Twitter での操作方法は下を開きます。</p>
-
-<ul>
-<li><a href="http://www.windowsazure.com/ja-jp/develop/mobile/how-to-guides/register-for-twitter-authentication/">モバイル サービスでの Twitter ログイン用のアプリケーションの登録</a></li>
-</ul>
-
-
-<p>説明が充実してるので上記に従ってください。要は「コンシューマ キー」と「コンシューマー シークレット」が得られれば OK です。</p>
-
-<p>ではマネージメントポータルの説明に戻ります。</p>
-
-<blockquote><ol>
-<li>Back in the Management Portal</li>
-</ol>
-</blockquote>
-
-<p>です。</p>
-
-<p>上部メニューの ID をクリック、その後、「twitter 設定」に先ほど取得した コンシューマ キー とコンシューマ シークレット を貼り付けて、一番下にある「保存」をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_03.png" alt="" /></p>
-
-<p>続いて、テーブルに権限を与えます</p>
-
-<blockquote><p>Restrict permissions to authenticated users</p></blockquote>
-
-<p>のところ。</p>
-
-<p>まず上部メニューの データ → TodoItem をクリックします。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_04.png" alt="" /></p>
-
-<p>次に、アクセス許可 をクリックし、全ての項目で「認証されたユーザーのみ」を選択します。その後「保存」します。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_05.png" alt="" /></p>
-
-<p>マネージメントポータル側の設定は以上です。
-Twitter での認証設定を追加し、またテーブルには、認証されたユーザーでしかアクセスできない権限を設定しました。</p>
-
-<p>結果、前回動かしたサンプルプログラムはこの設定を行う事で動作しなくなります。(401エラー)</p>
-
-<p>次に Xamarin Studio でコードを変更していきます。</p>
-
-<h2>2. アプリケーションに認証を追加する</h2>
-
-<blockquote><p>Add authentication to the app</p></blockquote>
-
-<p>のところです。</p>
-
-<ol>
-<li>〜 7. まであります。流れは説明通りですが、クラス名や大文字小文字が微妙に違うので注意が必要です。(<code>TodoService</code> は <code>QSTodoService</code> と読み替える必要があるなど)</li>
-</ol>
-
-
-<p>これらを修正したソース２つ <code>QSTodoService.cs</code> と <code>QSTodoListViewController.cs</code> を gist に貼り付けました。</p>
-
-<ul>
-<li><a href="https://gist.github.com/amay077/7960424">gist - QSTodoListViewController.cs and QSTodoService.cs</a></li>
-</ul>
-
-
-<p>修正前との差分が見たい方は <a href="https://gist.github.com/amay077/7960424/revisions">Revisions</a> で見られます。</p>
-
-<p>あ、今回は Twitter なので、
-<code>MobileServiceAuthenticationProvider.MicrosoftAccount</code> を忘れずに
-<code>MobileServiceAuthenticationProvider.Twitter</code> に置き換えてくださいね。</p>
-
-<p>これでコードの修正は終わりです。</p>
-
-<ol>
-<li>動かしてみる</li>
-</ol>
-
-
-<p>さて、iOS シミュレータ で動かしてみましょう。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_2_06.gif" alt="" /></p>
-
-<p>こんな感じで、Twitter による認証機能をアプリに組み込むことができました。</p>
-
-<p>今日は以上です。次回は Push 通知を行ってみます。</p>
 ]]></content>
   </entry>
   
