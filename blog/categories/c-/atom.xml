@@ -4,7 +4,7 @@
   <title><![CDATA[Category: C# | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/c-/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-10T22:12:07+09:00</updated>
+  <updated>2014-03-19T00:35:13+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,109 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ふたつの Iterator を LINQ で]]></title>
+    <link href="http://amay077.github.io/blog/2014/03/19/pair-iterator-implements-by-linq/"/>
+    <updated>2014-03-19T00:33:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/03/19/pair-iterator-implements-by-linq</id>
+    <content type="html"><![CDATA[<p>ふたつの Iterator を LINQ で</p>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/Nagise/20140315/1394884271">ふたつのIterator - プログラマーの脳みそ</a></li>
+</ul>
+
+
+<p>を拝見しました。</p>
+
+<!--more-->
+
+
+<p>コメントで「Zip じゃん」というのがあり、「確かに！」と思ったのでやってみました。</p>
+
+<h2>C＃ の場合</h2>
+
+<p>```csharp
+// using using System.Linq;</p>
+
+<p>var arr1 = new int[] { 1,2,3,4,5 };
+var arr2 = new string[] { "hoge", "fuga", "piyo" };</p>
+
+<p>arr1.Zip(arr2, (x, y) =>  new {x, y})</p>
+
+<pre><code>.ToList()
+.ForEach(Console.WriteLine);
+</code></pre>
+
+<p>```</p>
+
+<h4>結果</h4>
+
+<p><code>
+{ x = 1, y = hoge }
+{ x = 2, y = fuga }
+{ x = 3, y = piyo }
+</code></p>
+
+<p>うむ、シンプル。要素数が違ってても少ない方に合わせてくれます。</p>
+
+<h2>Java の場合</h2>
+
+<p><a href="https://code.google.com/p/reactive4java/">reactive4java</a> というライブラリがありまして、これは Java で Reactive Extensions を実現するライブラリなのですが、LINQ的な機能が <code>Interactive</code> というクラスで提供されています。</p>
+
+<p>これを使うと Zip ができます。</p>
+
+<p>```java
+//import hu.akarnokd.reactive4java.base.Func2;
+//import hu.akarnokd.reactive4java.interactive.Interactive;</p>
+
+<p>Iterable<Integer> array1 = Arrays.asList(1,2,3,4,5);
+Iterable<String> array2 = Arrays.asList("hoge", "fuga", "piyo");</p>
+
+<p>Iterator&lt;Pair&lt;Integer, String>> zippedIter =</p>
+
+<pre><code>    Interactive.zip(array1, array2, 
+            new Func2&lt;Integer, String, Pair&lt;Integer, String&gt;&gt;() {
+@Override
+public Pair&lt;Integer, String&gt; invoke(Integer x, String y) {
+    return new Pair&lt;Integer, String&gt;(x, y);
+}
+</code></pre>
+
+<p>}).iterator();</p>
+
+<p>while (zippedIter.hasNext()) {</p>
+
+<pre><code>Pair&lt;Integer, String&gt; p = zippedIter.next();
+Log.d("StartupActivity", String.format("x=%d, y=%s", p.first, p.second));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ああ、Android で試したので <code>Pair</code> とか使ってしまった。
+普通の Java の場合は自作の Tuple などに置き換えを。</p>
+
+<h4>結果</h4>
+
+<p><code>
+x=1, y=hoge
+x=2, y=fuga
+x=3, y=piyo
+</code></p>
+
+<p>C# より冗長ですけど、いい感じで利用できるのではと思います。</p>
+
+<p>reactive4java が Java8 のラムダ式に対応してくれると、上のコードはもっと簡潔に書けます。</p>
+
+<p><a href="https://code.google.com/p/reactive4java/wiki/Reactive4Java8">Reactive4Java8</a> には、対応してる感じが見られますが、<a href="https://code.google.com/p/reactive4java/">Top ページ</a> によると、どうやら、「reactive4java の開発は終了し、<a href="https://github.com/Netflix/RxJava">RxJava</a> の開発に参加するつもりだ」みたいなことが書いてあります。</p>
+
+<p>また、RxJava でなく reactive4java を使う利点として、<code>Interactive</code> 機能群の存在を挙げています。
+単純に LINQ 的な機能を Java で使いたいならば、 reactive4java はまだまだ役に立つと思います。</p>
+
+<p>最後に、もしあなたが Android 開発をしていて、Java の冗長さに嫌気がさしているなら、<a href="http://xamarin.com/csharp"><strong>Xamarin へどうぞ</strong></a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
@@ -496,111 +599,6 @@ QuickCross は、すべてのソースコードがプロジェクトにあるの
 <p>ただ残念なのは、Nuget の Package Manager Console を使う必要があるために、Visual Studio が必要で、その為には Xamarin も Business Edition 以上が必要になってしまう所です。</p>
 
 <p>Xamarin Studio のみでも使えるくらい Lightweight だったら、もっと試してみたくなるフレームワークです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Objective-C と Java と C# でクロージャ的な書き方の比較]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp/"/>
-    <updated>2014-01-29T15:52:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp</id>
-    <content type="html"><![CDATA[<p>クロージャとかラムダとか匿名** とか名前はいろいろですけど、各言語の書き方と動き（特に変数の扱い）について比べてみました。</p>
-
-<p>ついでに非同期処理の例にもなってしまいました。</p>
-
-<!--more-->
-
-
-<h3>Objective-C</h3>
-
-<p>Blocks を使います。</p>
-
-<p>```objc Obj-C
-int x = 1;
-__block int y = 2;</p>
-
-<p>dispatch_queue_t q_global = dispatch_get_global_queue(0, 0);
-dispatch_async(q_global, ^{</p>
-
-<pre><code>x = 10; // できない(コンパイルエラー
-y = 20; // できる
-
-int z = x + y;
-
-[self dispValue:z]; // self の参照カウンタが+1される
-</code></pre>
-
-<p>});
-```</p>
-
-<p>普通に宣言した変数を Block の中で使うと、自動的に「キャプチャ」され、変数の複製される。この変数には、 Block 内では代入できずコンパイルエラーとなる。
-<code>__block</code> を付けた変数は、Block 内外で同じ実体を参照でき、代入もできる。
-<code>self</code> やプロパティを Block 内で使用すると参照カウンタがインクリメントされ、明示的に release しないとリークする。
-あるいは、Block 外で <code>__weak</code> を付けた変数に代入しておくと、これは参照カウンタがインクリメントされない。</p>
-
-<h3>Java 6 (Android ベースなので…)</h3>
-
-<p>匿名クラスです。</p>
-
-<p>```java Java
-int x = 1;
-final int y = 2;</p>
-
-<p>ExecutorService executor = Executors.newSingleThreadExecutor();
-executor.submit(new Runnable() {</p>
-
-<pre><code>@Override
-public void run() {
-    y = 20; // できない(コンパイルエラー
-    int z = x + y; // できない(コンパイルエラー
-
-    String typeName = this.getClass().getInterfaces()[0].getName(); // Runnable になる
-}
-</code></pre>
-
-<p>});
-```</p>
-
-<p>Java は匿名クラスの実装中に使える変数はかなり制限がある。
-普通に宣言した変数は、匿名クラス内では使えない(コンパイルエラー)。
-<code>final</code> を付けて宣言した変数は、匿名クラス内では参照のみ可能。ちょうど Objective-C の通常変数を Block 内で使った時と同じ。
-Obj-C の <code>self</code> にあたる <code>this</code> は匿名クラス内では、その匿名クラスを示す。</p>
-
-<h3>C＃</h3>
-
-<p>ラムダ式です。</p>
-
-<p>```csharp C#
-int x = 1;
-const int y = 2;
-Task.Factory.StartNew(() =>
-{</p>
-
-<pre><code>x = 10; // OK
-y = 20; // これはダメ、const だから。
-var z = x + y;
-
-var typeName = this.GetType().Name;
-</code></pre>
-
-<p>});
-```</p>
-
-<p>C# はかなりゆる〜い印象。
-普通に宣言した変数を、ラムダ式の中でも自由に read/write できてしまう。write できちゃうのはこわい。
-<code>this</code> は、ラムダ式の外側のクラスを示す。
-　</p>
-
-<h2>所感</h2>
-
-<p>個人的には、Java のガチガチなのが好きかも。できる事が限定されているのでミスしにくい。
-Objective-C は、ローカル変数は良いけど、self とか使っちゃうミス起こしそう。
-C# は、普通に書き換えられて超不安、という感じ。なるべく const 使うようにしたい。
-　
-　
-　</p>
-
-<p>しかし記述量は C# が一番少ないですね、Xamarin いいよ Xamarin。。。</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-10T22:12:07+09:00</updated>
+  <updated>2014-03-19T00:35:13+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,133 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ふたつの Iterator を LINQ で]]></title>
+    <link href="http://amay077.github.io/blog/2014/03/19/pair-iterator-implements-by-linq/"/>
+    <updated>2014-03-19T00:33:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/03/19/pair-iterator-implements-by-linq</id>
+    <content type="html"><![CDATA[<p>ふたつの Iterator を LINQ で</p>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/Nagise/20140315/1394884271">ふたつのIterator - プログラマーの脳みそ</a></li>
+</ul>
+
+
+<p>を拝見しました。</p>
+
+<!--more-->
+
+
+<p>コメントで「Zip じゃん」というのがあり、「確かに！」と思ったのでやってみました。</p>
+
+<h2>C＃ の場合</h2>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// using using System.Linq;</span>
+</span><span class='line'>
+</span><span class='line'><span class="kt">var</span> <span class="n">arr1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span> <span class="p">};</span>
+</span><span class='line'><span class="kt">var</span> <span class="n">arr2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;hoge&quot;</span><span class="p">,</span> <span class="s">&quot;fuga&quot;</span><span class="p">,</span> <span class="s">&quot;piyo&quot;</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">arr1</span><span class="p">.</span><span class="n">Zip</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span>  <span class="k">new</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">})</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">ToList</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>結果</h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">hoge</span> <span class="p">}</span>
+</span><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">fuga</span> <span class="p">}</span>
+</span><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">piyo</span> <span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>うむ、シンプル。要素数が違ってても少ない方に合わせてくれます。</p>
+
+<h2>Java の場合</h2>
+
+<p><a href="https://code.google.com/p/reactive4java/">reactive4java</a> というライブラリがありまして、これは Java で Reactive Extensions を実現するライブラリなのですが、LINQ的な機能が <code>Interactive</code> というクラスで提供されています。</p>
+
+<p>これを使うと Zip ができます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//import hu.akarnokd.reactive4java.base.Func2;</span>
+</span><span class='line'><span class="c1">//import hu.akarnokd.reactive4java.interactive.Interactive;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">array1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">);</span>
+</span><span class='line'><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">array2</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">,</span> <span class="s">&quot;fuga&quot;</span><span class="o">,</span> <span class="s">&quot;piyo&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">zippedIter</span> <span class="o">=</span>
+</span><span class='line'>      <span class="n">Interactive</span><span class="o">.</span><span class="na">zip</span><span class="o">(</span><span class="n">array1</span><span class="o">,</span> <span class="n">array2</span><span class="o">,</span>
+</span><span class='line'>              <span class="k">new</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">,</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;()</span> <span class="o">{</span>
+</span><span class='line'>  <span class="nd">@Override</span>
+</span><span class='line'>  <span class="kd">public</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">invoke</span><span class="o">(</span><span class="n">Integer</span> <span class="n">x</span><span class="o">,</span> <span class="n">String</span> <span class="n">y</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>      <span class="k">return</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
+</span><span class='line'>  <span class="o">}</span>
+</span><span class='line'><span class="o">}).</span><span class="na">iterator</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">while</span> <span class="o">(</span><span class="n">zippedIter</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">zippedIter</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
+</span><span class='line'>  <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="s">&quot;StartupActivity&quot;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;x=%d, y=%s&quot;</span><span class="o">,</span> <span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">,</span> <span class="n">p</span><span class="o">.</span><span class="na">second</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ああ、Android で試したので <code>Pair</code> とか使ってしまった。
+普通の Java の場合は自作の Tuple などに置き換えを。</p>
+
+<h4>結果</h4>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">hoge</span>
+</span><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">2</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">fuga</span>
+</span><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">piyo</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>C# より冗長ですけど、いい感じで利用できるのではと思います。</p>
+
+<p>reactive4java が Java8 のラムダ式に対応してくれると、上のコードはもっと簡潔に書けます。</p>
+
+<p><a href="https://code.google.com/p/reactive4java/wiki/Reactive4Java8">Reactive4Java8</a> には、対応してる感じが見られますが、<a href="https://code.google.com/p/reactive4java/">Top ページ</a> によると、どうやら、「reactive4java の開発は終了し、<a href="https://github.com/Netflix/RxJava">RxJava</a> の開発に参加するつもりだ」みたいなことが書いてあります。</p>
+
+<p>また、RxJava でなく reactive4java を使う利点として、<code>Interactive</code> 機能群の存在を挙げています。
+単純に LINQ 的な機能を Java で使いたいならば、 reactive4java はまだまだ役に立つと思います。</p>
+
+<p>最後に、もしあなたが Android 開発をしていて、Java の冗長さに嫌気がさしているなら、<a href="http://xamarin.com/csharp"><strong>Xamarin へどうぞ</strong></a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
@@ -3220,128 +3347,6 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 <p>それはともかく、何かトラブルがあると Xamarin のようなネイティブに皮を被せてるプラットフォームは途端に不安になります。どこに原因があるのか追求しづらいから。</p>
 
 <p>今回も、コードの修正後、いきなりアプリが落ちるようになって、まずα版を使っていたのでそれを疑って stable に戻して、次に実機が悪いのかとシミュレータで動かしてみたり、いろいろ試行錯誤してやっとチュートリアルの誤記だと分かったり。まだノウハウが無いといえばそれまで、α版が自己責任なのはその通りですが、イレギュラー時のリスクはあるなあと思いました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[家族ロボット教室に参加してきました]]></title>
-    <link href="http://amay077.github.io/blog/2013/12/18/report-of-oyako-robot-kyoshitsu/"/>
-    <updated>2013-12-18T20:23:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2013/12/18/report-of-oyako-robot-kyoshitsu</id>
-    <content type="html"><![CDATA[<p><a href="http://jp.fujitsu.com/group/fct/contribution/familyrobot-1/2013/1214.html">第一回 家族ロボット教室 in ここにこ</a> に参加してきました。</p>
-
-<!--more-->
-
-
-<p>少し前に ここにこ へ行ったときに掲示してあったのを見かけて、小３の子供に「これ、行きたい？」と聞いたら「行く行く！」と乗り気だったので、その熱が冷めない内に申し込みました。</p>
-
-<h2>どんなことをするの？</h2>
-
-<p><a href="http://education.lego.com/ja-jp/preschool-and-school/secondary/mindstorms-education-ev3/">レゴ マインドストーム EV3</a> という教材を使います。</p>
-
-<p>ググると２足歩行ロボットみたいなのが出てきますが、使ったのはもう少し簡素なロボットというよりは車のようなタイプのものでした。</p>
-
-<p>前半はロボットの組み立て、後半はパソコンでプログラミングをします。</p>
-
-<h3>ロボットを組み立てる</h3>
-
-<p>ロボットの組み立ては、設計図通りにパーツを組み立てていくものです。パーツは大きめなので小３の子でも問題なく組み立てられました。一部難しいところは事前にスタッフの方が組み立ててくれていました。</p>
-
-<p>こちらは組立中の様子、さっそく熱中しています。</p>
-
-<p><img src="http://distilleryimage9.ak.instagram.com/fdf49ff4647a11e3a076122b2a59491d_8.jpg" alt="" /></p>
-
-<p>そしてロボット完成。</p>
-
-<p><img src="http://distilleryimage11.ak.instagram.com/6fe17c9a647b11e3aa520e5d6fd881bf_8.jpg" alt="" /></p>
-
-<p>ロボットには、タイヤと、左右独立したモーター、フロント上部にタッチセンサー、フロント下部に光センサーが付いています。中央にあるのが心臓部です。</p>
-
-<h3>プログラミングしてロボットを動かす</h3>
-
-<p>さて次にいよいよプログラミングです。
-ノートパソコンは１人１台用意してあり、プログラミングに使うソフトウェアも起動済みです。</p>
-
-<p><img src="http://distilleryimage2.ak.instagram.com/3eac6e78647b11e3aeb912af24c9b212_8.jpg" alt="" /></p>
-
-<p>富士通主催ですから当然PCも富士通の、OS は XP ですね。。。</p>
-
-<p>プログラミングと言っても Java とか C とか「記述する」ものではなく、命令がブロックになっていて、それを繋いでいきます。</p>
-
-<p>ブロックには、</p>
-
-<ul>
-<li>モーターを動かす</li>
-<li>ステアリング</li>
-<li>タッチセンサーを使う</li>
-<li>光センサーを使う</li>
-<li>ループ（繰り返す）</li>
-</ul>
-
-
-<p>などがあり、「モーターを動かす」には、左右どちらか・回転数・速さ、ステアリングには回転角度などのパラメータがあります。</p>
-
-<p>USBケーブルでパソコンとロボットを接続し、プログラムを転送して、ロボットの方で「スタート」するとプログラムが実行される仕組みです。</p>
-
-<p>プログラミングのパートでは、講師のスタッフの方から度々「お題」が出され、受講生が自分で考えてプログラミングをしていきます。</p>
-
-<p>お題は、「まっすぐ走って少し曲がる」という簡単なものから、「ジグザグ走行する」「黒い線まで進んでバックする」など難易度が上がっていきます。</p>
-
-<p>ウチの子も自分で組み立てた命令通りにロボットが動くのが楽しかったらしく、とても熱中していました。たまに躓いたりしましたが、サポートしてくれるスタッフの方や私のヒントを得て、自分で考えてプログラミングしていました。</p>
-
-<p>最終課題は、「カベにぶつかったら反転して黒い線に沿ってゴールまで走る」というお題でタイムレースです。</p>
-
-<p>プログラムを作って転送して走らせ、うまく行かなかったらプログラムを見なおして修正、また転送して走らせる。何度も繰り返してやっと期待した動きをするようになりました。</p>
-
-<p><img src="http://distilleryimage1.ak.instagram.com/98679bf4647b11e3904b12c0ac24ae25_8.jpg" alt="" /></p>
-
-<p>そしてタイムトライアルの結果は、２位！
-本人も大変満足気でした。</p>
-
-<p>最後は全員で記念撮影して終わり。
-すこし予定時間をオーバーしていましたが、誰も帰りたそうなそぶりを見せない程、みんな熱中していました。</p>
-
-<h2>親としての感想</h2>
-
-<p>私もプログラムが大好きで、仕事でも趣味でもしているくらいなので、子供に何とかこの楽しさを伝えたい、と常々思っていた所に、このような機会があって参加してみてとても良かったです。</p>
-
-<p>途中で飽きたりしないか心配でしたが、始まってみるとそんな心配は杞憂で、最後まで熱中して参加していました。
-これで子供が「ものづくりの楽しさ」を少しでも感じてもらえたらいいなあ、と思います。</p>
-
-<p>このブログのタイトル「Experiments Never Fail」は、「試すということに失敗などない（＝失敗を恐れるな）」という意味ですが、これは自分の座右の銘であり子供に伝えたいことでもあります。
-今回の教室を通じて、それを感じてもらえたかなあ、と思います。</p>
-
-<h2>レゴ マインドストーム についての感想</h2>
-
-<p>教育用とうたっている通り、大変良いプロダクトだと思いました。</p>
-
-<p>パーツを組み立ててモノを作るハードウェアの側面と、プログラミングをして動かすというソフトウェアの側面が両立しています。</p>
-
-<p>特にプログラミングの方。</p>
-
-<p>応用的な動きをさせるにはまず「ループ」を配置するんですね。次にそのループの離脱条件を組み込みます（例：タッチセンサーにモノが触れたら）。
-これってまさに一般的なプログラミングでいう「メインループ」だよなあ、と。
-そのループの中で、ロボットに命令を実行させたり、逆にロボットからの通知で条件分岐したり。</p>
-
-<p>プログラミングの基本は十分にまなべる教材だと思いました。</p>
-
-<p>自宅に帰ってからさっそく「今日使ったロボット欲しい」と言われ、値段を調べたらギョッ！としましたが（<sup>_<sup>;）</sup></sup>
-もうちょっと手頃な価格帯で、代替品を探したいと思います。</p>
-
-<h2>家族ロボット教室 について</h2>
-
-<p>家族ロボット教室は、富士通コンピュータテクノロジーが震災復興事業として、これまでは当方地方で20回程も開催されて来たものだそうです。</p>
-
-<ul>
-<li><a href="http://jp.fujitsu.com/group/fct/contribution/familyrobot/">震災復興支援 家族ロボット教室 : 富士通コンピュータテクノロジーズ</a></li>
-</ul>
-
-
-<p>今回、たまたま支店が豊橋にあったとの事で東北以外で初開催だったそうです。偶然とはいえありがたいことです。</p>
-
-<p>スタッフの方も地元社員の方が中心だったようですが、特に不慣れな様子もなく、子供を常にサポートしてくれました。どうもありがとうございました。</p>
-
-<p>全国に広げられるのかは分かりませんが、小学生(３年以上)のお子さんがおられる方にはおすすめです。近くで開催されたら参加されると良いと思います。</p>
 ]]></content>
   </entry>
   
