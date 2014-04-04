@@ -1,12 +1,11 @@
 ---
 layout: post
-title: "Xamarin.iOS と Rx で iBeacon を使ってみる(つもり)"
+title: "Xamarin.iOS と Rx で iBeacon を使ってみた"
 date: 2013-12-11 00:12
 comments: true
 categories: [Xamarin, iBeacon, iOS, C#, XAC13]
 ---
 こちらは、[iBeacon Advent Calendar 2013](http://qiita.com/advent-calendar/2013/ibeacon) と [Xamarin Advent Calendar 2013](http://qiita.com/advent-calendar/2013/xamarin) とのクロスポストになります。
-<!--more-->
 
 Xamarin とは、.NET で iOS/Android アプリを開発できるプラットフォームです。詳しくは [こちら](http://qiita.com/amay077/items/38ee79b3e3e88cf751b9) をどうぞ。
 
@@ -14,7 +13,7 @@ Xamarin.iOS は、 iOS の APIセットが全て C# で使えますので、 iBe
 
 ## Xamarin.iOS で iBeacon を使うサンプル
 
-Xamarin で iBeacons を使うサンプルは、Xamarin 自体が既に公開されています。
+Xamarin で iBeacons を使うサンプルは、Xamarin 自体が既に公開しています。
 
 * [Play ‘Find The Monkey’ with iOS 7 iBeacons | Xamarin Blog](http://blog.xamarin.com/play-find-the-monkey-with-ios-7-ibeacons/)
 * [mikebluestein/FindTheMonkey](https://github.com/mikebluestein/FindTheMonkey)
@@ -49,110 +48,107 @@ Rx は、非同期処理やイベントコールバックを一直線なスト�
 
 これを Rx で書きなおすと、こうなります。
 
+### 2014.4.2 追記
+
+実際には動かない空想のコードを掲載していたので、実機で動作したコードに書き換えました。
+
 ```csharp FindTheMonkeyViewController_after.cs
-public override void ViewDidLoad()
+if (!UserInterfaceIdiomIsPhone)
 {
-    base.ViewDidLoad();
+  /* 省略 */
+} else
+{
+  InitPitchAndVolume();
+  var man = new CLLocationManager();
 
-    /* 省略 */
-
-    var monkeyUUID = new NSUuid(uuid);
-    var beaconRegion = new CLBeaconRegion(monkeyUUID, monkeyId);
-
-    beaconRegion.NotifyEntryStateOnDisplay = true;
-    beaconRegion.NotifyOnEntry = true;
-    beaconRegion.NotifyOnExit = true;
-
-    if (!UserInterfaceIdiomIsPhone)
-    {
-	/* 省略 */
-    } else
-    {
-
-        InitPitchAndVolume();
-
-        locationMgr = new CLLocationManager();
-
-        // ここがキモ
-        locationMgr.StartMonitoringAsObservable(beaconRegion) // リージョン監視〜開始通知受信
-            .Publish(_ => // ストリームを A と B に分配
-                locationMgr.ReceiveRegionEnteredAsObservable() // A:進入の受信
-                .Amb(locationMgr.GetStateForRegionAsObservable(beaconRegion))) // B:リージョン状態要求〜受信
-            .SelectMany(_ => // .Amb で A B どちらか先に来た方を使用
-                locationMgr.StartRangingBeaconsAsObservable(beaconRegion)) // レンジング開始〜ビーコン信号受信
-            .Subscribe(beacons => 
-            {
-                // Beacon が見つかった時に行う処理を書く
-            });
-    }
+  man.StartMonitoringAsObservable(beaconRegion) // 監視開始
+  .SelectMany(r =>
+    man.RegionEnteredAsObservable() // A:進入の受信
+    .Amb(man.RequestStateAsObservable(r) // B:リージョン状態要求
+      .Where(e => e.State == CLRegionState.Inside) // 範囲内のみ
+      .Select(x => x.Region as CLBeaconRegion) // CLRegion からcast
+    .SelectMany(man.StartRangingBeaconsAsObservable) // A/B どちらかを受信したらレンジング開始
+      .Where(x => x.Beacons.Length > 0) // ビーコンが1個以上みつかった場合のみ
+      .Select(x => x.Beacons [0]) // LINQ の Fisrt() でもOk
+      .DistinctUntilChanged(x => x.Proximity) // Proximity が変わった時のみ流す
+  .Subscribe((CLBeacon beacon) =>
+  {
+    // Beacon が見つかった時に行う処理を書く
+  });
 }
 ```
 
 ```csharp CLLocationManagerExtensions.cs
 public static class CLLocationManagerExtensions
 {
-    // リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド
-    public static IObservable<CLRegionEventArgs> StartMonitoringAsObservable(
-        this CLLocationManager man, CLBeaconRegion beaconRegion)
+  // リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド
+  public static IObservable<CLBeaconRegion> StartMonitoringAsObservable(
+    this CLLocationManager man, CLBeaconRegion beaconRegion)
+  {
+    return Observable.Defer(() =>
     {
-        return Observable.Defer(() =>
-        {
-            man.StartMonitoring(beaconRegion);
-            return Observable.FromEventPattern<CLRegionEventArgs>(man, 
-                "DidStartMonitoringForRegion")
-                        .FirstAsync()
-                        .Select(e => e.EventArgs);
-        });
-    }
-
-    // リージョンへの進入を IObservable で得る拡張メソッド
-    public static IObservable<CLRegion> ReceiveRegionEnteredAsObservable(
-        this CLLocationManager man)
+      var o = Observable.FromEventPattern<CLRegionEventArgs>(
+            h => man.DidStartMonitoringForRegion += h, 
+            h => man.DidStartMonitoringForRegion -= h)
+      .Select(x => x.EventArgs.Region as CLBeaconRegion);
+      
+      man.StartMonitoring(beaconRegion);          
+      return o;
+    });
+  }
+  
+  // リージョンへの進入を IObservable で得る拡張メソッド
+  public static IObservable<CLBeaconRegion> RegionEnteredAsObservable(
+    this CLLocationManager man)
+  {
+    return Observable.FromEventPattern<CLRegionEventArgs>(
+      h => man.RegionEntered += h, h => man.RegionEntered -= h)
+        .Select(e => e.EventArgs.Region as CLBeaconRegion);
+  }
+  
+  // リージョンの状態を要求して、結果を IObservable で得る拡張メソッド
+  public static IObservable<CLRegionStateDeterminedEventArgs> RequestStateAsObservable(
+    this CLLocationManager man, CLBeaconRegion beaconRegion)
+  {
+    return Observable.Defer<CLRegionStateDeterminedEventArgs>(() => 
     {
-        return Observable.FromEventPattern<CLRegionEventArgs>(man, 
-            "RegionEntered")
-                .FirstAsync()
-                .Select(e => e.EventArgs.Region);
-    }
-
-    // リージョンの状態を要求して、結果を IObservable で得る拡張メソッド
-    public static IObservable<CLRegion> GetStateForRegionAsObservable(
-        this CLLocationManager man, CLBeaconRegion beaconRegion)
+      var o = Observable.FromEventPattern<CLRegionStateDeterminedEventArgs>(
+      h => man.DidDetermineState += h, h => man.DidDetermineState -= h)
+        .Select(e => e.EventArgs);
+      
+      man.RequestState(beaconRegion);
+      return o;
+    });
+  }
+  
+  // レンジングを開始してビーコン信号を IObservable で得る拡張メソッド
+  public static IObservable<CLRegionBeaconsRangedEventArgs> StartRangingBeaconsAsObservable(
+    this CLLocationManager man, CLBeaconRegion beaconRegion)
+  {
+    return Observable.Defer(() => 
     {
-        return Observable.Defer(() =>
-        {
-            man.RequestState(beaconRegion);
-            return Observable.FromEventPattern<CLRegionStateDeterminedEventArgs>(man, 
-                "DidDetermineState")
-                        .FirstAsync()
-                        .Where(e => e.EventArgs.State == CLRegionState.Inside)
-                        .Select(e => e.EventArgs.Region);
-        });
-    }
-
-    // レンジングを開始してビーコン信号を IObservable で得る拡張メソッド
-    public static IObservable<IEnumerable<CLBeacon>> StartRangingBeaconsAsObservable(
-        this CLLocationManager man, CLBeaconRegion beaconRegion)
-    {
-        return Observable.Defer(() =>
-            {
-                man.StartRangingBeacons(beaconRegion);
-                return Observable.FromEventPattern<CLRegionBeaconsRangedEventArgs>(man, 
-                    "DidRangeBeacons")
-                        .Select(e => e.EventArgs.Beacons);
-            });
-    }
+      var o = Observable.FromEventPattern<CLRegionBeaconsRangedEventArgs>(
+      h => man.DidRangeBeacons += h, h => man.DidRangeBeacons -= h)
+        .Select(e => e.EventArgs);
+      
+      man.StartRangingBeacons(beaconRegion);
+      return o;
+    });
+  }
 }
 ```
 
+実機で動作するサンプルを
+
+* [amay077/FindTheMonkey](https://github.com/amay077/FindTheMonkey)
+
+に置きました。
+
 ``locationMgr.StartMonitoringAsObservable`` で始まるところがキモですね。各々の機能は ``CLLocationManagerExtensions.cs`` の拡張メソッドで逃してます。これも C# の利点(たしか Objective-C にもあったっけ)。
 
-リージョン監視の開始通知を受け取ったら ``Publish`` で分配。
-
-ひとつは進入を検知したら値を流す(A)、もうひとつは開始位置のリージョン状態を得て、それがリージョン内だったら値を流す(B)。これらは ``.Amb`` で合流。 ``.Amb`` は右辺と左辺のどちらか先に返された最初の結果を後続に流すというものです。つまり、B がリージョン外だったら自動的に A の ``didEnterRegion`` を待つことになります。
+リージョン監視の開始通知を受け取ったら進入の検知(A)をしつつ、もうひとつの処理で開始位置のリージョン状態を得て、それがリージョン内だったら値を流す(B)。これらは ``.Amb`` で合流。 ``.Amb`` は右辺と左辺のどちらか先に返された最初の結果を後続に流すというものです。つまり、B がリージョン外だったら自動的に A の ``didEnterRegion`` を待つことになります。
 
 最後に、レンジングを開始して受信する度に結果(ビーコン信号)を流します。
-Rx は基本的に、複数の結果を逐一返すものですが、``StartRangingBeaconsAsObservable`` 以外は、拡張メソッドで ``.FirstAsync`` としていて、つまり「最初の一つ」だけを後続に流すようにしています。
  
 んで、これを購読(``.Subscribe``)することで処理を開始して、結果を ``// Beacon が見つかった時に行う処理を書く`` のところで受け取る仕組みです。
 
@@ -161,7 +157,3 @@ Rx は基本的に、複数の結果を逐一返すものですが、``StartRang
 Objective-C でも [ReactiveCocoa](http://qiita.com/somtd@github/items/8409ddd6d0927c04c1dd) とか使うとできるのかな？(でもやっぱり構文が…)
 
 そんなわけで、少しでも Xamarin に興味持っていただけたら幸いです。(これが言いたかった)
-
-### P.S.
-
-実はこのコード、まだ…実機で動かしてないんです。iOS Dev Program の契約が切れたまま放置してて、3日くらい前に再登録して支払い済みなんですが、まだ pending 状態で…。登録が完了したらちゃんと実機で動かすつもりですが…動かなかったらごめんなさいして直します。
