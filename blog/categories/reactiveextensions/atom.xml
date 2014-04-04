@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ReactiveExtensions | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/reactiveextensions/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-19T00:35:13+09:00</updated>
+  <updated>2014-04-04T15:36:49+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
+    <updated>2014-04-03T15:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
+</ul>
+
+
+<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
+
+<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
+
+<p><code>csharp
+MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
+</code></p>
+
+<p>これを FromEventPattern を使うとこう書けます。</p>
+
+<p><code>csharp DoesNotWorkOnDevice.cs
+Observable.FromEventPattern(MyButton, "TouchUpInside")
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
+
+<blockquote><p>System.InvalidOperationException: Could not find event 'TouchUpInside' on object of type 'MonoTouch.UIKit.UIButton'.</p></blockquote>
+
+<p><code>TouchUpInside</code> が無いと言われます。</p>
+
+<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
+
+<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
+
+<ul>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
+</ul>
+
+
+<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
+
+<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
+
+<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
+
+<p><code>csharp WorkOnDevice.cs
+Observable.FromEventPattern(
+  h =&gt; MyButton.TouchUpInside+=h,
+  h =&gt; MyButton.TouchUpInside-=h)
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>Xamarin.iOS の制限事項は以下に。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
+</ul>
+
+
+<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
+
+<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin に Reactive Extensions を導入する]]></title>
@@ -468,104 +539,6 @@ ConnecableObservable という interface は既に用意されていますが、
 
 
 <p>Rx の神々のみなさんが懇切丁寧に解説してくださってるのに、失敗しないと気づかない自分のバカバカ！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[reactive4java で位置を取得し続ける]]></title>
-    <link href="http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java/"/>
-    <updated>2012-10-03T15:21:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/10/03/locate-using-reactive4java</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/items/07762776102dbc84b1c7">前回</a>に続き、 reactive4java ネタ。
-調子に乗って Android で位置を取得し続けるのを reactive4java を使ってやってみた。</p>
-
-<!--more-->
-
-
-<p>```java LocationFunctions.java
-/<em>*
- * 位置を取得し続ける(finish は呼ばれない)
- </em>/
-public static Observable<Location> getCurrentLocationAsObservable(</p>
-
-<pre><code>    final Context context, final String provider) {
-return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt;, Closeable&gt;() {
-    private volatile boolean _stop = false;
-
-    @Override
-    public Closeable invoke(final Observer&lt;? super Location&gt; observer) {
-        final LocationManager locMan = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
-
-        final LocationListener listener = new LocationListener() {
-
-            @Override
-            public void onStatusChanged(String provider, int status, Bundle extras) { }
-
-            @Override
-            public void onProviderEnabled(String provider) { }
-
-            @Override
-            public void onProviderDisabled(String provider) {
-                observer.error(
-                    new InvalidParameterException("LocationProvider disabled."));
-            }
-
-            @Override
-            public void onLocationChanged(Location location) {
-                if (_stop) {
-                    return;
-                }
-
-                // 発火
-                observer.next(location);
-            }
-        };
-
-        // 位置取得開始
-        locMan.requestLocationUpdates(provider, 0, 0, listener, Looper.getMainLooper());
-
-        return new Closeable() {
-            @Override
-            public void close() throws IOException {
-                if (_stop) {
-                    return;
-                }
-                _stop = true;
-                locMan.removeUpdates(listener);
-                observer.finish();
-            }
-        };
-    }
-});
-</code></pre>
-
-<p>}
-```</p>
-
-<p>使い方は、方位の時とほとんど同じ。パラメータが Float から Location に代わっただけ。</p>
-
-<p><code>_stop</code> フラグは、Listener を unregister しても溜まってるデータは流しちゃうんじゃないか、という事で用意した。
-方位のやつは AtomicBoolean を使ったけどこっちは volatile でやってる。確かどっかで 'AtomicBoolean の方が確実に Atomic' って言ってた気がするけど、そもそもそんなに神経質になるところじゃないか。</p>
-
-<p>Observable にすることで、「ｎ秒間位置を取得して貯めて、その中で一番精度の良いものを通す」みたいなことも簡単にできる。</p>
-
-<p>Android の場合、購読開始時に registerXXXListener、Close で unregisterXXXEventListener てのがひとつのパターン。
-たぶん BroadcastReceiver にも適用できる。</p>
-
-<p>XXXListener も BroadcastReceiver も Observable でラップしちゃえば、その後は同じように扱えるので便利♪</p>
-
-<h2>追記 9.27</h2>
-
-<p>実はこのプログラム、Cold でしたー。というわけで、Hot についての記事を書きました。
-* <a href="http://qiita.com/items/3a7bda9d0fdcb9248800">Cold を Hot にできる。そう、Publish ならね。 - Qiita</a></p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
-<li><a href="http://stackoverflow.com/questions/3786825/java-volatile-boolean-vs-atomicboolean">Java: volatile boolean vs AtomicBoolean - Stack Overflow</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-19T00:35:13+09:00</updated>
+  <updated>2014-04-04T15:36:49+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,241 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Intent を受けとるには？]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android/"/>
+    <updated>2014-04-01T15:26:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android</id>
+    <content type="html"><![CDATA[<p>例えば、他のアプリからテキストを「送る」して、自作の Xamarin アプリでそれを受け取りたい時。</p>
+
+<!--more-->
+
+
+<p>普通の Android アプリ開発だと <code>AndroidManifest.xml</code> にこう書く。</p>
+
+<p>```xml AndroidManifest.xml
+<activity
+  android:name="com.example.intenttest.MainActivity"
+  android:label="@string/app_name" >
+  <intent-filter></p>
+
+<pre><code>&lt;action android:name="android.intent.action.MAIN" /&gt;
+  &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+</code></pre>
+
+<p>  </intent-filter></p>
+
+<p>  <intent-filter></p>
+
+<pre><code>&lt;action android:name="android.intent.action.SEND" /&gt;
+&lt;category android:name="android.intent.category.DEFAULT" /&gt;
+&lt;data android:mimeType="text/plain" /&gt;
+</code></pre>
+
+<p>  </intent-filter>
+</activity>
+```</p>
+
+<p>Xamarin.Android では、Activity のソースファイルの属性として、以下のように書く。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "MainActivity", MainLauncher = true)]
+[IntentFilter (new []{ Intent.ActionSend },
+  Categories = new []{ Intent.CategoryDefault },
+  DataMimeType = "text/plain" )]
+public class MainActivity : Activity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+</code></pre>
+
+<p>```</p>
+
+<p>テキストでない場合は、mimetype を適宜変更する。省略したら動作しなかった。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Activity がメモリリークしにくくなってる件]]></title>
+    <link href="http://amay077.github.io/blog/2014/03/19/android-memory-leaks-improvements/"/>
+    <updated>2014-03-19T15:12:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/03/19/android-memory-leaks-improvements</id>
+    <content type="html"><![CDATA[<p>2009年の情報なんですけどね。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://android-developers.blogspot.jp/2009/01/avoiding-memory-leaks.html">Avoiding memory leaks | Android Developers Blog</a></li>
+<li><a href="http://d.hatena.ne.jp/androidzaurus/20090121/1232519066">Avoiding memory leaks （超訳） - Android Zaurusの日記</a></li>
+<li><a href="http://tomokey.blogspot.jp/2011/05/android.html">暇なメモ帳: Androidのソースコードレビュー(メモリリーク)</a></li>
+</ul>
+
+
+<p>Android でメモリリークする典型的なパターンとして上で紹介されているものがあって、日頃はこうならないように気をつけて実装をしているわけです。</p>
+
+<p>また、メモリリークの調査方法もたくさん情報があります。</p>
+
+<ul>
+<li><a href="http://rainbowdevil.jp/?p=1187">Androidでメモリリークの調査と、そのヒープダンプから画像を抽出する » RainbowDevilsLand</a></li>
+<li><a href="http://tlync.hateblo.jp/entry/20111220/1324372308">富豪的 Android プログラマの為の Eclipse Memory Analyzer Tool 入門 - sandbox</a></li>
+</ul>
+
+
+<p>日頃、Xamarin.Android を触っているので、「Xamarin でも同じようにリークするよね」と思いやってみたところ全然リークしなかったので、もしや Android-Java でもリークしないんじゃ？と考え、試してみたのが以下の内容です。</p>
+
+<h2>試した</h2>
+
+<p>以下の2つのパターンについて試しました</p>
+
+<ol>
+<li>Avoiding memory leaks の 2番目の例。Activity への強参照を持った Drawable を static なメンバにキープしちゃう件。画面が回転した時に、Activity がリークしてしまう、とされる。</li>
+<li>暇なメモ帳さんの「問題3」＋α。非static な Inner クラスが Activity の強参照を持ってる、且つ、このオブジェクトを Activity の static メンバにしちゃう。</li>
+</ol>
+
+
+<h2>結論</h2>
+
+<p>から言うと、</p>
+
+<p><strong>1. はリークせず、2. はリークしました。</strong></p>
+
+<p>あれれ？</p>
+
+<h2>パターン1のテストコード</h2>
+
+<p>ほぼ元コードのコピペだけど、クラスが破棄された(<code>finalize</code>)時にログ吐くようにしています。</p>
+
+<p>```java
+public class MainActivity extends Activity {</p>
+
+<pre><code>private static final String TAG = "MainActivity";
+private static Drawable sBackground;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    Log.d(TAG, "onCreate:" + this.hashCode());
+
+    Button button = new Button(this);
+    button.setText("Leaks are bad");
+
+    if (sBackground == null) {
+        sBackground = getResources().getDrawable(R.drawable.ic_launcher);
+    }
+    button.setBackgroundDrawable(sBackground);
+    setContentView(button);
+}
+
+@Override
+protected void onDestroy() {
+    Log.d(TAG, "onDestroy:" + this.hashCode());
+    super.onDestroy();
+}
+
+@Override
+protected void finalize() throws Throwable {
+    Log.d(TAG, "finalize:" + this.hashCode());
+    super.finalize();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>確認手順</h3>
+
+<ol>
+<li>このアプリを実行。Android2.3 のエミュレータ(4.0 の実機でも試した)。</li>
+<li>画面を回転させる（Ctrl+F11）</li>
+<li>DDMS から GC を走らせる</li>
+<li>LogCat を収集</li>
+</ol>
+
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_02.png" alt="" />
+<img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_03.png" alt="" /></p>
+
+<p>Logcat の出力結果はこう。</p>
+
+<p><code>
+03-19 21:28:09.539: D/MainActivity(382): onCreate:1079076320
+03-19 21:29:15.979: D/MainActivity(382): onDestroy:1079076320
+03-19 21:29:15.989: D/MainActivity(382): onCreate:1079106528 ←横画面のActivity
+03-19 21:29:33.939: D/MainActivity(382): finalize:1079076320
+</code></p>
+
+<p>ちゃんと GC を走らせた後、 Activity の <code>finalize</code> が呼ばれています。
+MAT でも確認したけど、リークは発見できませんでした。</p>
+
+<h2>パターン2のテストコード</h2>
+
+<p>こんな実装は早々お目にかからないと思うけど、非static な Inner クラスのインスタンスを、Activity の static メンバにしちゃうぞ、と。</p>
+
+<p>```java
+public class MainActivity extends Activity {</p>
+
+<pre><code>private static final String TAG = "MainActivity";
+private static SomeInnerClass innerClass;
+
+@Override
+public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
+    Log.d(TAG, "onCreate");
+
+    if (innerClass == null) {
+        innerClass = new SomeInnerClass();
+    }
+}
+
+@Override
+protected void onDestroy() {
+    Log.d(TAG, "onDestroy");
+    super.onDestroy();
+}
+
+@Override
+protected void finalize() throws Throwable {
+    Log.d(TAG, "finalize");
+    super.finalize();
+}
+
+class SomeInnerClass {
+    public void doSomething() { }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>確認手順</h3>
+
+<p>パターン1と同じです。</p>
+
+<p>Logcat の出力結果はこちら。</p>
+
+<p><code>
+03-19 21:42:55.289: D/MainActivity(476): onCreate
+03-19 21:43:05.369: D/MainActivity(476): onDestroy
+03-19 21:43:05.549: D/MainActivity(476): onCreate
+</code></p>
+
+<p>ご覧のとおり、<code>finalize</code> が呼ばれない、つまり Activity がリークしています。</p>
+
+<h2>考察っぽいの</h2>
+
+<p>パターン2 がリークするのは当然と言えます。
+Activity への強参照を持ったオブジェクトを、static フィールドで保持し続けてしまうので、Activity が破棄されない。</p>
+
+<p>パターン1 も同じ理屈だと思うのですが（少なくとも冒頭の記事の説明ではそう）。これがリークしないのは、Android SDK が改善された(例えば、今まで Activity の強参照を持ってたのが弱参照に変わった)とか、Dalvik の GC が改善されたとかでしょうか？</p>
+
+<p>まあ4年も経てば常識も変わるということで、Activity に関しては以前ほど神経質にならなくてもいいかもしれませんが、メモリリークの可能性が消えることは有り得ないので、このアンチパターンはこれからも遵守していかないといけませんね。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
@@ -433,278 +668,6 @@ namespace Starter.Views
 
 
 <p>に置いておきます。徐々に進化させていこうと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MvvmCross だけじゃない！クロスプラットフォームMVVMフレームワーク「QuickCross」を試す]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/11/introduce-quickcross/"/>
-    <updated>2014-02-11T19:47:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/11/introduce-quickcross</id>
-    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/">以前、MvvmCross を紹介しました</a> が、Xamarin で使える同種のフレームワークはまだいくつかあります。</p>
-
-<!--more-->
-
-
-<p>今回は、その中の一つ、「QuickCross」を見てみます</p>
-
-<ul>
-<li><a href="https://github.com/MacawNL/QuickCross">MacawNL/QuickCross</a></li>
-</ul>
-
-
-<h2>なぜ他のMVVMフレームワークが必要なのか？</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#why-another-cross-platform-mvvm-framework">Why another cross-platform Mvvm framework?</a> にて、MvvmCross があるのになぜ？という事を説明しています。</p>
-
-<p>要約すると、MvvmCross は、高機能だが Fat で複雑で、拡張が大変であるのに対し、QuickCross は、軽量で生産性が高く、拡張が簡単である、との事です。</p>
-
-<h2>主な機能</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#features">Features</a> より。</p>
-
-<ul>
-<li>Xamarin.iOS, Xamarin.Android, Windows Phone, Windows Store Apps に対応。</li>
-<li>バイナリは使ってない！Snippet と、プロジェクトにソースコードの追加を行うだけです。</li>
-<li>ViewModel や View の追加は package manager console からコマンドを実行して行います。</li>
-<li>いくつかのコードスニペットを提供します。</li>
-<li>以下略…</li>
-</ul>
-
-
-<h2>仕組み</h2>
-
-<p><img src="https://raw.github.com/MacawNL/QuickCross/master/assets/quickcross_pattern.png" alt="" />
-via https://github.com/MacawNL/QuickCross#features</p>
-
-<p>Navigator って概念があるのが MvvmCross と違うとこですかね。</p>
-
-<h2>使い方</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#getting-started">Getting Started</a> を見てください。</p>
-
-<p>Nuget の Package manager console を使う必要があるので、Mac と Xamarin Studio 、そして Indie Edition では試せません、残念。
-Visual Studio ＋ Xamarin Business Edition以上を使ってる方、試してみてください。</p>
-
-<h2>サンプルを動かしてみた</h2>
-
-<p>Getting Started は試せませんでしたが、github に含まれるサンプルは Mac + Xamarin Studio でも動かせました。</p>
-
-<p><a href="https://github.com/MacawNL/QuickCross/blob/master/QuickCross.ios.sln">QuickCross.ios.sln</a> を Xamarin Studio で開いて実行したところ↓</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/introduce_quickcross_01.png" alt="" /></p>
-
-<p>MvvmCross と同じく、ViewModel などは Shared プロジェクトの方にあります。
-Shared プロジェクトは PCL にできるんじゃないかなーと思いやってみましたが、</p>
-
-<ul>
-<li>Profile147(.NET4.0) では <code>System.Windows.Input.ICommand</code> が無いと言われ</li>
-<li>Profile78(.NET4.5) では、この<a href="https://bugzilla.xamarin.com/show_bug.cgi?id=17247">バグ</a> にエンカウント</li>
-</ul>
-
-
-<p>してビルドできませんでした、残念。</p>
-
-<h2>まとめ</h2>
-
-<p>MvvmCross は確かに大規模すぎて使うのが大変です。拡張するには Plugin を自作する事になりますし。
-QuickCross は、すべてのソースコードがプロジェクトにあるので、カスタマイズが手軽に行えそうだというのは分かりました。</p>
-
-<p>Xamarin Starter Edition の場合、64kbyte までのバイナリ制限があるので、MvvmCross は使えませんが、QuickCross なら使えるかも知れません。</p>
-
-<p>ただ残念なのは、Nuget の Package Manager Console を使う必要があるために、Visual Studio が必要で、その為には Xamarin も Business Edition 以上が必要になってしまう所です。</p>
-
-<p>Xamarin Studio のみでも使えるくらい Lightweight だったら、もっと試してみたくなるフレームワークです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS と Android で画面表示時のコールバックを比較する]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android/"/>
-    <updated>2014-01-29T15:55:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android</id>
-    <content type="html"><![CDATA[<p>モバイル開発における画面のライフサイクル、重要ですね。
-iOS と Android で「ざっくりとは同じでしょ？」などと思っていましたが、調べてみたら結構違ってました。</p>
-
-<!--more-->
-
-
-<p>と言うのも、こちら</p>
-
-<ul>
-<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
-</ul>
-
-
-<p>のエントリが大変参考になったので、「Android と比べるとどうか？」と興味が沸いたのです。</p>
-
-<h2>画面が表示される時</h2>
-
-<p>iOS/Android の <code>UIViewController</code>, <code>Activity</code> に備わってるコールバックの、画面表示時での発生順をそれぞれ調べて発生順に並べてみました。同じような意味のコールバックは横に並べて書きました。</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th>順番</th>
-<th>イベント</th>
-<th>iOS(UIViewController)</th>
-<th>Android(Activity)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>1</td>
-<td>クラスが生成された時</td>
-<td>init</td>
-<td>ctor(コンストラクタ)</td>
-</tr>
-<tr>
-<td></td>
-<td>2</td>
-<td>画面がロードされる前</td>
-<td>loadView</td>
-<td>onCreate</td>
-</tr>
-<tr>
-<td></td>
-<td>3</td>
-<td>(画面が再度開始される前)</td>
-<td></td>
-<td>onRestart ※停止状態(onStop)から復帰する時のみ</td>
-</tr>
-<tr>
-<td></td>
-<td>4</td>
-<td>画面が開始される前</td>
-<td></td>
-<td>onStart</td>
-</tr>
-<tr>
-<td></td>
-<td>5</td>
-<td>画面がロードされた後</td>
-<td>viewDidLoad</td>
-<td>onPostCreate</td>
-</tr>
-<tr>
-<td></td>
-<td>6</td>
-<td>画面が表示され始める前</td>
-<td></td>
-<td>onResume ※一時停止(Pause)からの復帰はここから</td>
-</tr>
-<tr>
-<td></td>
-<td>7</td>
-<td>画面が表示され始めた後</td>
-<td></td>
-<td>onPostResume</td>
-</tr>
-<tr>
-<td></td>
-<td>8</td>
-<td>UIの配置が行われる前</td>
-<td>viewWillLayoutSubviews</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>9</td>
-<td>UIの配置が行われた後</td>
-<td>viewDidLayoutSubviews</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>10</td>
-<td>画面が表示される直前</td>
-<td> viewWillAppear </td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>11</td>
-<td>画面が表示された直後</td>
-<td>viewDidAppear</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>12</td>
-<td>画面にフォーカスが移った直後</td>
-<td></td>
-<td>onWindowFocusChanged(true) ※表示される度に呼ばれる</td>
-</tr>
-</tbody>
-</table>
-
-
-<h3>onCreate は生成前？後？</h3>
-
-<p>iOS というか CocoaTouch の命名文化って、will とか did とか、時系列が明確に分かるものが多いので良いですね。
-それに比べて Android は…。 onCreate は前？後？ onPostCreate があるので「前」ですね。</p>
-
-<h3>UIパーツのサイズはいつ決まるのか？</h3>
-
-<p>iOS の方は 9. <code>viewDidLayoutSubviews</code> の時です。
-冒頭で紹介したエントリにも以下のように書かれています。</p>
-
-<blockquote><p>self.view の subviews.frame の調整、すなわちレイアウト処理は全てここで記述するべきです。</p></blockquote>
-
-<p>Android の方は問題です。
-<code>Button</code> などの生成は <code>onCreate</code> で行うのが一般的ですが、この時点では、まだレイアウトされていません。なので大抵の場合 <code>button1.Height = 0</code> です。
-では、いつのタイミングで <code>button1.Height</code> に適切な値が格納されるかと言うと…、 12. <code>onWindowFocusChanged(true)</code> まで待たないといけません。しかもこのコールバックは、Focus が変わる度に呼ばれるので、「最初の１回」だけを取得しようと思ったら別のフラグが必要になります、あーめんどい。</p>
-
-<p>続きは</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view">android - When Can I First Measure a View? - Stack Overflow</a></li>
-</ul>
-
-
-<p>で。私は <code>View.post</code> する方法が一番簡単だと思いました。</p>
-
-<h3>onResume/onPostResume の命名が...</h3>
-
-<p>「画面が表示され始める前/画面が表示され始めた後」なんて無理やりな名前を付けてしまいました。
-特に <code>onPostResume</code> は無理がありすぎ。
-名前からは <code>viewDidAppear</code> に相当するとも捉えられますが、まだこの時点ではレイアウトが完了していないという、中途半端なタイミングです。何のために使えば良いのでしょう？</p>
-
-<h3>回転したらどうなるの？</h3>
-
-<p>iOS の場合は、8.<code>viewWillLayoutSubviews</code> からやり直しです。つまり、ここに適切に縦横対応のレイアウト処理を記述しておけば、<code>didRotateFromInterfaceOrientation</code>など、他のコールバックでの処理は通常必要ないと思います。</p>
-
-<p>Android の場合は、AndroidManifest.xml への設定なしだと、なんと 1.コンストラクタ からやりなおしです。とその前に当然 <code>onDestroy</code> や <code>OnSaveInstanceState</code> が呼ばれるわけですが、、、それはまた別の機会に。</p>
-
-<h2>まとめっぽいもの</h2>
-
-<p>iOS プログラミングでは今まで <code>viewDidLoad</code> で、UIパーツを生成してレイアウト処理してるプログラムが多いように思いますが、それは間違いで、「loadView で生成して、viewDidLayoutSubviews でレイアウト」とするのが最も効率的なようです。</p>
-
-<p>Android でも、onCreate でレイアウト処理するとハマることがありそうです(<a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">実際ありました</a>)。ちょっと注意しといた方がよさそうです。</p>
-
-<p>「画面が破棄される時」「メモリが足りなくなった時」「回転した時」とか、書くこと沢山あるんですけど、ありすぎてもうダメです。</p>
-
-<h2>参考</h2>
-
-<h3>iOS</h3>
-
-<ul>
-<li><a href="https://developer.apple.com/library/ios/Documentation/UIKit/Reference/UIViewController_Class/Reference/Reference.html#//apple_ref/occ/instm/UIViewController">UIViewController Class Reference</a></li>
-<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
-<li><a href="https://gist.github.com/shinyaohira/6482235">iOS View Controllerプログラミングガイド</a></li>
-</ul>
-
-
-<h3>Android</h3>
-
-<ul>
-<li><a href="http://developer.android.com/training/basics/activity-lifecycle/starting.html">Starting an Activity | Android Developers</a></li>
-<li><a href="http://developer.android.com/reference/android/app/Activity.html">Activity | Android Developers</a></li>
-<li><a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

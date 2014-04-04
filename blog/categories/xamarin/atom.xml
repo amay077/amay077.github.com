@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-19T00:35:13+09:00</updated>
+  <updated>2014-04-04T15:36:49+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,189 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin でビルドを自動化するには Business 版以上が必要です]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/04/command-line-building-requires-buisiness-license/"/>
+    <updated>2014-04-04T15:31:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/04/command-line-building-requires-buisiness-license</id>
+    <content type="html"><![CDATA[<p>Xamarin でも、リリース用アプリのビルド→署名→テストとか、自動化したいじゃないですか。</p>
+
+<!--more-->
+
+
+<p>Win/Visual Studio の場合は <code>msbuild</code>、Mac/Xamarin Studio の場合は <code>xbuild</code> でそれが可能との情報を得て試してみたところ、、、</p>
+
+<p>```sh
+$ xbuild HogeAppAndroid.csproj</p>
+
+<p>XBuild Engine Version 3.2.6.0
+Mono, Version 3.2.6.0
+Copyright (C) Marek Sieradzki 2005-2008, Novell 2008-2011.</p>
+
+<p>Build started 2014/04/04 13:13:59.</p>
+
+<hr />
+
+<p>Project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj" (default target(s)):</p>
+
+<pre><code>Target _SetLatestTargetFrameworkVersion:
+</code></pre>
+
+<p>: error XA9008: Building from the command-line requires a Business License.</p>
+
+<pre><code>Task "ResolveSdks" execution -- FAILED
+Done building target "_SetLatestTargetFrameworkVersion" in project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj".-- FAILED
+</code></pre>
+
+<p>Done building project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj".-- FAILED
+```</p>
+
+<p><strong>“Building from the command-line requires a Business License.”</strong></p>
+
+<p>だそうです。</p>
+
+<p>Starter Edition, Indie Edition では、コマンドラインからのビルドは許可されていないようです。</p>
+
+<ul>
+<li><a href="https://store.xamarin.com/">Store - Xamarin</a></li>
+</ul>
+
+
+<p>の比較表ではちょっと分からなかったな。。。</p>
+
+<p>Win/Visual Studio な人は自動的に Business Edition 以上だから問題ないのですが、個人だから Business版買えないよ、Starter/Indie だけど (なんちゃって)CI とかやりたいよ、という人はあきらめるしかないみたいです。</p>
+
+<p>…手動でやります。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
+    <updated>2014-04-03T15:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
+</ul>
+
+
+<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
+
+<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
+
+<p><code>csharp
+MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
+</code></p>
+
+<p>これを FromEventPattern を使うとこう書けます。</p>
+
+<p><code>csharp DoesNotWorkOnDevice.cs
+Observable.FromEventPattern(MyButton, "TouchUpInside")
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
+
+<blockquote><p>System.InvalidOperationException: Could not find event 'TouchUpInside' on object of type 'MonoTouch.UIKit.UIButton'.</p></blockquote>
+
+<p><code>TouchUpInside</code> が無いと言われます。</p>
+
+<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
+
+<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
+
+<ul>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
+</ul>
+
+
+<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
+
+<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
+
+<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
+
+<p><code>csharp WorkOnDevice.cs
+Observable.FromEventPattern(
+  h =&gt; MyButton.TouchUpInside+=h,
+  h =&gt; MyButton.TouchUpInside-=h)
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>Xamarin.iOS の制限事項は以下に。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
+</ul>
+
+
+<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
+
+<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で Intent を受けとるには？]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android/"/>
+    <updated>2014-04-01T15:26:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android</id>
+    <content type="html"><![CDATA[<p>例えば、他のアプリからテキストを「送る」して、自作の Xamarin アプリでそれを受け取りたい時。</p>
+
+<!--more-->
+
+
+<p>普通の Android アプリ開発だと <code>AndroidManifest.xml</code> にこう書く。</p>
+
+<p>```xml AndroidManifest.xml
+<activity
+  android:name="com.example.intenttest.MainActivity"
+  android:label="@string/app_name" >
+  <intent-filter></p>
+
+<pre><code>&lt;action android:name="android.intent.action.MAIN" /&gt;
+  &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
+</code></pre>
+
+<p>  </intent-filter></p>
+
+<p>  <intent-filter></p>
+
+<pre><code>&lt;action android:name="android.intent.action.SEND" /&gt;
+&lt;category android:name="android.intent.category.DEFAULT" /&gt;
+&lt;data android:mimeType="text/plain" /&gt;
+</code></pre>
+
+<p>  </intent-filter>
+</activity>
+```</p>
+
+<p>Xamarin.Android では、Activity のソースファイルの属性として、以下のように書く。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "MainActivity", MainLauncher = true)]
+[IntentFilter (new []{ Intent.ActionSend },
+  Categories = new []{ Intent.CategoryDefault },
+  DataMimeType = "text/plain" )]
+public class MainActivity : Activity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+</code></pre>
+
+<p>```</p>
+
+<p>テキストでない場合は、mimetype を適宜変更する。省略したら動作しなかった。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
@@ -193,414 +376,6 @@ return comp.Task;
 
 <p>こんなところで。
 何かおかしなところがあったらコメント頂けるとありがたいです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/"/>
-    <updated>2014-02-27T21:34:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>ReactiveUI は、Reactive Extensions を全面的に取り入れた クロスプラットフォームな MVVMフレームワークです。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
-</ul>
-
-
-<p>作者は GitHub の中の人 <a href="http://twitter.com/xpaulbettsx">Paul Betts</a> 氏、<a href="http://xamarin.com/mvp">Xamarin の MVP</a> でもあります。</p>
-
-<p>元々は WPF, Silverlight, WinRT, Windows Phone に対応していましたが、Xamarin.iOS や Xamarin.Android, Xamarin.Mac にも <a href="http://blog.paulbetts.org/index.php/2013/03/12/reactiveui-4-5-is-released/">対応が進んで来た</a> ので、使ってみる事にしました。</p>
-
-<p>Visual Studio + WPF 等なら、nuget から取得できて楽なんでしょうけども、なにせ Mac なので、Xamarin Studio のみでいきます。</p>
-
-<h2>とりあえず使ってみる</h2>
-
-<p>Github が公開した <a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub's Xamarin starter apps</a>, これに ReactiveUI も含まれているので、こちらを Clone して Xamarin Studio で開いてビルド、すぐ動きます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_01.png" alt="" /></p>
-
-<p>これ、ViewModel側で UUID を生成して、View側の Label にバインドしているのですが、何ともシンプル過ぎて…。</p>
-
-<p>それでもこのフレームワークの構成を知るには十分です。</p>
-
-<h2>ReactiveUI に必要なもの</h2>
-
-<p>ソリューションツリーを見ると次の4つのプロジェクトがあります。</p>
-
-<ul>
-<li>Starter-Core-Android</li>
-<li>Starter-Core-iOS</li>
-<li>Starter-Android</li>
-<li>Starter-iOS</li>
-</ul>
-
-
-<h3>ViewModel-Model層</h3>
-
-<p>Starter-Core-xxx は、ディレクトリ的には同じ場所にあり、Android用とiOS用のプロジェクトファイル(.csproj)が用意してあるだけです。ここはアプリケーションの ViewModel-Model層になります。PCL化はされていないようですね(その内、とサイトに書いてありました)。</p>
-
-<p>サンプルで用意されてる ViewModel を見てみます。</p>
-
-<p>```csharp TestViewModel.cs
-using System;
-using ReactiveUI;
-using System.Runtime.Serialization;</p>
-
-<p>namespace Starter.Core.ViewModels
-{</p>
-
-<pre><code>[DataContract]
-public class TestViewModel : ReactiveObject
-{
-    string _TheGuid;
-    [DataMember] public string TheGuid {
-        get { return _TheGuid; }
-        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
-    }
-
-    public TestViewModel()
-    {
-        TheGuid = Guid.NewGuid().ToString();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>MvvmCross とか、他の MVVM-FW とだいたい同じですね(そりゃそうだ)。
-基底クラスの <code>ReactiveObject</code> が、BaseViewModel的な役割をします。(が、Reactive を冠しているだけに、随所で Rx の力が発揮される、はずです←まだ分かってない)</p>
-
-<p>このコードでは、TestViewModel の生成と同時に、Guid を生成して、<code>TheGuid</code> プロパティに設定しています。</p>
-
-<h3>View層</h3>
-
-<p>Starter-Android, Starter-iOS はそれぞれの View層になります。</p>
-
-<p>Starter-iOS の TestViewController.cs を見てみます。</p>
-
-<p>```csharp TestViewController.cs
-namespace Starter.Views
-{</p>
-
-<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
-{
-    [省略]
-
-    public override async void ViewDidLoad()
-    {
-        base.ViewDidLoad();
-        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
-
-        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
-            return new TestViewModel();
-        });
-    }
-
-    TestViewModel _ViewModel;
-    public TestViewModel ViewModel {
-        get { return _ViewModel; }
-        set { this.RaiseAndSetIfChanged(ref _ViewModel, value); }
-    }
-
-    [省略]
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>UIViewController</code> ではなく <code>ReactiveViewController</code> から派生させてます。この辺もよくあるやり方。<code>IViewFor</code> は、今はスルーで。</p>
-
-<p>バインドは <code>this.OneWayBind</code> で。
-ViewModel の TheGuid プロパティを、View の TheGuidラベルの Text プロパティへ単方向(OneWay)バインドしてます。</p>
-
-<p>TestViewModel の生成は、ここでは Akavache というストレージライブラリの生成を待ってから行っていますが、Akavache を使わない場合は普通に <code>this.ViewModel = new TestViewModel()</code> で OK でしょう。</p>
-
-<p>これで、TestViewModelの生成 → Guidの生成 → vm.TheGuidプロパティへ設定 → vm より TheGuid の変更が通知される → View側のBindingが変更を検知 → Viewのラベルを書き換える、という流れになります。</p>
-
-<h2>ちょっと拡張してみる</h2>
-
-<h3>双方向バインディング</h3>
-
-<p>ViewModel→View だけでなく、View→ViewModel もやってみましょう。</p>
-
-<p>まず TestViewModel にプロパティを追加します。
-プロパティは <code>MyName</code> とします。
-初期値として "Enter your name" とでも設定しましょうか。</p>
-
-<p>```csharp TestViewModel.cs
-namespace Starter.Core.ViewModels
-{</p>
-
-<pre><code>[DataContract]
-public class TestViewModel : ReactiveObject
-{
-    string _TheGuid;
-    [DataMember] public string TheGuid {
-        get { return _TheGuid; }
-        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
-    }
-
-    string _myName;
-    [DataMember] public string MyName {
-        get { return _myName; }
-        set { this.RaiseAndSetIfChanged(ref _myName, value); }
-    }
-
-    public TestViewModel()
-    {
-        TheGuid = Guid.NewGuid().ToString();
-
-        this.MyName = "Enter your name";
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>次に Interface Builder で TestViewController に、UITextField と UILabel を追加し、Outlet を "MyText", "MyLabel" とします。これで Xamarin.iOS から <code>MyText</code>, <code>MyLabel</code> でインスタンスにアクセスできるはず、ですよね。</p>
-
-<p><code>MyText</code>, <code>MyLabel</code> に、vm.MyName をバインドします。</p>
-
-<p>```csharp TestViewController.cs
-namespace Starter.Views
-{</p>
-
-<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
-{
-    [省略]
-
-    public override async void ViewDidLoad()
-    {
-        base.ViewDidLoad();
-        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
-
-        this.Bind(ViewModel, vm=&gt; vm.MyName, v =&gt; v.MyText.Text);
-        this.OneWayBind(ViewModel, vm =&gt; vm.MyName, v =&gt; v.MyLabel.Text);
-
-        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
-            return new TestViewModel();
-        });
-    }
-
-    [省略]
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>編集できる <code>MyText</code> は <code>this.Bind</code> を使って双方向バインドします。プロパティの値を表示するだけの <code>MyLabel</code> は、 <code>this.OneWayBind</code> で。</p>
-
-<p>これで動かしてみます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_02.gif" alt="" /></p>
-
-<p>UITextField への入力が、vm.MyName へ適用され、その変更を MyLabel に表示させる、という流れです。</p>
-
-<p>今日はこの辺で。まだ全然 Reactive じゃないですが、次回以降、Command の実装やバインディングについて試してみようと思います。</p>
-
-<p>ここまでのコードは、</p>
-
-<ul>
-<li>https://github.com/amay077/starter-mobile/tree/N_plus_1</li>
-</ul>
-
-
-<p>に置いておきます。徐々に進化させていこうと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MvvmCross だけじゃない！クロスプラットフォームMVVMフレームワーク「QuickCross」を試す]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/11/introduce-quickcross/"/>
-    <updated>2014-02-11T19:47:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/11/introduce-quickcross</id>
-    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/">以前、MvvmCross を紹介しました</a> が、Xamarin で使える同種のフレームワークはまだいくつかあります。</p>
-
-<!--more-->
-
-
-<p>今回は、その中の一つ、「QuickCross」を見てみます</p>
-
-<ul>
-<li><a href="https://github.com/MacawNL/QuickCross">MacawNL/QuickCross</a></li>
-</ul>
-
-
-<h2>なぜ他のMVVMフレームワークが必要なのか？</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#why-another-cross-platform-mvvm-framework">Why another cross-platform Mvvm framework?</a> にて、MvvmCross があるのになぜ？という事を説明しています。</p>
-
-<p>要約すると、MvvmCross は、高機能だが Fat で複雑で、拡張が大変であるのに対し、QuickCross は、軽量で生産性が高く、拡張が簡単である、との事です。</p>
-
-<h2>主な機能</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#features">Features</a> より。</p>
-
-<ul>
-<li>Xamarin.iOS, Xamarin.Android, Windows Phone, Windows Store Apps に対応。</li>
-<li>バイナリは使ってない！Snippet と、プロジェクトにソースコードの追加を行うだけです。</li>
-<li>ViewModel や View の追加は package manager console からコマンドを実行して行います。</li>
-<li>いくつかのコードスニペットを提供します。</li>
-<li>以下略…</li>
-</ul>
-
-
-<h2>仕組み</h2>
-
-<p><img src="https://raw.github.com/MacawNL/QuickCross/master/assets/quickcross_pattern.png" alt="" />
-via https://github.com/MacawNL/QuickCross#features</p>
-
-<p>Navigator って概念があるのが MvvmCross と違うとこですかね。</p>
-
-<h2>使い方</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#getting-started">Getting Started</a> を見てください。</p>
-
-<p>Nuget の Package manager console を使う必要があるので、Mac と Xamarin Studio 、そして Indie Edition では試せません、残念。
-Visual Studio ＋ Xamarin Business Edition以上を使ってる方、試してみてください。</p>
-
-<h2>サンプルを動かしてみた</h2>
-
-<p>Getting Started は試せませんでしたが、github に含まれるサンプルは Mac + Xamarin Studio でも動かせました。</p>
-
-<p><a href="https://github.com/MacawNL/QuickCross/blob/master/QuickCross.ios.sln">QuickCross.ios.sln</a> を Xamarin Studio で開いて実行したところ↓</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/introduce_quickcross_01.png" alt="" /></p>
-
-<p>MvvmCross と同じく、ViewModel などは Shared プロジェクトの方にあります。
-Shared プロジェクトは PCL にできるんじゃないかなーと思いやってみましたが、</p>
-
-<ul>
-<li>Profile147(.NET4.0) では <code>System.Windows.Input.ICommand</code> が無いと言われ</li>
-<li>Profile78(.NET4.5) では、この<a href="https://bugzilla.xamarin.com/show_bug.cgi?id=17247">バグ</a> にエンカウント</li>
-</ul>
-
-
-<p>してビルドできませんでした、残念。</p>
-
-<h2>まとめ</h2>
-
-<p>MvvmCross は確かに大規模すぎて使うのが大変です。拡張するには Plugin を自作する事になりますし。
-QuickCross は、すべてのソースコードがプロジェクトにあるので、カスタマイズが手軽に行えそうだというのは分かりました。</p>
-
-<p>Xamarin Starter Edition の場合、64kbyte までのバイナリ制限があるので、MvvmCross は使えませんが、QuickCross なら使えるかも知れません。</p>
-
-<p>ただ残念なのは、Nuget の Package Manager Console を使う必要があるために、Visual Studio が必要で、その為には Xamarin も Business Edition 以上が必要になってしまう所です。</p>
-
-<p>Xamarin Studio のみでも使えるくらい Lightweight だったら、もっと試してみたくなるフレームワークです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Objective-C と Java と C# でクロージャ的な書き方の比較]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp/"/>
-    <updated>2014-01-29T15:52:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/29/closure-like-statement-comparison-with-objc-java-csharp</id>
-    <content type="html"><![CDATA[<p>クロージャとかラムダとか匿名** とか名前はいろいろですけど、各言語の書き方と動き（特に変数の扱い）について比べてみました。</p>
-
-<p>ついでに非同期処理の例にもなってしまいました。</p>
-
-<!--more-->
-
-
-<h3>Objective-C</h3>
-
-<p>Blocks を使います。</p>
-
-<p>```objc Obj-C
-int x = 1;
-__block int y = 2;</p>
-
-<p>dispatch_queue_t q_global = dispatch_get_global_queue(0, 0);
-dispatch_async(q_global, ^{</p>
-
-<pre><code>x = 10; // できない(コンパイルエラー
-y = 20; // できる
-
-int z = x + y;
-
-[self dispValue:z]; // self の参照カウンタが+1される
-</code></pre>
-
-<p>});
-```</p>
-
-<p>普通に宣言した変数を Block の中で使うと、自動的に「キャプチャ」され、変数の複製される。この変数には、 Block 内では代入できずコンパイルエラーとなる。
-<code>__block</code> を付けた変数は、Block 内外で同じ実体を参照でき、代入もできる。
-<code>self</code> やプロパティを Block 内で使用すると参照カウンタがインクリメントされ、明示的に release しないとリークする。
-あるいは、Block 外で <code>__weak</code> を付けた変数に代入しておくと、これは参照カウンタがインクリメントされない。</p>
-
-<h3>Java 6 (Android ベースなので…)</h3>
-
-<p>匿名クラスです。</p>
-
-<p>```java Java
-int x = 1;
-final int y = 2;</p>
-
-<p>ExecutorService executor = Executors.newSingleThreadExecutor();
-executor.submit(new Runnable() {</p>
-
-<pre><code>@Override
-public void run() {
-    y = 20; // できない(コンパイルエラー
-    int z = x + y; // できない(コンパイルエラー
-
-    String typeName = this.getClass().getInterfaces()[0].getName(); // Runnable になる
-}
-</code></pre>
-
-<p>});
-```</p>
-
-<p>Java は匿名クラスの実装中に使える変数はかなり制限がある。
-普通に宣言した変数は、匿名クラス内では使えない(コンパイルエラー)。
-<code>final</code> を付けて宣言した変数は、匿名クラス内では参照のみ可能。ちょうど Objective-C の通常変数を Block 内で使った時と同じ。
-Obj-C の <code>self</code> にあたる <code>this</code> は匿名クラス内では、その匿名クラスを示す。</p>
-
-<h3>C＃</h3>
-
-<p>ラムダ式です。</p>
-
-<p>```csharp C#
-int x = 1;
-const int y = 2;
-Task.Factory.StartNew(() =>
-{</p>
-
-<pre><code>x = 10; // OK
-y = 20; // これはダメ、const だから。
-var z = x + y;
-
-var typeName = this.GetType().Name;
-</code></pre>
-
-<p>});
-```</p>
-
-<p>C# はかなりゆる〜い印象。
-普通に宣言した変数を、ラムダ式の中でも自由に read/write できてしまう。write できちゃうのはこわい。
-<code>this</code> は、ラムダ式の外側のクラスを示す。
-　</p>
-
-<h2>所感</h2>
-
-<p>個人的には、Java のガチガチなのが好きかも。できる事が限定されているのでミスしにくい。
-Objective-C は、ローカル変数は良いけど、self とか使っちゃうミス起こしそう。
-C# は、普通に書き換えられて超不安、という感じ。なるべく const 使うようにしたい。
-　
-　
-　</p>
-
-<p>しかし記述量は C# が一番少ないですね、Xamarin いいよ Xamarin。。。</p>
 ]]></content>
   </entry>
   

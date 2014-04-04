@@ -4,7 +4,7 @@
   <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-03-19T00:35:13+09:00</updated>
+  <updated>2014-04-04T15:36:49+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
+    <updated>2014-04-03T15:29:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
+    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
+</ul>
+
+
+<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
+
+<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
+
+<p><code>csharp
+MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
+</code></p>
+
+<p>これを FromEventPattern を使うとこう書けます。</p>
+
+<p><code>csharp DoesNotWorkOnDevice.cs
+Observable.FromEventPattern(MyButton, "TouchUpInside")
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
+
+<blockquote><p>System.InvalidOperationException: Could not find event 'TouchUpInside' on object of type 'MonoTouch.UIKit.UIButton'.</p></blockquote>
+
+<p><code>TouchUpInside</code> が無いと言われます。</p>
+
+<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
+
+<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
+
+<ul>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
+</ul>
+
+
+<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
+
+<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
+
+<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
+
+<p><code>csharp WorkOnDevice.cs
+Observable.FromEventPattern(
+  h =&gt; MyButton.TouchUpInside+=h,
+  h =&gt; MyButton.TouchUpInside-=h)
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
+</code></p>
+
+<p>Xamarin.iOS の制限事項は以下に。</p>
+
+<ul>
+<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
+</ul>
+
+
+<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
+
+<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
@@ -496,196 +567,6 @@ QuickCross は、すべてのソースコードがプロジェクトにあるの
 <p>ただ残念なのは、Nuget の Package Manager Console を使う必要があるために、Visual Studio が必要で、その為には Xamarin も Business Edition 以上が必要になってしまう所です。</p>
 
 <p>Xamarin Studio のみでも使えるくらい Lightweight だったら、もっと試してみたくなるフレームワークです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS と Android で画面表示時のコールバックを比較する]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android/"/>
-    <updated>2014-01-29T15:55:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/29/displaying-view-lifecycle-comparison-ios-android</id>
-    <content type="html"><![CDATA[<p>モバイル開発における画面のライフサイクル、重要ですね。
-iOS と Android で「ざっくりとは同じでしょ？」などと思っていましたが、調べてみたら結構違ってました。</p>
-
-<!--more-->
-
-
-<p>と言うのも、こちら</p>
-
-<ul>
-<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
-</ul>
-
-
-<p>のエントリが大変参考になったので、「Android と比べるとどうか？」と興味が沸いたのです。</p>
-
-<h2>画面が表示される時</h2>
-
-<p>iOS/Android の <code>UIViewController</code>, <code>Activity</code> に備わってるコールバックの、画面表示時での発生順をそれぞれ調べて発生順に並べてみました。同じような意味のコールバックは横に並べて書きました。</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th>順番</th>
-<th>イベント</th>
-<th>iOS(UIViewController)</th>
-<th>Android(Activity)</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td>1</td>
-<td>クラスが生成された時</td>
-<td>init</td>
-<td>ctor(コンストラクタ)</td>
-</tr>
-<tr>
-<td></td>
-<td>2</td>
-<td>画面がロードされる前</td>
-<td>loadView</td>
-<td>onCreate</td>
-</tr>
-<tr>
-<td></td>
-<td>3</td>
-<td>(画面が再度開始される前)</td>
-<td></td>
-<td>onRestart ※停止状態(onStop)から復帰する時のみ</td>
-</tr>
-<tr>
-<td></td>
-<td>4</td>
-<td>画面が開始される前</td>
-<td></td>
-<td>onStart</td>
-</tr>
-<tr>
-<td></td>
-<td>5</td>
-<td>画面がロードされた後</td>
-<td>viewDidLoad</td>
-<td>onPostCreate</td>
-</tr>
-<tr>
-<td></td>
-<td>6</td>
-<td>画面が表示され始める前</td>
-<td></td>
-<td>onResume ※一時停止(Pause)からの復帰はここから</td>
-</tr>
-<tr>
-<td></td>
-<td>7</td>
-<td>画面が表示され始めた後</td>
-<td></td>
-<td>onPostResume</td>
-</tr>
-<tr>
-<td></td>
-<td>8</td>
-<td>UIの配置が行われる前</td>
-<td>viewWillLayoutSubviews</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>9</td>
-<td>UIの配置が行われた後</td>
-<td>viewDidLayoutSubviews</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>10</td>
-<td>画面が表示される直前</td>
-<td> viewWillAppear </td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>11</td>
-<td>画面が表示された直後</td>
-<td>viewDidAppear</td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td>12</td>
-<td>画面にフォーカスが移った直後</td>
-<td></td>
-<td>onWindowFocusChanged(true) ※表示される度に呼ばれる</td>
-</tr>
-</tbody>
-</table>
-
-
-<h3>onCreate は生成前？後？</h3>
-
-<p>iOS というか CocoaTouch の命名文化って、will とか did とか、時系列が明確に分かるものが多いので良いですね。
-それに比べて Android は…。 onCreate は前？後？ onPostCreate があるので「前」ですね。</p>
-
-<h3>UIパーツのサイズはいつ決まるのか？</h3>
-
-<p>iOS の方は 9. <code>viewDidLayoutSubviews</code> の時です。
-冒頭で紹介したエントリにも以下のように書かれています。</p>
-
-<blockquote><p>self.view の subviews.frame の調整、すなわちレイアウト処理は全てここで記述するべきです。</p></blockquote>
-
-<p>Android の方は問題です。
-<code>Button</code> などの生成は <code>onCreate</code> で行うのが一般的ですが、この時点では、まだレイアウトされていません。なので大抵の場合 <code>button1.Height = 0</code> です。
-では、いつのタイミングで <code>button1.Height</code> に適切な値が格納されるかと言うと…、 12. <code>onWindowFocusChanged(true)</code> まで待たないといけません。しかもこのコールバックは、Focus が変わる度に呼ばれるので、「最初の１回」だけを取得しようと思ったら別のフラグが必要になります、あーめんどい。</p>
-
-<p>続きは</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view">android - When Can I First Measure a View? - Stack Overflow</a></li>
-</ul>
-
-
-<p>で。私は <code>View.post</code> する方法が一番簡単だと思いました。</p>
-
-<h3>onResume/onPostResume の命名が...</h3>
-
-<p>「画面が表示され始める前/画面が表示され始めた後」なんて無理やりな名前を付けてしまいました。
-特に <code>onPostResume</code> は無理がありすぎ。
-名前からは <code>viewDidAppear</code> に相当するとも捉えられますが、まだこの時点ではレイアウトが完了していないという、中途半端なタイミングです。何のために使えば良いのでしょう？</p>
-
-<h3>回転したらどうなるの？</h3>
-
-<p>iOS の場合は、8.<code>viewWillLayoutSubviews</code> からやり直しです。つまり、ここに適切に縦横対応のレイアウト処理を記述しておけば、<code>didRotateFromInterfaceOrientation</code>など、他のコールバックでの処理は通常必要ないと思います。</p>
-
-<p>Android の場合は、AndroidManifest.xml への設定なしだと、なんと 1.コンストラクタ からやりなおしです。とその前に当然 <code>onDestroy</code> や <code>OnSaveInstanceState</code> が呼ばれるわけですが、、、それはまた別の機会に。</p>
-
-<h2>まとめっぽいもの</h2>
-
-<p>iOS プログラミングでは今まで <code>viewDidLoad</code> で、UIパーツを生成してレイアウト処理してるプログラムが多いように思いますが、それは間違いで、「loadView で生成して、viewDidLayoutSubviews でレイアウト」とするのが最も効率的なようです。</p>
-
-<p>Android でも、onCreate でレイアウト処理するとハマることがありそうです(<a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">実際ありました</a>)。ちょっと注意しといた方がよさそうです。</p>
-
-<p>「画面が破棄される時」「メモリが足りなくなった時」「回転した時」とか、書くこと沢山あるんですけど、ありすぎてもうダメです。</p>
-
-<h2>参考</h2>
-
-<h3>iOS</h3>
-
-<ul>
-<li><a href="https://developer.apple.com/library/ios/Documentation/UIKit/Reference/UIViewController_Class/Reference/Reference.html#//apple_ref/occ/instm/UIViewController">UIViewController Class Reference</a></li>
-<li><a href="http://blog.jarinosuke.com/entry/uiviewcontroller_view_coding_pattern">メモリ管理・レイアウトの観点からみた UIViewController の view の扱い - jarinosuke blog</a></li>
-<li><a href="https://gist.github.com/shinyaohira/6482235">iOS View Controllerプログラミングガイド</a></li>
-</ul>
-
-
-<h3>Android</h3>
-
-<ul>
-<li><a href="http://developer.android.com/training/basics/activity-lifecycle/starting.html">Starting an Activity | Android Developers</a></li>
-<li><a href="http://developer.android.com/reference/android/app/Activity.html">Activity | Android Developers</a></li>
-<li><a href="http://qiita.com/amay077/items/070ac1db6b52dd03505f">moveCamera(CameraUpdateFactory.newLatLngBounds(… で落ちる</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

@@ -5,7 +5,7 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Xamarin.iOS と Rx で iBeacon を使ってみる(つもり) - Experiments Never Fail</title>
+  <title>Xamarin.iOS と Rx で iBeacon を使ってみた - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
    
@@ -102,7 +102,7 @@ $(document).ready( function () {
 
   <header>
   <div class="jumbotron">
-    Xamarin.iOS と Rx で iBeacon を使ってみる(つもり)
+    Xamarin.iOS と Rx で iBeacon を使ってみた
 	<h5>
 
 
@@ -130,16 +130,13 @@ $(document).ready( function () {
     <div class="span12">
       <p>こちらは、<a href="http://qiita.com/advent-calendar/2013/ibeacon">iBeacon Advent Calendar 2013</a> と <a href="http://qiita.com/advent-calendar/2013/xamarin">Xamarin Advent Calendar 2013</a> とのクロスポストになります。</p>
 
-<!--more-->
-
-
 <p>Xamarin とは、.NET で iOS/Android アプリを開発できるプラットフォームです。詳しくは <a href="http://qiita.com/amay077/items/38ee79b3e3e88cf751b9">こちら</a> をどうぞ。</p>
 
 <p>Xamarin.iOS は、 iOS の APIセットが全て C# で使えますので、 iBeacon 関連の API もそのまま使えます。さらに C# や .NET の強力な言語仕様により、より簡潔に、美しく書くことができます。</p>
 
 <h2>Xamarin.iOS で iBeacon を使うサンプル</h2>
 
-<p>Xamarin で iBeacons を使うサンプルは、Xamarin 自体が既に公開されています。</p>
+<p>Xamarin で iBeacons を使うサンプルは、Xamarin 自体が既に公開しています。</p>
 
 <ul>
 <li><a href="http://blog.xamarin.com/play-find-the-monkey-with-ios-7-ibeacons/">Play ‘Find The Monkey’ with iOS 7 iBeacons | Xamarin Blog</a></li>
@@ -183,6 +180,10 @@ Rx は、非同期処理やイベントコールバックを一直線なスト�
 
 <p>これを Rx で書きなおすと、こうなります。</p>
 
+<h3>2014.4.2 追記</h3>
+
+<p>実際には動かない空想のコードを掲載していたので、実機で動作したコードに書き換えました。</p>
+
 <figure class='code'><figcaption><span>FindTheMonkeyViewController_after.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
@@ -206,54 +207,28 @@ Rx は、非同期処理やイベントコールバックを一直線なスト�
 <span class='line-number'>21</span>
 <span class='line-number'>22</span>
 <span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">if</span> <span class="p">(!</span><span class="n">UserInterfaceIdiomIsPhone</span><span class="p">)</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">base</span><span class="p">.</span><span class="n">ViewDidLoad</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/* 省略 */</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">monkeyUUID</span> <span class="p">=</span> <span class="k">new</span> <span class="n">NSUuid</span><span class="p">(</span><span class="n">uuid</span><span class="p">);</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">beaconRegion</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLBeaconRegion</span><span class="p">(</span><span class="n">monkeyUUID</span><span class="p">,</span> <span class="n">monkeyId</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">beaconRegion</span><span class="p">.</span><span class="n">NotifyEntryStateOnDisplay</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">beaconRegion</span><span class="p">.</span><span class="n">NotifyOnEntry</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>    <span class="n">beaconRegion</span><span class="p">.</span><span class="n">NotifyOnExit</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="k">if</span> <span class="p">(!</span><span class="n">UserInterfaceIdiomIsPhone</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
 </span><span class='line'>  <span class="cm">/* 省略 */</span>
-</span><span class='line'>    <span class="p">}</span> <span class="k">else</span>
-</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'><span class="p">}</span> <span class="k">else</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="n">InitPitchAndVolume</span><span class="p">();</span>
+</span><span class='line'>  <span class="kt">var</span> <span class="n">man</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLLocationManager</span><span class="p">();</span>
 </span><span class='line'>
-</span><span class='line'>        <span class="n">InitPitchAndVolume</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">locationMgr</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CLLocationManager</span><span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ここがキモ</span>
-</span><span class='line'>        <span class="n">locationMgr</span><span class="p">.</span><span class="n">StartMonitoringAsObservable</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">)</span> <span class="c1">// リージョン監視〜開始通知受信</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">Publish</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="c1">// ストリームを A と B に分配</span>
-</span><span class='line'>                <span class="n">locationMgr</span><span class="p">.</span><span class="n">ReceiveRegionEnteredAsObservable</span><span class="p">()</span> <span class="c1">// A:進入の受信</span>
-</span><span class='line'>                <span class="p">.</span><span class="n">Amb</span><span class="p">(</span><span class="n">locationMgr</span><span class="p">.</span><span class="n">GetStateForRegionAsObservable</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">)))</span> <span class="c1">// B:リージョン状態要求〜受信</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="c1">// .Amb で A B どちらか先に来た方を使用</span>
-</span><span class='line'>                <span class="n">locationMgr</span><span class="p">.</span><span class="n">StartRangingBeaconsAsObservable</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">))</span> <span class="c1">// レンジング開始〜ビーコン信号受信</span>
-</span><span class='line'>            <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">beacons</span> <span class="p">=&gt;</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="c1">// Beacon が見つかった時に行う処理を書く</span>
-</span><span class='line'>            <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="n">man</span><span class="p">.</span><span class="n">StartMonitoringAsObservable</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">)</span> <span class="c1">// 監視開始</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">r</span> <span class="p">=&gt;</span>
+</span><span class='line'>    <span class="n">man</span><span class="p">.</span><span class="n">RegionEnteredAsObservable</span><span class="p">()</span> <span class="c1">// A:進入の受信</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Amb</span><span class="p">(</span><span class="n">man</span><span class="p">.</span><span class="n">RequestStateAsObservable</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="c1">// B:リージョン状態要求</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">State</span> <span class="p">==</span> <span class="n">CLRegionState</span><span class="p">.</span><span class="n">Inside</span><span class="p">)</span> <span class="c1">// 範囲内のみ</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">)</span> <span class="c1">// CLRegion からcast</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">man</span><span class="p">.</span><span class="n">StartRangingBeaconsAsObservable</span><span class="p">)</span> <span class="c1">// A/B どちらかを受信したらレンジング開始</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Beacons</span><span class="p">.</span><span class="n">Length</span> <span class="p">&gt;</span> <span class="m">0</span><span class="p">)</span> <span class="c1">// ビーコンが1個以上みつかった場合のみ</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Beacons</span> <span class="p">[</span><span class="m">0</span><span class="p">])</span> <span class="c1">// LINQ の Fisrt() でもOk</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">DistinctUntilChanged</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Proximity</span><span class="p">)</span> <span class="c1">// Proximity が変わった時のみ流す</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">Subscribe</span><span class="p">((</span><span class="n">CLBeacon</span> <span class="n">beacon</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="c1">// Beacon が見つかった時に行う処理を書く</span>
+</span><span class='line'>  <span class="p">});</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
@@ -314,71 +289,83 @@ Rx は、非同期処理やイベントコールバックを一直線なスト�
 <span class='line-number'>52</span>
 <span class='line-number'>53</span>
 <span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
 </pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">CLLocationManagerExtensions</span>
 </span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="c1">// リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;</span> <span class="n">StartMonitoringAsObservable</span><span class="p">(</span>
-</span><span class='line'>        <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1">// リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLBeaconRegion</span><span class="p">&gt;</span> <span class="n">StartMonitoringAsObservable</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
 </span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">man</span><span class="p">.</span><span class="n">StartMonitoring</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span><span class="n">man</span><span class="p">,</span>
-</span><span class='line'>                <span class="s">&quot;DidStartMonitoringForRegion&quot;</span><span class="p">)</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">FirstAsync</span><span class="p">()</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span>
+</span><span class='line'>            <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidStartMonitoringForRegion</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidStartMonitoringForRegion</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+</span><span class='line'>      <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">);</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="c1">// リージョンへの進入を IObservable で得る拡張メソッド</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegion</span><span class="p">&gt;</span> <span class="n">ReceiveRegionEnteredAsObservable</span><span class="p">(</span>
-</span><span class='line'>        <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span><span class="n">man</span><span class="p">,</span>
-</span><span class='line'>            <span class="s">&quot;RegionEntered&quot;</span><span class="p">)</span>
-</span><span class='line'>                <span class="p">.</span><span class="n">FirstAsync</span><span class="p">()</span>
-</span><span class='line'>                <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span><span class="p">);</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>      <span class="n">man</span><span class="p">.</span><span class="n">StartMonitoring</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="c1">// リージョンの状態を要求して、結果を IObservable で得る拡張メソッド</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegion</span><span class="p">&gt;</span> <span class="n">GetStateForRegionAsObservable</span><span class="p">(</span>
-</span><span class='line'>        <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">man</span><span class="p">.</span><span class="n">RequestState</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;(</span><span class="n">man</span><span class="p">,</span>
-</span><span class='line'>                <span class="s">&quot;DidDetermineState&quot;</span><span class="p">)</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">FirstAsync</span><span class="p">()</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">State</span> <span class="p">==</span> <span class="n">CLRegionState</span><span class="p">.</span><span class="n">Inside</span><span class="p">)</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span><span class="p">);</span>
-</span><span class='line'>        <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>  <span class="c1">// リージョンへの進入を IObservable で得る拡張メソッド</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLBeaconRegion</span><span class="p">&gt;</span> <span class="n">RegionEnteredAsObservable</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span>
+</span><span class='line'>      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">RegionEntered</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">RegionEntered</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'>
-</span><span class='line'>    <span class="c1">// レンジングを開始してビーコン信号を IObservable で得る拡張メソッド</span>
-</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">CLBeacon</span><span class="p">&gt;&gt;</span> <span class="n">StartRangingBeaconsAsObservable</span><span class="p">(</span>
-</span><span class='line'>        <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1">// リージョンの状態を要求して、結果を IObservable で得る拡張メソッド</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;</span> <span class="n">RequestStateAsObservable</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;(()</span> <span class="p">=&gt;</span>
 </span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>            <span class="p">{</span>
-</span><span class='line'>                <span class="n">man</span><span class="p">.</span><span class="n">StartRangingBeacons</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
-</span><span class='line'>                <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionBeaconsRangedEventArgs</span><span class="p">&gt;(</span><span class="n">man</span><span class="p">,</span>
-</span><span class='line'>                    <span class="s">&quot;DidRangeBeacons&quot;</span><span class="p">)</span>
-</span><span class='line'>                        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Beacons</span><span class="p">);</span>
-</span><span class='line'>            <span class="p">});</span>
-</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;(</span>
+</span><span class='line'>      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidDetermineState</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidDetermineState</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">man</span><span class="p">.</span><span class="n">RequestState</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// レンジングを開始してビーコン信号を IObservable で得る拡張メソッド</span>
+</span><span class='line'>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegionBeaconsRangedEventArgs</span><span class="p">&gt;</span> <span class="n">StartRangingBeaconsAsObservable</span><span class="p">(</span>
+</span><span class='line'>    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionBeaconsRangedEventArgs</span><span class="p">&gt;(</span>
+</span><span class='line'>      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidRangeBeacons</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidRangeBeacons</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">man</span><span class="p">.</span><span class="n">StartRangingBeacons</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
+</span><span class='line'>      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span>
 </span><span class='line'><span class="p">}</span>
 </span></code></pre></td></tr></table></div></figure>
 
 
+<p>実機で動作するサンプルを</p>
+
+<ul>
+<li><a href="https://github.com/amay077/FindTheMonkey">amay077/FindTheMonkey</a></li>
+</ul>
+
+
+<p>に置きました。</p>
+
 <p><code>locationMgr.StartMonitoringAsObservable</code> で始まるところがキモですね。各々の機能は <code>CLLocationManagerExtensions.cs</code> の拡張メソッドで逃してます。これも C# の利点(たしか Objective-C にもあったっけ)。</p>
 
-<p>リージョン監視の開始通知を受け取ったら <code>Publish</code> で分配。</p>
+<p>リージョン監視の開始通知を受け取ったら進入の検知(A)をしつつ、もうひとつの処理で開始位置のリージョン状態を得て、それがリージョン内だったら値を流す(B)。これらは <code>.Amb</code> で合流。 <code>.Amb</code> は右辺と左辺のどちらか先に返された最初の結果を後続に流すというものです。つまり、B がリージョン外だったら自動的に A の <code>didEnterRegion</code> を待つことになります。</p>
 
-<p>ひとつは進入を検知したら値を流す(A)、もうひとつは開始位置のリージョン状態を得て、それがリージョン内だったら値を流す(B)。これらは <code>.Amb</code> で合流。 <code>.Amb</code> は右辺と左辺のどちらか先に返された最初の結果を後続に流すというものです。つまり、B がリージョン外だったら自動的に A の <code>didEnterRegion</code> を待つことになります。</p>
-
-<p>最後に、レンジングを開始して受信する度に結果(ビーコン信号)を流します。
-Rx は基本的に、複数の結果を逐一返すものですが、<code>StartRangingBeaconsAsObservable</code> 以外は、拡張メソッドで <code>.FirstAsync</code> としていて、つまり「最初の一つ」だけを後続に流すようにしています。</p>
+<p>最後に、レンジングを開始して受信する度に結果(ビーコン信号)を流します。</p>
 
 <p>んで、これを購読(<code>.Subscribe</code>)することで処理を開始して、結果を <code>// Beacon が見つかった時に行う処理を書く</code> のところで受け取る仕組みです。</p>
 
@@ -387,10 +374,6 @@ Rx は基本的に、複数の結果を逐一返すものですが、<code>Start
 <p>Objective-C でも <a href="http://qiita.com/somtd@github/items/8409ddd6d0927c04c1dd">ReactiveCocoa</a> とか使うとできるのかな？(でもやっぱり構文が…)</p>
 
 <p>そんなわけで、少しでも Xamarin に興味持っていただけたら幸いです。(これが言いたかった)</p>
-
-<h3>P.S.</h3>
-
-<p>実はこのコード、まだ…実機で動かしてないんです。iOS Dev Program の契約が切れたまま放置してて、3日くらい前に再登録して支払い済みなんですが、まだ pending 状態で…。登録が完了したらちゃんと実機で動かすつもりですが…動かなかったらごめんなさいして直します。</p>
 
 
       <h4>Ads</h4>
