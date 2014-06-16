@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-04-04T15:36:49+09:00</updated>
+  <updated>2014-06-16T15:36:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,527 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel/"/>
+    <updated>2014-06-13T15:34:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「文字の自動縮小」の自己回答。</p>
+
+<!--more-->
+
+
+<p>Xamarin.Forms で定義した <code>Label</code> は、iOS では <code>UILabel</code> となるはずなので、その過程のどこかでフックできれば <code>UILabel.AdjustsFontSizeToFitWidth</code> が仕込める、と目論んで、ホントにできたのでメモ。</p>
+
+<h2>要点</h2>
+
+<p><del>Forms→ネイティブのフックは PageRenderer でできる。その中で得られる UIView（のサブクラス）は、Label と UILabel の両方の参照を持っているので、あとは使うだけ。</del></p>
+
+<p><strong>ページでなく、UIパーツレベルでフックできたので、全面的に書き換えた。</strong></p>
+
+<h2>やってみる</h2>
+
+<p>参考にしたのは https://github.com/xamarin/xamarin-forms-samples/tree/master/Forms2Native 。</p>
+
+<p>このサンプルをちょっと改造して試した。</p>
+
+<p>まずは Forms側の MySecondPage.cs を修正。</p>
+
+<figure class='code'><figcaption><span>MySecondPage.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MySecondPage</span> <span class="p">:</span> <span class="n">ContentPage</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="n">Label</span> <span class="n">MyLabel</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">public</span> <span class="nf">MySecondPage</span> <span class="p">()</span>
+</span><span class='line'>  <span class="p">{</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">MyLabel</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Label</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Too loooooooooooooooooooooooong label&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">Font</span> <span class="p">=</span> <span class="n">Font</span><span class="p">.</span><span class="n">SystemFontOfSize</span><span class="p">(</span><span class="m">30d</span><span class="p">),</span>
+</span><span class='line'>            <span class="n">LineBreakMode</span> <span class="p">=</span> <span class="n">LineBreakMode</span><span class="p">.</span><span class="n">NoWrap</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Orientation</span> <span class="p">=</span> <span class="n">StackOrientation</span><span class="p">.</span><span class="n">Vertical</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">CenterAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">this</span><span class="p">.</span><span class="n">MyLabel</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ラベルを配置。とても文字が長いので全部は表示しきれない。</p>
+
+<p>次に iOS側に MyLabelRenderer.cs を作成。</p>
+
+<figure class='code'><figcaption><span>MyLabelRenderer.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Forms2Native</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Xamarin.Forms.Platform.iOS</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="na">[assembly:ExportRenderer(typeof(Label), typeof(MyLabelRenderer))]</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">Forms2Native</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">MyLabelRenderer</span> <span class="p">:</span> <span class="n">LabelRenderer</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnElementChanged</span><span class="p">(</span><span class="n">ElementChangedEventArgs</span><span class="p">&lt;</span><span class="n">Label</span><span class="p">&gt;</span> <span class="n">e</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">base</span><span class="p">.</span><span class="n">OnElementChanged</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Control</span><span class="p">.</span><span class="n">AdjustsFontSizeToFitWidth</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>ExportRenderer</code> で「Formsの<code>Label</code>は、<code>MyLabelRenderer</code>を使う」と定義している。
+するとすべての <code>Label</code> の生成時を <code>OnElementChanged</code> でフックでき、<code>Control</code> で <code>UILabel</code> は取り出せるので、あとはご自由に、という感じ。</p>
+
+<p>この実装だと、すべての Label に Ajusts が適用されてしまう。個別に行いたい場合は、Forms側に Labelから派生した <code>AjustableLabel</code> を作成して使い、<code>ExportRenderer(typeof(Label),…</code> のところを <code>ExportRenderer(typeof(AjustableLabel),…</code> にすればいけるはず。そしてこの方法はカスタムビューを作る手順に通じる（というかそのもの？）はず。</p>
+
+<p>ちなみにこの <code>OnElementChanged</code> は、Nuget の Xamarin.Formsパッケージの Ver1.1.0.6201から利用できる。</p>
+
+<h2>実行する</h2>
+
+<p>こんな感じで、ちゃんと文字サイズが縮小されました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
+
+<p>Android の方も同じ要領でいけるは…ず。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms/"/>
+    <updated>2014-06-10T15:30:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
+
+<!--more-->
+
+
+<h2><del>不可視の扱い</del></h2>
+
+<p><del>Forms 側のパーツには <code>IsVisible = true | false</code> がある。
+iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</del></p>
+
+<p><del>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</del></p>
+
+<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
+
+<h2>空文字の扱い</h2>
+
+<p>IsVisible と勘違いしてたのはこっちだった。</p>
+
+<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
+
+<p>https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</p>
+
+<h2>画面回転時の再構築</h2>
+
+<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。
+Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
+
+<h2>回避方法</h2>
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>こんな感じっすね。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(MainLauncher = true, </span>
+</span><span class='line'><span class="na">    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
+</span><span class='line'><span class="p">{</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>BACKキーの扱い</h2>
+
+<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
+
+<h3>自己解決</h3>
+
+<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
+
+<h2>デフォルトスタイル</h2>
+
+<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。
+iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(Label = &quot;MyApp&quot;,  </span>
+</span><span class='line'><span class="na"> MainLauncher = true, </span>
+</span><span class='line'><span class="na"> Theme = &quot;@android:style/Theme.Holo.Light&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="cm">/* 以下省略 */</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>起動時</h2>
+
+<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
+ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
+
+<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
+
+<h2>文字の自動縮小</h2>
+
+<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
+
+<h3>自己解決</h3>
+
+<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
+
+<h2>iPhone と iPad</h2>
+
+<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
+
+<p>他にも見つけたら書きます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms は Windows.Forms じゃないよ]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/08/xamarin-forms-is-not-windows-forms/"/>
+    <updated>2014-06-08T15:28:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/08/xamarin-forms-is-not-windows-forms</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.buildinsider.net/mobile/xamarintips/0005">iOS／Androidの画面レイアウトを共通化するには？（Xamarin.Forms） - Build Insider</a></li>
+</ul>
+
+
+<p>に書ききれなかったことなど。</p>
+
+<!--more-->
+
+
+<h2>名前どうよ？</h2>
+
+<p><strong>Xamarin.Forms</strong> って名前、どうしても Windows.Forms を連想するけど全然別ものだから。とはいえ、あんまり WPF の経験がないので、Windows.Forms にそれほどイヤな印象がない。VB6時代なんて、画面に Fill するのすらゴリゴリ実装が必要だったし。</p>
+
+<h2>前身は MonoTouch.Dialog じゃないかと思います</h2>
+
+<p>MonoTouch.Dialog というのは、Xamarin の CTO でありスーパーハッカーのミゲル氏が開発した、簡単なコードで iOS の UI を実装できるライブラリ（「Dialog」だけど、「ダイアログボックス」とは関係ない。 ）</p>
+
+<ul>
+<li><a href="https://github.com/migueldeicaza/MonoTouch.Dialog">migueldeicaza/MonoTouch.Dialog</a></li>
+</ul>
+
+
+<p>たぶんだけど、Xamarin.Forms はこれの思想がベースにあって、他のプラットフォームやXAML対応が行われたんじゃないかと勝手に思ってます。（いつか紹介しようと思ってたけどこれでお役御免になってしまったかも）</p>
+
+<h2>Android の UIフレームワークに似てるような…</h2>
+
+<p><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/controls/layouts/">StackLayout</a> は LinearLayout相当、RelativeLayout も、同名クラスがあるし、割と Android の UI の考え方をベースにしてるのかなと予想。Windows Phone はあまり経験がないので知らない。。。</p>
+
+<h2>Hoge.iOS というプロジェクト名がキライ</h2>
+
+<p>プラットフォームの識別子をプロジェクト名につけるのが良いんだけど、 <code>HelloForms.iOS</code> とか「iOS」とつけるのが嫌い。名前空間名とかが小文字で始まってしまうのが気持ち悪くて。
+MvvmCross などでは、iOS は <code>XXX.Touch</code> 、Android は <code>XXX.Droid</code> としていて、こっちの方が好み。</p>
+
+<h2>XAML はデザイナーが無いとツラい</h2>
+
+<p>WPFじゃなくてもXAMLって言っていいんだ、というのを初めて知ったｗ
+Xamarin Studio のXMLデザイナーは補完も効かないしツラい。コードでUI作るのにも限界があるので、今年の <a href="https://evolve.xamarin.com/">Evolve</a> あたりで「Xamarin.Forms のUIデザイナー発表ばばーん！！」を期待してます。</p>
+
+<h2>タブの位置が上とか下とかどうでもいい</h2>
+
+<p>「UIはプラットフォームの流儀に合わせるべき」という説明に必ずと言っていいほど登場するのがタブバーの位置が Androidだと上で、iOSだと下、ってやつ。
+個人的にはどうでもいい。タブの切り替えをよく使うなら指の届きやすい画面下部に配置すべきだし、同じアプリならiOS版とAndroid版でUIを変えるべきでないと思っている。（かと言って、iOS版のUIをそっくりそのままAndroidに移植すればいいという話でもない）。 <strong>プロダクトのUXは、プラットフォームのUXより優先されるべき</strong> 、と思ってる。</p>
+
+<h2>上司への提案には好材料かと</h2>
+
+<ul>
+<li>私「iOS/Android 両方開発するなら Xamarin 使いましょう！」</li>
+<li>上「そうか、それは１ソースで両対応できるのか？」</li>
+<li>私「いえ、画面はプラットフォーム毎に書きます、カメラとかも別です。共通化できるのはコアロジックです。」</li>
+<li>上「なんだその程度か」</li>
+<li>私「…」</li>
+</ul>
+
+
+<p>というよくある話には、「画面が１ソースで共通にできる Xamarin.Forms」は、説得材料としては、とりわけ対PhoneGapには効果高いんじゃないかと思います。毒りんごかどうかはともかく。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS4.x 対応のソースコードから「新しいAPI」を使っている箇所を探す]]></title>
+    <link href="http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code/"/>
+    <updated>2014-05-14T15:26:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code</id>
+    <content type="html"><![CDATA[<p>　アプリを iOS4.x でも動作させたい場合、Xcode のプロジェクト設定で Deployment Target を &#8220;4.x&#8221; (4.3とか) に設定します。
+一方で Base SDK は最新のものしか選べません、今だと &#8220;7.1&#8221;。</p>
+
+<!--more-->
+
+
+<p>　この状態だと、コード中で iOS5以降に追加された API を使っていると、iOS4.x端末では当然クラッシュします。</p>
+
+<p>　Target を 4.x にしてるんだから、クラッシュしそうなコードがあったら Xcode が検出して警告して欲しいんですが、そういう機能はないみたいです。(実はあるのでしょうか？ Android だと警告どころかビルドエラーになるので、iOSアプリ開発は大変不便だな、と思ってしまいます。Obj-C は JavaScript みたいなもんだから仕方がない、のは分かりますが)</p>
+
+<p>　 <a href="http://oclint.org/">OCLint</a> という静的コード解析ツールを見つけましたが、機能をざっと見ても、APIバージョンをチェックするものはなさそうです。（試したことはありません）</p>
+
+<p>　しかし「動かしてみないと分からない」のは不安すぎるので、なんとかして「新しいAPIを使っていないか？」をチェックする方法を考えて、行ってみました。</p>
+
+<h2>新しいAPIを使っている箇所を見つける方法</h2>
+
+<h3>A. iOS Developer Center に API の更新内容がまとめられたページがあります。</h3>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/releasenotes/General/iOS50APIDiff/index.html#//apple_ref/doc/uid/TP40011042">iOS 4.3 to iOS 5.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/ios/releasenotes/General/iOS60APIDiffs/index.html">iOS 5.1 to iOS 6.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/IOS/releasenotes/General/iOS70APIDiffs/index.html">iOS 6.1 to iOS 7.0 API Differences</a></li>
+</ul>
+
+
+<h3>B. これらのページから「変更のあった API のリスト」を抽出します。</h3>
+
+<p>具体的には以下のようなリストを作ります。</p>
+
+<blockquote><p>Added vImageAlphaBlend_ARGB8888
+Added vImageAlphaBlend_ARGBFFFF
+…</p></blockquote>
+
+<p>この作業は自動化したいのですが、お試しなので手動でテキストエディタと <strong>EXCEL</strong> を駆使して作成しました。</p>
+
+<h3>C. あとは、自分のソースコードに対して、順次 grep をかけるスクリプトを作ります。</h3>
+
+<p>修正リストの中には、 <code>-[ALAsset setImageData:metadata:completionBlock:]</code> のように名前付き引数だったりする API もあるので、正規表現でなるべくヒットするように置換します。</p>
+
+<figure class='code'><figcaption><span>find_new_api.sh</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>grep -nr <span class="s2">&quot;ALAsset.*setImageData.*metadata.*completionBlock:.*;&quot;</span> ./src/*
+</span><span class='line'>grep -nr <span class="s2">&quot;vImageAlphaBlend_ARGB8888.*;&quot;</span> ./src/*
+</span><span class='line'>grep -nr <span class="s2">&quot;vImageAlphaBlend_ARGBFFFF.*;&quot;</span> ./src/*
+</span><span class='line'>…
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>D. このスクリプトを実行して何か出たら、そこが「新しいAPIを使ってる箇所」です。</h3>
+
+<h2>まとめ</h2>
+
+<h3>注意点</h3>
+
+<ul>
+<li>クラス自体が追加されているものも、メソッドの追加として探しているので、他のクラスと誤認することがあります。</li>
+<li>正規表現が完全に正しいかよくわかりません（ソースコードに改行含む場合とか）</li>
+</ul>
+
+
+<p>簡単で、不格好な方法ですが、十分に機能してくれますし、開発者の知識やテストだけに頼るのに比べれば随分と安心できます。</p>
+
+<p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
+
+<p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Rx で Chain of Responsibility]]></title>
+    <link href="http://amay077.github.io/blog/2014/05/13/chain-of-resposibility-using-rx/"/>
+    <updated>2014-05-13T15:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/05/13/chain-of-resposibility-using-rx</id>
+    <content type="html"><![CDATA[<p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">void</span> <span class="nf">Main</span><span class="p">()</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="s">&quot;有給届&quot;</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">kakariCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;係長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;遅刻届&quot;</span><span class="p">));</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">kaCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;課長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;有給届&quot;</span><span class="p">));</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">buCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;部長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;退職届&quot;</span><span class="p">));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">Observable</span><span class="p">.</span><span class="n">Concat</span><span class="p">(</span><span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">kakariCho</span><span class="p">,</span>  <span class="c1">// 係長</span>
+</span><span class='line'>        <span class="n">kaCho</span><span class="p">,</span>      <span class="c1">// 課長</span>
+</span><span class='line'>        <span class="n">buCho</span>       <span class="c1">// 部長</span>
+</span><span class='line'>    <span class="p">})</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="c1">// 最初の１人に承認されたら終了</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromDays</span><span class="p">(</span><span class="m">1</span><span class="p">))</span> <span class="c1">// 猶予１日</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+</span><span class='line'>        <span class="p">?</span> <span class="s">&quot;あなたの届書は却下されました&quot;</span>
+</span><span class='line'>        <span class="p">:</span> <span class="n">x</span> <span class="p">+</span> <span class="s">&quot;が承認しました&quot;</span><span class="p">));</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）</span>
+</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">CreateManager</span><span class="p">(</span><span class="kt">string</span> <span class="n">managerTitle</span><span class="p">,</span> <span class="kt">string</span> <span class="n">document</span><span class="p">,</span> <span class="n">Predicate</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">canIAccept</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="n">o</span> <span class="p">=&gt;</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">(()</span> <span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">canIAccept</span><span class="p">(</span><span class="n">document</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">o</span><span class="p">.</span><span class="n">OnNext</span><span class="p">(</span><span class="n">managerTitle</span><span class="p">);</span> <span class="c1">// 承認</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>        <span class="n">o</span><span class="p">.</span><span class="n">OnCompleted</span><span class="p">();</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>管理職の人を <code>IObservable</code> に見立てて、自分が処理できるなら <code>OnNext</code> を呼ぶ、処理できないなら <code>OnNext</code> は呼ばずに <code>OnComplete</code> しちゃう。
+で、係長・課長・部長の IObservable を <code>Concat</code> で役職の低い順につなげて、 <code>FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
+
+<p>係長・課長・部長が誰も承認しなかった時、タイムアウトするまで待ちが発生しちゃうのが難点。→ <code>Take(1)</code> じゃなくて <code>FirstOrDefault</code> すればいいみたい。誰も承認しなかった場合 <code>default(string)</code> つまり空文字が流れてくる。</p>
+
+<p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
+
+<p>んーどうしようか。。。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Intent に Enum を詰めて、取り出す]]></title>
+    <link href="http://amay077.github.io/blog/2014/04/23/put-and-get-enum-from-intent/"/>
+    <updated>2014-04-23T15:22:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/04/23/put-and-get-enum-from-intent</id>
+    <content type="html"><![CDATA[<p>タイトルの通りです。</p>
+
+<!--more-->
+
+
+
+
+<figure class='code'><figcaption><span>enum</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">enum</span> <span class="n">MyTypes</span> <span class="o">{</span>
+</span><span class='line'>  <span class="n">One</span><span class="o">,</span>
+</span><span class='line'>  <span class="n">Two</span><span class="o">,</span>
+</span><span class='line'>  <span class="n">Three</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>put</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">intent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">,</span><span class="n">MyType</span><span class="o">.</span><span class="na">Two</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>get</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">MyTypes</span> <span class="n">t</span> <span class="o">=</span> <span class="o">(</span><span class="n">MyTypes</span><span class="o">)</span><span class="n">intent</span><span class="o">.</span><span class="na">getSerializableExtra</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>取り出すのは <code>getSerializableExtra</code> であることに注意。</p>
+
+<p>なんか int に変換されそうじゃん、と思って <code>getIntExtra</code> を使うと取り出せない。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin でビルドを自動化するには Business 版以上が必要です]]></title>
@@ -2844,520 +3365,6 @@ C# は、普通に書き換えられて超不安、という感じ。なるべ�
 　</p>
 
 <p>…Xamarin いいよ、Xamarin</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Mac に入れてるアプリ一覧]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/24/my-favorite-apps-in-mac/"/>
-    <updated>2014-01-24T15:47:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/24/my-favorite-apps-in-mac</id>
-    <content type="html"><![CDATA[<p>環境移行するときの為の備忘録。
-あんまりカスタマイズしない方だったけど３０超えてた。</p>
-
-<!--more-->
-
-
-<h2>カスタマイズ</h2>
-
-<ol>
-<li>XtraFinder : 標準Finderのタブよりこっちの方が好き。フォルダから Terminal を開けるのが地味に便利。</li>
-<li>Sublime Text 2 : 常用テキストエディタ</li>
-<li>CopyPath : Finder で選択したファイルのパスをクリップボードにコピる</li>
-<li>ClipMenu : クリップボード履歴と定型文呼び出し</li>
-<li>FreeMemory : メモリ解放してくれる系からテキトーに選んだ</li>
-<li>Google IME : ATOK 買うお金がない</li>
-</ol>
-
-
-<h2>ブログ書く時</h2>
-
-<ol>
-<li>Kobito : Qiita 投稿＆Markdown エディタとして</li>
-<li>Skitch : スクショ撮り＆注釈入れに</li>
-<li>ImageOptim : 画像圧縮</li>
-<li>LICEcap : スクリーンをGIFアニメとして記録できる、便利</li>
-</ol>
-
-
-<h2>クラウドストレージ</h2>
-
-<ol>
-<li>Dropbox : おなじみ</li>
-<li>Bitcasa : 無制限Bytes/$10/Month プラン（既得権益♪）</li>
-</ol>
-
-
-<p>Evernote、Google Drive、Skydrive は Web で十分。</p>
-
-<h2>チャットとか電話とか</h2>
-
-<ol>
-<li>Skype : 主にお仕事連絡用</li>
-<li>Line : 家族連絡用</li>
-<li>Linphone : 050plus の発着信に使ってたけど最近使えなくなった(泣</li>
-</ol>
-
-
-<h2>ブラウザ</h2>
-
-<ol>
-<li>Google Chrome : 常用</li>
-<li>Firefox : 主にテスト用ですね</li>
-</ol>
-
-
-<h2>プログラム開発のお仕事で使う</h2>
-
-<ol>
-<li>Xamarin Studio : Xamarin 推しですから</li>
-<li>SourceTree : git/hg、SVN も git-svn でやってる</li>
-<li>Brackets : Web開発はこれで</li>
-<li>Eclipse : 仕方なく</li>
-<li>Xcode : 仕方なく</li>
-<li>astah community : UML 描くのに</li>
-<li>MacWinZipper : 日本語が化けないZIP圧縮/解凍ツール</li>
-</ol>
-
-
-<h2>その他</h2>
-
-<ol>
-<li>VMware Fusion : Windows 使う時はこれで</li>
-<li>Sophos Anti-Virus : 一応のセキュリティ担保</li>
-<li>Fitbit Connect : Fitbix Flex 買ったら付いてきた</li>
-<li>Keynote : 買ったけど最近使ってないなあ</li>
-<li>VLC : 定番</li>
-<li>HandBrake : 定番</li>
-<li>Cyberbuck : FTP とか S3 とか</li>
-<li>radikoro : たまにラジオ聴いてる</li>
-</ol>
-
-
-<p>Word や Excel は、VMware の Windows で使ってます。Office の Mac版使うよりストレス溜まりません。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ViewController の ViewDidLoad で this が nil になった件]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload/"/>
-    <updated>2014-01-18T18:18:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/18/viewcontroller-is-nil-when-viewdidload</id>
-    <content type="html"><![CDATA[<p>Xamarin Studio + Xcode で Storyboard でアプリを作っていた。複数ある画面の内、ある一つの画面に遷移すると落ちる現象に見舞われていろいろ調べていた。</p>
-
-<!--more-->
-
-
-<p>Xamarin Studio で該当画面の ViewController の ViewDidLoad にブレークポイントを仕掛けて停止させ、ウォッチしてみたところ、なんと this が「nil」になっていた。</p>
-
-<p>これのおかげで、ViewController に配置した UILabel などにもアクセスできない。</p>
-
-<p>ViewController を作りなおしてみたり、呼び出し方法を変えてみたりいろいろやってみたけど解消せず。</p>
-
-<p>30分ほど悪戦苦闘した後、実機にインストールされている該当アプリを一旦削除し、Xamarin Studio も終了させた後に再起動、ソリューションをクリーンして再ビルドして実行してみたところ、問題が解消した。</p>
-
-<p>なにがしかのトラブルが起きた時は、まずは端末内のアプリを消してみると良いのかも知れない。（これまでの経験的に）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google Maps Component for iOS の CoordinateBounds について]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk/"/>
-    <updated>2014-01-16T18:05:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/16/notice-for-coordinatebounds-in-gmapiossdk</id>
-    <content type="html"><![CDATA[<p>すごくニッチな話ですけど、Xamarin Components にある Google Maps を Xamarin.iOS で使った。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://components.xamarin.com/view/googlemapsios">Google Maps /Components</a></li>
-</ul>
-
-
-<p>このライブラリの中に <code>CoordinateBounds</code> という「領域」を表すクラスがある。これは <a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja">GMSCoordinateBounds</a> の Binding だ。</p>
-
-<p>で、CoordinateBounds には <code>Including</code> (<a href="https://developers.google.com/maps/documentation/ios/reference/interface_g_m_s_coordinate_bounds?hl=ja#a63cffdf310ca19c6bab74c9a4034aadd">includingCoordinate</a>) というメソッドがあって、これを呼ぶと指定した座標が入るように領域を拡幅してくれる、便利だ。</p>
-
-<p>で、最初はこのクラスをこう使っていた。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">bounds</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CoordinateBounds</span><span class="p">();</span>
-</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">34d</span><span class="p">,</span> <span class="m">134d</span><span class="p">));</span>
-</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">33d</span><span class="p">,</span> <span class="m">133d</span><span class="p">));</span>
-</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">35d</span><span class="p">,</span> <span class="m">135d</span><span class="p">));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>動かしてみて、この使い方だと <code>bounds</code> から期待した結果が得られないことに気づいた。範囲が -180〜+180 になってしまった。</p>
-
-<p>正しくはこう。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">bounds</span> <span class="p">=</span> <span class="k">new</span> <span class="n">CoordinateBounds</span><span class="p">(</span>
-</span><span class='line'>    <span class="k">new</span> <span class="nf">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">34d</span><span class="p">,</span> <span class="m">134d</span><span class="p">),</span>
-</span><span class='line'>    <span class="k">new</span> <span class="nf">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">33d</span><span class="p">,</span> <span class="m">133d</span><span class="p">));</span>
-</span><span class='line'><span class="n">bounds</span><span class="p">.</span><span class="n">Including</span><span class="p">(</span><span class="k">new</span> <span class="n">CLLocationCoordinate2D</span><span class="p">(</span><span class="m">35d</span><span class="p">,</span> <span class="m">135d</span><span class="p">));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これだと結果は、正しく [33,133 - 35,135] を返す。</p>
-
-<p>処理上、生成時に２つの座標が揃ってないケースだったので、「あ、デフォルトコンストラクタあるじゃん」と使ってたらハマった。本家 iOS 版の方には引数無しの initXXX は無かった。</p>
-
-<p>Objective-C の仕様上 alloc して init しないのを防げない、んだっけ？
-だから、Xamarin.iOS の Binding でデフォルトコンストラクタを隠せないのかな？
-突っ込んで調べてないけど、Binding ライブラリを使う時は注意しましょう、ちゃんと本家のAPIリファレンスを見ましょう、というお話でした。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS でエラー “Failed to load AOT module ... in aot-only mode”]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode/"/>
-    <updated>2014-01-16T15:14:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/16/failed-to-load-aot-module-in-aot-only-mode</id>
-    <content type="html"><![CDATA[<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
-
-<!--more-->
-
-
-<p>Xamarin.iOS で Binding プロジェクトをプロジェクトに追加して実機で実行したら、起動時に落ちるようになってしまった。</p>
-
-<p>ログには、</p>
-
-<blockquote><p>Failed to load AOT module ‘/xxx/Hoge.dll.dylib&#8217; in aot-only mode.</p></blockquote>
-
-<p>というエラーが出ていた。</p>
-
-<p>実機からアプリを削除して、
-ソリューションを「再ビルド」したら直った。小ネタ過ぎる。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://monotouch.2284126.n4.nabble.com/Failed-to-load-AOT-module-in-aot-only-mode-td4602614.html">MonoTouch - Failed to load AOT module &#8230; in aot-only mode</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で特定の画面だけ向きを固定する時ハマったこと]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller/"/>
-    <updated>2014-01-07T18:11:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/07/touble-by-lock-orientation-of-specific-viewcontroller</id>
-    <content type="html"><![CDATA[<p>画面A,B があって B だけ横向き固定にしたい。</p>
-
-<ul>
-<li><a href="http://stackoverflow.com/a/12588038">uiviewcontroller - iOS 6 ViewController is rotating but shouldn&#8217;t - Stack Overflow</a></li>
-<li><a href="http://qiita.com/yusuga_/items/8cc82376edb40e09f0e7">iPhone - UIViewController iOS6での画面回転への対応 - Qiita [キータ]</a></li>
-</ul>
-
-
-<p>これを Xamarin.iOS でやりたい。</p>
-
-<!--more-->
-
-
-<p>Storyboard を Interface Builder で開いて、NavigationController のカスタムクラスを <code>MyNavigationController</code> とした。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/viewcontroller_orientaion_lock_in_xamarin_ios_01.png" alt="" /></p>
-
-<p>すると、Xamarin Studio 側にも <code>MyNavigationController.cs</code> ができるので、Stackoverflow の通り、以下のように実装した。</p>
-
-<figure class='code'><figcaption><span>MyNavigationController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// This file has been autogenerated from a class added in the UI designer.</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">System.Linq</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">namespace</span> <span class="nn">MyApp</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">MyNavigationController</span> <span class="p">:</span> <span class="n">UINavigationController</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">public</span> <span class="nf">MyNavigationController</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">handle</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="n">handle</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientation</span> <span class="nf">PreferredInterfaceOrientationForPresentation</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">PreferredInterfaceOrientationForPresentation</span><span class="p">();</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientationMask</span> <span class="nf">GetSupportedInterfaceOrientations</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">GetSupportedInterfaceOrientations</span><span class="p">();</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">ShouldAutorotate</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">this</span><span class="p">.</span><span class="n">ViewControllers</span><span class="p">.</span><span class="n">Last</span><span class="p">().</span><span class="n">ShouldAutorotate</span><span class="p">();</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>次に、横固定にしたい画面Bを以下のように実装。</p>
-
-<figure class='code'><figcaption><span>BViewController.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// This file has been autogenerated from a class added in the UI designer.</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
-</span><span class='line'><span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">namespace</span> <span class="nn">MyApp</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>  <span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">BViewController</span> <span class="p">:</span> <span class="n">UIViewController</span>
-</span><span class='line'>  <span class="p">{</span>
-</span><span class='line'>      <span class="k">public</span> <span class="nf">PhotoPreviewViewController</span> <span class="p">(</span><span class="n">IntPtr</span> <span class="n">handle</span><span class="p">)</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="n">handle</span><span class="p">)</span>
-</span><span class='line'>      <span class="p">{</span>
-</span><span class='line'>      <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientation</span> <span class="nf">PreferredInterfaceOrientationForPresentation</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">UIInterfaceOrientation</span><span class="p">.</span><span class="n">LandscapeLeft</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="n">UIInterfaceOrientationMask</span> <span class="nf">GetSupportedInterfaceOrientations</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">UIInterfaceOrientationMask</span><span class="p">.</span><span class="n">LandscapeLeft</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">ShouldAutorotate</span><span class="p">()</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="k">false</span><span class="p">;</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>  <span class="p">}</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これで動かしてみたものの、一向に画面が固定されない。
-しばらく悩んだ後、<code>MyNavigationController</code> のコンストラクタにブレークポイントを仕掛けてデバッグしてみたとても止まらない。
-よくよくアプリケーション出力のコンソールを見てみると、</p>
-
-<blockquote><p>Unknown class MyNavigationController in InterfaceBuilder file.&#8221;</p></blockquote>
-
-<p>と出力されていることに気づいた。
-なんか、.storyboard と C# クラスの関連付けがうまくいってないらしい。</p>
-
-<p>ソリューションをクリアして、再ビルドしたらこのエラーは消え、画面Bの向きが固定されるようになった！</p>
-
-<p>(ただ、縦画面のまま画面Bに遷移すると縦画面で固定されてしまう。これは実装が何か足りない気がする。)</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[NHK紅白の Android/iPhone アプリが .NET/Xamarin 製だったということ]]></title>
-    <link href="http://amay077.github.io/blog/2014/01/02/nhk-kouhaku-utagassen-apps-made-by-xamarin/"/>
-    <updated>2014-01-02T11:27:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/01/02/nhk-kouhaku-utagassen-apps-made-by-xamarin</id>
-    <content type="html"><![CDATA[<p>新年あけましておめでとうございます。
-今年も Xamarin 推しで参ります、よろしくお願いします。</p>
-
-<!--more-->
-
-
-<p>2013年大晦日の紅白歌合戦、NHK が iPhone/Android 用のアプリを配信していました。</p>
-
-<ul>
-<li><a href="http://www1.nhk.or.jp/kouhaku/app/">紅白アプリ｜第64回NHK紅白歌合戦</a></li>
-<li><a href="http://weekly.ascii.jp/elem/000/000/192/192769/">紅白で「イェーガー！」と叫ぶために曲を見逃さないiPhoneアプリ、NHK紅白</a></li>
-</ul>
-
-
-<p>なんとこのアプリ、Xamarin 製だったとのこと。
-紅白あんまり興味なかったのでノーチェックでしたわー。</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p>紅白アプリXamarinなんか</p>&mdash; ゆたか (@tmyt) <a href="https://twitter.com/tmyt/statuses/413092620567470080">2013, 12月 17</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-
-
-<blockquote class="twitter-tweet" lang="ja"><p>iPhoneの紅白アプリ、MvvmCross使ってるってことは、Xamarinで作ってるってこと？！ <a href="http://t.co/cTWPz2cp9E">pic.twitter.com/cTWPz2cp9E</a></p>&mdash; 菊池紘 (@kikuchy) <a href="https://twitter.com/kikuchy/statuses/417977438597959680">2013, 12月 31</a></blockquote>
-
-
-<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>このツイートを RT した後、ソッコーで Android 版を入れてみましたら、確かにクレジットに MvvmCross やら ActionBarSherlock for Xamarin やらならんでいました。</p>
-
-<h2>開発してるのは…</h2>
-
-<p>開発は、<a href="http://www.fenrir-inc.com/">スレイプニル</a> で有名なフェンリルさんのようですね。</p>
-
-<ul>
-<li><a href="http://biz.fenrir-inc.com/application_development/casestudy_app/nhk_kouhaku.html">フェンリル株式会社 | スマートフォンアプリ開発 実績 NHK 紅白</a></li>
-</ul>
-
-
-<p>2年連続で作っておられるようですが、おととしから Mono(MonoTouch/Mono for Android) 製だったのかな？いやスゴいです！</p>
-
-<h2>使われているライブラリ</h2>
-
-<p>せっかくなので、Android/iOSアプリ両方の著作権表示から、使われている OSS ライブラリを列挙してみます。(<a href="http://nkzn.hatenablog.jp/entry/2013/12/30/010956">こちらのエントリ</a>にインスパイアされました)
-当然ですが、すべて .NET/Mono で動作するライブラリばかりです。(ActionBar と Nimbus を除く)</p>
-
-<h3>MvvmCross</h3>
-
-<ul>
-<li>https://github.com/MvvmCross/MvvmCross</li>
-<li>クロスプラットフォームMVVMフレームワーク。<a href="http://qiita.com/amay077/items/c4227663b5a5e540dc13">こちらでも</a> 紹介しました</li>
-</ul>
-
-
-<h3>Json.NET</h3>
-
-<ul>
-<li>http://james.newtonking.com/json</li>
-<li>.NET/Mono で JSON を扱うための事実上標準ライブラリ</li>
-</ul>
-
-
-<h3>SocketIO4Net.Client</h3>
-
-<ul>
-<li>http://socketio4net.codeplex.com/</li>
-<li>WebSocket4Net と組み合わせて使うっぽい？ライブラリ</li>
-</ul>
-
-
-<h3>WebSocket4Net</h3>
-
-<ul>
-<li>http://websocket4net.codeplex.com/</li>
-<li>.NET で WebSocket 使うためのライブラリ。</li>
-</ul>
-
-
-<h3>SuperSocket.ClientEngine</h3>
-
-<ul>
-<li>http://clientengine.codeplex.com/</li>
-<li>ソケット通信用ライブラリっぽい。</li>
-</ul>
-
-
-<h3>MvxSettings</h3>
-
-<ul>
-<li>https://github.com/jamesmontemagno/Mvx.Plugins.Settings かな？</li>
-<li>設定情報をストアするための、MvvmCross のプラグイン</li>
-</ul>
-
-
-<h3>ActionBarSherlock for Xamarin</h3>
-
-<ul>
-<li>http://components.xamarin.com/view/XamarinActionBarSherlock</li>
-<li>スライドメニュー(NavigationDrawer) を実現するライブラリ。そういえばちょっと変わったスライドメニューでしたね。</li>
-</ul>
-
-
-<h3>AsyncOAuth</h3>
-
-<ul>
-<li>http://neue.cc/2013/02/27_398.html</li>
-<li>C#/LINQ の神であらせられる <a href="http://neue.cc/2013/02/27_398.html">@neuecc</a> さん作の 非同期OAuthライブラリ</li>
-</ul>
-
-
-<h3>Nimbus</h3>
-
-<ul>
-<li>http://nimbuskit.info/</li>
-<li>iOS の UIパーツがいろいろ拡張されてる的なライブラリ？Xamarin.iOS で Binding して使ってるのかなあ？</li>
-</ul>
-
-
-<h3>Html Agility Pack</h3>
-
-<ul>
-<li>http://htmlagilitypack.codeplex.com/</li>
-<li>HTMLパーサライブラリ</li>
-</ul>
-
-
-<p>生放送のテレビ番組向けアプリということで、リアルタイム通信に注力された様子が、使用されたと思われるライブラリからも伺えます。</p>
-
-<h2>これは強力すぎる Xamarin 導入事例ですね</h2>
-
-<p>日本の最も有名なテレビ番組のスマホアプリに Xamarin が使われていたというのは大きな導入事例になること必至です。
-アプリの性質上、期間限定となる可能性もあります。できればこのまま公開しつづけて欲しいですが、Xamarin を上司や提案先に紹介されたい場合は、お早めに、またキャプチャを多く撮っておかれる事をおすすめします。</p>
-
-<p>最後に、今年が Xamarin 普及元年とならん事を近くの神社にお祈りして、新年最初のエントリの締めとします。</p>
 ]]></content>
   </entry>
   

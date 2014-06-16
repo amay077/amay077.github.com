@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Objective-C | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/objective-c/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-04-04T15:36:49+09:00</updated>
+  <updated>2014-06-16T15:36:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,77 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS4.x 対応のソースコードから「新しいAPI」を使っている箇所を探す]]></title>
+    <link href="http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code/"/>
+    <updated>2014-05-14T15:26:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code</id>
+    <content type="html"><![CDATA[<p>　アプリを iOS4.x でも動作させたい場合、Xcode のプロジェクト設定で Deployment Target を "4.x" (4.3とか) に設定します。
+一方で Base SDK は最新のものしか選べません、今だと "7.1"。</p>
+
+<!--more-->
+
+
+<p>　この状態だと、コード中で iOS5以降に追加された API を使っていると、iOS4.x端末では当然クラッシュします。</p>
+
+<p>　Target を 4.x にしてるんだから、クラッシュしそうなコードがあったら Xcode が検出して警告して欲しいんですが、そういう機能はないみたいです。(実はあるのでしょうか？ Android だと警告どころかビルドエラーになるので、iOSアプリ開発は大変不便だな、と思ってしまいます。Obj-C は JavaScript みたいなもんだから仕方がない、のは分かりますが)</p>
+
+<p>　 <a href="http://oclint.org/">OCLint</a> という静的コード解析ツールを見つけましたが、機能をざっと見ても、APIバージョンをチェックするものはなさそうです。（試したことはありません）</p>
+
+<p>　しかし「動かしてみないと分からない」のは不安すぎるので、なんとかして「新しいAPIを使っていないか？」をチェックする方法を考えて、行ってみました。</p>
+
+<h2>新しいAPIを使っている箇所を見つける方法</h2>
+
+<h3>A. iOS Developer Center に API の更新内容がまとめられたページがあります。</h3>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/releasenotes/General/iOS50APIDiff/index.html#//apple_ref/doc/uid/TP40011042">iOS 4.3 to iOS 5.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/ios/releasenotes/General/iOS60APIDiffs/index.html">iOS 5.1 to iOS 6.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/IOS/releasenotes/General/iOS70APIDiffs/index.html">iOS 6.1 to iOS 7.0 API Differences</a></li>
+</ul>
+
+
+<h3>B. これらのページから「変更のあった API のリスト」を抽出します。</h3>
+
+<p>具体的には以下のようなリストを作ります。</p>
+
+<blockquote><p>Added vImageAlphaBlend_ARGB8888
+Added vImageAlphaBlend_ARGBFFFF
+…</p></blockquote>
+
+<p>この作業は自動化したいのですが、お試しなので手動でテキストエディタと <strong>EXCEL</strong> を駆使して作成しました。</p>
+
+<h3>C. あとは、自分のソースコードに対して、順次 grep をかけるスクリプトを作ります。</h3>
+
+<p>修正リストの中には、 <code>-[ALAsset setImageData:metadata:completionBlock:]</code> のように名前付き引数だったりする API もあるので、正規表現でなるべくヒットするように置換します。</p>
+
+<p><code>sh find_new_api.sh
+grep -nr "ALAsset.*setImageData.*metadata.*completionBlock:.*;" ./src/*
+grep -nr "vImageAlphaBlend_ARGB8888.*;" ./src/*
+grep -nr "vImageAlphaBlend_ARGBFFFF.*;" ./src/*
+…
+</code></p>
+
+<h3>D. このスクリプトを実行して何か出たら、そこが「新しいAPIを使ってる箇所」です。</h3>
+
+<h2>まとめ</h2>
+
+<h3>注意点</h3>
+
+<ul>
+<li>クラス自体が追加されているものも、メソッドの追加として探しているので、他のクラスと誤認することがあります。</li>
+<li>正規表現が完全に正しいかよくわかりません（ソースコードに改行含む場合とか）</li>
+</ul>
+
+
+<p>簡単で、不格好な方法ですが、十分に機能してくれますし、開発者の知識やテストだけに頼るのに比べれば随分と安心できます。</p>
+
+<p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
+
+<p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>

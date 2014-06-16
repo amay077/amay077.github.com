@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-04-04T15:36:49+09:00</updated>
+  <updated>2014-06-16T15:36:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,274 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel/"/>
+    <updated>2014-06-13T15:34:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「文字の自動縮小」の自己回答。</p>
+
+<!--more-->
+
+
+<p>Xamarin.Forms で定義した <code>Label</code> は、iOS では <code>UILabel</code> となるはずなので、その過程のどこかでフックできれば <code>UILabel.AdjustsFontSizeToFitWidth</code> が仕込める、と目論んで、ホントにできたのでメモ。</p>
+
+<h2>要点</h2>
+
+<p><del>Forms→ネイティブのフックは PageRenderer でできる。その中で得られる UIView（のサブクラス）は、Label と UILabel の両方の参照を持っているので、あとは使うだけ。</del></p>
+
+<p><strong>ページでなく、UIパーツレベルでフックできたので、全面的に書き換えた。</strong></p>
+
+<h2>やってみる</h2>
+
+<p>参考にしたのは https://github.com/xamarin/xamarin-forms-samples/tree/master/Forms2Native 。</p>
+
+<p>このサンプルをちょっと改造して試した。</p>
+
+<p>まずは Forms側の MySecondPage.cs を修正。</p>
+
+<p>```csharp MySecondPage.cs
+public class MySecondPage : ContentPage
+{</p>
+
+<pre><code>public Label MyLabel { get; private set; }
+
+public MySecondPage ()
+{
+    this.MyLabel = new Label
+    {
+        Text = "Too loooooooooooooooooooooooong label",
+        Font = Font.SystemFontOfSize(30d),
+        LineBreakMode = LineBreakMode.NoWrap
+    };
+
+    Content = new StackLayout
+    {
+        Orientation = StackOrientation.Vertical,
+        VerticalOptions = LayoutOptions.CenterAndExpand,
+        Children = 
+        {
+            this.MyLabel
+        }
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ラベルを配置。とても文字が長いので全部は表示しきれない。</p>
+
+<p>次に iOS側に MyLabelRenderer.cs を作成。</p>
+
+<p>```csharp MyLabelRenderer.cs
+using System;
+using Xamarin.Forms;
+using Forms2Native;
+using Xamarin.Forms.Platform.iOS;
+using MonoTouch.UIKit;</p>
+
+<p>[assembly:ExportRenderer(typeof(Label), typeof(MyLabelRenderer))]</p>
+
+<p>namespace Forms2Native
+{</p>
+
+<pre><code>public class MyLabelRenderer : LabelRenderer
+{
+    protected override void OnElementChanged(ElementChangedEventArgs&lt;Label&gt; e)
+    {
+        base.OnElementChanged(e);
+        this.Control.AdjustsFontSizeToFitWidth = true;
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>ExportRenderer</code> で「Formsの<code>Label</code>は、<code>MyLabelRenderer</code>を使う」と定義している。
+するとすべての <code>Label</code> の生成時を <code>OnElementChanged</code> でフックでき、<code>Control</code> で <code>UILabel</code> は取り出せるので、あとはご自由に、という感じ。</p>
+
+<p>この実装だと、すべての Label に Ajusts が適用されてしまう。個別に行いたい場合は、Forms側に Labelから派生した <code>AjustableLabel</code> を作成して使い、<code>ExportRenderer(typeof(Label),…</code> のところを <code>ExportRenderer(typeof(AjustableLabel),…</code> にすればいけるはず。そしてこの方法はカスタムビューを作る手順に通じる（というかそのもの？）はず。</p>
+
+<p>ちなみにこの <code>OnElementChanged</code> は、Nuget の Xamarin.Formsパッケージの Ver1.1.0.6201から利用できる。</p>
+
+<h2>実行する</h2>
+
+<p>こんな感じで、ちゃんと文字サイズが縮小されました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
+
+<p>Android の方も同じ要領でいけるは…ず。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms/"/>
+    <updated>2014-06-10T15:30:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
+
+<!--more-->
+
+
+<h2><del>不可視の扱い</del></h2>
+
+<p><del>Forms 側のパーツには <code>IsVisible = true | false</code> がある。
+iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</del></p>
+
+<p><del>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</del></p>
+
+<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
+
+<h2>空文字の扱い</h2>
+
+<p>IsVisible と勘違いしてたのはこっちだった。</p>
+
+<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
+
+<p>https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</p>
+
+<h2>画面回転時の再構築</h2>
+
+<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。
+Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
+
+<h2>回避方法</h2>
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>こんな感じっすね。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(MainLauncher = true,</p>
+
+<pre><code>ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]
+</code></pre>
+
+<p>public class MainActivity : AndroidActivity
+{
+```</p>
+
+<h2>BACKキーの扱い</h2>
+
+<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
+
+<h3>自己解決</h3>
+
+<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
+
+<h2>デフォルトスタイル</h2>
+
+<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。
+iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "MyApp",<br/>
+ MainLauncher = true,
+ Theme = "@android:style/Theme.Holo.Light")]
+public class MainActivity : AndroidActivity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    /* 以下省略 */
+</code></pre>
+
+<p>```</p>
+
+<h2>起動時</h2>
+
+<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
+ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
+
+<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
+
+<h2>文字の自動縮小</h2>
+
+<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
+
+<h3>自己解決</h3>
+
+<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
+
+<h2>iPhone と iPad</h2>
+
+<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
+
+<p>他にも見つけたら書きます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms は Windows.Forms じゃないよ]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/08/xamarin-forms-is-not-windows-forms/"/>
+    <updated>2014-06-08T15:28:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/08/xamarin-forms-is-not-windows-forms</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.buildinsider.net/mobile/xamarintips/0005">iOS／Androidの画面レイアウトを共通化するには？（Xamarin.Forms） - Build Insider</a></li>
+</ul>
+
+
+<p>に書ききれなかったことなど。</p>
+
+<!--more-->
+
+
+<h2>名前どうよ？</h2>
+
+<p><strong>Xamarin.Forms</strong> って名前、どうしても Windows.Forms を連想するけど全然別ものだから。とはいえ、あんまり WPF の経験がないので、Windows.Forms にそれほどイヤな印象がない。VB6時代なんて、画面に Fill するのすらゴリゴリ実装が必要だったし。</p>
+
+<h2>前身は MonoTouch.Dialog じゃないかと思います</h2>
+
+<p>MonoTouch.Dialog というのは、Xamarin の CTO でありスーパーハッカーのミゲル氏が開発した、簡単なコードで iOS の UI を実装できるライブラリ（「Dialog」だけど、「ダイアログボックス」とは関係ない。 ）</p>
+
+<ul>
+<li><a href="https://github.com/migueldeicaza/MonoTouch.Dialog">migueldeicaza/MonoTouch.Dialog</a></li>
+</ul>
+
+
+<p>たぶんだけど、Xamarin.Forms はこれの思想がベースにあって、他のプラットフォームやXAML対応が行われたんじゃないかと勝手に思ってます。（いつか紹介しようと思ってたけどこれでお役御免になってしまったかも）</p>
+
+<h2>Android の UIフレームワークに似てるような…</h2>
+
+<p><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/controls/layouts/">StackLayout</a> は LinearLayout相当、RelativeLayout も、同名クラスがあるし、割と Android の UI の考え方をベースにしてるのかなと予想。Windows Phone はあまり経験がないので知らない。。。</p>
+
+<h2>Hoge.iOS というプロジェクト名がキライ</h2>
+
+<p>プラットフォームの識別子をプロジェクト名につけるのが良いんだけど、 <code>HelloForms.iOS</code> とか「iOS」とつけるのが嫌い。名前空間名とかが小文字で始まってしまうのが気持ち悪くて。
+MvvmCross などでは、iOS は <code>XXX.Touch</code> 、Android は <code>XXX.Droid</code> としていて、こっちの方が好み。</p>
+
+<h2>XAML はデザイナーが無いとツラい</h2>
+
+<p>WPFじゃなくてもXAMLって言っていいんだ、というのを初めて知ったｗ
+Xamarin Studio のXMLデザイナーは補完も効かないしツラい。コードでUI作るのにも限界があるので、今年の <a href="https://evolve.xamarin.com/">Evolve</a> あたりで「Xamarin.Forms のUIデザイナー発表ばばーん！！」を期待してます。</p>
+
+<h2>タブの位置が上とか下とかどうでもいい</h2>
+
+<p>「UIはプラットフォームの流儀に合わせるべき」という説明に必ずと言っていいほど登場するのがタブバーの位置が Androidだと上で、iOSだと下、ってやつ。
+個人的にはどうでもいい。タブの切り替えをよく使うなら指の届きやすい画面下部に配置すべきだし、同じアプリならiOS版とAndroid版でUIを変えるべきでないと思っている。（かと言って、iOS版のUIをそっくりそのままAndroidに移植すればいいという話でもない）。 <strong>プロダクトのUXは、プラットフォームのUXより優先されるべき</strong> 、と思ってる。</p>
+
+<h2>上司への提案には好材料かと</h2>
+
+<ul>
+<li>私「iOS/Android 両方開発するなら Xamarin 使いましょう！」</li>
+<li>上「そうか、それは１ソースで両対応できるのか？」</li>
+<li>私「いえ、画面はプラットフォーム毎に書きます、カメラとかも別です。共通化できるのはコアロジックです。」</li>
+<li>上「なんだその程度か」</li>
+<li>私「…」</li>
+</ul>
+
+
+<p>というよくある話には、「画面が１ソースで共通にできる Xamarin.Forms」は、説得材料としては、とりわけ対PhoneGapには効果高いんじゃないかと思います。毒りんごかどうかはともかく。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin でビルドを自動化するには Business 版以上が必要です]]></title>
@@ -137,245 +405,6 @@ Observable.FromEventPattern(
 <p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
 
 <p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android で Intent を受けとるには？]]></title>
-    <link href="http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android/"/>
-    <updated>2014-04-01T15:26:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/04/01/receive-intent-by-xamarin-android</id>
-    <content type="html"><![CDATA[<p>例えば、他のアプリからテキストを「送る」して、自作の Xamarin アプリでそれを受け取りたい時。</p>
-
-<!--more-->
-
-
-<p>普通の Android アプリ開発だと <code>AndroidManifest.xml</code> にこう書く。</p>
-
-<p>```xml AndroidManifest.xml
-<activity
-  android:name="com.example.intenttest.MainActivity"
-  android:label="@string/app_name" >
-  <intent-filter></p>
-
-<pre><code>&lt;action android:name="android.intent.action.MAIN" /&gt;
-  &lt;category android:name="android.intent.category.LAUNCHER" /&gt;
-</code></pre>
-
-<p>  </intent-filter></p>
-
-<p>  <intent-filter></p>
-
-<pre><code>&lt;action android:name="android.intent.action.SEND" /&gt;
-&lt;category android:name="android.intent.category.DEFAULT" /&gt;
-&lt;data android:mimeType="text/plain" /&gt;
-</code></pre>
-
-<p>  </intent-filter>
-</activity>
-```</p>
-
-<p>Xamarin.Android では、Activity のソースファイルの属性として、以下のように書く。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = "MainActivity", MainLauncher = true)]
-[IntentFilter (new []{ Intent.ActionSend },
-  Categories = new []{ Intent.CategoryDefault },
-  DataMimeType = "text/plain" )]
-public class MainActivity : Activity
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle bundle)
-{
-    base.OnCreate(bundle);
-</code></pre>
-
-<p>```</p>
-
-<p>テキストでない場合は、mimetype を適宜変更する。省略したら動作しなかった。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた]]></title>
-    <link href="http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin/"/>
-    <updated>2014-03-10T22:09:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/03/10/using-uialertview-objc-vs-xamarin</id>
-    <content type="html"><![CDATA[<p>なんか割とニーズがあるみたいで。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://teapipin.blog10.fc2.com/blog-entry-224.html">【Objective-C】アラート（UIAlertView）でボタンを押すまで次の処理を待つ方法 - creativi.tea</a></li>
-<li><a href="http://cocoadays.blogspot.jp/2011/05/ios.html">Cocoaの日々: [iOS] 非同期処理を同期処理に変える</a></li>
-<li><a href="http://qiita.com/edo_m18/items/cb1d9061d91e572b58eb">[Objective-C] UIAlertViewを同期処理する - Qiita </a></li>
-</ul>
-
-
-<h2>Objective-C の場合</h2>
-
-<p><code>UIAlertView</code> は、結果を受け取るのが deletgate で、 Objective-C では、(Blocks を使わなければ) 受け取りが別メソッドになってしまう、しかも複数のアラートの結果が同じメソッドに飛んでくるので、tag値で分岐…とかいろいろで、ホントに使うのが面倒ですね。</p>
-
-<p>さらに、「アラートの結果を受け取ってから、次の処理を行う」という処理を素直に記述したいと思うと、上で示したような「アラートを表示して、結果が得られるまで while で待つ」というなんとも不格好なコードになってしまいます。下にも書いてみました。（あ、メンバ変数も使わざるを得ないし。）</p>
-
-<p>```objective-c HogeViewController.m
-@implementation HogeViewController {</p>
-
-<pre><code>NSInteger _buttonIndex;
-</code></pre>
-
-<p>}</p>
-
-<ul>
-<li>(IBAction)buttonTouchUp:(id)sender
-{
-  UIAlertView *alert = [[UIAlertView alloc] initWithTitle:nil
-
-<pre><code>                          message:NSLocalizedString(@"なにか押して",@"")
-                         delegate:self
-                cancelButtonTitle:@"Cancel"
-                otherButtonTitles:@"OK", nil];
-</code></pre>
-
-<p>  [alert show];</p>
-
-<p>  // ボタンが押されるまで待つ
-  <em>buttonIndex = -1;
-  while (</em>buttonIndex == -1) {</p>
-
-<pre><code>  [[NSRunLoop currentRunLoop]
-   runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5f]]; // 0.5秒
-</code></pre>
-
-<p>  }</p>
-
-<p>  label1.text = [NSString stringWithFormat:@"%d 番目のボタンを押したね", (int)_buttonIndex];
-}</p></li>
-</ul>
-
-
-<p>-(void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
-{</p>
-
-<pre><code>_buttonIndex = buttonIndex;
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>[NSRunLoop runUntilDate]</code> なんて VB6 の <code>DoEvents</code> ですもんねなつかしい。</p>
-
-<h2>Xamarin.iOS(C#) の場合</h2>
-
-<p>Objective-C ではややこしかった「アラートを出す→ボタンを押す→次の処理へ」という流れ、 Xamarin.iOS と C# ならこんなにシンプルに書けます。</p>
-
-<p>```csharp HogeViewController.cs
-async void OnButtonTouch(object sender, EventArgs e)
-{</p>
-
-<pre><code>var buttonIndex = await MsgBox("", "なにか押して", "Cancel", "OK");
-label1.Text = buttonIndex.ToString() + "番目を押したね";  
-</code></pre>
-
-<p>}</p>
-
-<p>static Task<int> MsgBox(string title, string message,</p>
-
-<pre><code>string cancelButtonTitle, params string[] buttons)
-</code></pre>
-
-<p>{</p>
-
-<pre><code>var comp = new TaskCompletionSource&lt;int&gt;();
-
-var alert = new UIAlertView(title, message, null, cancelButtonTitle, buttons);
-alert.Clicked += (_, e) =&gt; comp.TrySetResult(e.ButtonIndex);
-alert.Show();
-
-return comp.Task;
-</code></pre>
-
-<p>}
-```</p>
-
-<p>VB6 が懐かしくて <code>MsgBox</code> ってメソッドにしちゃいましたよ。</p>
-
-<p><code>MsgBox</code> は、Task を返す <strong>非同期な</strong> メソッドです。この非同期処理が終了するのは、<code>TaskCompletionSource.TrySetResult</code> が呼び出された時、つまりアラートのボタンが押された時です。この非同期処理の戻り値はもちろん押したボタンのインデックスです。</p>
-
-<p>非同期メソッドである <code>MsgBox</code> を呼び出す側には、キーワード <code>await</code> が付いています。
-これをつけると、次行以降の処理は、非同期の MsgBox が完了した後、順次実行されます、つまり待っているわけではなく、どちらかというと、 <strong>処理を後続に付け足す</strong> 感じ。
-さらに、この後続処理はUIスレッドで実行されるので、UIパーツへのアクセスも問題ありません。</p>
-
-<p><code>async</code> はメソッド内で <code>await</code> を使うときにつけるお約束。</p>
-
-<p>async/await は一見、ただの同期処理に見えるので理解して使う必要がありますが、Objective-C のコードに比べて、とても簡潔に、流れるように書くことができるのが分かると思います。</p>
-
-<p><strong>C# の非常に強力な言語機能は、<a href="https://xamarin.com/">Xamarin</a> を選択する大きな理由の一つです。</strong></p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://stackoverflow.com/questions/4613071/messagebox-show-and-dialogresult-equivalent-in-monotouch">c# - Messagebox.Show and DialogResult equivalent in MonoTouch - Stack Overflow</a></li>
-<li><a href="http://ufcpp.wordpress.com/2012/11/12/asyncawait%e3%81%a8%e5%90%8c%e6%99%82%e5%ae%9f%e8%a1%8c%e5%88%b6%e5%be%a1/">async/awaitと同時実行制御 | ++C++; // 未確認飛行 C ブログ</a></li>
-<li><a href="http://www.slideshare.net/bleistift/asyncawait2">async/await不要論</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/27/slides-from-my-xamarin-introduction/"/>
-    <updated>2014-02-27T21:40:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/27/slides-from-my-xamarin-introduction</id>
-    <content type="html"><![CDATA[<p>2/26 の <a href="http://atnd.org/events/47898">うずらインキュベータ</a> という勉強会で、Xamarin の話をしました。</p>
-
-<!--more-->
-
-
-
-
-<iframe src="http://www.slideshare.net/slideshow/embed_code/31674661" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC; border-width:1px 1px 0; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe>
-
-
-<p> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/amay077/xamarin-31674661" title="Xamarin によるクロスプラットフォームモバイルアプリ開発" target="_blank">Xamarin によるクロスプラットフォームモバイルアプリ開発</a> </strong> from <strong><a href="http://www.slideshare.net/amay077" target="_blank">amay 077</a></strong> </div></p>
-
-<p>45分という長い時間話すのは勉強会では初めてだったのですが、なんとか説明し切ることができました。（ちょっとデモが中途半端になってしまいましたが）</p>
-
-<p>資料は <a href="http://qiita.com/tags/xamarin">Qiita に書いてきた</a> 内容のまとめみたいなものですが、少し補足します。</p>
-
-<h2>Xamarin で作った経験あるの？</h2>
-
-<p>仕事では、まだ無いです（<sup>_<sup>;）</sup></sup>
-個人アプリでは「<a href="https://itunes.apple.com/us/app/fu-shifoto/id806913229">富士フォト</a>」というのを iOS 用は Xamarin.iOS で作りました。<a href="https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto">Android</a> は Java ですが Xamarin 化したいな。</p>
-
-<h2>Win+Visual Studio ではダメなの？</h2>
-
-<p>個人の見解ですから（<sup>_<sup>;）</sup></sup>
-私も元々は Windowsの開発がメインで Visual Studio の強力さは知っていますが、iOS やるならどういう形にせよ Mac+Xcode を扱わないといけないので、慣れておいた方がよいかなと。</p>
-
-<p>また、Microsoft との提携以降、Microsoft のエバンジェリストさんや MVP の方々が Visual Studio + Xamarin の話をものすごく展開されているので、そちらにお任せした次第です。</p>
-
-<h2>実行モデルのとこ</h2>
-
-<p>JavaSE が .NET に置き換わる図になっていますが、実際には少し違っていて、JavaSE のラッパもあります。例えば文字列型には、<code>System.String</code> と <code>Java.Lang.String</code> があります。当然、理由がなければ前者を使った方がよいわけですが。</p>
-
-<p>iOS のスタックに関しては、実はどこからどこまでが「CocoaTouch」なのかよく分かってません。</p>
-
-<h2>他のクロスプラットフォーム開発ツールとの比較</h2>
-
-<p>Titanium, AIR については2年くらい前に少し触ったことがあります。PhoneGap と DelphiXE についてはスペックを見て＆詳しい方からの情報を元にしてます。</p>
-
-<p>Titanium は次期 <a href="http://titanium-mobile.jp/38">Ti.Next</a> では JavaScriptCore を使ってすんごく速くなるそうですし、AIR も当時よりだいぶ <a href="http://www.slideshare.net/pik256/dev-sumi2014-13c4rev">高速になったらしい</a> です。</p>
-
-<h2>C# のとこ</h2>
-
-<p>https://xamarin.com/csharp よりは悪意のないコードかとｗ
-（Objective-C と比較しようとすると Obj-C の方が画面に入らないので Java との比較にしました。）</p>
-
-<p>こんなところで。
-何かおかしなところがあったらコメント頂けるとありがたいです。</p>
 ]]></content>
   </entry>
   

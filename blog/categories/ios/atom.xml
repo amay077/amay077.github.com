@@ -4,7 +4,7 @@
   <title><![CDATA[Category: iOS | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-04-04T15:36:49+09:00</updated>
+  <updated>2014-06-16T15:36:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,281 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel/"/>
+    <updated>2014-06-13T15:34:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「文字の自動縮小」の自己回答。</p>
+
+<!--more-->
+
+
+<p>Xamarin.Forms で定義した <code>Label</code> は、iOS では <code>UILabel</code> となるはずなので、その過程のどこかでフックできれば <code>UILabel.AdjustsFontSizeToFitWidth</code> が仕込める、と目論んで、ホントにできたのでメモ。</p>
+
+<h2>要点</h2>
+
+<p><del>Forms→ネイティブのフックは PageRenderer でできる。その中で得られる UIView（のサブクラス）は、Label と UILabel の両方の参照を持っているので、あとは使うだけ。</del></p>
+
+<p><strong>ページでなく、UIパーツレベルでフックできたので、全面的に書き換えた。</strong></p>
+
+<h2>やってみる</h2>
+
+<p>参考にしたのは https://github.com/xamarin/xamarin-forms-samples/tree/master/Forms2Native 。</p>
+
+<p>このサンプルをちょっと改造して試した。</p>
+
+<p>まずは Forms側の MySecondPage.cs を修正。</p>
+
+<p>```csharp MySecondPage.cs
+public class MySecondPage : ContentPage
+{</p>
+
+<pre><code>public Label MyLabel { get; private set; }
+
+public MySecondPage ()
+{
+    this.MyLabel = new Label
+    {
+        Text = "Too loooooooooooooooooooooooong label",
+        Font = Font.SystemFontOfSize(30d),
+        LineBreakMode = LineBreakMode.NoWrap
+    };
+
+    Content = new StackLayout
+    {
+        Orientation = StackOrientation.Vertical,
+        VerticalOptions = LayoutOptions.CenterAndExpand,
+        Children = 
+        {
+            this.MyLabel
+        }
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ラベルを配置。とても文字が長いので全部は表示しきれない。</p>
+
+<p>次に iOS側に MyLabelRenderer.cs を作成。</p>
+
+<p>```csharp MyLabelRenderer.cs
+using System;
+using Xamarin.Forms;
+using Forms2Native;
+using Xamarin.Forms.Platform.iOS;
+using MonoTouch.UIKit;</p>
+
+<p>[assembly:ExportRenderer(typeof(Label), typeof(MyLabelRenderer))]</p>
+
+<p>namespace Forms2Native
+{</p>
+
+<pre><code>public class MyLabelRenderer : LabelRenderer
+{
+    protected override void OnElementChanged(ElementChangedEventArgs&lt;Label&gt; e)
+    {
+        base.OnElementChanged(e);
+        this.Control.AdjustsFontSizeToFitWidth = true;
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>ExportRenderer</code> で「Formsの<code>Label</code>は、<code>MyLabelRenderer</code>を使う」と定義している。
+するとすべての <code>Label</code> の生成時を <code>OnElementChanged</code> でフックでき、<code>Control</code> で <code>UILabel</code> は取り出せるので、あとはご自由に、という感じ。</p>
+
+<p>この実装だと、すべての Label に Ajusts が適用されてしまう。個別に行いたい場合は、Forms側に Labelから派生した <code>AjustableLabel</code> を作成して使い、<code>ExportRenderer(typeof(Label),…</code> のところを <code>ExportRenderer(typeof(AjustableLabel),…</code> にすればいけるはず。そしてこの方法はカスタムビューを作る手順に通じる（というかそのもの？）はず。</p>
+
+<p>ちなみにこの <code>OnElementChanged</code> は、Nuget の Xamarin.Formsパッケージの Ver1.1.0.6201から利用できる。</p>
+
+<h2>実行する</h2>
+
+<p>こんな感じで、ちゃんと文字サイズが縮小されました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
+
+<p>Android の方も同じ要領でいけるは…ず。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
+    <link href="http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms/"/>
+    <updated>2014-06-10T15:30:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
+
+<!--more-->
+
+
+<h2><del>不可視の扱い</del></h2>
+
+<p><del>Forms 側のパーツには <code>IsVisible = true | false</code> がある。
+iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</del></p>
+
+<p><del>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</del></p>
+
+<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
+
+<h2>空文字の扱い</h2>
+
+<p>IsVisible と勘違いしてたのはこっちだった。</p>
+
+<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
+
+<p>https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</p>
+
+<h2>画面回転時の再構築</h2>
+
+<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。
+Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
+
+<h2>回避方法</h2>
+
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+
+
+<script async src="http://amay077.github.io//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>こんな感じっすね。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(MainLauncher = true,</p>
+
+<pre><code>ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]
+</code></pre>
+
+<p>public class MainActivity : AndroidActivity
+{
+```</p>
+
+<h2>BACKキーの扱い</h2>
+
+<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
+
+<h3>自己解決</h3>
+
+<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
+
+<h2>デフォルトスタイル</h2>
+
+<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。
+iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "MyApp",<br/>
+ MainLauncher = true,
+ Theme = "@android:style/Theme.Holo.Light")]
+public class MainActivity : AndroidActivity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    /* 以下省略 */
+</code></pre>
+
+<p>```</p>
+
+<h2>起動時</h2>
+
+<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
+ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
+
+<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
+
+<h2>文字の自動縮小</h2>
+
+<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
+
+<h3>自己解決</h3>
+
+<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
+
+<h2>iPhone と iPad</h2>
+
+<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
+
+<p>他にも見つけたら書きます。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[iOS4.x 対応のソースコードから「新しいAPI」を使っている箇所を探す]]></title>
+    <link href="http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code/"/>
+    <updated>2014-05-14T15:26:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/05/14/find-new-api-in-ios4-supported-code</id>
+    <content type="html"><![CDATA[<p>　アプリを iOS4.x でも動作させたい場合、Xcode のプロジェクト設定で Deployment Target を "4.x" (4.3とか) に設定します。
+一方で Base SDK は最新のものしか選べません、今だと "7.1"。</p>
+
+<!--more-->
+
+
+<p>　この状態だと、コード中で iOS5以降に追加された API を使っていると、iOS4.x端末では当然クラッシュします。</p>
+
+<p>　Target を 4.x にしてるんだから、クラッシュしそうなコードがあったら Xcode が検出して警告して欲しいんですが、そういう機能はないみたいです。(実はあるのでしょうか？ Android だと警告どころかビルドエラーになるので、iOSアプリ開発は大変不便だな、と思ってしまいます。Obj-C は JavaScript みたいなもんだから仕方がない、のは分かりますが)</p>
+
+<p>　 <a href="http://oclint.org/">OCLint</a> という静的コード解析ツールを見つけましたが、機能をざっと見ても、APIバージョンをチェックするものはなさそうです。（試したことはありません）</p>
+
+<p>　しかし「動かしてみないと分からない」のは不安すぎるので、なんとかして「新しいAPIを使っていないか？」をチェックする方法を考えて、行ってみました。</p>
+
+<h2>新しいAPIを使っている箇所を見つける方法</h2>
+
+<h3>A. iOS Developer Center に API の更新内容がまとめられたページがあります。</h3>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/releasenotes/General/iOS50APIDiff/index.html#//apple_ref/doc/uid/TP40011042">iOS 4.3 to iOS 5.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/ios/releasenotes/General/iOS60APIDiffs/index.html">iOS 5.1 to iOS 6.0 API Differences</a></li>
+<li><a href="https://developer.apple.com/LIBRARY/IOS/releasenotes/General/iOS70APIDiffs/index.html">iOS 6.1 to iOS 7.0 API Differences</a></li>
+</ul>
+
+
+<h3>B. これらのページから「変更のあった API のリスト」を抽出します。</h3>
+
+<p>具体的には以下のようなリストを作ります。</p>
+
+<blockquote><p>Added vImageAlphaBlend_ARGB8888
+Added vImageAlphaBlend_ARGBFFFF
+…</p></blockquote>
+
+<p>この作業は自動化したいのですが、お試しなので手動でテキストエディタと <strong>EXCEL</strong> を駆使して作成しました。</p>
+
+<h3>C. あとは、自分のソースコードに対して、順次 grep をかけるスクリプトを作ります。</h3>
+
+<p>修正リストの中には、 <code>-[ALAsset setImageData:metadata:completionBlock:]</code> のように名前付き引数だったりする API もあるので、正規表現でなるべくヒットするように置換します。</p>
+
+<p><code>sh find_new_api.sh
+grep -nr "ALAsset.*setImageData.*metadata.*completionBlock:.*;" ./src/*
+grep -nr "vImageAlphaBlend_ARGB8888.*;" ./src/*
+grep -nr "vImageAlphaBlend_ARGBFFFF.*;" ./src/*
+…
+</code></p>
+
+<h3>D. このスクリプトを実行して何か出たら、そこが「新しいAPIを使ってる箇所」です。</h3>
+
+<h2>まとめ</h2>
+
+<h3>注意点</h3>
+
+<ul>
+<li>クラス自体が追加されているものも、メソッドの追加として探しているので、他のクラスと誤認することがあります。</li>
+<li>正規表現が完全に正しいかよくわかりません（ソースコードに改行含む場合とか）</li>
+</ul>
+
+
+<p>簡単で、不格好な方法ですが、十分に機能してくれますし、開発者の知識やテストだけに頼るのに比べれば随分と安心できます。</p>
+
+<p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
+
+<p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
@@ -209,364 +484,6 @@ return comp.Task;
 <li><a href="http://www.slideshare.net/bleistift/asyncawait2">async/await不要論</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/27/slides-from-my-xamarin-introduction/"/>
-    <updated>2014-02-27T21:40:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/27/slides-from-my-xamarin-introduction</id>
-    <content type="html"><![CDATA[<p>2/26 の <a href="http://atnd.org/events/47898">うずらインキュベータ</a> という勉強会で、Xamarin の話をしました。</p>
-
-<!--more-->
-
-
-
-
-<iframe src="http://www.slideshare.net/slideshow/embed_code/31674661" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC; border-width:1px 1px 0; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe>
-
-
-<p> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/amay077/xamarin-31674661" title="Xamarin によるクロスプラットフォームモバイルアプリ開発" target="_blank">Xamarin によるクロスプラットフォームモバイルアプリ開発</a> </strong> from <strong><a href="http://www.slideshare.net/amay077" target="_blank">amay 077</a></strong> </div></p>
-
-<p>45分という長い時間話すのは勉強会では初めてだったのですが、なんとか説明し切ることができました。（ちょっとデモが中途半端になってしまいましたが）</p>
-
-<p>資料は <a href="http://qiita.com/tags/xamarin">Qiita に書いてきた</a> 内容のまとめみたいなものですが、少し補足します。</p>
-
-<h2>Xamarin で作った経験あるの？</h2>
-
-<p>仕事では、まだ無いです（<sup>_<sup>;）</sup></sup>
-個人アプリでは「<a href="https://itunes.apple.com/us/app/fu-shifoto/id806913229">富士フォト</a>」というのを iOS 用は Xamarin.iOS で作りました。<a href="https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto">Android</a> は Java ですが Xamarin 化したいな。</p>
-
-<h2>Win+Visual Studio ではダメなの？</h2>
-
-<p>個人の見解ですから（<sup>_<sup>;）</sup></sup>
-私も元々は Windowsの開発がメインで Visual Studio の強力さは知っていますが、iOS やるならどういう形にせよ Mac+Xcode を扱わないといけないので、慣れておいた方がよいかなと。</p>
-
-<p>また、Microsoft との提携以降、Microsoft のエバンジェリストさんや MVP の方々が Visual Studio + Xamarin の話をものすごく展開されているので、そちらにお任せした次第です。</p>
-
-<h2>実行モデルのとこ</h2>
-
-<p>JavaSE が .NET に置き換わる図になっていますが、実際には少し違っていて、JavaSE のラッパもあります。例えば文字列型には、<code>System.String</code> と <code>Java.Lang.String</code> があります。当然、理由がなければ前者を使った方がよいわけですが。</p>
-
-<p>iOS のスタックに関しては、実はどこからどこまでが「CocoaTouch」なのかよく分かってません。</p>
-
-<h2>他のクロスプラットフォーム開発ツールとの比較</h2>
-
-<p>Titanium, AIR については2年くらい前に少し触ったことがあります。PhoneGap と DelphiXE についてはスペックを見て＆詳しい方からの情報を元にしてます。</p>
-
-<p>Titanium は次期 <a href="http://titanium-mobile.jp/38">Ti.Next</a> では JavaScriptCore を使ってすんごく速くなるそうですし、AIR も当時よりだいぶ <a href="http://www.slideshare.net/pik256/dev-sumi2014-13c4rev">高速になったらしい</a> です。</p>
-
-<h2>C# のとこ</h2>
-
-<p>https://xamarin.com/csharp よりは悪意のないコードかとｗ
-（Objective-C と比較しようとすると Obj-C の方が画面に入らないので Java との比較にしました。）</p>
-
-<p>こんなところで。
-何かおかしなところがあったらコメント頂けるとありがたいです。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios/"/>
-    <updated>2014-02-27T21:34:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/27/using-reactiveui-on-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>ReactiveUI は、Reactive Extensions を全面的に取り入れた クロスプラットフォームな MVVMフレームワークです。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.reactiveui.net/">ReactiveUI</a></li>
-</ul>
-
-
-<p>作者は GitHub の中の人 <a href="http://twitter.com/xpaulbettsx">Paul Betts</a> 氏、<a href="http://xamarin.com/mvp">Xamarin の MVP</a> でもあります。</p>
-
-<p>元々は WPF, Silverlight, WinRT, Windows Phone に対応していましたが、Xamarin.iOS や Xamarin.Android, Xamarin.Mac にも <a href="http://blog.paulbetts.org/index.php/2013/03/12/reactiveui-4-5-is-released/">対応が進んで来た</a> ので、使ってみる事にしました。</p>
-
-<p>Visual Studio + WPF 等なら、nuget から取得できて楽なんでしょうけども、なにせ Mac なので、Xamarin Studio のみでいきます。</p>
-
-<h2>とりあえず使ってみる</h2>
-
-<p>Github が公開した <a href="http://log.paulbetts.org/open-source-githubs-xamarin-starter-apps/">GitHub's Xamarin starter apps</a>, これに ReactiveUI も含まれているので、こちらを Clone して Xamarin Studio で開いてビルド、すぐ動きます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_01.png" alt="" /></p>
-
-<p>これ、ViewModel側で UUID を生成して、View側の Label にバインドしているのですが、何ともシンプル過ぎて…。</p>
-
-<p>それでもこのフレームワークの構成を知るには十分です。</p>
-
-<h2>ReactiveUI に必要なもの</h2>
-
-<p>ソリューションツリーを見ると次の4つのプロジェクトがあります。</p>
-
-<ul>
-<li>Starter-Core-Android</li>
-<li>Starter-Core-iOS</li>
-<li>Starter-Android</li>
-<li>Starter-iOS</li>
-</ul>
-
-
-<h3>ViewModel-Model層</h3>
-
-<p>Starter-Core-xxx は、ディレクトリ的には同じ場所にあり、Android用とiOS用のプロジェクトファイル(.csproj)が用意してあるだけです。ここはアプリケーションの ViewModel-Model層になります。PCL化はされていないようですね(その内、とサイトに書いてありました)。</p>
-
-<p>サンプルで用意されてる ViewModel を見てみます。</p>
-
-<p>```csharp TestViewModel.cs
-using System;
-using ReactiveUI;
-using System.Runtime.Serialization;</p>
-
-<p>namespace Starter.Core.ViewModels
-{</p>
-
-<pre><code>[DataContract]
-public class TestViewModel : ReactiveObject
-{
-    string _TheGuid;
-    [DataMember] public string TheGuid {
-        get { return _TheGuid; }
-        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
-    }
-
-    public TestViewModel()
-    {
-        TheGuid = Guid.NewGuid().ToString();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>MvvmCross とか、他の MVVM-FW とだいたい同じですね(そりゃそうだ)。
-基底クラスの <code>ReactiveObject</code> が、BaseViewModel的な役割をします。(が、Reactive を冠しているだけに、随所で Rx の力が発揮される、はずです←まだ分かってない)</p>
-
-<p>このコードでは、TestViewModel の生成と同時に、Guid を生成して、<code>TheGuid</code> プロパティに設定しています。</p>
-
-<h3>View層</h3>
-
-<p>Starter-Android, Starter-iOS はそれぞれの View層になります。</p>
-
-<p>Starter-iOS の TestViewController.cs を見てみます。</p>
-
-<p>```csharp TestViewController.cs
-namespace Starter.Views
-{</p>
-
-<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
-{
-    [省略]
-
-    public override async void ViewDidLoad()
-    {
-        base.ViewDidLoad();
-        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
-
-        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
-            return new TestViewModel();
-        });
-    }
-
-    TestViewModel _ViewModel;
-    public TestViewModel ViewModel {
-        get { return _ViewModel; }
-        set { this.RaiseAndSetIfChanged(ref _ViewModel, value); }
-    }
-
-    [省略]
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>UIViewController</code> ではなく <code>ReactiveViewController</code> から派生させてます。この辺もよくあるやり方。<code>IViewFor</code> は、今はスルーで。</p>
-
-<p>バインドは <code>this.OneWayBind</code> で。
-ViewModel の TheGuid プロパティを、View の TheGuidラベルの Text プロパティへ単方向(OneWay)バインドしてます。</p>
-
-<p>TestViewModel の生成は、ここでは Akavache というストレージライブラリの生成を待ってから行っていますが、Akavache を使わない場合は普通に <code>this.ViewModel = new TestViewModel()</code> で OK でしょう。</p>
-
-<p>これで、TestViewModelの生成 → Guidの生成 → vm.TheGuidプロパティへ設定 → vm より TheGuid の変更が通知される → View側のBindingが変更を検知 → Viewのラベルを書き換える、という流れになります。</p>
-
-<h2>ちょっと拡張してみる</h2>
-
-<h3>双方向バインディング</h3>
-
-<p>ViewModel→View だけでなく、View→ViewModel もやってみましょう。</p>
-
-<p>まず TestViewModel にプロパティを追加します。
-プロパティは <code>MyName</code> とします。
-初期値として "Enter your name" とでも設定しましょうか。</p>
-
-<p>```csharp TestViewModel.cs
-namespace Starter.Core.ViewModels
-{</p>
-
-<pre><code>[DataContract]
-public class TestViewModel : ReactiveObject
-{
-    string _TheGuid;
-    [DataMember] public string TheGuid {
-        get { return _TheGuid; }
-        set { this.RaiseAndSetIfChanged(ref _TheGuid, value); }
-    }
-
-    string _myName;
-    [DataMember] public string MyName {
-        get { return _myName; }
-        set { this.RaiseAndSetIfChanged(ref _myName, value); }
-    }
-
-    public TestViewModel()
-    {
-        TheGuid = Guid.NewGuid().ToString();
-
-        this.MyName = "Enter your name";
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>次に Interface Builder で TestViewController に、UITextField と UILabel を追加し、Outlet を "MyText", "MyLabel" とします。これで Xamarin.iOS から <code>MyText</code>, <code>MyLabel</code> でインスタンスにアクセスできるはず、ですよね。</p>
-
-<p><code>MyText</code>, <code>MyLabel</code> に、vm.MyName をバインドします。</p>
-
-<p>```csharp TestViewController.cs
-namespace Starter.Views
-{</p>
-
-<pre><code>public partial class TestViewController : ReactiveViewController, IViewFor&lt;TestViewModel&gt;
-{
-    [省略]
-
-    public override async void ViewDidLoad()
-    {
-        base.ViewDidLoad();
-        this.OneWayBind(ViewModel, vm =&gt; vm.TheGuid, v =&gt; v.TheGuid.Text);
-
-        this.Bind(ViewModel, vm=&gt; vm.MyName, v =&gt; v.MyText.Text);
-        this.OneWayBind(ViewModel, vm =&gt; vm.MyName, v =&gt; v.MyLabel.Text);
-
-        ViewModel = await BlobCache.LocalMachine.GetOrCreateObject("TestViewModel", () =&gt; {
-            return new TestViewModel();
-        });
-    }
-
-    [省略]
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>編集できる <code>MyText</code> は <code>this.Bind</code> を使って双方向バインドします。プロパティの値を表示するだけの <code>MyLabel</code> は、 <code>this.OneWayBind</code> で。</p>
-
-<p>これで動かしてみます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_reactiveui_02.gif" alt="" /></p>
-
-<p>UITextField への入力が、vm.MyName へ適用され、その変更を MyLabel に表示させる、という流れです。</p>
-
-<p>今日はこの辺で。まだ全然 Reactive じゃないですが、次回以降、Command の実装やバインディングについて試してみようと思います。</p>
-
-<p>ここまでのコードは、</p>
-
-<ul>
-<li>https://github.com/amay077/starter-mobile/tree/N_plus_1</li>
-</ul>
-
-
-<p>に置いておきます。徐々に進化させていこうと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[MvvmCross だけじゃない！クロスプラットフォームMVVMフレームワーク「QuickCross」を試す]]></title>
-    <link href="http://amay077.github.io/blog/2014/02/11/introduce-quickcross/"/>
-    <updated>2014-02-11T19:47:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2014/02/11/introduce-quickcross</id>
-    <content type="html"><![CDATA[<p><a href="http://amay077.github.io/blog/2013/12/25/using-mvvmcross-the-x-platform-mvvm-framework/">以前、MvvmCross を紹介しました</a> が、Xamarin で使える同種のフレームワークはまだいくつかあります。</p>
-
-<!--more-->
-
-
-<p>今回は、その中の一つ、「QuickCross」を見てみます</p>
-
-<ul>
-<li><a href="https://github.com/MacawNL/QuickCross">MacawNL/QuickCross</a></li>
-</ul>
-
-
-<h2>なぜ他のMVVMフレームワークが必要なのか？</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#why-another-cross-platform-mvvm-framework">Why another cross-platform Mvvm framework?</a> にて、MvvmCross があるのになぜ？という事を説明しています。</p>
-
-<p>要約すると、MvvmCross は、高機能だが Fat で複雑で、拡張が大変であるのに対し、QuickCross は、軽量で生産性が高く、拡張が簡単である、との事です。</p>
-
-<h2>主な機能</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#features">Features</a> より。</p>
-
-<ul>
-<li>Xamarin.iOS, Xamarin.Android, Windows Phone, Windows Store Apps に対応。</li>
-<li>バイナリは使ってない！Snippet と、プロジェクトにソースコードの追加を行うだけです。</li>
-<li>ViewModel や View の追加は package manager console からコマンドを実行して行います。</li>
-<li>いくつかのコードスニペットを提供します。</li>
-<li>以下略…</li>
-</ul>
-
-
-<h2>仕組み</h2>
-
-<p><img src="https://raw.github.com/MacawNL/QuickCross/master/assets/quickcross_pattern.png" alt="" />
-via https://github.com/MacawNL/QuickCross#features</p>
-
-<p>Navigator って概念があるのが MvvmCross と違うとこですかね。</p>
-
-<h2>使い方</h2>
-
-<p><a href="https://github.com/MacawNL/QuickCross#getting-started">Getting Started</a> を見てください。</p>
-
-<p>Nuget の Package manager console を使う必要があるので、Mac と Xamarin Studio 、そして Indie Edition では試せません、残念。
-Visual Studio ＋ Xamarin Business Edition以上を使ってる方、試してみてください。</p>
-
-<h2>サンプルを動かしてみた</h2>
-
-<p>Getting Started は試せませんでしたが、github に含まれるサンプルは Mac + Xamarin Studio でも動かせました。</p>
-
-<p><a href="https://github.com/MacawNL/QuickCross/blob/master/QuickCross.ios.sln">QuickCross.ios.sln</a> を Xamarin Studio で開いて実行したところ↓</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/introduce_quickcross_01.png" alt="" /></p>
-
-<p>MvvmCross と同じく、ViewModel などは Shared プロジェクトの方にあります。
-Shared プロジェクトは PCL にできるんじゃないかなーと思いやってみましたが、</p>
-
-<ul>
-<li>Profile147(.NET4.0) では <code>System.Windows.Input.ICommand</code> が無いと言われ</li>
-<li>Profile78(.NET4.5) では、この<a href="https://bugzilla.xamarin.com/show_bug.cgi?id=17247">バグ</a> にエンカウント</li>
-</ul>
-
-
-<p>してビルドできませんでした、残念。</p>
-
-<h2>まとめ</h2>
-
-<p>MvvmCross は確かに大規模すぎて使うのが大変です。拡張するには Plugin を自作する事になりますし。
-QuickCross は、すべてのソースコードがプロジェクトにあるので、カスタマイズが手軽に行えそうだというのは分かりました。</p>
-
-<p>Xamarin Starter Edition の場合、64kbyte までのバイナリ制限があるので、MvvmCross は使えませんが、QuickCross なら使えるかも知れません。</p>
-
-<p>ただ残念なのは、Nuget の Package Manager Console を使う必要があるために、Visual Studio が必要で、その為には Xamarin も Business Edition 以上が必要になってしまう所です。</p>
-
-<p>Xamarin Studio のみでも使えるくらい Lightweight だったら、もっと試してみたくなるフレームワークです。</p>
 ]]></content>
   </entry>
   

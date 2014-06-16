@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ReactiveExtensions | Experiments Never Fail]]></title>
   <link href="http://amay077.github.io/blog/categories/reactiveextensions/atom.xml" rel="self"/>
   <link href="http://amay077.github.io/"/>
-  <updated>2014-04-04T15:36:49+09:00</updated>
+  <updated>2014-06-16T15:36:18+09:00</updated>
   <id>http://amay077.github.io/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,68 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Rx で Chain of Responsibility]]></title>
+    <link href="http://amay077.github.io/blog/2014/05/13/chain-of-resposibility-using-rx/"/>
+    <updated>2014-05-13T15:24:00+09:00</updated>
+    <id>http://amay077.github.io/blog/2014/05/13/chain-of-resposibility-using-rx</id>
+    <content type="html"><![CDATA[<p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。</p>
+
+<!--more-->
+
+
+<p>```csharp
+void Main()
+{</p>
+
+<pre><code>var document = "有給届";
+
+var kakariCho = CreateManager("係長", document, d =&gt; String.Equals(document, "遅刻届"));
+var kaCho = CreateManager("課長", document, d =&gt; String.Equals(document, "有給届"));
+var buCho = CreateManager("部長", document, d =&gt; String.Equals(document, "退職届"));
+
+Observable.Concat(new [] { 
+    kakariCho,  // 係長
+    kaCho,      // 課長
+    buCho       // 部長
+})
+.FirstOrDefault() // 最初の１人に承認されたら終了
+.Timeout(TimeSpan.FromDays(1)) // 猶予１日
+.Subscribe(x =&gt; Debug.WriteLine(String.IsNullOrEmpty(x) 
+    ? "あなたの届書は却下されました" 
+    : x + "が承認しました"));
+</code></pre>
+
+<p>}</p>
+
+<p>/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）
+IObservable<string> CreateManager(string managerTitle, string document, Predicate<string> canIAccept)
+{</p>
+
+<pre><code>return Observable.Create&lt;string&gt;(o =&gt; Task.Run(() =&gt; 
+{
+    if (canIAccept(document)) 
+    {
+        o.OnNext(managerTitle); // 承認
+    }
+    o.OnCompleted();
+}));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>管理職の人を <code>IObservable</code> に見立てて、自分が処理できるなら <code>OnNext</code> を呼ぶ、処理できないなら <code>OnNext</code> は呼ばずに <code>OnComplete</code> しちゃう。
+で、係長・課長・部長の IObservable を <code>Concat</code> で役職の低い順につなげて、 <code>FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
+
+<p>係長・課長・部長が誰も承認しなかった時、タイムアウトするまで待ちが発生しちゃうのが難点。→ <code>Take(1)</code> じゃなくて <code>FirstOrDefault</code> すればいいみたい。誰も承認しなかった場合 <code>default(string)</code> つまり空文字が流れてくる。</p>
+
+<p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
+
+<p>んーどうしようか。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
@@ -447,98 +509,6 @@ Yes、アプリ側を 4.0.0 にしてプロジェクトクリーン→Xamarin St
 <li><a href="https://code.google.com/p/reactive4java/">reactive4java</a> Java ではこれ使ってました</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Cold を Hot にできる。そう、Publish ならね。]]></title>
-    <link href="http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot/"/>
-    <updated>2012-10-03T19:13:00+09:00</updated>
-    <id>http://amay077.github.io/blog/2012/10/03/rx-cold-to-hot</id>
-    <content type="html"><![CDATA[<p>Rx いいよ Rx とか言っておきながら、いままで Cold と Hot の違いについて、ちゃんとわかってませんでしたスイマセン。</p>
-
-<!--more-->
-
-
-<p>そのため、</p>
-
-<ul>
-<li><a href="http://qiita.com/items/07762776102dbc84b1c7">reactive4java で端末の方位を取得しつづける - Qiita</a></li>
-<li><a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a></li>
-</ul>
-
-
-<p>で作ったサンプルプログラム、盛大にバグってましたorz</p>
-
-<h2>Cold な Observable と Hot な Observable</h2>
-
-<p>音楽プレーヤ iPod に例えると自分なりにしっくり来ました。
-Observable が iPod で、Observer は聴く人。
-なんとこの iPod はイヤホンジャックがたくさんあります。
-そしてさらにこの iPod はイヤホンを接続するだけで再生が始まり、抜くと停止します。</p>
-
-<p>Cold な iPod では、聴く人がイヤホンを接続すると、音楽が最初から再生されます。
-次の人がイヤホンを接続すると、また音楽が最初から再生されます。(最初の人は、再生されなおすわけじゃないよ。)</p>
-
-<p>Hot な iPod では、最初に聴く人がイヤホンを接続すると、音楽が再生され始めます。
-次の人が、イヤホンを接続すると、その人は途中から聴くことになります。一つのストリーミング放送をみんなで聴くみたいな。
-最後の人がイヤホンを外すと、再生が止まります(この辺はストリーミングと微妙に感覚が異なる、ストリーミングって、聴いてる人が居ようが居まいが流され続けるってイメージだから)。</p>
-
-<h2>何が問題か</h2>
-
-<p>以上を踏まえた上で、<a href="http://qiita.com/items/e15ba88d51938531b1a3">reactive4java で位置を取得し続ける - Qiita</a> で作ったプログラムのどこが問題だったかというと。</p>
-
-<p>位置を聞くために接続をすると、その都度、<code>locMan.requestLocationUpdates</code> が呼ばれているという事です。上記の音楽プレーヤで例えると、<code>player.start()</code> です。</p>
-
-<p>位置情報の取得は、ホントに無限ストリーミングなので、一見問題無さげに見えますが、２つリスナを登録するのは頂けません。(中には複数のリスナを登録できない API もあるでしょう、ありました。それで気づいたんです。)</p>
-
-<p>これは最初の register でのみ <code>locMan.requestLocationUpdates</code> が実行され、2番目以降の register では、observer.next だけが呼ばれるようにしないといけません。
-そのためには、register した複数の observer を保持・管理する必要があります。うげー。</p>
-
-<h2>そこで Publish ですよ。</h2>
-
-<p>.publish() を Observable のおしりにくっつけます。はい、これだけ。本当に。簡単すぎて「いいの？」って思っちゃうくらい。</p>
-
-<p>``java getCurrectLocationAsHotObservable.java
-/<em>*
- * 位置を取得し続ける(Hot)
- </em>/
-public static ObservableBuilder<Location> getCurrentLocationAsHotObservable(</p>
-
-<pre><code>final Context context, final String provider) {
-return ObservableBuilder.from(
-    getCurrentlocationAsObservable(context, provider)
-    ).publish(); // Cold → Hot へ変換！
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これだけで、複数の人が位置を聴きに来ても、<code>locMan.requestLocationUpdates</code> が呼ばれるのは１回だけである、Hot な Observable になります。Rx すげえよ Rx！</p>
-
-<p>reactive4java のソースを読んだところ、前述の「複数の observer を保持・管理して、最初だけリスナ登録して、誰もいなくなったらリスナ解除する」みたいな面倒なことを publish の中(正確には observeOn)で行なってくれているようです。</p>
-
-<p>ますます Reactive Extensions が好きになりましたよ。</p>
-
-<h2>.NET の Reactive Extensions と reactive4java の違い</h2>
-
-<p>.NET の Reactive Extenstions では、Publish は、<code>IConnectableObservable&lt;T&gt;</code> を返すそうです。そして <code>Subscribe</code> しただけでは再生は開始されず、<code>Connect</code> した時に再生されるのだ、とも。</p>
-
-<p>一方、<a href="http://reactive4java.googlecode.com/svn/trunk/Reactive4Java/docs/javadoc/index.html">reactive4java</a> では、<code>publish</code> は、普通の <code>Observable&lt;T&gt;</code> を返します。Observable には register(.NET の Subscribe に相当)しかないので、これを呼び出した時に再生が開始されます。</p>
-
-<p>特に reactive4java の挙動で困っていませんが、今後のバージョンアップで .NET 側に合わせられるかも知れません。
-ConnecableObservable という interface は既に用意されていますが、使われていないようです。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://xin9le.net/archives/104">Rx入門 (14) – Cold to Hot変換 : xin9le note</a></li>
-<li><a href="http://d.hatena.ne.jp/okazuki/20120212/1329059831">Reactive Extensions再入門 その３６「ColdからHotへ！Publishメソッドと参照カウンタ？RefCountメソッド」 - かずきのBlog@Hatena</a></li>
-<li><a href="http://neue.cc/2010/06/24_263.html">neue cc - Reactive Extensions for .NET (Rx) メソッド探訪第7回:IEnumerable vs IObservable</a></li>
-</ul>
-
-
-<p>Rx の神々のみなさんが懇切丁寧に解説してくださってるのに、失敗しないと気づかない自分のバカバカ！</p>
 ]]></content>
   </entry>
   
