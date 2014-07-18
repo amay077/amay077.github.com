@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: f# | Experiments Never Fail]]></title>
+  <link href="http://blog.amay077.net/blog/categories/f-number/atom.xml" rel="self"/>
+  <link href="http://blog.amay077.net/"/>
+  <updated>2014-07-18T20:23:29+09:00</updated>
+  <id>http://blog.amay077.net/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[ランダムで且つ重複しない数値リストを作る]]></title>
+    <link href="http://blog.amay077.net/blog/2014/07/08/create-distinct-array-in-fsharp/"/>
+    <updated>2014-07-08T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/07/08/create-distinct-array-in-fsharp</id>
+    <content type="html"><![CDATA[<p>F# 入門中です。</p>
+
+<!--more-->
+
+
+<p><a href="http://www.shuzan.jp/kentei/flash/">フラッシュ暗算</a>ぽいアプリを作っていて、次々と表示する数値は、</p>
+
+<ul>
+<li>ランダムで</li>
+<li>一度使った数値は二度と使わなくて</li>
+<li>０も使わない</li>
+</ul>
+
+
+<p>というルールにしています（公式ルールは知らない）</p>
+
+<p><code>makeRandomList</code> の引数 <code>rand</code> は <code>System.Random</code> のインスタンス、<code>count</code> は生成するリストの要素数、<code>arr</code> は生成した数値群(=再帰処理で値の既出判定に使う)としています。</p>
+
+<p><code>rand.Next(10)</code> で得た値が、0 もしくは <code>arr</code> に存在する場合は、もう一度同じパラメータで再帰呼び出し、そうでない場合は <code>count</code> を減算しつつ、<code>arr</code> に値を連結して再帰呼び出しします。<code>count</code> が <code>0</code> になったら <code>arr</code> を返して終わります。</p>
+
+<p>```fsharp
+let rec makeRandomList = fun (rand:Random, count:int, arr:List<int>) &ndash;></p>
+
+<pre><code>match count with
+| 0 -&gt; arr
+| _ -&gt; 
+    let n = rand.Next(10) // 1桁の数値
+    if n = 0 || arr |&gt; List.exists (fun x-&gt;x=n) then 
+        makeRandomList (rand, count, arr) 
+    else makeRandomList (rand, count-1, [n] @ arr)
+</code></pre>
+
+<p>let arr = makeRandomList (new Random(DateTime.Now.Millisecond), 3, [])
+for x in arr do</p>
+
+<pre><code>Console.WriteLine x
+</code></pre>
+
+<p>// 出力例
+7
+5
+4
+```</p>
+
+<p>こんな感じで書けばいいのかなあ。
+なんかところどころ手続き型の書き方になってる気がしますが、C# で <code>while</code> で処理するよりはスマートにできた気がします。</p>
+]]></content>
+  </entry>
+  
+</feed>
