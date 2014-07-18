@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-07-17T21:03:27+09:00</updated>
+  <updated>2014-07-18T15:05:23+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,242 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ランダムで且つ重複しない数値リストを作る]]></title>
+    <link href="http://blog.amay077.net/blog/2014/07/08/create-distinct-array-in-fsharp/"/>
+    <updated>2014-07-08T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/07/08/create-distinct-array-in-fsharp</id>
+    <content type="html"><![CDATA[<p>F# 入門中です。</p>
+
+<!--more-->
+
+
+<p><a href="http://www.shuzan.jp/kentei/flash/">フラッシュ暗算</a>ぽいアプリを作っていて、次々と表示する数値は、</p>
+
+<ul>
+<li>ランダムで</li>
+<li>一度使った数値は二度と使わなくて</li>
+<li>０も使わない</li>
+</ul>
+
+
+<p>というルールにしています（公式ルールは知らない）</p>
+
+<p><code>makeRandomList</code> の引数 <code>rand</code> は <code>System.Random</code> のインスタンス、<code>count</code> は生成するリストの要素数、<code>arr</code> は生成した数値群(=再帰処理で値の既出判定に使う)としています。</p>
+
+<p><code>rand.Next(10)</code> で得た値が、0 もしくは <code>arr</code> に存在する場合は、もう一度同じパラメータで再帰呼び出し、そうでない場合は <code>count</code> を減算しつつ、<code>arr</code> に値を連結して再帰呼び出しします。<code>count</code> が <code>0</code> になったら <code>arr</code> を返して終わります。</p>
+
+<p>```fsharp
+let rec makeRandomList = fun (rand:Random, count:int, arr:List<int>) -></p>
+
+<pre><code>match count with
+| 0 -&gt; arr
+| _ -&gt; 
+    let n = rand.Next(10) // 1桁の数値
+    if n = 0 || arr |&gt; List.exists (fun x-&gt;x=n) then 
+        makeRandomList (rand, count, arr) 
+    else makeRandomList (rand, count-1, [n] @ arr)
+</code></pre>
+
+<p>let arr = makeRandomList (new Random(DateTime.Now.Millisecond), 3, [])
+for x in arr do</p>
+
+<pre><code>Console.WriteLine x
+</code></pre>
+
+<p>// 出力例
+7
+5
+4
+```</p>
+
+<p>こんな感じで書けばいいのかなあ。
+なんかところどころ手続き型の書き方になってる気がしますが、C# で <code>while</code> で処理するよりはスマートにできた気がします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin で System.Data.SqlClient を使うには BUSINESS 版以上が必要です]]></title>
+    <link href="http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition/"/>
+    <updated>2014-07-01T01:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition</id>
+    <content type="html"><![CDATA[<p>当方 Xamarin INDIE 版しか買えないしがない個人開発者です。</p>
+
+<!--more-->
+
+
+<p>Xamarin で <code>System.Data.SqlClient.SqlCommand</code> などを使ったプロジェクトをビルドしたら、ビルド時にこんなダイアログボックスが。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_01.png" alt="" /></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_02.png" alt="" /></p>
+
+<p>どうやら、特定のクラスを使用するには BUSINESS 版以上が必要なようです。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/ab90c74e78dd87ba31fb">Xamarin でビルドを自動化するには Business 版以上が必要です</a></li>
+</ul>
+
+
+<p>といい、INDIE 版の制限事項が後出しで判明するのなんとかならないですかね。</p>
+
+<p>今回は .NET のプロジェクトを Xamarin に移植する際に発覚したもので、特に <code>SqlClient</code> は使ってなかったので削除して解決しました。</p>
+
+<p>Xamarin で <code>SqlClient</code> って何に使うんだろ？イントラ？あるいは SQL Server Compact が使える？まさかね。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms、Android での BACK キーの制御]]></title>
+    <link href="http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms/"/>
+    <updated>2014-06-17T01:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「BACKキーの制御」の <strong>現時点(1.1.0.6201)</strong> での回答。</p>
+
+<!--more-->
+
+
+<p>Android の BACKキーの制御を、Xamarin.Forms ではどう扱えるかを調べた。</p>
+
+<h2>シナリオ</h2>
+
+<p>Xamarin.Forms による画面１(MainPage)、２(SecondPage)があり、MainPage では BACKキーで戻る(=アプリ終了)事ができるが、SecondPage ではBACKキーが効かない、ようにしたい。</p>
+
+<h2>対策</h2>
+
+<p>まず画面１と２はこんな感じ。ボタンを押したら画面２へ遷移するだけ。</p>
+
+<p>```csharp Pages.cs
+// 画面１
+public class MainPage : ContentPage
+{</p>
+
+<pre><code>public MainPage() 
+{
+    var button = new Button
+    {
+        Text = "To Second",
+        VerticalOptions = LayoutOptions.Center,
+    };
+
+    button.Clicked += (sender, e) =&gt; 
+    {
+        this.Navigation.PushAsync(new SecondPage());
+    };
+
+    Content = button;
+}
+</code></pre>
+
+<p>}</p>
+
+<p>// 画面２
+public class SecondPage : ContentPage
+{</p>
+
+<pre><code>public SecondPage()
+{
+    Content = new Label
+    {
+        Text = "Second"
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ここからが本題。
+まず Android側のエントリポイントである <code>MainActivity.cs</code> は以下のように、<code>ContentPage</code> プロパティを設ける。そして <code>OnBackPressed</code> メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "ScrollTest.Android.Android", MainLauncher = true)]
+public class MainActivity : AndroidActivity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+
+    Xamarin.Forms.Forms.Init(this, bundle);
+
+    SetPage(new NavigationPage(new MainPage()));
+}
+
+internal Page ContentPage
+{
+    get;
+    set;
+}
+
+public override void OnBackPressed()
+{
+    if (this.ContentPage is MainPage)
+    {
+        base.OnBackPressed();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に、MainActivity.ContentPage への設定を行うコードは以下の通り。
+PageRenderer を拡張して ExportRenderer することで、すべての Page にフックをかけ、Page の表示時に MainActivity.ContentPage に設定する。</p>
+
+<p>```csharp MyPageRenderer.cs
+using System;
+using Xamarin.Forms.Platform.Android;
+using Android.App;
+using Xamarin.Forms;
+using ScrollTest.Android;
+using Android.Views;
+using Android.Graphics;</p>
+
+<p>[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</p>
+
+<p>namespace ScrollTest.Android
+{</p>
+
+<pre><code>public class MyPageRenderer : PageRenderer
+{
+    protected override void OnElementChanged(ElementChangedEventArgs&lt;Xamarin.Forms.Page&gt; e)
+    {
+        base.OnElementChanged(e);
+
+        // なんとなく不安なので weak にしてみた
+        var activity = new WeakReference&lt;MainActivity&gt;(this.Context as MainActivity);
+
+        e.NewElement.Appearing += (_, __) =&gt;
+        {
+            MainActivity a;
+            if (activity.TryGetTarget(out a)) {
+                a.ContentPage = e.NewElement;    
+            }
+        };
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これで、画面１(MainPage)の時だけ BACKキーが効くようにできる。</p>
+
+<h3><code>Appearing</code> イベントが必要なの？</h3>
+
+<p>　Xamarin.Forms の Android実装では、画面遷移の度に <strong>「同じインスタンスの MainActivity」</strong> が使いまわされる、さらに <code>OnElementChanged</code> は、各Pageにつき１度しか発生しない。その為、画面１→２→１と遷移すると <code>MainActivity.ContentPage</code> は <code>SecondPage</code> のままになってしまう。ので <code>Appearing</code> イベントで表示の度に MainActivity.ContentPage を設定する必要がある。</p>
+
+<h3><code>AndroidActivity</code> に static な <code>BackPressed</code> イベントがあるんだけど…</h3>
+
+<p>イベントハンドラの定義は
+<code>public delegate bool BackButtonPressedEventHandler(object sender, EventArgs e);</code>
+となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
+
+<p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
@@ -214,197 +450,6 @@ ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionB
 <p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
 
 <p>他にも見つけたら書きます。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms は Windows.Forms じゃないよ]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/08/xamarin-forms-is-not-windows-forms/"/>
-    <updated>2014-06-08T15:28:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/08/xamarin-forms-is-not-windows-forms</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://www.buildinsider.net/mobile/xamarintips/0005">iOS／Androidの画面レイアウトを共通化するには？（Xamarin.Forms） - Build Insider</a></li>
-</ul>
-
-
-<p>に書ききれなかったことなど。</p>
-
-<!--more-->
-
-
-<h2>名前どうよ？</h2>
-
-<p><strong>Xamarin.Forms</strong> って名前、どうしても Windows.Forms を連想するけど全然別ものだから。とはいえ、あんまり WPF の経験がないので、Windows.Forms にそれほどイヤな印象がない。VB6時代なんて、画面に Fill するのすらゴリゴリ実装が必要だったし。</p>
-
-<h2>前身は MonoTouch.Dialog じゃないかと思います</h2>
-
-<p>MonoTouch.Dialog というのは、Xamarin の CTO でありスーパーハッカーのミゲル氏が開発した、簡単なコードで iOS の UI を実装できるライブラリ（「Dialog」だけど、「ダイアログボックス」とは関係ない。 ）</p>
-
-<ul>
-<li><a href="https://github.com/migueldeicaza/MonoTouch.Dialog">migueldeicaza/MonoTouch.Dialog</a></li>
-</ul>
-
-
-<p>たぶんだけど、Xamarin.Forms はこれの思想がベースにあって、他のプラットフォームやXAML対応が行われたんじゃないかと勝手に思ってます。（いつか紹介しようと思ってたけどこれでお役御免になってしまったかも）</p>
-
-<h2>Android の UIフレームワークに似てるような…</h2>
-
-<p><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/controls/layouts/">StackLayout</a> は LinearLayout相当、RelativeLayout も、同名クラスがあるし、割と Android の UI の考え方をベースにしてるのかなと予想。Windows Phone はあまり経験がないので知らない。。。</p>
-
-<h2>Hoge.iOS というプロジェクト名がキライ</h2>
-
-<p>プラットフォームの識別子をプロジェクト名につけるのが良いんだけど、 <code>HelloForms.iOS</code> とか「iOS」とつけるのが嫌い。名前空間名とかが小文字で始まってしまうのが気持ち悪くて。
-MvvmCross などでは、iOS は <code>XXX.Touch</code> 、Android は <code>XXX.Droid</code> としていて、こっちの方が好み。</p>
-
-<h2>XAML はデザイナーが無いとツラい</h2>
-
-<p>WPFじゃなくてもXAMLって言っていいんだ、というのを初めて知ったｗ
-Xamarin Studio のXMLデザイナーは補完も効かないしツラい。コードでUI作るのにも限界があるので、今年の <a href="https://evolve.xamarin.com/">Evolve</a> あたりで「Xamarin.Forms のUIデザイナー発表ばばーん！！」を期待してます。</p>
-
-<h2>タブの位置が上とか下とかどうでもいい</h2>
-
-<p>「UIはプラットフォームの流儀に合わせるべき」という説明に必ずと言っていいほど登場するのがタブバーの位置が Androidだと上で、iOSだと下、ってやつ。
-個人的にはどうでもいい。タブの切り替えをよく使うなら指の届きやすい画面下部に配置すべきだし、同じアプリならiOS版とAndroid版でUIを変えるべきでないと思っている。（かと言って、iOS版のUIをそっくりそのままAndroidに移植すればいいという話でもない）。 <strong>プロダクトのUXは、プラットフォームのUXより優先されるべき</strong> 、と思ってる。</p>
-
-<h2>上司への提案には好材料かと</h2>
-
-<ul>
-<li>私「iOS/Android 両方開発するなら Xamarin 使いましょう！」</li>
-<li>上「そうか、それは１ソースで両対応できるのか？」</li>
-<li>私「いえ、画面はプラットフォーム毎に書きます、カメラとかも別です。共通化できるのはコアロジックです。」</li>
-<li>上「なんだその程度か」</li>
-<li>私「…」</li>
-</ul>
-
-
-<p>というよくある話には、「画面が１ソースで共通にできる Xamarin.Forms」は、説得材料としては、とりわけ対PhoneGapには効果高いんじゃないかと思います。毒りんごかどうかはともかく。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin でビルドを自動化するには Business 版以上が必要です]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/04/command-line-building-requires-buisiness-license/"/>
-    <updated>2014-04-04T15:31:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/04/command-line-building-requires-buisiness-license</id>
-    <content type="html"><![CDATA[<p>Xamarin でも、リリース用アプリのビルド→署名→テストとか、自動化したいじゃないですか。</p>
-
-<!--more-->
-
-
-<p>Win/Visual Studio の場合は <code>msbuild</code>、Mac/Xamarin Studio の場合は <code>xbuild</code> でそれが可能との情報を得て試してみたところ、、、</p>
-
-<p>```sh
-$ xbuild HogeAppAndroid.csproj</p>
-
-<p>XBuild Engine Version 3.2.6.0
-Mono, Version 3.2.6.0
-Copyright (C) Marek Sieradzki 2005-2008, Novell 2008-2011.</p>
-
-<p>Build started 2014/04/04 13:13:59.</p>
-
-<hr />
-
-<p>Project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj" (default target(s)):</p>
-
-<pre><code>Target _SetLatestTargetFrameworkVersion:
-</code></pre>
-
-<p>: error XA9008: Building from the command-line requires a Business License.</p>
-
-<pre><code>Task "ResolveSdks" execution -- FAILED
-Done building target "_SetLatestTargetFrameworkVersion" in project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj".-- FAILED
-</code></pre>
-
-<p>Done building project "...HogeAppAndroid/HogeAppAndroid/HogeAppAndroid.csproj".-- FAILED
-```</p>
-
-<p><strong>“Building from the command-line requires a Business License.”</strong></p>
-
-<p>だそうです。</p>
-
-<p>Starter Edition, Indie Edition では、コマンドラインからのビルドは許可されていないようです。</p>
-
-<ul>
-<li><a href="https://store.xamarin.com/">Store - Xamarin</a></li>
-</ul>
-
-
-<p>の比較表ではちょっと分からなかったな。。。</p>
-
-<p>Win/Visual Studio な人は自動的に Business Edition 以上だから問題ないのですが、個人だから Business版買えないよ、Starter/Indie だけど (なんちゃって)CI とかやりたいよ、という人はあきらめるしかないみたいです。</p>
-
-<p>…手動でやります。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
-    <updated>2014-04-03T15:29:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
-</ul>
-
-
-<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
-
-<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
-
-<p><code>csharp
-MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
-</code></p>
-
-<p>これを FromEventPattern を使うとこう書けます。</p>
-
-<p><code>csharp DoesNotWorkOnDevice.cs
-Observable.FromEventPattern(MyButton, "TouchUpInside")
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
-
-<blockquote><p>System.InvalidOperationException: Could not find event 'TouchUpInside' on object of type 'MonoTouch.UIKit.UIButton'.</p></blockquote>
-
-<p><code>TouchUpInside</code> が無いと言われます。</p>
-
-<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
-
-<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
-</ul>
-
-
-<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
-
-<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
-
-<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
-
-<p><code>csharp WorkOnDevice.cs
-Observable.FromEventPattern(
-  h =&gt; MyButton.TouchUpInside+=h,
-  h =&gt; MyButton.TouchUpInside-=h)
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>Xamarin.iOS の制限事項は以下に。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
-</ul>
-
-
-<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
-
-<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
 ]]></content>
   </entry>
   

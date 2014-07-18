@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-07-17T21:03:27+09:00</updated>
+  <updated>2014-07-18T15:05:23+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,508 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ドラッグ＆ドロップで並び替えできる ListView]]></title>
+    <link href="http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop/"/>
+    <updated>2014-07-01T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop</id>
+    <content type="html"><![CDATA[<p>最近こういうUI見たことないなあ、と思いながらも、実装の必要があったので、いろいろ先駆者さま達の足跡を辿り、最終的に、</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://shogogg.hatenablog.jp/entry/20110118/1295326773">ドラッグ＆ドロップで並び替えできる ListView - パンダのメモ帳</a></li>
+</ul>
+
+
+<p>が自分のやりたい事に最も近く、割と新し（といっても３年前…）かったので参考にしました。</p>
+
+<p>ただ、こちらの実装だと、ListView の上にマージンがあるとドラッグ中のアイテムの描画がすこしバグってたので、修正して使いました。</p>
+
+<p>こんな感じ↓です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/drag_and_drop_listview_01.gif" alt="" /> capture by <a href="http://www.cockos.com/licecap/">LICEcap</a></p>
+
+<p>修正後のソースです。</p>
+
+<p>修正箇所は２つ</p>
+
+<ol>
+<li><code>mActionDownEvent</code> を参照の保持でなく、 <code>obtain</code> してクローンを保持するように（＋ <code>recycle</code> で破棄）。<code>onTouchEvent</code> の 引数 <code>event</code> は、内部で使いまわされるようで、参照のコピーでは、値が勝手に変わっていました。</li>
+<li><code>updateLayoutParams</code> はスクリーン座標を前提に。元は <code>listView.getTop() + event.getY()</code> でしたが、これではステータスバーとActionBarの高さが考慮されないようだったので、<code>event.getRawY()</code> を使うようにしました。</li>
+</ol>
+
+
+<p>```java SortableListView.java
+import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.PixelFormat;
+import android.util.AttributeSet;
+import android.view.Gravity;
+import android.view.MotionEvent;
+import android.view.View;
+import android.view.WindowManager;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
+import android.widget.ImageView;
+import android.widget.ListView;</p>
+
+<p>public class SortableListView extends ListView implements</p>
+
+<pre><code>    OnItemLongClickListener {
+private static final int SCROLL_SPEED_FAST = 25;
+private static final int SCROLL_SPEED_SLOW = 8;
+private static final Bitmap.Config DRAG_BITMAP_CONFIG = Bitmap.Config.ARGB_8888;
+
+private boolean mSortable = false;
+private boolean mDragging = false;
+private DragListener mDragListener = new SimpleDragListener();
+private int mBitmapBackgroundColor = Color.argb(128, 0xFF, 0xFF, 0xFF);
+private Bitmap mDragBitmap = null;
+private ImageView mDragImageView = null;
+private WindowManager.LayoutParams mLayoutParams = null;
+private MotionEvent mActionDownEvent;
+private int mPositionFrom = -1;
+
+/** コンストラクタ */
+public SortableListView(Context context) {
+    super(context);
+    setOnItemLongClickListener(this);
+}
+
+/** コンストラクタ */
+public SortableListView(Context context, AttributeSet attrs) {
+    super(context, attrs);
+    setOnItemLongClickListener(this);
+}
+
+/** コンストラクタ */
+public SortableListView(Context context, AttributeSet attrs, int defStyle) {
+    super(context, attrs, defStyle);
+    setOnItemLongClickListener(this);
+}
+
+/** ドラッグイベントリスナの設定 */
+public void setDragListener(DragListener listener) {
+    mDragListener = listener;
+}
+
+/** ソートモードの切替 */
+public void setSortable(boolean sortable) {
+    this.mSortable = sortable;
+}
+
+/** ソート中アイテムの背景色を設定 */
+@Override
+public void setBackgroundColor(int color) {
+    mBitmapBackgroundColor = color;
+}
+
+/** ソートモードの設定 */
+public boolean getSortable() {
+    return mSortable;
+}
+
+/** MotionEvent から position を取得する */
+private int eventToPosition(MotionEvent event) {
+    return pointToPosition((int) event.getX(), (int) event.getY());
+}
+
+/** タッチイベント処理 */
+@Override
+public boolean onTouchEvent(MotionEvent event) {
+    if (!mSortable) {
+        return super.onTouchEvent(event);
+    }
+    switch (event.getAction()) {
+        case MotionEvent.ACTION_DOWN: {
+            storeMotionEvent(event);
+            break;
+        }
+        case MotionEvent.ACTION_MOVE: {
+            if (duringDrag(event)) {
+                return true;
+            }
+            break;
+        }
+        case MotionEvent.ACTION_UP: {
+            if (stopDrag(event, true)) {
+                return true;
+            }
+            break;
+        }
+        case MotionEvent.ACTION_CANCEL:
+        case MotionEvent.ACTION_OUTSIDE: {
+            if (stopDrag(event, false)) {
+                return true;
+            }
+            break;
+        }
+    }
+    return super.onTouchEvent(event);
+}
+
+/** リスト要素長押しイベント処理 */
+@Override
+public boolean onItemLongClick(AdapterView&lt;?&gt; parent, View view,
+        int position, long id) {
+    return startDrag();
+}
+
+/** ACTION_DOWN 時の MotionEvent をプロパティに格納 */
+private void storeMotionEvent(MotionEvent event) {
+    mActionDownEvent = MotionEvent.obtain(event); // 複製しないと値が勝手に変わる
+}
+
+/** ドラッグ開始 */
+private boolean startDrag() {
+    // イベントから position を取得
+    mPositionFrom = eventToPosition(mActionDownEvent);
+
+    // 取得した position が 0未満＝範囲外の場合はドラッグを開始しない
+    if (mPositionFrom &lt; 0) {
+        return false;
+    }
+    mDragging = true;
+
+    // View, Canvas, WindowManager の取得・生成
+    final View view = getChildByIndex(mPositionFrom);
+    final Canvas canvas = new Canvas();
+    final WindowManager wm = getWindowManager();
+
+    // ドラッグ対象要素の View を Canvas に描画
+    mDragBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
+            DRAG_BITMAP_CONFIG);
+    canvas.setBitmap(mDragBitmap);
+    view.draw(canvas);
+
+    // 前回使用した ImageView が残っている場合は除去（念のため？）
+    if (mDragImageView != null) {
+        wm.removeView(mDragImageView);
+    }
+
+    // ImageView 用の LayoutParams が未設定の場合は設定する
+    if (mLayoutParams == null) {
+        initLayoutParams();
+    }
+
+    // ImageView を生成し WindowManager に addChild する
+    mDragImageView = new ImageView(getContext());
+    mDragImageView.setBackgroundColor(mBitmapBackgroundColor);
+    mDragImageView.setImageBitmap(mDragBitmap);
+    wm.addView(mDragImageView, mLayoutParams);
+
+    // ドラッグ開始
+    if (mDragListener != null) {
+        mPositionFrom = mDragListener.onStartDrag(mPositionFrom);
+    }
+    return duringDrag(mActionDownEvent);
+}
+
+/** ドラッグ処理 */
+private boolean duringDrag(MotionEvent event) {
+    if (!mDragging || mDragImageView == null) {
+        return false;
+    }
+    final int x = (int) event.getX();
+    final int y = (int) event.getY();
+    final int height = getHeight();
+    final int middle = height / 2;
+
+    // スクロール速度の決定
+    final int speed;
+    final int fastBound = height / 9;
+    final int slowBound = height / 4;
+    if (event.getEventTime() - event.getDownTime() &lt; 500) {
+        // ドラッグの開始から500ミリ秒の間はスクロールしない
+        speed = 0;
+    } else if (y &lt; slowBound) {
+        speed = y &lt; fastBound ? -SCROLL_SPEED_FAST : -SCROLL_SPEED_SLOW;
+    } else if (y &gt; height - slowBound) {
+        speed = y &gt; height - fastBound ? SCROLL_SPEED_FAST
+                : SCROLL_SPEED_SLOW;
+    } else {
+        speed = 0;
+    }
+
+    // スクロール処理
+    if (speed != 0) {
+        // 横方向はとりあえず考えない
+        int middlePosition = pointToPosition(0, middle);
+        if (middlePosition == AdapterView.INVALID_POSITION) {
+            middlePosition = pointToPosition(0, middle + getDividerHeight()
+                    + 64);
+        }
+        final View middleView = getChildByIndex(middlePosition);
+        if (middleView != null) {
+            setSelectionFromTop(middlePosition, middleView.getTop() - speed);
+        }
+    }
+
+    // ImageView の表示や位置を更新
+    if (mDragImageView.getHeight() &lt; 0) {
+        mDragImageView.setVisibility(View.INVISIBLE);
+    } else {
+        mDragImageView.setVisibility(View.VISIBLE);
+    }
+    updateLayoutParams((int)event.getRawY()); // ここだけスクリーン座標を使う
+    getWindowManager().updateViewLayout(mDragImageView, mLayoutParams);
+    if (mDragListener != null) {
+        mPositionFrom = mDragListener.onDuringDrag(mPositionFrom,
+                pointToPosition(x, y));
+    }
+    return true;
+}
+
+/** ドラッグ終了 */
+private boolean stopDrag(MotionEvent event, boolean isDrop) {
+    if (!mDragging) {
+        return false;
+    }
+    if (isDrop &amp;&amp; mDragListener != null) {
+        mDragListener.onStopDrag(mPositionFrom, eventToPosition(event));
+    }
+    mDragging = false;
+    if (mDragImageView != null) {
+        getWindowManager().removeView(mDragImageView);
+        mDragImageView = null;
+        // リサイクルするとたまに死ぬけどタイミング分からない by vvakame
+        // mDragBitmap.recycle();
+        mDragBitmap = null;
+
+        mActionDownEvent.recycle();
+        mActionDownEvent = null;
+        return true;
+    }
+    return false;
+}
+
+/** 指定インデックスのView要素を取得する */
+private View getChildByIndex(int index) {
+    return getChildAt(index - getFirstVisiblePosition());
+}
+
+/** WindowManager の取得 */
+protected WindowManager getWindowManager() {
+    return (WindowManager) getContext().getSystemService(
+            Context.WINDOW_SERVICE);
+}
+
+/** ImageView 用 LayoutParams の初期化 */
+protected void initLayoutParams() {
+    mLayoutParams = new WindowManager.LayoutParams();
+    mLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
+    mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+    mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+    mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
+            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+            | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
+    mLayoutParams.format = PixelFormat.TRANSLUCENT;
+    mLayoutParams.windowAnimations = 0;
+    mLayoutParams.x = getLeft();
+    mLayoutParams.y = getTop();
+}
+
+/** ImageView 用 LayoutParams の座標情報を更新 */
+protected void updateLayoutParams(int rawY) {
+    mLayoutParams.y =  rawY - 32;
+}
+
+/** ドラッグイベントリスナーインターフェース */
+public interface DragListener {
+    /** ドラッグ開始時の処理 */
+    public int onStartDrag(int position);
+
+    /** ドラッグ中の処理 */
+    public int onDuringDrag(int positionFrom, int positionTo);
+
+    /** ドラッグ終了＝ドロップ時の処理 */
+    public boolean onStopDrag(int positionFrom, int positionTo);
+}
+
+/** ドラッグイベントリスナー実装 */
+public static class SimpleDragListener implements DragListener {
+    /** ドラッグ開始時の処理 */
+    @Override
+    public int onStartDrag(int position) {
+        return position;
+    }
+
+    /** ドラッグ中の処理 */
+    @Override
+    public int onDuringDrag(int positionFrom, int positionTo) {
+        return positionFrom;
+    }
+
+    /** ドラッグ終了＝ドロップ時の処理 */
+    @Override
+    public boolean onStopDrag(int positionFrom, int positionTo) {
+        return positionFrom != positionTo &amp;&amp; positionFrom &gt;= 0
+                || positionTo &gt;= 0;
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms、Android での BACK キーの制御]]></title>
+    <link href="http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms/"/>
+    <updated>2014-06-17T01:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「BACKキーの制御」の <strong>現時点(1.1.0.6201)</strong> での回答。</p>
+
+<!--more-->
+
+
+<p>Android の BACKキーの制御を、Xamarin.Forms ではどう扱えるかを調べた。</p>
+
+<h2>シナリオ</h2>
+
+<p>Xamarin.Forms による画面１(MainPage)、２(SecondPage)があり、MainPage では BACKキーで戻る(=アプリ終了)事ができるが、SecondPage ではBACKキーが効かない、ようにしたい。</p>
+
+<h2>対策</h2>
+
+<p>まず画面１と２はこんな感じ。ボタンを押したら画面２へ遷移するだけ。</p>
+
+<p>```csharp Pages.cs
+// 画面１
+public class MainPage : ContentPage
+{</p>
+
+<pre><code>public MainPage() 
+{
+    var button = new Button
+    {
+        Text = "To Second",
+        VerticalOptions = LayoutOptions.Center,
+    };
+
+    button.Clicked += (sender, e) =&gt; 
+    {
+        this.Navigation.PushAsync(new SecondPage());
+    };
+
+    Content = button;
+}
+</code></pre>
+
+<p>}</p>
+
+<p>// 画面２
+public class SecondPage : ContentPage
+{</p>
+
+<pre><code>public SecondPage()
+{
+    Content = new Label
+    {
+        Text = "Second"
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ここからが本題。
+まず Android側のエントリポイントである <code>MainActivity.cs</code> は以下のように、<code>ContentPage</code> プロパティを設ける。そして <code>OnBackPressed</code> メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "ScrollTest.Android.Android", MainLauncher = true)]
+public class MainActivity : AndroidActivity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+
+    Xamarin.Forms.Forms.Init(this, bundle);
+
+    SetPage(new NavigationPage(new MainPage()));
+}
+
+internal Page ContentPage
+{
+    get;
+    set;
+}
+
+public override void OnBackPressed()
+{
+    if (this.ContentPage is MainPage)
+    {
+        base.OnBackPressed();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に、MainActivity.ContentPage への設定を行うコードは以下の通り。
+PageRenderer を拡張して ExportRenderer することで、すべての Page にフックをかけ、Page の表示時に MainActivity.ContentPage に設定する。</p>
+
+<p>```csharp MyPageRenderer.cs
+using System;
+using Xamarin.Forms.Platform.Android;
+using Android.App;
+using Xamarin.Forms;
+using ScrollTest.Android;
+using Android.Views;
+using Android.Graphics;</p>
+
+<p>[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</p>
+
+<p>namespace ScrollTest.Android
+{</p>
+
+<pre><code>public class MyPageRenderer : PageRenderer
+{
+    protected override void OnElementChanged(ElementChangedEventArgs&lt;Xamarin.Forms.Page&gt; e)
+    {
+        base.OnElementChanged(e);
+
+        // なんとなく不安なので weak にしてみた
+        var activity = new WeakReference&lt;MainActivity&gt;(this.Context as MainActivity);
+
+        e.NewElement.Appearing += (_, __) =&gt;
+        {
+            MainActivity a;
+            if (activity.TryGetTarget(out a)) {
+                a.ContentPage = e.NewElement;    
+            }
+        };
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これで、画面１(MainPage)の時だけ BACKキーが効くようにできる。</p>
+
+<h3><code>Appearing</code> イベントが必要なの？</h3>
+
+<p>　Xamarin.Forms の Android実装では、画面遷移の度に <strong>「同じインスタンスの MainActivity」</strong> が使いまわされる、さらに <code>OnElementChanged</code> は、各Pageにつき１度しか発生しない。その為、画面１→２→１と遷移すると <code>MainActivity.ContentPage</code> は <code>SecondPage</code> のままになってしまう。ので <code>Appearing</code> イベントで表示の度に MainActivity.ContentPage を設定する必要がある。</p>
+
+<h3><code>AndroidActivity</code> に static な <code>BackPressed</code> イベントがあるんだけど…</h3>
+
+<p>イベントハンドラの定義は
+<code>public delegate bool BackButtonPressedEventHandler(object sender, EventArgs e);</code>
+となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
+
+<p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
@@ -203,240 +705,6 @@ public class MainActivity : Activity
 <p>```</p>
 
 <p>テキストでない場合は、mimetype を適宜変更する。省略したら動作しなかった。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Activity がメモリリークしにくくなってる件]]></title>
-    <link href="http://blog.amay077.net/blog/2014/03/19/android-memory-leaks-improvements/"/>
-    <updated>2014-03-19T15:12:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/03/19/android-memory-leaks-improvements</id>
-    <content type="html"><![CDATA[<p>2009年の情報なんですけどね。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://android-developers.blogspot.jp/2009/01/avoiding-memory-leaks.html">Avoiding memory leaks | Android Developers Blog</a></li>
-<li><a href="http://d.hatena.ne.jp/androidzaurus/20090121/1232519066">Avoiding memory leaks （超訳） - Android Zaurusの日記</a></li>
-<li><a href="http://tomokey.blogspot.jp/2011/05/android.html">暇なメモ帳: Androidのソースコードレビュー(メモリリーク)</a></li>
-</ul>
-
-
-<p>Android でメモリリークする典型的なパターンとして上で紹介されているものがあって、日頃はこうならないように気をつけて実装をしているわけです。</p>
-
-<p>また、メモリリークの調査方法もたくさん情報があります。</p>
-
-<ul>
-<li><a href="http://rainbowdevil.jp/?p=1187">Androidでメモリリークの調査と、そのヒープダンプから画像を抽出する » RainbowDevilsLand</a></li>
-<li><a href="http://tlync.hateblo.jp/entry/20111220/1324372308">富豪的 Android プログラマの為の Eclipse Memory Analyzer Tool 入門 - sandbox</a></li>
-</ul>
-
-
-<p>日頃、Xamarin.Android を触っているので、「Xamarin でも同じようにリークするよね」と思いやってみたところ全然リークしなかったので、もしや Android-Java でもリークしないんじゃ？と考え、試してみたのが以下の内容です。</p>
-
-<h2>試した</h2>
-
-<p>以下の2つのパターンについて試しました</p>
-
-<ol>
-<li>Avoiding memory leaks の 2番目の例。Activity への強参照を持った Drawable を static なメンバにキープしちゃう件。画面が回転した時に、Activity がリークしてしまう、とされる。</li>
-<li>暇なメモ帳さんの「問題3」＋α。非static な Inner クラスが Activity の強参照を持ってる、且つ、このオブジェクトを Activity の static メンバにしちゃう。</li>
-</ol>
-
-
-<h2>結論</h2>
-
-<p>から言うと、</p>
-
-<p><strong>1. はリークせず、2. はリークしました。</strong></p>
-
-<p>あれれ？</p>
-
-<h2>パターン1のテストコード</h2>
-
-<p>ほぼ元コードのコピペだけど、クラスが破棄された(<code>finalize</code>)時にログ吐くようにしています。</p>
-
-<p>```java
-public class MainActivity extends Activity {</p>
-
-<pre><code>private static final String TAG = "MainActivity";
-private static Drawable sBackground;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    Log.d(TAG, "onCreate:" + this.hashCode());
-
-    Button button = new Button(this);
-    button.setText("Leaks are bad");
-
-    if (sBackground == null) {
-        sBackground = getResources().getDrawable(R.drawable.ic_launcher);
-    }
-    button.setBackgroundDrawable(sBackground);
-    setContentView(button);
-}
-
-@Override
-protected void onDestroy() {
-    Log.d(TAG, "onDestroy:" + this.hashCode());
-    super.onDestroy();
-}
-
-@Override
-protected void finalize() throws Throwable {
-    Log.d(TAG, "finalize:" + this.hashCode());
-    super.finalize();
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h3>確認手順</h3>
-
-<ol>
-<li>このアプリを実行。Android2.3 のエミュレータ(4.0 の実機でも試した)。</li>
-<li>画面を回転させる（Ctrl+F11）</li>
-<li>DDMS から GC を走らせる</li>
-<li>LogCat を収集</li>
-</ol>
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_02.png" alt="" />
-<img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_03.png" alt="" /></p>
-
-<p>Logcat の出力結果はこう。</p>
-
-<p><code>
-03-19 21:28:09.539: D/MainActivity(382): onCreate:1079076320
-03-19 21:29:15.979: D/MainActivity(382): onDestroy:1079076320
-03-19 21:29:15.989: D/MainActivity(382): onCreate:1079106528 ←横画面のActivity
-03-19 21:29:33.939: D/MainActivity(382): finalize:1079076320
-</code></p>
-
-<p>ちゃんと GC を走らせた後、 Activity の <code>finalize</code> が呼ばれています。
-MAT でも確認したけど、リークは発見できませんでした。</p>
-
-<h2>パターン2のテストコード</h2>
-
-<p>こんな実装は早々お目にかからないと思うけど、非static な Inner クラスのインスタンスを、Activity の static メンバにしちゃうぞ、と。</p>
-
-<p>```java
-public class MainActivity extends Activity {</p>
-
-<pre><code>private static final String TAG = "MainActivity";
-private static SomeInnerClass innerClass;
-
-@Override
-public void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    Log.d(TAG, "onCreate");
-
-    if (innerClass == null) {
-        innerClass = new SomeInnerClass();
-    }
-}
-
-@Override
-protected void onDestroy() {
-    Log.d(TAG, "onDestroy");
-    super.onDestroy();
-}
-
-@Override
-protected void finalize() throws Throwable {
-    Log.d(TAG, "finalize");
-    super.finalize();
-}
-
-class SomeInnerClass {
-    public void doSomething() { }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h3>確認手順</h3>
-
-<p>パターン1と同じです。</p>
-
-<p>Logcat の出力結果はこちら。</p>
-
-<p><code>
-03-19 21:42:55.289: D/MainActivity(476): onCreate
-03-19 21:43:05.369: D/MainActivity(476): onDestroy
-03-19 21:43:05.549: D/MainActivity(476): onCreate
-</code></p>
-
-<p>ご覧のとおり、<code>finalize</code> が呼ばれない、つまり Activity がリークしています。</p>
-
-<h2>考察っぽいの</h2>
-
-<p>パターン2 がリークするのは当然と言えます。
-Activity への強参照を持ったオブジェクトを、static フィールドで保持し続けてしまうので、Activity が破棄されない。</p>
-
-<p>パターン1 も同じ理屈だと思うのですが（少なくとも冒頭の記事の説明ではそう）。これがリークしないのは、Android SDK が改善された(例えば、今まで Activity の強参照を持ってたのが弱参照に変わった)とか、Dalvik の GC が改善されたとかでしょうか？</p>
-
-<p>まあ4年も経てば常識も変わるということで、Activity に関しては以前ほど神経質にならなくてもいいかもしれませんが、メモリリークの可能性が消えることは有り得ないので、このアンチパターンはこれからも遵守していかないといけませんね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin によるクロスプラットフォームモバイルアプリ開発、資料と補足]]></title>
-    <link href="http://blog.amay077.net/blog/2014/02/27/slides-from-my-xamarin-introduction/"/>
-    <updated>2014-02-27T21:40:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/02/27/slides-from-my-xamarin-introduction</id>
-    <content type="html"><![CDATA[<p>2/26 の <a href="http://atnd.org/events/47898">うずらインキュベータ</a> という勉強会で、Xamarin の話をしました。</p>
-
-<!--more-->
-
-
-
-
-<iframe src="http://www.slideshare.net/slideshow/embed_code/31674661" width="427" height="356" frameborder="0" marginwidth="0" marginheight="0" scrolling="no" style="border:1px solid #CCC; border-width:1px 1px 0; margin-bottom:5px; max-width: 100%;" allowfullscreen> </iframe>
-
-
-<p> <div style="margin-bottom:5px"> <strong> <a href="https://www.slideshare.net/amay077/xamarin-31674661" title="Xamarin によるクロスプラットフォームモバイルアプリ開発" target="_blank">Xamarin によるクロスプラットフォームモバイルアプリ開発</a> </strong> from <strong><a href="http://www.slideshare.net/amay077" target="_blank">amay 077</a></strong> </div></p>
-
-<p>45分という長い時間話すのは勉強会では初めてだったのですが、なんとか説明し切ることができました。（ちょっとデモが中途半端になってしまいましたが）</p>
-
-<p>資料は <a href="http://qiita.com/tags/xamarin">Qiita に書いてきた</a> 内容のまとめみたいなものですが、少し補足します。</p>
-
-<h2>Xamarin で作った経験あるの？</h2>
-
-<p>仕事では、まだ無いです（<sup>_<sup>;）</sup></sup>
-個人アプリでは「<a href="https://itunes.apple.com/us/app/fu-shifoto/id806913229">富士フォト</a>」というのを iOS 用は Xamarin.iOS で作りました。<a href="https://play.google.com/store/apps/details?id=com.amay077.android.fujiphoto">Android</a> は Java ですが Xamarin 化したいな。</p>
-
-<h2>Win+Visual Studio ではダメなの？</h2>
-
-<p>個人の見解ですから（<sup>_<sup>;）</sup></sup>
-私も元々は Windowsの開発がメインで Visual Studio の強力さは知っていますが、iOS やるならどういう形にせよ Mac+Xcode を扱わないといけないので、慣れておいた方がよいかなと。</p>
-
-<p>また、Microsoft との提携以降、Microsoft のエバンジェリストさんや MVP の方々が Visual Studio + Xamarin の話をものすごく展開されているので、そちらにお任せした次第です。</p>
-
-<h2>実行モデルのとこ</h2>
-
-<p>JavaSE が .NET に置き換わる図になっていますが、実際には少し違っていて、JavaSE のラッパもあります。例えば文字列型には、<code>System.String</code> と <code>Java.Lang.String</code> があります。当然、理由がなければ前者を使った方がよいわけですが。</p>
-
-<p>iOS のスタックに関しては、実はどこからどこまでが「CocoaTouch」なのかよく分かってません。</p>
-
-<h2>他のクロスプラットフォーム開発ツールとの比較</h2>
-
-<p>Titanium, AIR については2年くらい前に少し触ったことがあります。PhoneGap と DelphiXE についてはスペックを見て＆詳しい方からの情報を元にしてます。</p>
-
-<p>Titanium は次期 <a href="http://titanium-mobile.jp/38">Ti.Next</a> では JavaScriptCore を使ってすんごく速くなるそうですし、AIR も当時よりだいぶ <a href="http://www.slideshare.net/pik256/dev-sumi2014-13c4rev">高速になったらしい</a> です。</p>
-
-<h2>C# のとこ</h2>
-
-<p>https://xamarin.com/csharp よりは悪意のないコードかとｗ
-（Objective-C と比較しようとすると Obj-C の方が画面に入らないので Java との比較にしました。）</p>
-
-<p>こんなところで。
-何かおかしなところがあったらコメント頂けるとありがたいです。</p>
 ]]></content>
   </entry>
   

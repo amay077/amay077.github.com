@@ -4,7 +4,7 @@
   <title><![CDATA[Category: C# | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/c-/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-07-17T21:03:27+09:00</updated>
+  <updated>2014-07-18T15:05:23+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,157 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms、Android での BACK キーの制御]]></title>
+    <link href="http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms/"/>
+    <updated>2014-06-17T01:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms</id>
+    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「BACKキーの制御」の <strong>現時点(1.1.0.6201)</strong> での回答。</p>
+
+<!--more-->
+
+
+<p>Android の BACKキーの制御を、Xamarin.Forms ではどう扱えるかを調べた。</p>
+
+<h2>シナリオ</h2>
+
+<p>Xamarin.Forms による画面１(MainPage)、２(SecondPage)があり、MainPage では BACKキーで戻る(=アプリ終了)事ができるが、SecondPage ではBACKキーが効かない、ようにしたい。</p>
+
+<h2>対策</h2>
+
+<p>まず画面１と２はこんな感じ。ボタンを押したら画面２へ遷移するだけ。</p>
+
+<p>```csharp Pages.cs
+// 画面１
+public class MainPage : ContentPage
+{</p>
+
+<pre><code>public MainPage() 
+{
+    var button = new Button
+    {
+        Text = "To Second",
+        VerticalOptions = LayoutOptions.Center,
+    };
+
+    button.Clicked += (sender, e) =&gt; 
+    {
+        this.Navigation.PushAsync(new SecondPage());
+    };
+
+    Content = button;
+}
+</code></pre>
+
+<p>}</p>
+
+<p>// 画面２
+public class SecondPage : ContentPage
+{</p>
+
+<pre><code>public SecondPage()
+{
+    Content = new Label
+    {
+        Text = "Second"
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>ここからが本題。
+まず Android側のエントリポイントである <code>MainActivity.cs</code> は以下のように、<code>ContentPage</code> プロパティを設ける。そして <code>OnBackPressed</code> メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = "ScrollTest.Android.Android", MainLauncher = true)]
+public class MainActivity : AndroidActivity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+
+    Xamarin.Forms.Forms.Init(this, bundle);
+
+    SetPage(new NavigationPage(new MainPage()));
+}
+
+internal Page ContentPage
+{
+    get;
+    set;
+}
+
+public override void OnBackPressed()
+{
+    if (this.ContentPage is MainPage)
+    {
+        base.OnBackPressed();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>次に、MainActivity.ContentPage への設定を行うコードは以下の通り。
+PageRenderer を拡張して ExportRenderer することで、すべての Page にフックをかけ、Page の表示時に MainActivity.ContentPage に設定する。</p>
+
+<p>```csharp MyPageRenderer.cs
+using System;
+using Xamarin.Forms.Platform.Android;
+using Android.App;
+using Xamarin.Forms;
+using ScrollTest.Android;
+using Android.Views;
+using Android.Graphics;</p>
+
+<p>[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</p>
+
+<p>namespace ScrollTest.Android
+{</p>
+
+<pre><code>public class MyPageRenderer : PageRenderer
+{
+    protected override void OnElementChanged(ElementChangedEventArgs&lt;Xamarin.Forms.Page&gt; e)
+    {
+        base.OnElementChanged(e);
+
+        // なんとなく不安なので weak にしてみた
+        var activity = new WeakReference&lt;MainActivity&gt;(this.Context as MainActivity);
+
+        e.NewElement.Appearing += (_, __) =&gt;
+        {
+            MainActivity a;
+            if (activity.TryGetTarget(out a)) {
+                a.ContentPage = e.NewElement;    
+            }
+        };
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これで、画面１(MainPage)の時だけ BACKキーが効くようにできる。</p>
+
+<h3><code>Appearing</code> イベントが必要なの？</h3>
+
+<p>　Xamarin.Forms の Android実装では、画面遷移の度に <strong>「同じインスタンスの MainActivity」</strong> が使いまわされる、さらに <code>OnElementChanged</code> は、各Pageにつき１度しか発生しない。その為、画面１→２→１と遷移すると <code>MainActivity.ContentPage</code> は <code>SecondPage</code> のままになってしまう。ので <code>Appearing</code> イベントで表示の度に MainActivity.ContentPage を設定する必要がある。</p>
+
+<h3><code>AndroidActivity</code> に static な <code>BackPressed</code> イベントがあるんだけど…</h3>
+
+<p>イベントハンドラの定義は
+<code>public delegate bool BackButtonPressedEventHandler(object sender, EventArgs e);</code>
+となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
+
+<p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
@@ -1033,109 +1184,6 @@ Average=4.5
 </code></p>
 
 <p>…疲れた。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ふたつの Iterator を LINQ で]]></title>
-    <link href="http://blog.amay077.net/blog/2014/03/19/pair-iterator-implements-by-linq/"/>
-    <updated>2014-03-19T00:33:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/03/19/pair-iterator-implements-by-linq</id>
-    <content type="html"><![CDATA[<p>ふたつの Iterator を LINQ で</p>
-
-<ul>
-<li><a href="http://d.hatena.ne.jp/Nagise/20140315/1394884271">ふたつのIterator - プログラマーの脳みそ</a></li>
-</ul>
-
-
-<p>を拝見しました。</p>
-
-<!--more-->
-
-
-<p>コメントで「Zip じゃん」というのがあり、「確かに！」と思ったのでやってみました。</p>
-
-<h2>C＃ の場合</h2>
-
-<p>```csharp
-// using using System.Linq;</p>
-
-<p>var arr1 = new int[] { 1,2,3,4,5 };
-var arr2 = new string[] { "hoge", "fuga", "piyo" };</p>
-
-<p>arr1.Zip(arr2, (x, y) =>  new {x, y})</p>
-
-<pre><code>.ToList()
-.ForEach(Console.WriteLine);
-</code></pre>
-
-<p>```</p>
-
-<h4>結果</h4>
-
-<p><code>
-{ x = 1, y = hoge }
-{ x = 2, y = fuga }
-{ x = 3, y = piyo }
-</code></p>
-
-<p>うむ、シンプル。要素数が違ってても少ない方に合わせてくれます。</p>
-
-<h2>Java の場合</h2>
-
-<p><a href="https://code.google.com/p/reactive4java/">reactive4java</a> というライブラリがありまして、これは Java で Reactive Extensions を実現するライブラリなのですが、LINQ的な機能が <code>Interactive</code> というクラスで提供されています。</p>
-
-<p>これを使うと Zip ができます。</p>
-
-<p>```java
-//import hu.akarnokd.reactive4java.base.Func2;
-//import hu.akarnokd.reactive4java.interactive.Interactive;</p>
-
-<p>Iterable<Integer> array1 = Arrays.asList(1,2,3,4,5);
-Iterable<String> array2 = Arrays.asList("hoge", "fuga", "piyo");</p>
-
-<p>Iterator&lt;Pair&lt;Integer, String>> zippedIter =</p>
-
-<pre><code>    Interactive.zip(array1, array2, 
-            new Func2&lt;Integer, String, Pair&lt;Integer, String&gt;&gt;() {
-@Override
-public Pair&lt;Integer, String&gt; invoke(Integer x, String y) {
-    return new Pair&lt;Integer, String&gt;(x, y);
-}
-</code></pre>
-
-<p>}).iterator();</p>
-
-<p>while (zippedIter.hasNext()) {</p>
-
-<pre><code>Pair&lt;Integer, String&gt; p = zippedIter.next();
-Log.d("StartupActivity", String.format("x=%d, y=%s", p.first, p.second));
-</code></pre>
-
-<p>}
-```</p>
-
-<p>ああ、Android で試したので <code>Pair</code> とか使ってしまった。
-普通の Java の場合は自作の Tuple などに置き換えを。</p>
-
-<h4>結果</h4>
-
-<p><code>
-x=1, y=hoge
-x=2, y=fuga
-x=3, y=piyo
-</code></p>
-
-<p>C# より冗長ですけど、いい感じで利用できるのではと思います。</p>
-
-<p>reactive4java が Java8 のラムダ式に対応してくれると、上のコードはもっと簡潔に書けます。</p>
-
-<p><a href="https://code.google.com/p/reactive4java/wiki/Reactive4Java8">Reactive4Java8</a> には、対応してる感じが見られますが、<a href="https://code.google.com/p/reactive4java/">Top ページ</a> によると、どうやら、「reactive4java の開発は終了し、<a href="https://github.com/Netflix/RxJava">RxJava</a> の開発に参加するつもりだ」みたいなことが書いてあります。</p>
-
-<p>また、RxJava でなく reactive4java を使う利点として、<code>Interactive</code> 機能群の存在を挙げています。
-単純に LINQ 的な機能を Java で使いたいならば、 reactive4java はまだまだ役に立つと思います。</p>
-
-<p>最後に、もしあなたが Android 開発をしていて、Java の冗長さに嫌気がさしているなら、<a href="http://xamarin.com/csharp"><strong>Xamarin へどうぞ</strong></a></p>
 ]]></content>
   </entry>
   
