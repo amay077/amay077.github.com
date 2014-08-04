@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-07-30T15:47:58+09:00</updated>
+  <updated>2014-08-04T21:41:12+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,101 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[いまさら Raspberry Pi やってみた]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/04/raspberry-try-first/"/>
+    <updated>2014-08-04T21:03:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/04/raspberry-try-first</id>
+    <content type="html"><![CDATA[<p>昨年の秋に買って以来放置してしまってた Raspberry Pi、ふと思い立って動かしてみました。</p>
+
+<!--more-->
+
+
+<p>当時は、買ったはよかったものの、余ってるSDカードがなくてそのまま「寝て」しまってました。</p>
+
+<h2>OS のインストール</h2>
+
+<ul>
+<li><a href="http://qiita.com/tomk79/items/cdc1b88358afba2c6337">RaspberryPi &ndash; Raspberry Pi に入門してみた。 &ndash; Qiita</a></li>
+</ul>
+
+
+<p>に沿ってやりました。ZIPファイルのダウンロードが300MBほど経過したところで終わってしまったので、BitTorrent を使ってみました。
+Mac なので、<a href="https://www.transmissionbt.com/">Transmission</a> というクライアントを使用しました。速いっすね BitTorrent。</p>
+
+<p>RaspberryPiへの給電は MacMini のUSBポートから、ディスプレイはHDMIで行いました。
+SDカードは、以前使っていたスマホに刺さっていたmicroSDカード＋SDカードアダプタにて、そのためか、少し衝撃を与えるとOSが再起動してしまうという gkbr な環境です。</p>
+
+<h2>WiFi に接続する</h2>
+
+<p>有線LANが余ってなかったので、WiFiでやることにしました。ちょうど使わなくなったノートPCにWiFiドングルが刺さってました。</p>
+
+<p>WiFi に接続するための設定は、</p>
+
+<ul>
+<li><a href="http://kingyo-bachi.blogspot.jp/2013/07/raspberry-pilan.html">コチョナナバ: Raspberry Piを無線LAN対応させてみた</a></li>
+</ul>
+
+
+<p>を参考にしましたが、設定後再起動してもIPアドレスが取得できず、結局 <code>startx</code> で GUI を立ち上げ、GUIのWiFi設定ツールで設定したところ、接続できるようになりました。その後の再起動でも自動的にWiFiに接続できるようになりました。</p>
+
+<p>Raspberry Pi のUSBポートは２つしかないのに、GUIでのWiFi設定を行うにはマウスとキーボードとWiFiドングルが必要で、キーボードとマウスを抜き差ししながら、しかも本体にできるだけ衝撃を与えないようにするのが大変でした（^_^;）</p>
+
+<p>GUIのWiFi設定ツールで設定した後の <code>wpa_supplicant.conf</code> はこんな感じになっていました。</p>
+
+<figure class='code'><figcaption><span>wpa_supplicant.conf</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">ctrl_interface=DIR=/var/run/wpa_supplicant</span> <span class="err">GROUP=netdev</span>
+</span><span class='line'><span class="err">update_config=</span><span class="mi">1</span>
+</span><span class='line'>
+</span><span class='line'><span class="err">network=</span><span class="p">{</span>
+</span><span class='line'>  <span class="err">ssid=</span><span class="nt">&quot;&lt;WiFi-APのSSID&gt;&quot;</span>
+</span><span class='line'>  <span class="err">psk=</span><span class="s2">&quot;&lt;WiFi-APの接続生パスワード&gt;&quot;</span>
+</span><span class='line'>  <span class="err">proto=RSN</span>
+</span><span class='line'>  <span class="err">key_mgmt=WPA-PSK</span>
+</span><span class='line'>  <span class="err">pairwise=TKIP</span>
+</span><span class='line'>  <span class="err">auth_alg=OPEN</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>root のパスワードを設定</h2>
+
+<p><code>sudo passwd root</code> で root のパスワードを設定しました。（こんなことすらググらないと分からない程度のLinux力ですorz）</p>
+
+<h2>SSHで接続</h2>
+
+<p>前出のコチョバナナさんの続きで、 <code>avahi-deamon</code> を導入して、DHCPでIPアドレスが変わっても、<code>ssh raspberrypi.local</code> で接続できるようにしました。</p>
+
+<p>とりあえずここまで。
+カメラとかセンサーはないので、これから何しようか考えます。</p>
+
+<p>一連のセットアップで一番苦労したのは vi のテキスト入力です。。。</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00CBWMXVE" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+
+
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B003NSAMW2" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+
+
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00ISP0MOI" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[タイプカバーを買いました]]></title>
@@ -3151,133 +3246,6 @@ Activity への強参照を持ったオブジェクトを、static フィール�
 <p>パターン1 も同じ理屈だと思うのですが（少なくとも冒頭の記事の説明ではそう）。これがリークしないのは、Android SDK が改善された(例えば、今まで Activity の強参照を持ってたのが弱参照に変わった)とか、Dalvik の GC が改善されたとかでしょうか？</p>
 
 <p>まあ4年も経てば常識も変わるということで、Activity に関しては以前ほど神経質にならなくてもいいかもしれませんが、メモリリークの可能性が消えることは有り得ないので、このアンチパターンはこれからも遵守していかないといけませんね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ふたつの Iterator を LINQ で]]></title>
-    <link href="http://blog.amay077.net/blog/2014/03/19/pair-iterator-implements-by-linq/"/>
-    <updated>2014-03-19T00:33:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/03/19/pair-iterator-implements-by-linq</id>
-    <content type="html"><![CDATA[<p>ふたつの Iterator を LINQ で</p>
-
-<ul>
-<li><a href="http://d.hatena.ne.jp/Nagise/20140315/1394884271">ふたつのIterator &ndash; プログラマーの脳みそ</a></li>
-</ul>
-
-
-<p>を拝見しました。</p>
-
-<!--more-->
-
-
-<p>コメントで「Zip じゃん」というのがあり、「確かに！」と思ったのでやってみました。</p>
-
-<h2>C＃ の場合</h2>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// using using System.Linq;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">arr1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span> <span class="p">};</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">arr2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;hoge&quot;</span><span class="p">,</span> <span class="s">&quot;fuga&quot;</span><span class="p">,</span> <span class="s">&quot;piyo&quot;</span> <span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">arr1</span><span class="p">.</span><span class="n">Zip</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span>  <span class="k">new</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">})</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">ToList</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h4>結果</h4>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">hoge</span> <span class="p">}</span>
-</span><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">fuga</span> <span class="p">}</span>
-</span><span class='line'><span class="p">{</span> <span class="n">x</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">y</span> <span class="p">=</span> <span class="n">piyo</span> <span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>うむ、シンプル。要素数が違ってても少ない方に合わせてくれます。</p>
-
-<h2>Java の場合</h2>
-
-<p><a href="https://code.google.com/p/reactive4java/">reactive4java</a> というライブラリがありまして、これは Java で Reactive Extensions を実現するライブラリなのですが、LINQ的な機能が <code>Interactive</code> というクラスで提供されています。</p>
-
-<p>これを使うと Zip ができます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//import hu.akarnokd.reactive4java.base.Func2;</span>
-</span><span class='line'><span class="c1">//import hu.akarnokd.reactive4java.interactive.Interactive;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">array1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">);</span>
-</span><span class='line'><span class="n">Iterable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">array2</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">,</span> <span class="s">&quot;fuga&quot;</span><span class="o">,</span> <span class="s">&quot;piyo&quot;</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">Iterator</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">zippedIter</span> <span class="o">=</span>
-</span><span class='line'>      <span class="n">Interactive</span><span class="o">.</span><span class="na">zip</span><span class="o">(</span><span class="n">array1</span><span class="o">,</span> <span class="n">array2</span><span class="o">,</span>
-</span><span class='line'>              <span class="k">new</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">,</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;()</span> <span class="o">{</span>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">public</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">invoke</span><span class="o">(</span><span class="n">Integer</span> <span class="n">x</span><span class="o">,</span> <span class="n">String</span> <span class="n">y</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">return</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">);</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}).</span><span class="na">iterator</span><span class="o">();</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">while</span> <span class="o">(</span><span class="n">zippedIter</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
-</span><span class='line'>  <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">=</span> <span class="n">zippedIter</span><span class="o">.</span><span class="na">next</span><span class="o">();</span>
-</span><span class='line'>  <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="s">&quot;StartupActivity&quot;</span><span class="o">,</span> <span class="n">String</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;x=%d, y=%s&quot;</span><span class="o">,</span> <span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">,</span> <span class="n">p</span><span class="o">.</span><span class="na">second</span><span class="o">));</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ああ、Android で試したので <code>Pair</code> とか使ってしまった。
-普通の Java の場合は自作の Tuple などに置き換えを。</p>
-
-<h4>結果</h4>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">hoge</span>
-</span><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">2</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">fuga</span>
-</span><span class='line'><span class="n">x</span><span class="o">=</span><span class="mi">3</span><span class="o">,</span> <span class="n">y</span><span class="o">=</span><span class="n">piyo</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>C# より冗長ですけど、いい感じで利用できるのではと思います。</p>
-
-<p>reactive4java が Java8 のラムダ式に対応してくれると、上のコードはもっと簡潔に書けます。</p>
-
-<p><a href="https://code.google.com/p/reactive4java/wiki/Reactive4Java8">Reactive4Java8</a> には、対応してる感じが見られますが、<a href="https://code.google.com/p/reactive4java/">Top ページ</a> によると、どうやら、「reactive4java の開発は終了し、<a href="https://github.com/Netflix/RxJava">RxJava</a> の開発に参加するつもりだ」みたいなことが書いてあります。</p>
-
-<p>また、RxJava でなく reactive4java を使う利点として、<code>Interactive</code> 機能群の存在を挙げています。
-単純に LINQ 的な機能を Java で使いたいならば、 reactive4java はまだまだ役に立つと思います。</p>
-
-<p>最後に、もしあなたが Android 開発をしていて、Java の冗長さに嫌気がさしているなら、<a href="http://xamarin.com/csharp"><strong>Xamarin へどうぞ</strong></a></p>
 ]]></content>
   </entry>
   
