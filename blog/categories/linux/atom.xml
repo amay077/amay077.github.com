@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: linux | Experiments Never Fail]]></title>
+  <link href="http://blog.amay077.net/blog/categories/linux/atom.xml" rel="self"/>
+  <link href="http://blog.amay077.net/"/>
+  <updated>2014-08-05T22:56:59+09:00</updated>
+  <id>http://blog.amay077.net/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[いまさら Docker やってみた]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/05/docker-try-first/"/>
+    <updated>2014-08-05T21:39:53+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/05/docker-try-first</id>
+    <content type="html"><![CDATA[<p>いまさら感満載なんですが、Docker やってみました。</p>
+
+<!--more-->
+
+
+<p>ホストPCはMacです。</p>
+
+<h2>Docker のインストール</h2>
+
+<p>Macなので事前に VirtualBox を入れて置く必要があります。</p>
+
+<p>あとは、</p>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
+</ul>
+
+
+<p>を参考に。</p>
+
+<p>Docker と boot2docker のバージョンはこんな感じでした。</p>
+
+<p>```sh
+$ docker -v
+Docker version 1.1.2, build d84a070</p>
+
+<p>$ boot2docker version
+Client version: v1.1.2
+Git commit: a229ac1
+```</p>
+
+<h2>boot2docker 経由で Docker の起動</h2>
+
+<p><code>boot2docker up</code> で Docker (というか Tiny Core Linux らしい)を起動。</p>
+
+<p><code>sh
+$ boot2docker up
+2014/08/05 21:47:19 Waiting for VM to be started...
+.......
+2014/08/05 21:47:41 Started.
+2014/08/05 21:47:41 Your DOCKER_HOST env variable is already set correctly.
+</code></p>
+
+<p><code>set:export DOCKER_HOST=</code> とか出たらホスト（Mac） .bash_profile にそのまま追記します。（上はすでに追加済なので <code>already</code> と出てます）</p>
+
+<h2>boot2docker から Docker に接続</h2>
+
+<p><code>boot2docker ssh</code> で Docker に接続。</p>
+
+<p>```sh
+$ boot2docker ssh</p>
+
+<pre><code>                    ##        .
+              ## ## ##       ==
+           ## ## ## ##      ===
+       /""""""""""""""""\___/ ===
+  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~
+       \______ o          __/
+         \    \        __/
+          \____\______/
+</code></pre>
+
+<hr />
+
+<p>| |<strong>   </strong><em>   </em><strong> | |<em>|</em></strong> \ <strong>| | </strong><em>   </em><strong>| | </strong><em><strong> _ </strong>
+| &lsquo;</em> \ / _ \ / _ \| <strong>| </strong>) / <em>` |/ _ \ / <strong>| |/ / _ \ &rsquo;</strong>|
+| |</em>) | (<em>) | (</em>) | |<em> / __/ (</em>| | (<em>) | (<strong>|   &lt;  </strong>/ |
+|</em>.<strong>/ _</strong>/ _<strong>/ _<em>|</em></strong><strong>_<em>,</em>|_</strong>/ _<strong>|_|__</strong>|_|
+boot2docker: 1.1.2</p>
+
+<pre><code>         master : 740106c - Thu Jul 24 03:24:10 UTC 2014
+</code></pre>
+
+<p>docker@boot2docker:~$
+```</p>
+
+<h2>Docker 内で ubuntu を起動する</h2>
+
+<p><code>docker run</code> で docker のイメージを（無ければダウンロードして）起動し、後続のコマンドを実行して終わる。
+下記の場合 bash を起動しているので、<code>exit</code> すると終わる。</p>
+
+<p><code>sh
+docker@boot2docker:~$ sudo docker run -i -t ubuntu /bin/bash ＜--docker内
+Unable to find image 'ubuntu' locally
+Pulling repository ubuntu
+ba5877dc9bec: Download complete
+511136ea3c5a: Download complete
+9bad880da3d2: Download complete
+25f11f5fb0cb: Download complete
+ebc34468f71d: Download complete
+2318d26665ef: Download complete
+root@c8b319b2b306:/# ＜--ubuntu に入った
+</code></p>
+
+<h2>アタッチとかデタッチとか</h2>
+
+<p>CTRL+p → CTRL+q と押すと、Ubuntu からデタッチして docker に戻る。（ubuntu は終わらない）</p>
+
+<p><code>docker ps</code> とすると起動している ubuntu の一覧が見える。</p>
+
+<p><code>sh
+ocker@boot2docker:~$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+c8b319b2b306        ubuntu:latest       /bin/bash           5 minutes ago       Up 5 minutes                            prickly_tesla       
+</code></p>
+
+<p>もう一度 <code>sudo docker run -i -t ubuntu /bin/bash</code> とすると、ubuntu がもう１個起動する。
+CTRL+p → CTRL+q でデタッチして、<code>docker ps</code> すると、２つになってるのが分かる。</p>
+
+<p><code>sh
+docker@boot2docker:~$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+4744cf404fda        ubuntu:latest       /bin/bash           4 seconds ago       Up 4 seconds                            distracted_einstein   
+c8b319b2b306        ubuntu:latest       /bin/bash           8 minutes ago       Up 8 minutes                            prickly_tesla         
+</code></p>
+
+<p>起動中の ubuntu に入るには、<code>docker attach c8b319b2b306</code> などとする。この場合 bash が実行中なので ubuntu のコンソールになる。</p>
+
+<p>```sh
+docker@boot2docker:~$ docker attach c8b319b2b306</p>
+
+<p>root@c8b319b2b306:/#
+```</p>
+
+<h2>起動しているOSの削除</h2>
+
+<p><code>docker attach</code> して <code>exit</code> するか、docker側から <code>docker kill c8b319b2b306</code> などとする。</p>
+
+<p><code>docker ps</code> すると、削除されたのが分かる。</p>
+
+<p><code>sh
+docker@boot2docker:~$ docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+4744cf404fda        ubuntu:latest       /bin/bash           3 minutes ago       Up 3 minutes                            distracted_einstein   
+</code></p>
+
+<h2>OSの状態の保存と復元</h2>
+
+<p>docker から起動した ubuntu は揮発性なので、終了すると状態が消えてしまう。
+が、ほんとは消えてなくて、終了した後で、履歴からイメージを作成することができる。</p>
+
+<p>まず、ubuntu にて適当なファイルを作成。</p>
+
+<p>```sh
+root@4744cf404fda:/# echo &lsquo;Hello&rsquo; >> mytext</p>
+
+<p>root@4744cf404fda:/# ls
+bin   dev  home  lib64  mnt opt   root  sbin  sys  usr
+boot  etc  lib   media  mytext  proc  run   srv   tmp  var
+```</p>
+
+<p>確かに <code>mytext</code> が作成されているのを確認したら、<code>exit</code> で終了、docker に戻る。</p>
+
+<p><code>sudo docker run -i -t ubuntu /bin/bash</code> で ubuntu を起動し、<code>ls</code> で、内容を確認。</p>
+
+<p><code>sh
+root@3d15ee0cc161:/# ls
+bin  boot  dev  etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+</code></p>
+
+<p><code>mytext</code> は消えている。
+確認後 <code>exit</code> で終了。</p>
+
+<p><code>docker ps -a</code> で履歴も含めて状態を見る。</p>
+
+<p><code>sh
+docker@boot2docker:~$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+3d15ee0cc161        ubuntu:latest       /bin/bash           19 seconds ago      Exited (0) 12 seconds ago                       dreamy_hawking        
+4744cf404fda        ubuntu:latest       /bin/bash           8 minutes ago       Exited (0) 30 seconds ago                       distracted_einstein   
+16d24570a714        ubuntu:latest       /bin/bash           12 minutes ago      Exited (0) 12 minutes ago                       focused_wilson        
+</code></p>
+
+<p><code>mytext</code> を保存したのは 4744cf404fda の ubuntu なので、これを保存する。
+<code>docker commit</code> で git ライクにコミットすると保存される。</p>
+
+<p>```sh
+docker@boot2docker:~$ docker commit -m &ldquo;Add mytext&rdquo; 4744cf404fda amay077/mytext_container</p>
+
+<p>467f6424ae4a7b813f51356a019ef6ee2467fe2f1f52d8ea7a2e32ddc0b63edd
+```</p>
+
+<p><code>docker images</code> を実行して保存されているイメージのリストを見る。</p>
+
+<p><code>sh
+REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+amay077/mytext_container   latest              467f6424ae4a        50 seconds ago      192.7 MB
+ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
+d
+</code></p>
+
+<p><code>amay077/mytext_container</code> が確かに保存されてる。</p>
+
+<p>そのイメージを使ってインスタンスを起動する。</p>
+
+<p>```sh
+docker@boot2docker:~$ sudo docker run -i -t amay077/mytext_container /bin/bash</p>
+
+<p>root@0f6e755990ff:/# ls
+bin   dev  home  lib64  mnt opt   root  sbin  sys  usr
+boot  etc  lib   media  mytext  proc  run   srv   tmp  var</p>
+
+<p>root@0f6e755990ff:/# cat mytext
+Hello
+```</p>
+
+<p>確かに mytext が保存された状態になっている。</p>
+
+<h2>コンテナとイメージの削除</h2>
+
+<p>いきなり「コンテナ」ってｗ</p>
+
+<p>イメージから起動した「モノ」をコンテナというらしい。
+起動して終了したもの（<code>docker ps -a</code> で見られるもの）もコンテナというらしい。</p>
+
+<p>OSを終了してから、<code>docker rm 3d15ee0cc161</code> などで個別に削除してもよいが、面倒なので、
+<code>docker rm `docker ps -a -q</code> とすると、起動してないコンテナを一括削除できる。</p>
+
+<p><code>``sh
+docker@boot2docker:~$ docker rm</code>docker ps -a -q`
+3d15ee0cc161
+4744cf404fda
+16d24570a714
+57ee3aa4a7d2
+c8b319b2b306</p>
+
+<p>docker@boot2docker:~$ docker ps -a
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+```</p>
+
+<p>続いて、イメージの削除は <code>docker rmi amay077/mytext_container</code> などで行う。</p>
+
+<p>```sh
+docker@boot2docker:~$ docker rmi amay077/mytext_container</p>
+
+<p>docker@boot2docker:~$ docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+ubuntu              latest              ba5877dc9bec        2 weeks ago         192.7 MB
+```</p>
+
+<p>ubuntu だけになった。
+<code>docker rmi ubuntu</code> もするときれいサッパリ。</p>
+
+<p>今日はここまで。</p>
+
+<h2>参考サイト</h2>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
+<li><a href="http://apatheia.info/blog/2013/06/17/docker/">仮想環境構築に docker を使う &ndash; apatheia.info</a></li>
+<li><a href="http://blog.n-z.jp/blog/2013-12-24-docker-rm.html">Dockerで不要になったコンテナやイメージを削除する &ndash; @znz blog</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>

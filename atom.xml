@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-04T21:41:12+09:00</updated>
+  <updated>2014-08-05T22:55:33+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,352 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[いまさら Docker やってみた]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/05/docker-try-first/"/>
+    <updated>2014-08-05T21:39:53+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/05/docker-try-first</id>
+    <content type="html"><![CDATA[<p>いまさら感満載なんですが、Docker やってみました。</p>
+
+<!--more-->
+
+
+<p>ホストPCはMacです。</p>
+
+<h2>Docker のインストール</h2>
+
+<p>Macなので事前に VirtualBox を入れて置く必要があります。</p>
+
+<p>あとは、</p>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
+</ul>
+
+
+<p>を参考に。</p>
+
+<p>Docker と boot2docker のバージョンはこんな感じでした。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>docker -v
+</span><span class='line'>Docker version 1.1.2, build d84a070
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>boot2docker version
+</span><span class='line'>Client version: v1.1.2
+</span><span class='line'>Git commit: a229ac1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>boot2docker 経由で Docker の起動</h2>
+
+<p><code>boot2docker up</code> で Docker (というか Tiny Core Linux らしい)を起動。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>boot2docker up
+</span><span class='line'>2014/08/05 21:47:19 Waiting <span class="k">for </span>VM to be started...
+</span><span class='line'>.......
+</span><span class='line'>2014/08/05 21:47:41 Started.
+</span><span class='line'>2014/08/05 21:47:41 Your DOCKER_HOST env variable is already <span class="nb">set </span>correctly.
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>set:export DOCKER_HOST=</code> とか出たら .bash_profile にそのまま追記します。（上はすでに追加済なので <code>already</code> と出てます）</p>
+
+<h2>boot2docker から Docker に接続</h2>
+
+<p><code>boot2docker ssh</code> で Docker に接続。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>boot2docker ssh
+</span><span class='line'>                        <span class="c">##        .</span>
+</span><span class='line'>                  <span class="c">## ## ##       ==</span>
+</span><span class='line'>               <span class="c">## ## ## ##      ===</span>
+</span><span class='line'>           /<span class="s2">&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span><span class="se">\_</span>__/ <span class="o">===</span>
+</span><span class='line'>      ~~~ <span class="o">{</span>~~ ~~~~ ~~~ ~~~~ ~~ ~ /  <span class="o">===</span>- ~~~
+</span><span class='line'>           <span class="se">\_</span>_____ o          __/
+</span><span class='line'>             <span class="se">\ </span>   <span class="se">\ </span>       __/
+</span><span class='line'>              <span class="se">\_</span>___<span class="se">\_</span>_____/
+</span><span class='line'> _                 _   ____     _            _
+</span><span class='line'><span class="p">|</span> <span class="p">|</span>__   ___   ___ <span class="p">|</span> <span class="p">|</span>_<span class="p">|</span>___ <span class="se">\ </span>__<span class="p">|</span> <span class="p">|</span> ___   ___<span class="p">|</span> <span class="p">|</span> _____ _ __
+</span><span class='line'><span class="p">|</span> <span class="s1">&#39;_ \ / _ \ / _ \| __| __) / _` |/ _ \ / __| |/ / _ \ &#39;</span>__<span class="p">|</span>
+</span><span class='line'><span class="p">|</span> <span class="p">|</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="p">|</span>_ / __/ <span class="o">(</span>_<span class="p">|</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>__<span class="p">|</span>   &lt;  __/ <span class="p">|</span>
+</span><span class='line'><span class="p">|</span>_.__/ <span class="se">\_</span>__/ <span class="se">\_</span>__/ <span class="se">\_</span>_<span class="p">|</span>_____<span class="se">\_</span>_,_<span class="p">|</span><span class="se">\_</span>__/ <span class="se">\_</span>__<span class="p">|</span>_<span class="p">|</span><span class="se">\_\_</span>__<span class="p">|</span>_<span class="p">|</span>
+</span><span class='line'>boot2docker: 1.1.2
+</span><span class='line'>             master : 740106c - Thu Jul 24 03:24:10 UTC 2014
+</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Docker 内で ubuntu を起動する</h2>
+
+<p><code>docker run</code> で docker のイメージを（無ければダウンロードして）起動し、後続のコマンドを実行して終わる。
+下記の場合 bash を起動しているので、<code>exit</code> すると終わる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>sudo docker run -i -t ubuntu /bin/bash ＜--docker内
+</span><span class='line'>Unable to find image <span class="s1">&#39;ubuntu&#39;</span> locally
+</span><span class='line'>Pulling repository ubuntu
+</span><span class='line'>ba5877dc9bec: Download <span class="nb">complete </span>
+</span><span class='line'>511136ea3c5a: Download <span class="nb">complete </span>
+</span><span class='line'>9bad880da3d2: Download <span class="nb">complete </span>
+</span><span class='line'>25f11f5fb0cb: Download <span class="nb">complete </span>
+</span><span class='line'>ebc34468f71d: Download <span class="nb">complete </span>
+</span><span class='line'>2318d26665ef: Download <span class="nb">complete </span>
+</span><span class='line'>root@c8b319b2b306:/# ＜--ubuntu に入った
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>アタッチとかデタッチとか</h2>
+
+<p>CTRL+p → CTRL+q と押すと、Ubuntu からデタッチして docker に戻る。（ubuntu は終わらない）</p>
+
+<p><code>docker ps</code> とすると起動している ubuntu の一覧が見える。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>ocker@boot2docker:~<span class="nv">$ </span>docker ps
+</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+</span><span class='line'>c8b319b2b306        ubuntu:latest       /bin/bash           5 minutes ago       Up 5 minutes                            prickly_tesla
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>もう一度 <code>sudo docker run -i -t ubuntu /bin/bash</code> とすると、ubuntu がもう１個起動する。
+CTRL+p → CTRL+q でデタッチして、<code>docker ps</code> すると、２つになってるのが分かる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps
+</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           4 seconds ago       Up 4 seconds                            distracted_einstein
+</span><span class='line'>c8b319b2b306        ubuntu:latest       /bin/bash           8 minutes ago       Up 8 minutes                            prickly_tesla
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>起動中の ubuntu に入るには、<code>docker attach c8b319b2b306</code> などとする。この場合 bash が実行中なので ubuntu のコンソールになる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker attach c8b319b2b306
+</span><span class='line'>
+</span><span class='line'>root@c8b319b2b306:/#
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>起動しているOSの削除</h2>
+
+<p><code>docker attach</code> して <code>exit</code> するか、docker側から <code>docker kill c8b319b2b306</code> などとする。</p>
+
+<p><code>docker ps</code> すると、削除されたのが分かる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps
+</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           3 minutes ago       Up 3 minutes                            distracted_einstein
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>OSの状態の保存と復元</h2>
+
+<p>docker から起動した ubuntu は揮発性なので、終了すると状態が消えてしまう。
+が、ほんとは消えてなくて、終了した後で、履歴からイメージを作成することができる。</p>
+
+<p>まず、ubuntu にて適当なファイルを作成。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>root@4744cf404fda:/# <span class="nb">echo</span> <span class="s1">&#39;Hello&#39;</span> &gt;&gt; mytext
+</span><span class='line'>
+</span><span class='line'>root@4744cf404fda:/# ls
+</span><span class='line'>bin   dev  home  lib64    mnt opt   root  sbin  sys  usr
+</span><span class='line'>boot  etc  lib     media  mytext  proc  run   srv   tmp  var
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>確かに <code>mytext</code> が作成されているのを確認したら、<code>exit</code> で終了、docker に戻る。</p>
+
+<p><code>sudo docker run -i -t ubuntu /bin/bash</code> で ubuntu を起動し、<code>ls</code> で、内容を確認。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>root@3d15ee0cc161:/# ls
+</span><span class='line'>bin  boot  dev    etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>mytext</code> は消えている。
+確認後 <code>exit</code> で終了。</p>
+
+<p><code>docker ps -a</code> で履歴も含めて状態を見る。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps -a
+</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
+</span><span class='line'>3d15ee0cc161        ubuntu:latest       /bin/bash           19 seconds ago      Exited <span class="o">(</span>0<span class="o">)</span> 12 seconds ago                       dreamy_hawking
+</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           8 minutes ago       Exited <span class="o">(</span>0<span class="o">)</span> 30 seconds ago                       distracted_einstein
+</span><span class='line'>16d24570a714        ubuntu:latest       /bin/bash           12 minutes ago      Exited <span class="o">(</span>0<span class="o">)</span> 12 minutes ago                       focused_wilson
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>mytext</code> を保存したのは 4744cf404fda の ubuntu なので、これを保存する。
+<code>docker commit</code> で git ライクにコミットすると保存される。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker commit -m <span class="s2">&quot;Add mytext&quot;</span> 4744cf404fda amay077/mytext_container
+</span><span class='line'>
+</span><span class='line'>467f6424ae4a7b813f51356a019ef6ee2467fe2f1f52d8ea7a2e32ddc0b63edd
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>docker images</code> を実行して保存されているイメージのリストを見る。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+</span><span class='line'>amay077/mytext_container   latest              467f6424ae4a        50 seconds ago      192.7 MB
+</span><span class='line'>ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
+</span><span class='line'>d
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>amay077/mytext_container</code> が確かに保存されてる。</p>
+
+<p>そのイメージを使ってインスタンスを起動する。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>sudo docker run -i -t amay077/mytext_container /bin/bash
+</span><span class='line'>
+</span><span class='line'>root@0f6e755990ff:/# ls
+</span><span class='line'>bin   dev  home  lib64    mnt opt   root  sbin  sys  usr
+</span><span class='line'>boot  etc  lib     media  mytext  proc  run   srv   tmp  var
+</span><span class='line'>
+</span><span class='line'>root@0f6e755990ff:/# cat mytext
+</span><span class='line'>Hello
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>確かに mytext が保存された状態になっている。</p>
+
+<h2>コンテナとイメージの削除</h2>
+
+<p>いきなり「コンテナ」ってｗ</p>
+
+<p>イメージから起動した「モノ」をコンテナというらしい。
+起動して終了したもの（<code>docker ps -a</code> で見られるもの）もコンテナというらしい。</p>
+
+<p>OSを終了してから、<code>docker rm 3d15ee0cc161</code> などで個別に削除してもよいが、面倒なので、
+<code>docker rm `docker ps -a -q</code> とすると、起動してないコンテナを一括削除できる。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker rm <span class="sb">`</span>docker ps -a -q<span class="sb">`</span>
+</span><span class='line'>3d15ee0cc161
+</span><span class='line'>4744cf404fda
+</span><span class='line'>16d24570a714
+</span><span class='line'>57ee3aa4a7d2
+</span><span class='line'>c8b319b2b306
+</span><span class='line'>
+</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps -a
+</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>続いて、イメージの削除は <code>docker rmi amay077/mytext_container</code> などで行う。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker rmi amay077/mytext_container
+</span><span class='line'>
+</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker images
+</span><span class='line'>REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+</span><span class='line'>ubuntu              latest              ba5877dc9bec        2 weeks ago         192.7 MB
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ubuntu だけになった。
+<code>docker rmi ubuntu</code> もするときれいサッパリ。</p>
+
+<p>今日はここまで。</p>
+
+<h2>参考サイト</h2>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
+<li><a href="http://apatheia.info/blog/2013/06/17/docker/">仮想環境構築に docker を使う &ndash; apatheia.info</a></li>
+<li><a href="http://blog.n-z.jp/blog/2013-12-24-docker-rm.html">Dockerで不要になったコンテナやイメージを削除する &ndash; @znz blog</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[いまさら Raspberry Pi やってみた]]></title>
@@ -3004,248 +3350,6 @@ Added vImageAlphaBlend_ARGBFFFF
 
 
 <p>…疲れた。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Activity がメモリリークしにくくなってる件]]></title>
-    <link href="http://blog.amay077.net/blog/2014/03/19/android-memory-leaks-improvements/"/>
-    <updated>2014-03-19T15:12:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/03/19/android-memory-leaks-improvements</id>
-    <content type="html"><![CDATA[<p>2009年の情報なんですけどね。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://android-developers.blogspot.jp/2009/01/avoiding-memory-leaks.html">Avoiding memory leaks | Android Developers Blog</a></li>
-<li><a href="http://d.hatena.ne.jp/androidzaurus/20090121/1232519066">Avoiding memory leaks （超訳） &ndash; Android Zaurusの日記</a></li>
-<li><a href="http://tomokey.blogspot.jp/2011/05/android.html">暇なメモ帳: Androidのソースコードレビュー(メモリリーク)</a></li>
-</ul>
-
-
-<p>Android でメモリリークする典型的なパターンとして上で紹介されているものがあって、日頃はこうならないように気をつけて実装をしているわけです。</p>
-
-<p>また、メモリリークの調査方法もたくさん情報があります。</p>
-
-<ul>
-<li><a href="http://rainbowdevil.jp/?p=1187">Androidでメモリリークの調査と、そのヒープダンプから画像を抽出する » RainbowDevilsLand</a></li>
-<li><a href="http://tlync.hateblo.jp/entry/20111220/1324372308">富豪的 Android プログラマの為の Eclipse Memory Analyzer Tool 入門 &ndash; sandbox</a></li>
-</ul>
-
-
-<p>日頃、Xamarin.Android を触っているので、「Xamarin でも同じようにリークするよね」と思いやってみたところ全然リークしなかったので、もしや Android-Java でもリークしないんじゃ？と考え、試してみたのが以下の内容です。</p>
-
-<h2>試した</h2>
-
-<p>以下の2つのパターンについて試しました</p>
-
-<ol>
-<li>Avoiding memory leaks の 2番目の例。Activity への強参照を持った Drawable を static なメンバにキープしちゃう件。画面が回転した時に、Activity がリークしてしまう、とされる。</li>
-<li>暇なメモ帳さんの「問題3」＋α。非static な Inner クラスが Activity の強参照を持ってる、且つ、このオブジェクトを Activity の static メンバにしちゃう。</li>
-</ol>
-
-
-<h2>結論</h2>
-
-<p>から言うと、</p>
-
-<p><strong>1. はリークせず、2. はリークしました。</strong></p>
-
-<p>あれれ？</p>
-
-<h2>パターン1のテストコード</h2>
-
-<p>ほぼ元コードのコピペだけど、クラスが破棄された(<code>finalize</code>)時にログ吐くようにしています。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;MainActivity&quot;</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="n">Drawable</span> <span class="n">sBackground</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onCreate:&quot;</span> <span class="o">+</span> <span class="k">this</span><span class="o">.</span><span class="na">hashCode</span><span class="o">());</span>
-</span><span class='line'>      
-</span><span class='line'>        <span class="n">Button</span> <span class="n">button</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Button</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">button</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Leaks are bad&quot;</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">sBackground</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">sBackground</span> <span class="o">=</span> <span class="n">getResources</span><span class="o">().</span><span class="na">getDrawable</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">drawable</span><span class="o">.</span><span class="na">ic_launcher</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="n">button</span><span class="o">.</span><span class="na">setBackgroundDrawable</span><span class="o">(</span><span class="n">sBackground</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">button</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>  
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onDestroy:&quot;</span> <span class="o">+</span> <span class="k">this</span><span class="o">.</span><span class="na">hashCode</span><span class="o">());</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">finalize</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;finalize:&quot;</span> <span class="o">+</span> <span class="k">this</span><span class="o">.</span><span class="na">hashCode</span><span class="o">());</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">finalize</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>確認手順</h3>
-
-<ol>
-<li>このアプリを実行。Android2.3 のエミュレータ(4.0 の実機でも試した)。</li>
-<li>画面を回転させる（Ctrl+F11）</li>
-<li>DDMS から GC を走らせる</li>
-<li>LogCat を収集</li>
-</ol>
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_02.png" alt="" />
-<img src="https://dl.dropboxusercontent.com/u/264530/qiita/improve_activity_leaks_03.png" alt="" /></p>
-
-<p>Logcat の出力結果はこう。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">28</span><span class="o">:</span><span class="mf">09.539</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">382</span><span class="o">):</span> <span class="nl">onCreate:</span><span class="mi">1079076320</span>
-</span><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">29</span><span class="o">:</span><span class="mf">15.979</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">382</span><span class="o">):</span> <span class="nl">onDestroy:</span><span class="mi">1079076320</span>
-</span><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">29</span><span class="o">:</span><span class="mf">15.989</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">382</span><span class="o">):</span> <span class="nl">onCreate:</span><span class="mi">1079106528</span> <span class="err">←横画面の</span><span class="n">Activity</span>
-</span><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">29</span><span class="o">:</span><span class="mf">33.939</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">382</span><span class="o">):</span> <span class="nl">finalize:</span><span class="mi">1079076320</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ちゃんと GC を走らせた後、 Activity の <code>finalize</code> が呼ばれています。
-MAT でも確認したけど、リークは発見できませんでした。</p>
-
-<h2>パターン2のテストコード</h2>
-
-<p>こんな実装は早々お目にかからないと思うけど、非static な Inner クラスのインスタンスを、Activity の static メンバにしちゃうぞ、と。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;MainActivity&quot;</span><span class="o">;</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="n">SomeInnerClass</span> <span class="n">innerClass</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onCreate&quot;</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">innerClass</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">innerClass</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SomeInnerClass</span><span class="o">();</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onDestroy&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">finalize</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Throwable</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;finalize&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">finalize</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">class</span> <span class="nc">SomeInnerClass</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">doSomething</span><span class="o">()</span> <span class="o">{</span> <span class="o">}</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>確認手順</h3>
-
-<p>パターン1と同じです。</p>
-
-<p>Logcat の出力結果はこちら。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">42</span><span class="o">:</span><span class="mf">55.289</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">476</span><span class="o">):</span> <span class="n">onCreate</span>
-</span><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">43</span><span class="o">:</span><span class="mf">05.369</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">476</span><span class="o">):</span> <span class="n">onDestroy</span>
-</span><span class='line'><span class="mi">03</span><span class="o">-</span><span class="mi">19</span> <span class="mi">21</span><span class="o">:</span><span class="mi">43</span><span class="o">:</span><span class="mf">05.549</span><span class="o">:</span> <span class="n">D</span><span class="o">/</span><span class="n">MainActivity</span><span class="o">(</span><span class="mi">476</span><span class="o">):</span> <span class="n">onCreate</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ご覧のとおり、<code>finalize</code> が呼ばれない、つまり Activity がリークしています。</p>
-
-<h2>考察っぽいの</h2>
-
-<p>パターン2 がリークするのは当然と言えます。
-Activity への強参照を持ったオブジェクトを、static フィールドで保持し続けてしまうので、Activity が破棄されない。</p>
-
-<p>パターン1 も同じ理屈だと思うのですが（少なくとも冒頭の記事の説明ではそう）。これがリークしないのは、Android SDK が改善された(例えば、今まで Activity の強参照を持ってたのが弱参照に変わった)とか、Dalvik の GC が改善されたとかでしょうか？</p>
-
-<p>まあ4年も経てば常識も変わるということで、Activity に関しては以前ほど神経質にならなくてもいいかもしれませんが、メモリリークの可能性が消えることは有り得ないので、このアンチパターンはこれからも遵守していかないといけませんね。</p>
 ]]></content>
   </entry>
   
