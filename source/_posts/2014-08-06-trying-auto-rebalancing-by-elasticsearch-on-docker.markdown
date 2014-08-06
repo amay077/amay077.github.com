@@ -31,9 +31,9 @@ Elasticsearch のインストールは、
 
 を参考にしました。（なんか Elasticsearch を導入済みのコンテナとか Dockerfile もあったみたい）
 
-次に、Elasticsearch の管理GUIを提供するプラグイン elasticsearch-header を導入します。
+次に、Elasticsearch の管理GUIを提供するプラグイン elasticsearch-head を導入します。
 
-elasticsearch-header については、こちらがとても参考になりました。
+elasticsearch-head については、こちらがとても参考になりました。
 
 * [elasticsearchのGUI「elasticsearch-head」がとても便利 - yuhei.kagaya](http://yuheikagaya.hatenablog.jp/entry/2013/07/14/185752)
 
@@ -96,7 +96,7 @@ docker@boot2docker:~$ docker run -i -t -p 9200:9200 -p 9300:9300 amay077/es_clus
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_04.png)
 
-設定できたら先のアドレスにアクセスすると elasticsearch-header の管理画面が表示されるはずです。
+設定できたら先のアドレスにアクセスすると elasticsearch-head の管理画面が表示されるはずです。
 
 続いて、さっきのコマンドを複数回実行し、複数の Elasticsearch を起動します。
 ``-p 9200:9200`` のところが重複するとエラーになるので ``-p 9201:9200`` などとズラしましたが、これで正しかったのかわかりません。
@@ -132,7 +132,7 @@ docker@boot2docker:~$ docker run -i -t -p 9204:9200 -p 9304:9300 amay077/es_clus
 #Control+p, Control+q でデタッチ
 ```
 
-その後 elasticsearch-header を見ると、
+その後 elasticsearch-head を見ると、
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_01.png)
 
