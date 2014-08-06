@@ -56,3 +56,7 @@ static 変数を用意し、LogCat に出力した後、1加算するだけで�
 各Activity から共有できるからと多用すると、特に状態を格納するなどで使うと不具合の元になりそうです。
 
 ※だれか Activity じゃなくて ”アプリケーション" が終了するタイミングを補足する方法、教えてください
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00KNOQ8UE" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00KX5FKCA" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
