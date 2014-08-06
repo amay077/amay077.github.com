@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-06T00:41:07+09:00</updated>
+  <updated>2014-08-07T00:42:54+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,195 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Elasticsearch の Auto-Rebalancing を Docker で試す]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/06/trying-auto-rebalancing-by-elasticsearch-on-docker/"/>
+    <updated>2014-08-06T23:39:51+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/06/trying-auto-rebalancing-by-elasticsearch-on-docker</id>
+    <content type="html"><![CDATA[<p>Linuxど素人の Docker 入門第二弾です。
+ちょっと Docker おもしろくなってきたかも。</p>
+
+<!--more-->
+
+
+<p><a href="http://www.elasticsearch.org/">Elasticsearch</a> というのは、Apache Solr と並ぶ（むしろ Solr より流行ってきた？）全文検索システムなんですが、複数のサーバにデータを分散配置して並列処理やフェイルオーバーができたりします。</p>
+
+<p>んで、Auto-Rebalancing というのは、サーバ（ノードというらしい）を追加した時に、そのサーバの役割が自動的に決まって、他のサーバからデータを分けて貰って、全体としてデータの平衡化が行われる事です。</p>
+
+<p>Docker なら、サーバーの起動が容易なので、Auto-Rebalancing を試すのに持ってこいだと思い、やってみました。</p>
+
+<p>全体的には、</p>
+
+<ul>
+<li><a href="http://inokara.hateblo.jp/entry/2013/11/15/042752">elasticsearch と elasticsearch-head を docker でサクッと試す &ndash; ようへいの日々精進 XP</a></li>
+</ul>
+
+
+<p>を参考にしています。</p>
+
+<h2>ubuntu の Docker コンテナに Elasticsearch をインストール</h2>
+
+<p><a href="http://blog.amay077.net/blog/2014/08/05/docker-try-first/">昨日</a>使った ubuntu のコンテナに Elasticsearch をインストールします。</p>
+
+<p>Elasticsearch のインストールは、</p>
+
+<ul>
+<li><a href="https://gist.github.com/wingdspur/2026107">Install ElasticSearch on Ubuntu 12.04</a></li>
+</ul>
+
+
+<p>を参考にしました。（なんか Elasticsearch を導入済みのコンテナとか Dockerfile もあったみたい）</p>
+
+<p>次に、Elasticsearch の管理GUIを提供するプラグイン elasticsearch-header を導入します。</p>
+
+<p>elasticsearch-header については、こちらがとても参考になりました。</p>
+
+<ul>
+<li><a href="http://yuheikagaya.hatenablog.jp/entry/2013/07/14/185752">elasticsearchのGUI「elasticsearch-head」がとても便利 &ndash; yuhei.kagaya</a></li>
+</ul>
+
+
+<p>インストールは、以下のコマンド一発です。(./ を付けないとうまく動いてくれなかった)</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span><span class="nb">cd </span>elasticsearch/bin
+</span><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>./plugin -install mobz/elasticsearch-head
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Elasticsearch のクラスタの設定</h2>
+
+<p>複数の Elasticsearch を動かす場合、共通のグループ名を付ける必要があります。</p>
+
+<p><code>elasticsearch.yml</code> を編集して、グループ名を付けます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>vim elasticsearch/config/elasticsearch.yml
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>elasticsearch.yml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">cluster.name:</span> <span class="err">amaycluster</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Elasticsearch の分散環境での使用については、</p>
+
+<ul>
+<li><a href="http://dev.classmethod.jp/cloud/aws/use-elasticsearch-2-use-cluster/">Cluster機能を使う – AWSで始めるElasticSearch(2) ｜ Developers.IO</a></li>
+</ul>
+
+
+<p>を参考にしました。
+「EC2ではマルチキャストが使えない」などと書かれていますが、これは Docker なのでスルーで。結果的には <code>elasticsearch.yml</code> は上記の修正しかしていません。</p>
+
+<h2>Elasticsearch 設定済のイメージを作る</h2>
+
+<p>ここまでで一旦コンテナを終了し、<code>docker commit</code> で保存します。
+<code>docker images</code> でイメージが作成できたのが確認できます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker commit -m <span class="s2">&quot;Setting Elasticsearch cluster&quot;</span> bb638d1f825f amay077/es_cluster
+</span><span class='line'>
+</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker images
+</span><span class='line'>REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
+</span><span class='line'>amay077/es_cluster         latest              b9d05b77d71a        9 hours ago         1.075 GB
+</span><span class='line'>ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>複数の Docker コンテナを起動し、それぞれで Elasticsearch を起動する</h2>
+
+<p>下のようなコマンドで、コンテナを起動し、Elasticsearch を開始します。
+（<code>/bin/bash</code> の代わりに直接 elasticsearch を開始してもよいと思いますが、後で直接コンソールに接続したいかなーと思いまして。）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker run -i -t -p 9200:9200 -p 9300:9300 amay077/es_cluster /bin/bash
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
+</span><span class='line'><span class="c">#Control+p, Control+q でデタッチ</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>1つ起動した時点で、ホストPC（Mac）のブラウザから <a href="http://localhost:9200/_plugin/head/">http://localhost:9200/_plugin/head/</a> にアクセスします。
+あ、その前に VirtualBox の設定で、9200と9300のポートフォワーディングを行う必要があります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_04.png" alt="" /></p>
+
+<p>設定できたら先のアドレスにアクセスすると elasticsearch-header の管理画面が表示されるはずです。</p>
+
+<p>続いて、さっきのコマンドを複数回実行し、複数の Elasticsearch を起動します。
+<code>-p 9200:9200</code> のところが重複するとエラーになるので <code>-p 9201:9200</code> などとズラしましたが、これで正しかったのかわかりません。</p>
+
+<h2>Elasticsearch にデータ投入</h2>
+
+<p>Elasticsearch へのデータ投入は、ホストPC（Mac）の Terminal から、</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test1&quot; }&#39;</span>
+</span><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test2&quot; }&#39;</span>
+</span><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test3&quot; }&#39;</span>
+</span><span class='line'>…続く
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>のような感じで、3万件ほど投入しました。</p>
+
+<p>投入後、 <a href="http://localhost:9200/_plugin/head/">http://localhost:9200/_plugin/head/</a> を見ると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_01.png" alt="" /></p>
+
+<p>となっています。４台のサーバにデータが分散して登録されたことが分かります。四角内の数字（0〜4）は、「データが5つに分割され」て、その「ブロックがどのサーバに配置されているか」を示していて、太枠がプライマリ、細枠がスレーブであることを示しています。
+いずれのサーバが死んでも、データの欠損なくサービス継続できることを示しています。</p>
+
+<h2>ノードを追加してみる</h2>
+
+<p>５台目の Elasticsearh を追加してみます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker run -i -t -p 9204:9200 -p 9304:9300 amay077/es_cluster /bin/bash
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span> root@de6d825fa34d:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
+</span><span class='line'><span class="c">#Control+p, Control+q でデタッチ</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>その後 elasticsearch-header を見ると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_01.png" alt="" /></p>
+
+<p>となり、しばらくしてから Refresh すると、</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_03.png" alt="" /></p>
+
+<p>となります。</p>
+
+<p>追加された「Isaiah Bradley」サーバには、データブロック１と３のスレーブの役割が与えられ、データが移動されたことが分かります。（移動中は色が変わったけどスクショ撮れなかった）</p>
+
+<p>このように Elasticsearch の Auto-Rebalancing を、Docker を使うことでお手軽に試すことができました。（実運用では Elasticsearch に Docker は、、、使わないですよねたぶん）</p>
+
+<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=4048662023" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[いまさら Docker やってみた]]></title>
@@ -2315,1041 +2504,6 @@ Added vImageAlphaBlend_ARGBFFFF
 
 
 <p>テキストでない場合は、mimetype を適宜変更する。省略したら動作しなかった。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[LINQ to Objects と Java8-Stream API の対応表]]></title>
-    <link href="http://blog.amay077.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/"/>
-    <updated>2014-03-20T15:15:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api</id>
-    <content type="html"><![CDATA[<p>Java8 で <code>filter</code> や <code>map</code> が使えるようになったー！
-というわけで .NET の LINQ to Objects との対応表を作ってみました。</p>
-
-<!--more-->
-
-
-<ul>
-<li>LINQ &ndash; <a href="http://msdn.microsoft.com/ja-jp/library/system.linq.enumerable(v=vs.110">Enumerable クラス (System.Linq)</a>.aspx)</li>
-<li>Java8 &ndash; <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">Stream (Java Platform SE 8 )</a></li>
-</ul>
-
-
-<p>の比較です。</p>
-
-<p>Java の方は</p>
-
-<ul>
-<li><a href="http://download.java.net/jdk8/docs/api/java/util/stream/Collectors.html">Collectors (Java Platform SE 8 )</a></li>
-</ul>
-
-
-<p>も使います。</p>
-
-<p>まだ試したものは少ないので間違ってるかもしれない ＆ カテゴライズが適当 なので、編集リクエストしてもらえるとありがたいです。</p>
-
-<table>
-<thead>
-<tr>
-<th></th>
-<th> 機能 </th>
-<th> LINQ </th>
-<th> Java8 </th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td></td>
-<td> <strong>【基本的なやつ】</strong> </td>
-<td></td>
-<td></td>
-</tr>
-<tr>
-<td></td>
-<td> 抽出 </td>
-<td> Where </td>
-<td> filter </td>
-</tr>
-<tr>
-<td></td>
-<td> 射影 </td>
-<td> Select </td>
-<td> map </td>
-</tr>
-<tr>
-<td></td>
-<td> 並べ替え </td>
-<td> OrderBy / OrderByDescending </td>
-<td> sorted </td>
-</tr>
-<tr>
-<td></td>
-<td> 後続を並べ替え </td>
-<td> ThenBy / ThenByDescending </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 平坦化して射影 </td>
-<td> SelectMany </td>
-<td> flatMap </td>
-</tr>
-<tr>
-<td></td>
-<td> <strong>【抽出系】</strong> </td>
-<td>  </td>
-<td>  </td>
-</tr>
-<tr>
-<td></td>
-<td> ｎ件飛ばす </td>
-<td> Skip </td>
-<td> skip </td>
-</tr>
-<tr>
-<td></td>
-<td> 条件を満たすまで飛ばす </td>
-<td> SkipWhile </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> ｎ件まで流す </td>
-<td> Take </td>
-<td> limit </td>
-</tr>
-<tr>
-<td></td>
-<td> 条件を満たすまで流す </td>
-<td> TakeWhile </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> <strong>【合成系】</strong> </td>
-<td>  </td>
-<td>  </td>
-</tr>
-<tr>
-<td></td>
-<td> 連結 </td>
-<td> Concat </td>
-<td> concat </td>
-</tr>
-<tr>
-<td></td>
-<td> 積集合 </td>
-<td> Intersect </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 和集合 </td>
-<td> Union </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 差集合 </td>
-<td> Except </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 内部結合 </td>
-<td> Join </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 外部結合</td>
-<td> GroupJoin </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 並びを逆にする </td>
-<td> Reverse </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 2つの値を揃えて流す </td>
-<td> Zip </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> <strong>【グループ化、集計系】</strong> </td>
-<td>  </td>
-<td>  </td>
-</tr>
-<tr>
-<td></td>
-<td> 重複を無くす </td>
-<td> Distinct </td>
-<td> distinct </td>
-</tr>
-<tr>
-<td></td>
-<td> 畳み込み </td>
-<td> Aggregate </td>
-<td> reduce </td>
-</tr>
-<tr>
-<td></td>
-<td> グループ化 </td>
-<td> GroupBy </td>
-<td> Collectors.groupingBy </td>
-</tr>
-<tr>
-<td></td>
-<td> 平均 </td>
-<td> Average </td>
-<td> IntStream.average /  Collectors.summarizingXXX </td>
-</tr>
-<tr>
-<td></td>
-<td> 件数 </td>
-<td> Count / LongCount </td>
-<td> count </td>
-</tr>
-<tr>
-<td></td>
-<td> 最大 </td>
-<td> Max </td>
-<td> max </td>
-</tr>
-<tr>
-<td></td>
-<td> 最小 </td>
-<td> Min </td>
-<td> min </td>
-</tr>
-<tr>
-<td></td>
-<td> 合計 </td>
-<td> Sum </td>
-<td> IntStream.sum / Collectors.summarizingXXX</td>
-</tr>
-<tr>
-<td></td>
-<td> 先頭 </td>
-<td> First / FirstOrDefault </td>
-<td> findFirst </td>
-</tr>
-<tr>
-<td></td>
-<td> 終端 </td>
-<td> Last / LastOrDefault </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> とりあえず値を得る </td>
-<td> </td>
-<td> findAny </td>
-</tr>
-<tr>
-<td></td>
-<td> 集計用の汎用関数？ </td>
-<td> </td>
-<td> collect </td>
-</tr>
-<tr>
-<td></td>
-<td> 1件の値を得る </td>
-<td> Single / SingleOrDefault </td>
-<td> </td>
-</tr>
-<tr>
-<td></td>
-<td> 空なら既定値を返す </td>
-<td> DefaultIfEmpty </td>
-<td> </td>
-</tr>
-<tr>
-<td></td>
-<td> 全データが条件にマッチするか？ </td>
-<td> All </td>
-<td> allMatch </td>
-</tr>
-<tr>
-<td></td>
-<td> いずれかのデータが条件にマッチするか？ </td>
-<td> Any </td>
-<td> anyMatch </td>
-</tr>
-<tr>
-<td></td>
-<td> いずれかのデータも条件にマッチしないか？ </td>
-<td> </td>
-<td> noneMatch </td>
-</tr>
-<tr>
-<td></td>
-<td> <strong>【生成系】</strong> </td>
-<td>  </td>
-<td>  </td>
-</tr>
-<tr>
-<td></td>
-<td> 空っぽ </td>
-<td> Empty </td>
-<td> empty </td>
-</tr>
-<tr>
-<td></td>
-<td> 範囲を生成 </td>
-<td> Range </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 繰り返す </td>
-<td> Repeat </td>
-<td> n/a </td>
-</tr>
-<tr>
-<td></td>
-<td> 無限リスト生成 </td>
-<td> </td>
-<td> generate / iterate </td>
-</tr>
-<tr>
-<td></td>
-<td> <strong>【その他】</strong> </td>
-<td>  </td>
-<td>  </td>
-</tr>
-<tr>
-<td></td>
-<td> </td>
-<td> SequenceEqual </td>
-<td> </td>
-</tr>
-<tr>
-<td></td>
-<td> 列挙 </td>
-<td> ToList().ForEach </td>
-<td> forEach </td>
-</tr>
-<tr>
-<td></td>
-<td> なんか Action を挟む(デバッグ用？) </td>
-<td> </td>
-<td> peek </td>
-</tr>
-</tbody>
-</table>
-
-
-<p>ううむ、合成系の機能はほとんどないようです…ので自力でやるしか。
-以下、サンプル。</p>
-
-<h2>サンプル</h2>
-
-<p>LINQ の方は Mac+Mono(Xamarin) で試しています（ぼそり</p>
-
-<h3>抽出(Where)、並べ替え(OrderBy)、射影(Select)</h3>
-
-<p>0〜9 を、偶数値だけ抽出して、降順にソートして、値を10倍して、出力。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Where</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">OrderByDescending</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">*</span> <span class="m">10</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">6</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">8</span><span class="o">,</span><span class="mi">9</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">sorted</span><span class="o">((</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">-</span> <span class="n">x</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">10</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">80</span> <span class="mi">60</span> <span class="mi">40</span> <span class="mi">20</span> <span class="mi">0</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>平坦化して射影(SelectMany)</h3>
-
-<p>1〜5のリストから、「n×10から始まるn件」のリストを生成。(結果見たほうが分かりやすいな（^_^;)</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">5</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">10</span> <span class="p">*</span> <span class="n">x</span><span class="p">,</span> <span class="n">x</span><span class="p">))</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">10</span><span class="o">,</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">+</span> <span class="n">x</span><span class="o">).</span><span class="na">boxed</span><span class="o">())</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">10</span>
-</span><span class='line'><span class="mi">20</span> <span class="mi">21</span>
-</span><span class='line'><span class="mi">30</span> <span class="mi">31</span> <span class="mi">32</span>
-</span><span class='line'><span class="mi">40</span> <span class="mi">41</span> <span class="mi">42</span> <span class="mi">43</span>
-</span><span class='line'><span class="mi">50</span> <span class="mi">51</span> <span class="mi">52</span> <span class="mi">53</span> <span class="mi">54</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>抽出系(Take, Skip)</h3>
-
-<p>1〜10のリストの3件飛ばして、5件取得。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Skip</span><span class="p">(</span><span class="m">3</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Take</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 無限リストでも limit あるから大丈夫</span>
-</span><span class='line'><span class="n">Stream</span><span class="o">.</span><span class="na">iterate</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">x</span><span class="o">-&gt;</span> <span class="n">x</span><span class="o">++)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">skip</span><span class="o">(</span><span class="mi">3</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">limit</span><span class="o">(</span><span class="mi">5</span><span class="o">)</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">7</span> <span class="mi">8</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>LINQ には件数でなく条件を指定できる <code>TakeWhile</code> <code>SkipWhile</code> がありますが、Java にはなさそうなので <code>filter</code> で代用しないといけなさそう。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">SkipWhile</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">&lt;</span> <span class="m">4</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">TakeWhile</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">&lt;</span> <span class="m">9</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>連結(Concat)</h3>
-
-<p>2つのリストをつなげる</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span> <span class="p">}.</span><span class="n">Concat</span><span class="p">(</span><span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span> <span class="m">30</span><span class="p">,</span> <span class="m">20</span><span class="p">,</span> <span class="m">10</span> <span class="p">})</span>
-</span><span class='line'><span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
-</span><span class='line'>  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">).</span><span class="na">stream</span><span class="o">(),</span>
-</span><span class='line'>  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">30</span><span class="o">,</span><span class="mi">20</span><span class="o">,</span><span class="mi">10</span><span class="o">).</span><span class="na">stream</span><span class="o">())</span>
-</span><span class='line'><span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>なんで static メソッドやねん…。</p>
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">30</span> <span class="mi">20</span> <span class="mi">10</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>積集合(Intersect)、和集合(Union)、差集合(Except)</h3>
-
-<p>積集合：2つのリストから重複をなくす。
-和集合：2つのリストをマージする。
-差集合：リスト1を基準にリスト2との差分を得る。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">};</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">list2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">8</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">6</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">list1</span><span class="p">.</span><span class="n">Intersect</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">list1</span><span class="p">.</span><span class="n">Union</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">list1</span><span class="p">.</span><span class="n">Except</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 自力で実現かよｗ</span>
-</span><span class='line'><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">(),</span>
-</span><span class='line'>  <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">)))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="c1">// 積</span>
-</span><span class='line'><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">5</span> <span class="mi">6</span> <span class="mi">8</span> <span class="mi">7</span> <span class="c1">// 和</span>
-</span><span class='line'><span class="mi">1</span> <span class="mi">2</span> <span class="mi">3</span> <span class="c1">// 差</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>内部結合(Join)</h3>
-
-<p>商品マスタと売上テーブルを INNER JOIN する的な。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Apple&quot;</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Grape&quot;</span> <span class="p">}</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">master</span><span class="p">.</span><span class="n">Join</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
-</span><span class='line'>  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">Sales</span> <span class="p">})</span>
-</span><span class='line'><span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 自力</span>
-</span><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">&quot;Apple&quot;</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">&quot;Grape&quot;</span><span class="o">)</span>
-</span><span class='line'><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-</span><span class='line'><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">outer</span> <span class="o">-&gt;</span> <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span> <span class="o">-&gt;</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span>
-</span><span class='line'>    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">z</span><span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="n">z</span><span class="o">.</span><span class="na">getValue</span><span class="o">())))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Apple</span><span class="o">,</span> <span class="n">Sales</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Grape</span><span class="o">,</span> <span class="n">Sales</span> <span class="o">=</span> <span class="mi">200</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Grape</span><span class="o">,</span> <span class="n">Sales</span> <span class="o">=</span> <span class="mi">300</span> <span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>外部結合(GroupJoin)</h3>
-
-<p>商品マスタと売上テーブルを OUTER JOIN する的な。結合先のテーブルに行が見つからなかったものは null になる。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Apple&quot;</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Grape&quot;</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">&quot;Orange&quot;</span> <span class="p">},</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>  <span class="c1">// Orange は無い</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span><span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span><span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span><span class="p">},</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">master</span><span class="p">.</span><span class="n">GroupJoin</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
-</span><span class='line'>  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span>
-</span><span class='line'>  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">FirstOfSales</span> <span class="p">=</span> <span class="n">i</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span>
-</span><span class='line'>    <span class="n">x</span><span class="p">=&gt;(</span><span class="kt">int?</span><span class="p">)</span><span class="n">x</span><span class="p">.</span><span class="n">Sales</span><span class="p">).</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="p">})</span> <span class="c1">// 無かったら null にしたいので null許容型にしてから FirstOrDefault</span>
-</span><span class='line'><span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>たぶん普通は First じゃなくて Sum とか使うんだろう。</p>
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// これも自力</span>
-</span><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">&quot;Apple&quot;</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">&quot;Grape&quot;</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">5</span><span class="o">,</span> <span class="s">&quot;Orange&quot;</span><span class="o">)</span>
-</span><span class='line'><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-</span><span class='line'><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">map</span><span class="o">(</span><span class="n">outer</span><span class="o">-&gt;</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Optional</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span>
-</span><span class='line'>  <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span><span class="o">-&gt;</span><span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span> <span class="c1">// Id でフィルタ</span>
-</span><span class='line'>      <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span><span class="o">-&gt;</span><span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">())</span> <span class="c1">// Sales だけに射影</span>
-</span><span class='line'>      <span class="o">.</span><span class="na">findFirst</span><span class="o">()))</span> <span class="c1">// 同一Id中の先頭</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">[.</span><span class="na">NET</span><span class="o">]</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Apple</span><span class="o">,</span> <span class="n">FirstOfSales</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Grape</span><span class="o">,</span> <span class="n">FirstOfSales</span> <span class="o">=</span> <span class="mi">200</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Name</span> <span class="o">=</span> <span class="n">Orange</span><span class="o">,</span> <span class="n">FirstOfSales</span> <span class="o">=</span> <span class="o">}</span> <span class="c1">// 相手が居ないやつは null になる</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span><span class="n">Java</span><span class="o">]</span>
-</span><span class='line'><span class="n">Apple</span><span class="o">=</span><span class="n">Optional</span><span class="o">[</span><span class="mi">100</span><span class="o">]</span>
-</span><span class='line'><span class="n">Grape</span><span class="o">=</span><span class="n">Optional</span><span class="o">[</span><span class="mi">200</span><span class="o">]</span>
-</span><span class='line'><span class="n">Orange</span><span class="o">=</span><span class="n">Optional</span><span class="o">.</span><span class="na">empty</span> <span class="c1">// Option だから empty になるのは良い</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>2つの値を揃えて流す(Zip)</h3>
-
-<p>２つのリストの値をひとつずつセットにして流す。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">arr1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="m">5</span> <span class="p">};</span>
-</span><span class='line'><span class="kt">var</span> <span class="n">arr2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">&quot;hoge&quot;</span><span class="p">,</span> <span class="s">&quot;fuga&quot;</span><span class="p">,</span> <span class="s">&quot;piyo&quot;</span> <span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">arr1</span><span class="p">.</span><span class="n">Zip</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span>  <span class="k">new</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">})</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">ToList</span><span class="p">()</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// FIXME どうやるの？ Streams.zip はどこいった？</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">1</span><span class="o">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">hoge</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">fuga</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">x</span> <span class="o">=</span> <span class="mi">3</span><span class="o">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">piyo</span> <span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>重複を無くす(Distinct)</h3>
-
-<p>重複する数値リストから重複をなくす。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Distinct</span><span class="p">()</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">distinct</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">1</span> <span class="mi">3</span> <span class="mi">4</span> <span class="mi">2</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>畳み込み</h3>
-
-<p>いろいろな集計の素、畳み込み。言語により fold とか reduce とか aggregate とか、いろいろな呼び名がありますね。
-よい例が浮かなかったので Max を実装してみました。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">max</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">Aggregate</span><span class="p">(</span><span class="n">Int32</span><span class="p">.</span><span class="n">MinValue</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Math</span><span class="p">.</span><span class="n">Max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">));</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">max</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MIN_VALUE</span><span class="o">,</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Math</span><span class="o">.</span><span class="na">max</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">));</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">max</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="mi">7</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>グループ化</h3>
-
-<p>リストの要素をキーにしてグループ化する。Salesは合計を計算する。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
-</span><span class='line'>    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
-</span><span class='line'><span class="p">};</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">sales</span><span class="p">.</span><span class="n">GroupBy</span><span class="p">(</span><span class="n">x</span><span class="p">=&gt;</span><span class="n">x</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> <span class="p">(</span><span class="n">Id</span><span class="p">,</span> <span class="n">groupedSales</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span><span class="n">Id</span><span class="p">,</span>
-</span><span class='line'>    <span class="n">SumOfSales</span> <span class="p">=</span> <span class="n">groupedSales</span><span class="p">.</span><span class="n">Sum</span><span class="p">(</span> <span class="n">element</span> <span class="p">=&gt;</span> <span class="n">element</span><span class="p">.</span><span class="n">Sales</span><span class="p">)</span> <span class="c1">// Sales は合計する</span>
-</span><span class='line'>  <span class="p">})</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">ToList</span><span class="p">().</span><span class="n">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>（LINQ ではありませんが、 <code>List.LookUp</code> を使って実現することもできるようです → <a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302#comment-82388821b902ad7999b0">コメント:2014/03/22 00:29</a>）</p>
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// javafx に Pair があったので Tuple 代わりに使っちゃった</span>
-</span><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-</span><span class='line'>  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-</span><span class='line'><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">groupingBy</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">()))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">entrySet</span><span class="o">().</span><span class="na">stream</span><span class="o">()</span> <span class="c1">// group化の結果が Map なので、エントリを Stream 化</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span>
-</span><span class='line'>    <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="c1">// Key が Id に相当</span>
-</span><span class='line'>    <span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">().</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summingInt</span><span class="o">(</span><span class="n">y</span><span class="o">-&gt;</span><span class="n">y</span><span class="o">.</span><span class="na">getValue</span><span class="o">()))))</span> <span class="c1">// Value が List なのでまた Stream 化して合計を得る</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">// Collectors.groupingBy 使わずに Map.merge を使ったほうが分かりやすい気も。。。</span>
-</span><span class='line'><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span>
-</span><span class='line'>  <span class="o">()</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(),</span>
-</span><span class='line'>  <span class="o">(</span><span class="n">map</span><span class="o">,</span> <span class="n">item</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="n">item</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="n">item</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">),</span> <span class="c1">// 同じキーの値を加算してく</span>
-</span><span class='line'>  <span class="o">(</span><span class="n">left</span><span class="o">,</span> <span class="n">right</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">left</span><span class="o">.</span><span class="na">putAll</span><span class="o">(</span><span class="n">right</span><span class="o">))</span>
-</span><span class='line'>  <span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">k</span><span class="o">,</span> <span class="n">v</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">k</span> <span class="o">+</span> <span class="s">&quot;:&quot;</span> <span class="o">+</span> <span class="n">v</span><span class="o">));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Java の方、カオスすぎる…。.NET の <code>IGrouping</code> を Map でやってるからだな。</p>
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="o">[.</span><span class="na">NET</span><span class="o">]</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Id</span> <span class="o">=</span> <span class="mi">1</span><span class="o">,</span> <span class="n">SumOfSales</span> <span class="o">=</span> <span class="mi">100</span> <span class="o">}</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Id</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="n">SumOfSales</span> <span class="o">=</span> <span class="mi">500</span> <span class="o">}</span> <span class="c1">// ID=2 の Sales が合計されている</span>
-</span><span class='line'><span class="o">{</span> <span class="n">Id</span> <span class="o">=</span> <span class="mi">3</span><span class="o">,</span> <span class="n">SumOfSales</span> <span class="o">=</span> <span class="mi">400</span> <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span><span class="n">Java</span><span class="o">]</span>
-</span><span class='line'><span class="mi">1</span><span class="o">=</span><span class="mi">100</span>
-</span><span class='line'><span class="mi">2</span><span class="o">=</span><span class="mi">500</span>
-</span><span class='line'><span class="mi">3</span><span class="o">=</span><span class="mi">400</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>合計(Sum)、最大(Max)、最小(Min)、平均(Average)、件数(Count)、先頭(First)、終端(Last)</h3>
-
-<p>集計いろいろ。</p>
-
-<figure class='code'><figcaption><span>C#</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="n">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">);</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Sum={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Sum</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Max={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Max</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Min={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Min</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Count={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Count</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;First={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">First</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Last={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Last</span><span class="p">());</span>
-</span><span class='line'><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Average={0}&quot;</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="n">Average</span><span class="p">());</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">List</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">6</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">8</span><span class="o">,</span><span class="mi">9</span><span class="o">);</span>
-</span><span class='line'><span class="n">IntSummaryStatistics</span> <span class="n">stats</span> <span class="o">=</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summarizingInt</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">));</span> <span class="c1">// Max,Min,Count,Average が取得できる</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Sum=&quot;</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getSum</span><span class="o">());</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Max=&quot;</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMax</span><span class="o">());</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Min=&quot;</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMin</span><span class="o">());</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Count=&quot;</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getCount</span><span class="o">());</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;First=&quot;</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// summarizing では取れない</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Last=&quot;</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">sorted</span><span class="o">((</span><span class="n">x</span><span class="o">,</span><span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">y</span><span class="o">-</span><span class="n">x</span><span class="o">).</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// 微妙</span>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Average=&quot;</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getAverage</span><span class="o">());</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">&quot;Average=&quot;</span> <span class="o">+</span> <span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">).</span><span class="na">average</span><span class="o">());</span> <span class="c1">// 型指定 Stream なら average, sum がある（結果は Option に包まれる）</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>Java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Sum</span><span class="o">=</span><span class="mi">45</span>
-</span><span class='line'><span class="n">Max</span><span class="o">=</span><span class="mi">9</span>
-</span><span class='line'><span class="n">Min</span><span class="o">=</span><span class="mi">0</span>
-</span><span class='line'><span class="n">Count</span><span class="o">=</span><span class="mi">10</span>
-</span><span class='line'><span class="n">First</span><span class="o">=</span><span class="mi">0</span>
-</span><span class='line'><span class="n">Last</span><span class="o">=</span><span class="mi">9</span>
-</span><span class='line'><span class="n">Average</span><span class="o">=</span><span class="mf">4.5</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>…疲れた。。。</p>
 ]]></content>
   </entry>
   
