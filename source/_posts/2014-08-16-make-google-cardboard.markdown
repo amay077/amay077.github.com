@@ -40,6 +40,7 @@ categories: [Android, Cardboard]
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-04.jpg)
 
 子供の夏休みの自由工作にでもできるかなーと思いますが、大人で3時間かかるのは結構つらいかも。
+
 カッターで段ボールを切るのに力入れすぎて指にマメできたし…。
 
 ワークショップ中のその他の写真は
