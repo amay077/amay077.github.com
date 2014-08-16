@@ -10,7 +10,7 @@ categories: [Android, Cardboard]
 
 で Google Cardboard のクローンを作りました。
 <!--more-->
-段ボールやレンズ、磁石などの材料は主催の方が用意してくださった( @macha さんありがとうございます )ので、カッターとガムテープと筆記具くらいを持参するだけですみました。
+段ボールやレンズ、磁石などの材料は主催の方が用意してくださった( [@macha1972](https://twitter.com/macha1972) さんありがとうございます )ので、カッターとガムテープと筆記具くらいを持参するだけですみました。
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-01.jpg)
 
@@ -41,3 +41,9 @@ categories: [Android, Cardboard]
 
 子供の夏休みの自由工作にでもできるかなーと思いますが、大人で3時間かかるのは結構つらいかも。
 カッターで段ボールを切るのに力入れすぎて指にマメできたし…。
+
+ワークショップ中のその他の写真は
+
+* [日本Androidの会 浜松支部の写真・動画 - Facebookグループ](https://www.facebook.com/media/set/?set=o.282944361773276&type=3)
+
+からどうぞ。
