@@ -9,7 +9,7 @@ categories: [Android, Cardboard]
 * [日本Androidの会浜松支部 第40回ミーティング #jaghama - connpass](http://connpass.com/event/7735/)
 
 で Google Cardboard のクローンを作りました。
-
+<!--more-->
 段ボールやレンズ、磁石などの材料は主催の方が用意してくださった( @macha さんありがとうございます )ので、カッターとガムテープと筆記具くらいを持参するだけですみました。
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-01.jpg)
