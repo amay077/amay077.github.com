@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-19T23:57:23+09:00</updated>
+  <updated>2014-08-28T17:45:20+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use/"/>
+    <updated>2014-08-28T17:42:04+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use</id>
+    <content type="html"><![CDATA[<p>Google Maps などを使用する時、開発中ならば <code>debug.keystore</code> のフィンガープリント(SHA1)を取得する必要がありますが、 debug.keystore がどこにあるのか分からなくてハマった。</p>
+
+<!--more-->
+
+
+<h2>結論</h2>
+
+<p>から書いておくと</p>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/android/platform_features/maps_and_location/maps/obtaining_a_google_maps_api_key/">Obtaining a Google Maps API Key | Xamarin</a></li>
+</ul>
+
+
+<p>に書いてある通りで、</p>
+
+<ul>
+<li>Windows &ndash; <code>C:¥Users¥[USERNAME]¥AppData¥Local¥Xamarin¥Mono for Android¥debug.keystore</code></li>
+<li>OSX &ndash; <code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code></li>
+</ul>
+
+
+<p>がそれぞれ使われる。</p>
+
+<h2>なぜハマったか？</h2>
+
+<h3>Eclipse と同じだと思ってた</h3>
+
+<p>Java での Android 開発時に設定したディレクトリを使ってくれると思い込んでた。けどよく考えればあれは Android SDK ではなく Eclipse 固有の設定だったのよね。</p>
+
+<h3>ドキュメントが古いと思ってた</h3>
+
+<p>上記で紹介した「Obtaining a Google Maps…」の記事が古いと思ってた。なぜならディレクトリ名に <code>Mono for Android</code> が含まれていて、これは Xamarin.Android の旧製品名だったから。</p>
+
+<h3>Spotlight検索でヒットしなかった</h3>
+
+<p>Mac を使っているのだけど、Spotlight検索（所謂PC内検索）で <code>debug.keystore</code> がヒットしたのがいつもJava-Android開発で使ってる１つだけだったので、.local の中にあるとは気付けず。。。隠しディレクトリだからヒットしないよね。</p>
+
+<p>こんなことでハマるのは自分くらいだろうけど、メモしときます。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ランダムで且つ重複しない数値リストを作る]]></title>
@@ -348,108 +395,6 @@ using MonoTouch.UIKit;</p>
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
 
 <p>Android の方も同じ要領でいけるは…ず。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms/"/>
-    <updated>2014-06-10T15:30:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms</id>
-    <content type="html"><![CDATA[<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
-
-<!--more-->
-
-
-<h2><del>不可視の扱い</del></h2>
-
-<p><del>Forms 側のパーツには <code>IsVisible = true | false</code> がある。
-iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</del></p>
-
-<p><del>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</del></p>
-
-<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
-
-<h2>空文字の扱い</h2>
-
-<p>IsVisible と勘違いしてたのはこっちだった。</p>
-
-<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
-
-<p><a href="https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a">https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</a></p>
-
-<h2>画面回転時の再構築</h2>
-
-<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。
-Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
-
-<h2>回避方法</h2>
-
-<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>こんな感じっすね。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(MainLauncher = true,</p>
-
-<pre><code>ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]
-</code></pre>
-
-<p>public class MainActivity : AndroidActivity
-{
-```</p>
-
-<h2>BACKキーの扱い</h2>
-
-<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
-
-<h3>自己解決</h3>
-
-<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
-
-<h2>デフォルトスタイル</h2>
-
-<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。
-iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;MyApp&rdquo;,<br/>
- MainLauncher = true,
- Theme = &ldquo;@android:style/Theme.Holo.Light&rdquo;)]
-public class MainActivity : AndroidActivity
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle bundle)
-{
-    /* 以下省略 */
-</code></pre>
-
-<p>```</p>
-
-<h2>起動時</h2>
-
-<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
-ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
-
-<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
-
-<h2>文字の自動縮小</h2>
-
-<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
-
-<h3>自己解決</h3>
-
-<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
-
-<h2>iPhone と iPad</h2>
-
-<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
-
-<p>他にも見つけたら書きます。</p>
 ]]></content>
   </entry>
   

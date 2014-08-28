@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-19T23:57:23+09:00</updated>
+  <updated>2014-08-28T17:45:20+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,53 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use/"/>
+    <updated>2014-08-28T17:42:04+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use</id>
+    <content type="html"><![CDATA[<p>Google Maps などを使用する時、開発中ならば <code>debug.keystore</code> のフィンガープリント(SHA1)を取得する必要がありますが、 debug.keystore がどこにあるのか分からなくてハマった。</p>
+
+<!--more-->
+
+
+<h2>結論</h2>
+
+<p>から書いておくと</p>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/android/platform_features/maps_and_location/maps/obtaining_a_google_maps_api_key/">Obtaining a Google Maps API Key | Xamarin</a></li>
+</ul>
+
+
+<p>に書いてある通りで、</p>
+
+<ul>
+<li>Windows &ndash; <code>C:¥Users¥[USERNAME]¥AppData¥Local¥Xamarin¥Mono for Android¥debug.keystore</code></li>
+<li>OSX &ndash; <code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code></li>
+</ul>
+
+
+<p>がそれぞれ使われる。</p>
+
+<h2>なぜハマったか？</h2>
+
+<h3>Eclipse と同じだと思ってた</h3>
+
+<p>Java での Android 開発時に設定したディレクトリを使ってくれると思い込んでた。けどよく考えればあれは Android SDK ではなく Eclipse 固有の設定だったのよね。</p>
+
+<h3>ドキュメントが古いと思ってた</h3>
+
+<p>上記で紹介した「Obtaining a Google Maps…」の記事が古いと思ってた。なぜならディレクトリ名に <code>Mono for Android</code> が含まれていて、これは Xamarin.Android の旧製品名だったから。</p>
+
+<h3>Spotlight検索でヒットしなかった</h3>
+
+<p>Mac を使っているのだけど、Spotlight検索（所謂PC内検索）で <code>debug.keystore</code> がヒットしたのがいつもJava-Android開発で使ってる１つだけだったので、.local の中にあるとは気付けず。。。隠しディレクトリだからヒットしないよね。</p>
+
+<p>こんなことでハマるのは自分くらいだろうけど、メモしときます。。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Git でリモートリポジトリの更新が反映されないとき]]></title>
@@ -2378,51 +2425,6 @@ Added vImageAlphaBlend_ARGBFFFF
 <p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
 
 <p>んーどうしようか。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Intent に Enum を詰めて、取り出す]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/23/put-and-get-enum-from-intent/"/>
-    <updated>2014-04-23T15:22:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/23/put-and-get-enum-from-intent</id>
-    <content type="html"><![CDATA[<p>タイトルの通りです。</p>
-
-<!--more-->
-
-
-
-
-<figure class='code'><figcaption><span>enum</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">enum</span> <span class="n">MyTypes</span> <span class="o">{</span>
-</span><span class='line'>  <span class="n">One</span><span class="o">,</span>
-</span><span class='line'>  <span class="n">Two</span><span class="o">,</span>
-</span><span class='line'>  <span class="n">Three</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>put</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">intent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">,</span><span class="n">MyType</span><span class="o">.</span><span class="na">Two</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>get</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">MyTypes</span> <span class="n">t</span> <span class="o">=</span> <span class="o">(</span><span class="n">MyTypes</span><span class="o">)</span><span class="n">intent</span><span class="o">.</span><span class="na">getSerializableExtra</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">);</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>取り出すのは <code>getSerializableExtra</code> であることに注意。</p>
-
-<p>なんか int に変換されそうじゃん、と思って <code>getIntExtra</code> を使うと取り出せない。</p>
 ]]></content>
   </entry>
   
