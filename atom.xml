@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-28T17:45:20+09:00</updated>
+  <updated>2014-08-31T00:49:45+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue/"/>
+    <updated>2014-08-31T00:48:46+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.buildinsider.net/mobile/xamarintips/0016">Xamarin.iOSでの画面遷移で「戻る」を実現するには？（Storyboard、Unwind Segue使用） &ndash; Build Insider</a></li>
+</ul>
+
+
+<p>に Unwind Segue について書きましたが、載せきれなかったことを補足します。</p>
+
+<!--more-->
+
+
+<p>上記Tipsでは、Unwind Segueを作るのに、ボタンとExitを結んでますが、<code>PerformSegue</code>で Unwind Segue を使いたい場合もありましょう。</p>
+
+<p><code>PerformsSegue</code>に渡す Identifier はどこで付与するの？とあちこち探しましたが、どうも現在の Xamarin Studio（のiOSデザイナ）はまだ対応していないようです。というか、そもそもコントロールから引っ張るタイプのUnwind Segueしか作れないみたいです。</p>
+
+<p>Xcode の Interface Builder では</p>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/technotes/tn2298/_index.html#//apple_ref/doc/uid/DTS40013591-CH1-TNTAG2-ADDING_AN_UNWIND_SEGUE_TO_A_STORYBOARD">Technical Note TN2298: Using Unwind Segues</a></li>
+</ul>
+
+
+<p>にあるように、「ViewControllerのアイコンをExitアイコンへControl+ドラッグ＆ドロップする」で、”Manual” Unwind Segue が作成できるのですが、Xamarin Studio では、それっぽい操作をしても反応がありません。</p>
+
+<p>当然ながら、Xcode で作成した Segue は Xamarin Studio でも使えるので、Manual Unwind Segue の作成と Identifier の付与は Xcode で行って、Xamarin側で <code>PerformSegue</code> を呼び出せばいいと思います。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
@@ -2335,96 +2367,6 @@ Added vImageAlphaBlend_ARGBFFFF
 <p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
 
 <p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Rx で Chain of Responsibility]]></title>
-    <link href="http://blog.amay077.net/blog/2014/05/13/chain-of-resposibility-using-rx/"/>
-    <updated>2014-05-13T15:24:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/05/13/chain-of-resposibility-using-rx</id>
-    <content type="html"><![CDATA[<p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。</p>
-
-<!--more-->
-
-
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">void</span> <span class="nf">Main</span><span class="p">()</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="s">&quot;有給届&quot;</span><span class="p">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">kakariCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;係長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;遅刻届&quot;</span><span class="p">));</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">kaCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;課長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;有給届&quot;</span><span class="p">));</span>
-</span><span class='line'>    <span class="kt">var</span> <span class="n">buCho</span> <span class="p">=</span> <span class="n">CreateManager</span><span class="p">(</span><span class="s">&quot;部長&quot;</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">&quot;退職届&quot;</span><span class="p">));</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="n">Observable</span><span class="p">.</span><span class="n">Concat</span><span class="p">(</span><span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-</span><span class='line'>        <span class="n">kakariCho</span><span class="p">,</span>  <span class="c1">// 係長</span>
-</span><span class='line'>        <span class="n">kaCho</span><span class="p">,</span>      <span class="c1">// 課長</span>
-</span><span class='line'>        <span class="n">buCho</span>       <span class="c1">// 部長</span>
-</span><span class='line'>    <span class="p">})</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">FirstOrDefault</span><span class="p">()</span> <span class="c1">// 最初の１人に承認されたら終了</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromDays</span><span class="p">(</span><span class="m">1</span><span class="p">))</span> <span class="c1">// 猶予１日</span>
-</span><span class='line'>    <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="n">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</span><span class='line'>        <span class="p">?</span> <span class="s">&quot;あなたの届書は却下されました&quot;</span>
-</span><span class='line'>        <span class="p">:</span> <span class="n">x</span> <span class="p">+</span> <span class="s">&quot;が承認しました&quot;</span><span class="p">));</span>
-</span><span class='line'><span class="p">}</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1">/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）</span>
-</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">CreateManager</span><span class="p">(</span><span class="kt">string</span> <span class="n">managerTitle</span><span class="p">,</span> <span class="kt">string</span> <span class="n">document</span><span class="p">,</span> <span class="n">Predicate</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">canIAccept</span><span class="p">)</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="n">o</span> <span class="p">=&gt;</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">(()</span> <span class="p">=&gt;</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="p">(</span><span class="n">canIAccept</span><span class="p">(</span><span class="n">document</span><span class="p">))</span>
-</span><span class='line'>        <span class="p">{</span>
-</span><span class='line'>            <span class="n">o</span><span class="p">.</span><span class="n">OnNext</span><span class="p">(</span><span class="n">managerTitle</span><span class="p">);</span> <span class="c1">// 承認</span>
-</span><span class='line'>        <span class="p">}</span>
-</span><span class='line'>        <span class="n">o</span><span class="p">.</span><span class="n">OnCompleted</span><span class="p">();</span>
-</span><span class='line'>    <span class="p">}));</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>管理職の人を <code>IObservable</code> に見立てて、自分が処理できるなら <code>OnNext</code> を呼ぶ、処理できないなら <code>OnNext</code> は呼ばずに <code>OnComplete</code> しちゃう。
-で、係長・課長・部長の IObservable を <code>Concat</code> で役職の低い順につなげて、 <code>FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
-
-<p>係長・課長・部長が誰も承認しなかった時、タイムアウトするまで待ちが発生しちゃうのが難点。→ <code>Take(1)</code> じゃなくて <code>FirstOrDefault</code> すればいいみたい。誰も承認しなかった場合 <code>default(string)</code> つまり空文字が流れてくる。</p>
-
-<p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
-
-<p>んーどうしようか。。。</p>
 ]]></content>
   </entry>
   

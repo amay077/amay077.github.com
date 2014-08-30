@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-28T17:45:20+09:00</updated>
+  <updated>2014-08-31T00:50:08+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,38 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです]]></title>
+    <link href="http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue/"/>
+    <updated>2014-08-31T00:48:46+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://www.buildinsider.net/mobile/xamarintips/0016">Xamarin.iOSでの画面遷移で「戻る」を実現するには？（Storyboard、Unwind Segue使用） &ndash; Build Insider</a></li>
+</ul>
+
+
+<p>に Unwind Segue について書きましたが、載せきれなかったことを補足します。</p>
+
+<!--more-->
+
+
+<p>上記Tipsでは、Unwind Segueを作るのに、ボタンとExitを結んでますが、<code>PerformSegue</code>で Unwind Segue を使いたい場合もありましょう。</p>
+
+<p><code>PerformsSegue</code>に渡す Identifier はどこで付与するの？とあちこち探しましたが、どうも現在の Xamarin Studio（のiOSデザイナ）はまだ対応していないようです。というか、そもそもコントロールから引っ張るタイプのUnwind Segueしか作れないみたいです。</p>
+
+<p>Xcode の Interface Builder では</p>
+
+<ul>
+<li><a href="https://developer.apple.com/library/ios/technotes/tn2298/_index.html#//apple_ref/doc/uid/DTS40013591-CH1-TNTAG2-ADDING_AN_UNWIND_SEGUE_TO_A_STORYBOARD">Technical Note TN2298: Using Unwind Segues</a></li>
+</ul>
+
+
+<p>にあるように、「ViewControllerのアイコンをExitアイコンへControl+ドラッグ＆ドロップする」で、”Manual” Unwind Segue が作成できるのですが、Xamarin Studio では、それっぽい操作をしても反応がありません。</p>
+
+<p>当然ながら、Xcode で作成した Segue は Xamarin Studio でも使えるので、Manual Unwind Segue の作成と Identifier の付与は Xcode で行って、Xamarin側で <code>PerformSegue</code> を呼び出せばいいと思います。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
@@ -293,108 +325,6 @@ using Android.Graphics;</p>
 となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
 
 <p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms の Label から iOS の UILabel を取り出す]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel/"/>
-    <updated>2014-06-13T15:34:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/13/convert-xamarin-forms-label-to-native-uilabel</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「文字の自動縮小」の自己回答。</p>
-
-<!--more-->
-
-
-<p>Xamarin.Forms で定義した <code>Label</code> は、iOS では <code>UILabel</code> となるはずなので、その過程のどこかでフックできれば <code>UILabel.AdjustsFontSizeToFitWidth</code> が仕込める、と目論んで、ホントにできたのでメモ。</p>
-
-<h2>要点</h2>
-
-<p><del>Forms→ネイティブのフックは PageRenderer でできる。その中で得られる UIView（のサブクラス）は、Label と UILabel の両方の参照を持っているので、あとは使うだけ。</del></p>
-
-<p><strong>ページでなく、UIパーツレベルでフックできたので、全面的に書き換えた。</strong></p>
-
-<h2>やってみる</h2>
-
-<p>参考にしたのは <a href="https://github.com/xamarin/xamarin-forms-samples/tree/master/Forms2Native">https://github.com/xamarin/xamarin-forms-samples/tree/master/Forms2Native</a> 。</p>
-
-<p>このサンプルをちょっと改造して試した。</p>
-
-<p>まずは Forms側の MySecondPage.cs を修正。</p>
-
-<p>```csharp MySecondPage.cs
-public class MySecondPage : ContentPage
-{</p>
-
-<pre><code>public Label MyLabel { get; private set; }
-
-public MySecondPage ()
-{
-    this.MyLabel = new Label
-    {
-        Text = "Too loooooooooooooooooooooooong label",
-        Font = Font.SystemFontOfSize(30d),
-        LineBreakMode = LineBreakMode.NoWrap
-    };
-
-    Content = new StackLayout
-    {
-        Orientation = StackOrientation.Vertical,
-        VerticalOptions = LayoutOptions.CenterAndExpand,
-        Children = 
-        {
-            this.MyLabel
-        }
-    };
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>ラベルを配置。とても文字が長いので全部は表示しきれない。</p>
-
-<p>次に iOS側に MyLabelRenderer.cs を作成。</p>
-
-<p>```csharp MyLabelRenderer.cs
-using System;
-using Xamarin.Forms;
-using Forms2Native;
-using Xamarin.Forms.Platform.iOS;
-using MonoTouch.UIKit;</p>
-
-<p>[assembly:ExportRenderer(typeof(Label), typeof(MyLabelRenderer))]</p>
-
-<p>namespace Forms2Native
-{</p>
-
-<pre><code>public class MyLabelRenderer : LabelRenderer
-{
-    protected override void OnElementChanged(ElementChangedEventArgs&lt;Label&gt; e)
-    {
-        base.OnElementChanged(e);
-        this.Control.AdjustsFontSizeToFitWidth = true;
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>ExportRenderer</code> で「Formsの<code>Label</code>は、<code>MyLabelRenderer</code>を使う」と定義している。
-するとすべての <code>Label</code> の生成時を <code>OnElementChanged</code> でフックでき、<code>Control</code> で <code>UILabel</code> は取り出せるので、あとはご自由に、という感じ。</p>
-
-<p>この実装だと、すべての Label に Ajusts が適用されてしまう。個別に行いたい場合は、Forms側に Labelから派生した <code>AjustableLabel</code> を作成して使い、<code>ExportRenderer(typeof(Label),…</code> のところを <code>ExportRenderer(typeof(AjustableLabel),…</code> にすればいけるはず。そしてこの方法はカスタムビューを作る手順に通じる（というかそのもの？）はず。</p>
-
-<p>ちなみにこの <code>OnElementChanged</code> は、Nuget の Xamarin.Formsパッケージの Ver1.1.0.6201から利用できる。</p>
-
-<h2>実行する</h2>
-
-<p>こんな感じで、ちゃんと文字サイズが縮小されました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
-
-<p>Android の方も同じ要領でいけるは…ず。</p>
 ]]></content>
   </entry>
   
