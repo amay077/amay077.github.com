@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-08-31T00:49:45+09:00</updated>
+  <updated>2014-09-01T21:44:21+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,137 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[システムの起動時にアプリを起動する]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/01/run-application-on-system-startup/"/>
+    <updated>2014-09-01T21:41:43+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/01/run-application-on-system-startup</id>
+    <content type="html"><![CDATA[<p>ググれば出てくるんだけど、情報が古いので書きなおしてみた。</p>
+
+<!--more-->
+
+
+<h2>全体</h2>
+
+<p>Android OS の起動が終わると <code>android.intent.action.BOOT_COMPLETED</code> がブロードキャストされるので、それを捕まえて任意の処理をする。</p>
+
+<h2>起動時に呼び出されるコード</h2>
+
+<p>ブロードキャストを捕まえたときに呼ばれるコード。<code>MyActivity</code> を開始している。BroadcastReceiver から Activity を開始するには <code>Intent.FLAG_ACTIVITY_NEW_TASK</code> が必要なので注意。</p>
+
+<figure class='code'><figcaption><span>StartupReceiver.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">StartupReceiver</span> <span class="kd">extends</span> <span class="n">BroadcastReceiver</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;StartupReceiver&quot;</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onReceive:&quot;</span> <span class="o">+</span> <span class="n">MyApplication</span><span class="o">.</span><span class="na">data</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">Intent</span> <span class="n">intentActivity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">MyActivity</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">intentActivity</span><span class="o">.</span><span class="na">setFlags</span><span class="o">(</span><span class="n">Intent</span><span class="o">.</span><span class="na">FLAG_ACTIVITY_NEW_TASK</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">context</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intentActivity</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>AndroidManifest.xml で受信登録</h2>
+
+<p><code>StartupReceiver</code> を登録する。
+忘れちゃいけないのが <code>android.permission.RECEIVE_BOOT_COMPLETED</code> による権限の設定。これがないと受信できない。</p>
+
+<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.amay077.reboottest&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.RECEIVE_BOOT_COMPLETED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;application</span>
+</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
+</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
+</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
+</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;activity</span>
+</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.MyActivity&quot;</span>
+</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;receiver</span> <span class="na">android:name=</span><span class="s">&quot;.StartupReceiver&quot;</span> <span class="nt">&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.BOOT_COMPLETED&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;/receiver&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>端末を再起動して試す</h2>
+
+<ul>
+<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト | 9ensanのLifeHack</a></li>
+</ul>
+
+
+<p>で知った <code>adb shell am broadcast -a android.intent.action.BOOT_COMPLETED</code> は GenyMotion でも使えました。
+<code>RECEIVE_BOOT_COMPLETED</code> の位置によっては、テストが成功したりしなかったりだと書かれておられますが、上記の <code>AndroidManifest.xml</code> では、テストも実際の再起動も成功しました。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://techbooster.jpn.org/andriod/application/1100/">システムの起動時にサービスを実行する « Tech Booster</a>(2010年なのでだいぶ古い、要注意)</li>
+<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト | 9ensanのLifeHack</a>(2012年、まだまだ古い)</li>
+<li><a href="http://stackoverflow.com/questions/20441308/boot-completed-not-working-android/20441442#20441442">broadcastreceiver &ndash; BOOT_COMPLETED not working Android &ndash; Stack Overflow</a>(2013年、これなら何とか)</li>
+<li><a href="https://groups.google.com/forum/#!topic/android-group-japan/D1EKohMIji0">BOOT_COMPLETEDが受信出来ない &ndash; Google グループ</a> SDカードにインストールされるとこのブロードキャストを受信できないそうです</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです]]></title>
@@ -2292,81 +2423,6 @@ Xamarin Studio のXMLデザイナーは補完も効かないしツラい。コ�
 
 
 <p>というよくある話には、「画面が１ソースで共通にできる Xamarin.Forms」は、説得材料としては、とりわけ対PhoneGapには効果高いんじゃないかと思います。毒りんごかどうかはともかく。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[iOS4.x 対応のソースコードから「新しいAPI」を使っている箇所を探す]]></title>
-    <link href="http://blog.amay077.net/blog/2014/05/14/find-new-api-in-ios4-supported-code/"/>
-    <updated>2014-05-14T15:26:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/05/14/find-new-api-in-ios4-supported-code</id>
-    <content type="html"><![CDATA[<p>　アプリを iOS4.x でも動作させたい場合、Xcode のプロジェクト設定で Deployment Target を &ldquo;4.x&rdquo; (4.3とか) に設定します。
-一方で Base SDK は最新のものしか選べません、今だと &ldquo;7.1&#8221;。</p>
-
-<!--more-->
-
-
-<p>　この状態だと、コード中で iOS5以降に追加された API を使っていると、iOS4.x端末では当然クラッシュします。</p>
-
-<p>　Target を 4.x にしてるんだから、クラッシュしそうなコードがあったら Xcode が検出して警告して欲しいんですが、そういう機能はないみたいです。(実はあるのでしょうか？ Android だと警告どころかビルドエラーになるので、iOSアプリ開発は大変不便だな、と思ってしまいます。Obj-C は JavaScript みたいなもんだから仕方がない、のは分かりますが)</p>
-
-<p>　 <a href="http://oclint.org/">OCLint</a> という静的コード解析ツールを見つけましたが、機能をざっと見ても、APIバージョンをチェックするものはなさそうです。（試したことはありません）</p>
-
-<p>　しかし「動かしてみないと分からない」のは不安すぎるので、なんとかして「新しいAPIを使っていないか？」をチェックする方法を考えて、行ってみました。</p>
-
-<h2>新しいAPIを使っている箇所を見つける方法</h2>
-
-<h3>A. iOS Developer Center に API の更新内容がまとめられたページがあります。</h3>
-
-<ul>
-<li><a href="https://developer.apple.com/library/ios/releasenotes/General/iOS50APIDiff/index.html#//apple_ref/doc/uid/TP40011042">iOS 4.3 to iOS 5.0 API Differences</a></li>
-<li><a href="https://developer.apple.com/LIBRARY/ios/releasenotes/General/iOS60APIDiffs/index.html">iOS 5.1 to iOS 6.0 API Differences</a></li>
-<li><a href="https://developer.apple.com/LIBRARY/IOS/releasenotes/General/iOS70APIDiffs/index.html">iOS 6.1 to iOS 7.0 API Differences</a></li>
-</ul>
-
-
-<h3>B. これらのページから「変更のあった API のリスト」を抽出します。</h3>
-
-<p>具体的には以下のようなリストを作ります。</p>
-
-<blockquote><p>Added vImageAlphaBlend_ARGB8888
-Added vImageAlphaBlend_ARGBFFFF
-…</p></blockquote>
-
-<p>この作業は自動化したいのですが、お試しなので手動でテキストエディタと <strong>EXCEL</strong> を駆使して作成しました。</p>
-
-<h3>C. あとは、自分のソースコードに対して、順次 grep をかけるスクリプトを作ります。</h3>
-
-<p>修正リストの中には、 <code>-[ALAsset setImageData:metadata:completionBlock:]</code> のように名前付き引数だったりする API もあるので、正規表現でなるべくヒットするように置換します。</p>
-
-<figure class='code'><figcaption><span>find_new_api.sh</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>grep -nr <span class="s2">&quot;ALAsset.*setImageData.*metadata.*completionBlock:.*;&quot;</span> ./src/*
-</span><span class='line'>grep -nr <span class="s2">&quot;vImageAlphaBlend_ARGB8888.*;&quot;</span> ./src/*
-</span><span class='line'>grep -nr <span class="s2">&quot;vImageAlphaBlend_ARGBFFFF.*;&quot;</span> ./src/*
-</span><span class='line'>…
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>D. このスクリプトを実行して何か出たら、そこが「新しいAPIを使ってる箇所」です。</h3>
-
-<h2>まとめ</h2>
-
-<h3>注意点</h3>
-
-<ul>
-<li>クラス自体が追加されているものも、メソッドの追加として探しているので、他のクラスと誤認することがあります。</li>
-<li>正規表現が完全に正しいかよくわかりません（ソースコードに改行含む場合とか）</li>
-</ul>
-
-
-<p>簡単で、不格好な方法ですが、十分に機能してくれますし、開発者の知識やテストだけに頼るのに比べれば随分と安心できます。</p>
-
-<p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
-
-<p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
 ]]></content>
   </entry>
   
