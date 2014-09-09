@@ -4,7 +4,7 @@
   <title><![CDATA[Category: reactiveextensions | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/reactiveextensions/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-01T21:44:21+09:00</updated>
+  <updated>2014-09-09T21:40:58+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,242 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/"/>
+    <updated>2014-09-09T21:38:29+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty</id>
+    <content type="html"><![CDATA[<p>　<a href="http://www.buildinsider.net/mobile/xamarintips/0005">Xamarin.Forms</a> は、Xamarin に新たに搭載されたクロスプラットフォームUIフレームワーク＆MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<p>　<a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty</a> は、MVVMの(特に ViewModelの)実装を強力にサポートしてくれる、<a href="http://www.atmarkit.co.jp/fdotnet/introrx/index/">Reactive Extensions</a> を基盤としたライブラリです。</p>
+
+<p> 両者を組み合わせると、Android/iOSアプリが COOL な感じで書けるんじゃないか、という事で試してみました。</p>
+
+<h2>0. 環境など</h2>
+
+<p>Mac + Xamarin Studio を使いますが、Windows + Visual Studio + Xamarin-Addin でもイケると思います。</p>
+
+<h2>1. 導入</h2>
+
+<h3>プロジェクトの作成</h3>
+
+<p>新規ソリューションを、［C#］−［Mobile Apps］−［Blank App(Xamarin.Forms Portable)］で作成します。</p>
+
+<h3>PCL の Profile を変更</h3>
+
+<p>　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を <strong>PCL 4.5 &ndash; Profile49</strong> に変更します。元々の Profile47 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
+
+<h3>Nuget で Reactive Extensions と ReactiveProperty を追加</h3>
+
+<p>　メニューの［プロジェクト］ー［Add Packages］で Nuget のダイアログを開き、図のように 「Reactive Extensions &ndash; Main Library」と「ReactiveProperty Portable」を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
+
+<p>（Reactive Extensions の追加の際、なにやらWarningが出るようですが、とりあえず進めます。）</p>
+
+<h2>2. ViewModel の実装</h2>
+
+<p>　PCL のプロジェクトに、<code>FirstViewModel.cs</code> を作成します。
+　<code>FirstViewModel</code> は、以下のようなプロパティとコマンドを持ちます。</p>
+
+<ul>
+<li>InputTextプロパティ : EditBox の入力に応じて更新</li>
+<li>DisplayTextプロパティ : InputText の変化から1秒後に、InputText を大文字にして更新</li>
+<li>Clearコマンド : InputText が &lsquo;clear&rsquo; の時のみ有効。実行すると InputText を空にする。</li>
+</ul>
+
+
+<p>これらの実装が下のようになります。</p>
+
+<p>```csharp FirstViewModel.cs
+using System;
+using Codeplex.Reactive;
+using System.Reactive.Linq;</p>
+
+<p>namespace FormsWithRxProperty.ViewModels
+{</p>
+
+<pre><code>public class FirstViewModel
+{
+    private readonly ReactiveProperty&lt;string&gt; _inputText = 
+        new ReactiveProperty&lt;string&gt;("Hoge");
+    public ReactiveProperty&lt;string&gt; InputText 
+    { 
+        get { return _inputText; }
+    }
+
+    public ReactiveProperty&lt;string&gt; DisplayText
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand Clear
+    {
+        get; private set;
+    }
+
+    public FirstViewModel()
+    {
+        // DisplayText は、InputText の変更から1秒後に大文字にして更新
+        this.DisplayText = _inputText
+            .Delay(TimeSpan.FromSeconds(1))
+            .Select(x =&gt; x.ToUpper())
+            .ToReactiveProperty();
+
+        // InputText が `clear` の時に実装可能
+        this.Clear = _inputText
+            .Select(x =&gt; x.Equals("clear"))
+            .ToReactiveCommand();
+        // 実行されたら、InputText を空にする
+        this.Clear.Subscribe(_ =&gt; _inputText.Value = String.Empty);
+    }
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　面倒な <code>INotifyPropertyChanged</code> の実装が必要なく、すっきりと記述できます。
+　また、他のプロパティに関連して(反応して)値が変化するプロパティや、コマンドの利用可否などが、Reactive Extensions の機能により、流れるように記述できます。</p>
+
+<h2>3. 画面及び ViewModel との Binding の実装</h2>
+
+<p>　画面(UI)は、Xamarin.Forms の恩恵で、Android/iOS 共通で実装できます。XAML も使えますが、よく知らないのでコードでUIを記述します。</p>
+
+<p>　PCL のプロジェクトに、 <code>FirstPage.cs</code> を作成し、以下のように実装します。</p>
+
+<p>```csharp FirstPage.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.ViewModels;</p>
+
+<p>namespace FormsWithRxProperty.Pages
+{</p>
+
+<pre><code>public class FirstPage : ContentPage
+{
+    public FirstPage()
+    {
+        // UI
+        var entry = new Entry
+        {
+            Text = "Hello, Forms!",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        var label = new Label
+        {
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.CenterAndExpand,
+        };
+
+        var button = new Button
+        {
+            Text = "Clear (type 'clear' to enable)",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        this.Content = new StackLayout
+        {
+            Padding = new Thickness(50f),
+            VerticalOptions = LayoutOptions.Start,
+            HorizontalOptions = LayoutOptions.Fill,
+            Orientation = StackOrientation.Vertical,
+            Children =
+            {
+                entry,
+                label,
+                button
+            }
+        };
+
+        // ViewModel との Binding
+        this.BindingContext = new FirstViewModel();
+        entry.SetBinding&lt;FirstViewModel&gt;(Entry.TextProperty, vm=&gt;vm.InputText.Value);
+        label.SetBinding&lt;FirstViewModel&gt;(Label.TextProperty, vm=&gt;vm.DisplayText.Value);
+        button.SetBinding&lt;FirstViewModel&gt;(Button.CommandProperty, vm=&gt;vm.Clear);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　ちょっと長いですが、画面に「エディットボックス」「ラベル」「ボタン」が縦に並んでいるだけです。</p>
+
+<p>　下部の４行で、<code>FirstViewModel</code> の各プロパティ、コマンドと Bind しています。</p>
+
+<p>　もともとあった <code>App.cs</code> は、<code>FirstPage</code> を生成するだけにします。</p>
+
+<p>```csharp App.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.Pages;</p>
+
+<p>namespace FormsWithRxProperty
+{</p>
+
+<pre><code>public class App
+{
+    public static Page GetMainPage()
+    {   
+        return new FirstPage();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>動かす！</h2>
+
+<p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 <strong>そしてなにより楽しい！</strong></p>
+
+<p>　今回のサンプルプログラムは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XamarinFormsWithReactivePropertySample/tree/master">amay077/XamarinFormsWithReactivePropertySample</a></li>
+</ul>
+
+
+<p>　に置きましたので、是非試してみてください。</p>
+
+<h3>ReactiveProperty</h3>
+
+<ul>
+<li><a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty オーバービュー &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://reactiveproperty.codeplex.com/releases/view/132232">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Download: ReactiveProperty v1.0</a></li>
+<li><a href="http://neue.cc/2011/08/26_341.html">neue cc &ndash; ReactiveProperty : Rx + MVVMへの試み</a></li>
+<li><a href="http://yone64.wordpress.com/2014/06/20/reactiveproperty%E3%82%92%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E4%BA%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%80%81reactiveextensions%E5%85%A5%E9%96%80%EF%BC%88%E3%81%9D%E3%81%AE%EF%BC%91%EF%BC%89/">ReactivePropertyを使いたい人のための、ReactiveExtensions入門（その１） | 泥庭</a></li>
+</ul>
+
+
+<h3>Xamarin.Forms</h3>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/">Xamarin.Forms | Xamarin</a></li>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/14">Xamarin.Formsの基本構想と仕組み &ndash; Build Insider</a></li>
+<li><a href="http://www.buildinsider.net/tagcloud?tag=Xamarin.Forms">Xamarin.Forms &ndash; Build Insider</a></li>
+<li><a href="http://furuya02.hatenablog.com/entry/2014/08/08/003036">Xamarin.Forms ListViewでTwitter風のレイアウトを作成してみました（機種依存コードなし） &ndash; SIN@SAPPOROWORKSの覚書</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Rx で Chain of Responsibility]]></title>
@@ -347,168 +583,6 @@ e =&gt; Android.Util.Log.Debug(TAG, "error:" + e.Message), // エラー(タイ�
 ```</p>
 
 <p>Reactive Extensions と C# の拡張メソッドなどのおかげで、Java よりもずいぶんとすっきり書けました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android で Reactive Extensions を使う]]></title>
-    <link href="http://blog.amay077.net/blog/2013/03/01/how-to-use-rx-in-xamarin/"/>
-    <updated>2013-03-01T17:38:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2013/03/01/how-to-use-rx-in-xamarin</id>
-    <content type="html"><![CDATA[<p>なんか一気にハードル上がったような。。。</p>
-
-<!-- more -->
-
-
-<p>Reactive Extensions(Rx) については、</p>
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_01/introrx_01_01.html">Reactive Extensionsの概要と利用方法 － ＠IT</a></li>
-</ul>
-
-
-<p>などを読んで頂くとして、Rx は昨年 <a href="http://www.infoq.com/jp/news/2012/11/rx-net-open-source">オープンソース化され</a>、本家を Mono for Android で使えるようにした</p>
-
-<ul>
-<li><a href="http://rxm4a.codeplex.com/">RxM4A &ndash; Mono For Android Reactive Extensions</a></li>
-</ul>
-
-
-<p>というプロジェクトがあります。
-Mono で使えるということは Xamarin でももちろん…ということで使ってみます。</p>
-
-<h2>サンプルアプリケーションを作る</h2>
-
-<p>とりあえず Xamarin.Android で &ldquo;XamarinAndroidRxSample&rdquo; というプロジェクトを作りました。</p>
-
-<h2>RxM4A のソースを Clone する</h2>
-
-<p>上記のサイトからソースを取得します。以下のコマンドでもおｋ(要git)</p>
-
-<blockquote><p>$git clone <a href="https://git01.codeplex.com/rxm4a">https://git01.codeplex.com/rxm4a</a></p></blockquote>
-
-<h2>ソリューションにプロジェクトを追加する</h2>
-
-<p>ソリューションツリーのソリューションのところで右クリック→追加→既存のプロジェクトを追加</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a.png" alt="&quot;add_project&quot;" /></p>
-
-<p>で、先ほど取得した RxM4A のディレクトリへ移動します。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_projects.png" alt="&quot;projects&quot;" /></p>
-
-<p>RxMonoForAndroid の中から以下のプロジェクトを追加します。</p>
-
-<ul>
-<li>System.Reactive.Interfaces</li>
-<li>System.Reactive.Core</li>
-<li>System.Reactive.Linq</li>
-</ul>
-
-
-<p>フォルダを掘ってくと xxx.csproj ってファイルがあるので、それを選択します。
-依存関係があるので、上記の順番通りやらないとなにかエラーが出ますが、最終的に３つ揃えば問題ないでしょう。</p>
-
-<h2>参照を追加する</h2>
-
-<p>XamarinAndroidRxSample から、今追加した３つのプロジェクトを参照に追加します。</p>
-
-<p>ソリューションツリーの XamarinAndroidRxSample のところで右クリック→参照アセンブリの追加 から、</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_add_reference.png" alt="&quot;add_project_reference&quot;" />
-<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_add_reference2.png" alt="&quot;add_project_reference&quot;" /></p>
-
-<p>ダイアログのタブで Projects を選ぶと３つ出てくるのでチェックをいれて OK してください。</p>
-
-<h2>Reactive Extensions を使ってみる</h2>
-
-<p>ボタンを押した時の処理で Rx を使ってみます。</p>
-
-<p>```c# Main.cs
-(ここまで省略)
-using Android.Util;</p>
-
-<p>using System.Reactive.Linq; // これ必要</p>
-
-<p>namespace XamarinAndroidRxSample
-{</p>
-
-<pre><code>[Activity (Label = "XamarinAndroidRxSample", MainLauncher = true)]
-public class Activity1 : Activity
-{
-    protected override void OnCreate(Bundle bundle)
-    {
-        base.OnCreate(bundle);
-
-        // Set our view from the "main" layout resource
-        SetContentView(Resource.Layout.Main);
-
-        // Get our button from the layout resource,
-        // and attach an event to it
-        Button button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
-
-        button.Click += delegate
-        {
-            Observable.Range(0, 10) // 0〜9 のリスト
-            .Where(n =&gt; n % 2 == 0) // 偶数だけ抽出
-            .Select(n =&gt; n * 2) // 値を２倍して
-            .Subscribe(n =&gt; Log.Debug("Activity1", n.ToString())); // 出力
-        };
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>動かしてみた結果</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_output.png" alt="&quot;output&quot;" /></p>
-
-<p>全然 Rx っぽくない(Linq だけでできる) 処理ですけど、Rx 関連クラスが使えることは確認できました。</p>
-
-<p>使い倒すには、RxMonoForAndroid 配下の他のプロジェクトを参照に追加して〜となるでしょう。</p>
-
-<h2>アセンブリ参照はどうやるの？</h2>
-
-<p>ここではプロジェクト参照で行ったのですけど、各Rxプロジェクトをビルドしてできた</p>
-
-<ul>
-<li>System.Reactive.Interfaces.dll</li>
-<li>System.Reactive.Core.dll</li>
-<li>System.Reactive.Linq.dll</li>
-</ul>
-
-
-<p>をアセンブリ参照してもいいでしょ？と思ってやってみました。
-それぞれの System.Reactive.Linq プロジェクトの <code>/bin/Debug</code> ディレクトリの中に上記ファイルができているので、てっとり早くそれを XamarinAndroidRxSample でアセンブリ参照してみました。(ほんとはちゃんと Release ビルドしてね)</p>
-
-<p>そしたらアプリは動くには動いたのですが、ソリューションツリーに怪しげなエラーが↓</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_rxm4a_error.png" alt="&quot;error&quot;" /></p>
-
-<p>アプリとDLLでターゲットフレームワークが違う(アプリは ICS4.0.3 でDLLは 4.0.0) だとこうなるんでしょうか？
-Yes、アプリ側を 4.0.0 にしてプロジェクトクリーン→Xamarin Studio を再起動したら消えました。(けどアプリの方がバージョン上位だったのに、下位互換性はどうなってるんでしょ？)</p>
-
-<h2>サンプルプロジェクト</h2>
-
-<p>これも github においておこう。RxM4A は Submodule として登録してみた。</p>
-
-<ul>
-<li><a href="https://github.com/amay077/XamarinAndroid_RxSample">amay077 / XamarinAndroid_RxSample</a></li>
-</ul>
-
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_01/introrx_01_01.html">Reactive Extensionsの概要と利用方法 － ＠IT</a></li>
-<li><a href="http://rxm4a.codeplex.com/">RxM4A &ndash; Mono For Android Reactive Extensions</a></li>
-<li><a href="http://neue.cc/">neue cc</a> スーパー勉強になります</li>
-<li><a href="http://d.hatena.ne.jp/okazuki/20111114/1321277465">かずきのBlog@Hatena</a> 膨大なサンプル集がようやく Android開発で活かせます！</li>
-<li><a href="https://code.google.com/p/reactive4java/">reactive4java</a> Java ではこれ使ってました</li>
-</ul>
-
 ]]></content>
   </entry>
   

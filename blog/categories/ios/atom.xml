@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-01T21:44:21+09:00</updated>
+  <updated>2014-09-09T21:40:58+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,242 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/"/>
+    <updated>2014-09-09T21:38:29+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty</id>
+    <content type="html"><![CDATA[<p>　<a href="http://www.buildinsider.net/mobile/xamarintips/0005">Xamarin.Forms</a> は、Xamarin に新たに搭載されたクロスプラットフォームUIフレームワーク＆MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<p>　<a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty</a> は、MVVMの(特に ViewModelの)実装を強力にサポートしてくれる、<a href="http://www.atmarkit.co.jp/fdotnet/introrx/index/">Reactive Extensions</a> を基盤としたライブラリです。</p>
+
+<p> 両者を組み合わせると、Android/iOSアプリが COOL な感じで書けるんじゃないか、という事で試してみました。</p>
+
+<h2>0. 環境など</h2>
+
+<p>Mac + Xamarin Studio を使いますが、Windows + Visual Studio + Xamarin-Addin でもイケると思います。</p>
+
+<h2>1. 導入</h2>
+
+<h3>プロジェクトの作成</h3>
+
+<p>新規ソリューションを、［C#］−［Mobile Apps］−［Blank App(Xamarin.Forms Portable)］で作成します。</p>
+
+<h3>PCL の Profile を変更</h3>
+
+<p>　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を <strong>PCL 4.5 &ndash; Profile49</strong> に変更します。元々の Profile47 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
+
+<h3>Nuget で Reactive Extensions と ReactiveProperty を追加</h3>
+
+<p>　メニューの［プロジェクト］ー［Add Packages］で Nuget のダイアログを開き、図のように 「Reactive Extensions &ndash; Main Library」と「ReactiveProperty Portable」を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
+
+<p>（Reactive Extensions の追加の際、なにやらWarningが出るようですが、とりあえず進めます。）</p>
+
+<h2>2. ViewModel の実装</h2>
+
+<p>　PCL のプロジェクトに、<code>FirstViewModel.cs</code> を作成します。
+　<code>FirstViewModel</code> は、以下のようなプロパティとコマンドを持ちます。</p>
+
+<ul>
+<li>InputTextプロパティ : EditBox の入力に応じて更新</li>
+<li>DisplayTextプロパティ : InputText の変化から1秒後に、InputText を大文字にして更新</li>
+<li>Clearコマンド : InputText が &lsquo;clear&rsquo; の時のみ有効。実行すると InputText を空にする。</li>
+</ul>
+
+
+<p>これらの実装が下のようになります。</p>
+
+<p>```csharp FirstViewModel.cs
+using System;
+using Codeplex.Reactive;
+using System.Reactive.Linq;</p>
+
+<p>namespace FormsWithRxProperty.ViewModels
+{</p>
+
+<pre><code>public class FirstViewModel
+{
+    private readonly ReactiveProperty&lt;string&gt; _inputText = 
+        new ReactiveProperty&lt;string&gt;("Hoge");
+    public ReactiveProperty&lt;string&gt; InputText 
+    { 
+        get { return _inputText; }
+    }
+
+    public ReactiveProperty&lt;string&gt; DisplayText
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand Clear
+    {
+        get; private set;
+    }
+
+    public FirstViewModel()
+    {
+        // DisplayText は、InputText の変更から1秒後に大文字にして更新
+        this.DisplayText = _inputText
+            .Delay(TimeSpan.FromSeconds(1))
+            .Select(x =&gt; x.ToUpper())
+            .ToReactiveProperty();
+
+        // InputText が `clear` の時に実装可能
+        this.Clear = _inputText
+            .Select(x =&gt; x.Equals("clear"))
+            .ToReactiveCommand();
+        // 実行されたら、InputText を空にする
+        this.Clear.Subscribe(_ =&gt; _inputText.Value = String.Empty);
+    }
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　面倒な <code>INotifyPropertyChanged</code> の実装が必要なく、すっきりと記述できます。
+　また、他のプロパティに関連して(反応して)値が変化するプロパティや、コマンドの利用可否などが、Reactive Extensions の機能により、流れるように記述できます。</p>
+
+<h2>3. 画面及び ViewModel との Binding の実装</h2>
+
+<p>　画面(UI)は、Xamarin.Forms の恩恵で、Android/iOS 共通で実装できます。XAML も使えますが、よく知らないのでコードでUIを記述します。</p>
+
+<p>　PCL のプロジェクトに、 <code>FirstPage.cs</code> を作成し、以下のように実装します。</p>
+
+<p>```csharp FirstPage.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.ViewModels;</p>
+
+<p>namespace FormsWithRxProperty.Pages
+{</p>
+
+<pre><code>public class FirstPage : ContentPage
+{
+    public FirstPage()
+    {
+        // UI
+        var entry = new Entry
+        {
+            Text = "Hello, Forms!",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        var label = new Label
+        {
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.CenterAndExpand,
+        };
+
+        var button = new Button
+        {
+            Text = "Clear (type 'clear' to enable)",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        this.Content = new StackLayout
+        {
+            Padding = new Thickness(50f),
+            VerticalOptions = LayoutOptions.Start,
+            HorizontalOptions = LayoutOptions.Fill,
+            Orientation = StackOrientation.Vertical,
+            Children =
+            {
+                entry,
+                label,
+                button
+            }
+        };
+
+        // ViewModel との Binding
+        this.BindingContext = new FirstViewModel();
+        entry.SetBinding&lt;FirstViewModel&gt;(Entry.TextProperty, vm=&gt;vm.InputText.Value);
+        label.SetBinding&lt;FirstViewModel&gt;(Label.TextProperty, vm=&gt;vm.DisplayText.Value);
+        button.SetBinding&lt;FirstViewModel&gt;(Button.CommandProperty, vm=&gt;vm.Clear);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　ちょっと長いですが、画面に「エディットボックス」「ラベル」「ボタン」が縦に並んでいるだけです。</p>
+
+<p>　下部の４行で、<code>FirstViewModel</code> の各プロパティ、コマンドと Bind しています。</p>
+
+<p>　もともとあった <code>App.cs</code> は、<code>FirstPage</code> を生成するだけにします。</p>
+
+<p>```csharp App.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.Pages;</p>
+
+<p>namespace FormsWithRxProperty
+{</p>
+
+<pre><code>public class App
+{
+    public static Page GetMainPage()
+    {   
+        return new FirstPage();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>動かす！</h2>
+
+<p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 <strong>そしてなにより楽しい！</strong></p>
+
+<p>　今回のサンプルプログラムは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XamarinFormsWithReactivePropertySample/tree/master">amay077/XamarinFormsWithReactivePropertySample</a></li>
+</ul>
+
+
+<p>　に置きましたので、是非試してみてください。</p>
+
+<h3>ReactiveProperty</h3>
+
+<ul>
+<li><a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty オーバービュー &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://reactiveproperty.codeplex.com/releases/view/132232">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Download: ReactiveProperty v1.0</a></li>
+<li><a href="http://neue.cc/2011/08/26_341.html">neue cc &ndash; ReactiveProperty : Rx + MVVMへの試み</a></li>
+<li><a href="http://yone64.wordpress.com/2014/06/20/reactiveproperty%E3%82%92%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E4%BA%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%80%81reactiveextensions%E5%85%A5%E9%96%80%EF%BC%88%E3%81%9D%E3%81%AE%EF%BC%91%EF%BC%89/">ReactivePropertyを使いたい人のための、ReactiveExtensions入門（その１） | 泥庭</a></li>
+</ul>
+
+
+<h3>Xamarin.Forms</h3>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/">Xamarin.Forms | Xamarin</a></li>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/14">Xamarin.Formsの基本構想と仕組み &ndash; Build Insider</a></li>
+<li><a href="http://www.buildinsider.net/tagcloud?tag=Xamarin.Forms">Xamarin.Forms &ndash; Build Insider</a></li>
+<li><a href="http://furuya02.hatenablog.com/entry/2014/08/08/003036">Xamarin.Forms ListViewでTwitter風のレイアウトを作成してみました（機種依存コードなし） &ndash; SIN@SAPPOROWORKSの覚書</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです]]></title>
@@ -317,77 +553,6 @@ grep -nr "vImageAlphaBlend_ARGBFFFF.*;" ./src/*
 <p>APIの更新情報を JSON か何かで提供してくれたら、もうちょっと楽なんですけども。。。</p>
 
 <p>iOSアプリの開発者のみなさんは、どうやって iOS の下位バージョン互換性を担保しているのでしょうか？</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
-    <updated>2014-04-03T15:29:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
-</ul>
-
-
-<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
-
-<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
-
-<p><code>csharp
-MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
-</code></p>
-
-<p>これを FromEventPattern を使うとこう書けます。</p>
-
-<p><code>csharp DoesNotWorkOnDevice.cs
-Observable.FromEventPattern(MyButton, "TouchUpInside")
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
-
-<blockquote><p>System.InvalidOperationException: Could not find event &lsquo;TouchUpInside&rsquo; on object of type &lsquo;MonoTouch.UIKit.UIButton&rsquo;.</p></blockquote>
-
-<p><code>TouchUpInside</code> が無いと言われます。</p>
-
-<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
-
-<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 &ndash; Build Insider</a></li>
-</ul>
-
-
-<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
-
-<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
-
-<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
-
-<p><code>csharp WorkOnDevice.cs
-Observable.FromEventPattern(
-  h =&gt; MyButton.TouchUpInside+=h,
-  h =&gt; MyButton.TouchUpInside-=h)
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>Xamarin.iOS の制限事項は以下に。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
-</ul>
-
-
-<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
-
-<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
 ]]></content>
   </entry>
   

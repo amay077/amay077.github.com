@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-01T21:44:21+09:00</updated>
+  <updated>2014-09-09T21:40:58+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,242 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/"/>
+    <updated>2014-09-09T21:38:29+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty</id>
+    <content type="html"><![CDATA[<p>　<a href="http://www.buildinsider.net/mobile/xamarintips/0005">Xamarin.Forms</a> は、Xamarin に新たに搭載されたクロスプラットフォームUIフレームワーク＆MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<p>　<a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty</a> は、MVVMの(特に ViewModelの)実装を強力にサポートしてくれる、<a href="http://www.atmarkit.co.jp/fdotnet/introrx/index/">Reactive Extensions</a> を基盤としたライブラリです。</p>
+
+<p> 両者を組み合わせると、Android/iOSアプリが COOL な感じで書けるんじゃないか、という事で試してみました。</p>
+
+<h2>0. 環境など</h2>
+
+<p>Mac + Xamarin Studio を使いますが、Windows + Visual Studio + Xamarin-Addin でもイケると思います。</p>
+
+<h2>1. 導入</h2>
+
+<h3>プロジェクトの作成</h3>
+
+<p>新規ソリューションを、［C#］−［Mobile Apps］−［Blank App(Xamarin.Forms Portable)］で作成します。</p>
+
+<h3>PCL の Profile を変更</h3>
+
+<p>　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を <strong>PCL 4.5 &ndash; Profile49</strong> に変更します。元々の Profile47 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
+
+<h3>Nuget で Reactive Extensions と ReactiveProperty を追加</h3>
+
+<p>　メニューの［プロジェクト］ー［Add Packages］で Nuget のダイアログを開き、図のように 「Reactive Extensions &ndash; Main Library」と「ReactiveProperty Portable」を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
+
+<p>（Reactive Extensions の追加の際、なにやらWarningが出るようですが、とりあえず進めます。）</p>
+
+<h2>2. ViewModel の実装</h2>
+
+<p>　PCL のプロジェクトに、<code>FirstViewModel.cs</code> を作成します。
+　<code>FirstViewModel</code> は、以下のようなプロパティとコマンドを持ちます。</p>
+
+<ul>
+<li>InputTextプロパティ : EditBox の入力に応じて更新</li>
+<li>DisplayTextプロパティ : InputText の変化から1秒後に、InputText を大文字にして更新</li>
+<li>Clearコマンド : InputText が &lsquo;clear&rsquo; の時のみ有効。実行すると InputText を空にする。</li>
+</ul>
+
+
+<p>これらの実装が下のようになります。</p>
+
+<p>```csharp FirstViewModel.cs
+using System;
+using Codeplex.Reactive;
+using System.Reactive.Linq;</p>
+
+<p>namespace FormsWithRxProperty.ViewModels
+{</p>
+
+<pre><code>public class FirstViewModel
+{
+    private readonly ReactiveProperty&lt;string&gt; _inputText = 
+        new ReactiveProperty&lt;string&gt;("Hoge");
+    public ReactiveProperty&lt;string&gt; InputText 
+    { 
+        get { return _inputText; }
+    }
+
+    public ReactiveProperty&lt;string&gt; DisplayText
+    {
+        get; private set;
+    }
+
+    public ReactiveCommand Clear
+    {
+        get; private set;
+    }
+
+    public FirstViewModel()
+    {
+        // DisplayText は、InputText の変更から1秒後に大文字にして更新
+        this.DisplayText = _inputText
+            .Delay(TimeSpan.FromSeconds(1))
+            .Select(x =&gt; x.ToUpper())
+            .ToReactiveProperty();
+
+        // InputText が `clear` の時に実装可能
+        this.Clear = _inputText
+            .Select(x =&gt; x.Equals("clear"))
+            .ToReactiveCommand();
+        // 実行されたら、InputText を空にする
+        this.Clear.Subscribe(_ =&gt; _inputText.Value = String.Empty);
+    }
+
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　面倒な <code>INotifyPropertyChanged</code> の実装が必要なく、すっきりと記述できます。
+　また、他のプロパティに関連して(反応して)値が変化するプロパティや、コマンドの利用可否などが、Reactive Extensions の機能により、流れるように記述できます。</p>
+
+<h2>3. 画面及び ViewModel との Binding の実装</h2>
+
+<p>　画面(UI)は、Xamarin.Forms の恩恵で、Android/iOS 共通で実装できます。XAML も使えますが、よく知らないのでコードでUIを記述します。</p>
+
+<p>　PCL のプロジェクトに、 <code>FirstPage.cs</code> を作成し、以下のように実装します。</p>
+
+<p>```csharp FirstPage.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.ViewModels;</p>
+
+<p>namespace FormsWithRxProperty.Pages
+{</p>
+
+<pre><code>public class FirstPage : ContentPage
+{
+    public FirstPage()
+    {
+        // UI
+        var entry = new Entry
+        {
+            Text = "Hello, Forms!",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        var label = new Label
+        {
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.CenterAndExpand,
+        };
+
+        var button = new Button
+        {
+            Text = "Clear (type 'clear' to enable)",
+            VerticalOptions = LayoutOptions.Center,
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+        };
+
+        this.Content = new StackLayout
+        {
+            Padding = new Thickness(50f),
+            VerticalOptions = LayoutOptions.Start,
+            HorizontalOptions = LayoutOptions.Fill,
+            Orientation = StackOrientation.Vertical,
+            Children =
+            {
+                entry,
+                label,
+                button
+            }
+        };
+
+        // ViewModel との Binding
+        this.BindingContext = new FirstViewModel();
+        entry.SetBinding&lt;FirstViewModel&gt;(Entry.TextProperty, vm=&gt;vm.InputText.Value);
+        label.SetBinding&lt;FirstViewModel&gt;(Label.TextProperty, vm=&gt;vm.DisplayText.Value);
+        button.SetBinding&lt;FirstViewModel&gt;(Button.CommandProperty, vm=&gt;vm.Clear);
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　ちょっと長いですが、画面に「エディットボックス」「ラベル」「ボタン」が縦に並んでいるだけです。</p>
+
+<p>　下部の４行で、<code>FirstViewModel</code> の各プロパティ、コマンドと Bind しています。</p>
+
+<p>　もともとあった <code>App.cs</code> は、<code>FirstPage</code> を生成するだけにします。</p>
+
+<p>```csharp App.cs
+using System;
+using Xamarin.Forms;
+using FormsWithRxProperty.Pages;</p>
+
+<p>namespace FormsWithRxProperty
+{</p>
+
+<pre><code>public class App
+{
+    public static Page GetMainPage()
+    {   
+        return new FirstPage();
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>動かす！</h2>
+
+<p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 <strong>そしてなにより楽しい！</strong></p>
+
+<p>　今回のサンプルプログラムは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XamarinFormsWithReactivePropertySample/tree/master">amay077/XamarinFormsWithReactivePropertySample</a></li>
+</ul>
+
+
+<p>　に置きましたので、是非試してみてください。</p>
+
+<h3>ReactiveProperty</h3>
+
+<ul>
+<li><a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty オーバービュー &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://reactiveproperty.codeplex.com/releases/view/132232">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Download: ReactiveProperty v1.0</a></li>
+<li><a href="http://neue.cc/2011/08/26_341.html">neue cc &ndash; ReactiveProperty : Rx + MVVMへの試み</a></li>
+<li><a href="http://yone64.wordpress.com/2014/06/20/reactiveproperty%E3%82%92%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E4%BA%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%80%81reactiveextensions%E5%85%A5%E9%96%80%EF%BC%88%E3%81%9D%E3%81%AE%EF%BC%91%EF%BC%89/">ReactivePropertyを使いたい人のための、ReactiveExtensions入門（その１） | 泥庭</a></li>
+</ul>
+
+
+<h3>Xamarin.Forms</h3>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/">Xamarin.Forms | Xamarin</a></li>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/14">Xamarin.Formsの基本構想と仕組み &ndash; Build Insider</a></li>
+<li><a href="http://www.buildinsider.net/tagcloud?tag=Xamarin.Forms">Xamarin.Forms &ndash; Build Insider</a></li>
+<li><a href="http://furuya02.hatenablog.com/entry/2014/08/08/003036">Xamarin.Forms ListViewでTwitter風のレイアウトを作成してみました（機種依存コードなし） &ndash; SIN@SAPPOROWORKSの覚書</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[システムの起動時にアプリを起動する]]></title>
@@ -566,157 +802,6 @@ public static class SimpleDragListener implements DragListener {
 
 <p>}
 ```</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms、Android での BACK キーの制御]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms/"/>
-    <updated>2014-06-17T01:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/17/hooking-back-key-in-xamarin-forms</id>
-    <content type="html"><![CDATA[<p><a href="http://qiita.com/amay077/items/12979585ac3e2dcacacb">Xamarin.Forms でどうにかしたい iOS と Android の違い</a> の「BACKキーの制御」の <strong>現時点(1.1.0.6201)</strong> での回答。</p>
-
-<!--more-->
-
-
-<p>Android の BACKキーの制御を、Xamarin.Forms ではどう扱えるかを調べた。</p>
-
-<h2>シナリオ</h2>
-
-<p>Xamarin.Forms による画面１(MainPage)、２(SecondPage)があり、MainPage では BACKキーで戻る(=アプリ終了)事ができるが、SecondPage ではBACKキーが効かない、ようにしたい。</p>
-
-<h2>対策</h2>
-
-<p>まず画面１と２はこんな感じ。ボタンを押したら画面２へ遷移するだけ。</p>
-
-<p>```csharp Pages.cs
-// 画面１
-public class MainPage : ContentPage
-{</p>
-
-<pre><code>public MainPage() 
-{
-    var button = new Button
-    {
-        Text = "To Second",
-        VerticalOptions = LayoutOptions.Center,
-    };
-
-    button.Clicked += (sender, e) =&gt; 
-    {
-        this.Navigation.PushAsync(new SecondPage());
-    };
-
-    Content = button;
-}
-</code></pre>
-
-<p>}</p>
-
-<p>// 画面２
-public class SecondPage : ContentPage
-{</p>
-
-<pre><code>public SecondPage()
-{
-    Content = new Label
-    {
-        Text = "Second"
-    };
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>ここからが本題。
-まず Android側のエントリポイントである <code>MainActivity.cs</code> は以下のように、<code>ContentPage</code> プロパティを設ける。そして <code>OnBackPressed</code> メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;ScrollTest.Android.Android&rdquo;, MainLauncher = true)]
-public class MainActivity : AndroidActivity
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle bundle)
-{
-    base.OnCreate(bundle);
-
-    Xamarin.Forms.Forms.Init(this, bundle);
-
-    SetPage(new NavigationPage(new MainPage()));
-}
-
-internal Page ContentPage
-{
-    get;
-    set;
-}
-
-public override void OnBackPressed()
-{
-    if (this.ContentPage is MainPage)
-    {
-        base.OnBackPressed();
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>次に、MainActivity.ContentPage への設定を行うコードは以下の通り。
-PageRenderer を拡張して ExportRenderer することで、すべての Page にフックをかけ、Page の表示時に MainActivity.ContentPage に設定する。</p>
-
-<p>```csharp MyPageRenderer.cs
-using System;
-using Xamarin.Forms.Platform.Android;
-using Android.App;
-using Xamarin.Forms;
-using ScrollTest.Android;
-using Android.Views;
-using Android.Graphics;</p>
-
-<p>[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</p>
-
-<p>namespace ScrollTest.Android
-{</p>
-
-<pre><code>public class MyPageRenderer : PageRenderer
-{
-    protected override void OnElementChanged(ElementChangedEventArgs&lt;Xamarin.Forms.Page&gt; e)
-    {
-        base.OnElementChanged(e);
-
-        // なんとなく不安なので weak にしてみた
-        var activity = new WeakReference&lt;MainActivity&gt;(this.Context as MainActivity);
-
-        e.NewElement.Appearing += (_, __) =&gt;
-        {
-            MainActivity a;
-            if (activity.TryGetTarget(out a)) {
-                a.ContentPage = e.NewElement;    
-            }
-        };
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これで、画面１(MainPage)の時だけ BACKキーが効くようにできる。</p>
-
-<h3><code>Appearing</code> イベントが必要なの？</h3>
-
-<p>　Xamarin.Forms の Android実装では、画面遷移の度に <strong>「同じインスタンスの MainActivity」</strong> が使いまわされる、さらに <code>OnElementChanged</code> は、各Pageにつき１度しか発生しない。その為、画面１→２→１と遷移すると <code>MainActivity.ContentPage</code> は <code>SecondPage</code> のままになってしまう。ので <code>Appearing</code> イベントで表示の度に MainActivity.ContentPage を設定する必要がある。</p>
-
-<h3><code>AndroidActivity</code> に static な <code>BackPressed</code> イベントがあるんだけど…</h3>
-
-<p>イベントハンドラの定義は
-<code>public delegate bool BackButtonPressedEventHandler(object sender, EventArgs e);</code>
-となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
-
-<p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
 ]]></content>
   </entry>
   

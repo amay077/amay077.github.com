@@ -1,0 +1,578 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Forms と ReactiveProperty で快適MVVM生活 - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,ios,reactiveextensions,reactiveproperty,xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin.Forms と ReactiveProperty で快適MVVM生活
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2014-09-09T21:38:29+09:00" pubdate data-updated="true">Sep 9<sup>th</sup>, 2014</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/reactiveextensions/'>reactiveextensions</a>, <a class='category' href='/blog/categories/reactiveproperty/'>reactiveproperty</a>, <a class='category' href='/blog/categories/xamarin/'>xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>　<a href="http://www.buildinsider.net/mobile/xamarintips/0005">Xamarin.Forms</a> は、Xamarin に新たに搭載されたクロスプラットフォームUIフレームワーク＆MVVMフレームワークです。</p>
+
+<!--more-->
+
+
+<p>　<a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty</a> は、MVVMの(特に ViewModelの)実装を強力にサポートしてくれる、<a href="http://www.atmarkit.co.jp/fdotnet/introrx/index/">Reactive Extensions</a> を基盤としたライブラリです。</p>
+
+<p> 両者を組み合わせると、Android/iOSアプリが COOL な感じで書けるんじゃないか、という事で試してみました。</p>
+
+<h2>0. 環境など</h2>
+
+<p>Mac + Xamarin Studio を使いますが、Windows + Visual Studio + Xamarin-Addin でもイケると思います。</p>
+
+<h2>1. 導入</h2>
+
+<h3>プロジェクトの作成</h3>
+
+<p>新規ソリューションを、［C#］−［Mobile Apps］−［Blank App(Xamarin.Forms Portable)］で作成します。</p>
+
+<h3>PCL の Profile を変更</h3>
+
+<p>　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を <strong>PCL 4.5 &ndash; Profile49</strong> に変更します。元々の Profile47 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
+
+<h3>Nuget で Reactive Extensions と ReactiveProperty を追加</h3>
+
+<p>　メニューの［プロジェクト］ー［Add Packages］で Nuget のダイアログを開き、図のように 「Reactive Extensions &ndash; Main Library」と「ReactiveProperty Portable」を追加します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
+
+<p>（Reactive Extensions の追加の際、なにやらWarningが出るようですが、とりあえず進めます。）</p>
+
+<h2>2. ViewModel の実装</h2>
+
+<p>　PCL のプロジェクトに、<code>FirstViewModel.cs</code> を作成します。
+　<code>FirstViewModel</code> は、以下のようなプロパティとコマンドを持ちます。</p>
+
+<ul>
+<li>InputTextプロパティ : EditBox の入力に応じて更新</li>
+<li>DisplayTextプロパティ : InputText の変化から1秒後に、InputText を大文字にして更新</li>
+<li>Clearコマンド : InputText が &lsquo;clear&rsquo; の時のみ有効。実行すると InputText を空にする。</li>
+</ul>
+
+
+<p>これらの実装が下のようになります。</p>
+
+<figure class='code'><figcaption><span>FirstViewModel.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Codeplex.Reactive</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">System.Reactive.Linq</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FormsWithRxProperty.ViewModels</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstViewModel</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">private</span> <span class="k">readonly</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">_inputText</span> <span class="p">=</span>
+</span><span class='line'>            <span class="k">new</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="s">&quot;Hoge&quot;</span><span class="p">);</span>
+</span><span class='line'>        <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">InputText</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_inputText</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">DisplayText</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="n">ReactiveCommand</span> <span class="n">Clear</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">FirstViewModel</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// DisplayText は、InputText の変更から1秒後に大文字にして更新</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">DisplayText</span> <span class="p">=</span> <span class="n">_inputText</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Delay</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">1</span><span class="p">))</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">ToUpper</span><span class="p">())</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">ToReactiveProperty</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// InputText が `clear` の時に実装可能</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Clear</span> <span class="p">=</span> <span class="n">_inputText</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Equals</span><span class="p">(</span><span class="s">&quot;clear&quot;</span><span class="p">))</span>
+</span><span class='line'>                <span class="p">.</span><span class="n">ToReactiveCommand</span><span class="p">();</span>
+</span><span class='line'>            <span class="c1">// 実行されたら、InputText を空にする</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Clear</span><span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="n">_inputText</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　面倒な <code>INotifyPropertyChanged</code> の実装が必要なく、すっきりと記述できます。
+　また、他のプロパティに関連して(反応して)値が変化するプロパティや、コマンドの利用可否などが、Reactive Extensions の機能により、流れるように記述できます。</p>
+
+<h2>3. 画面及び ViewModel との Binding の実装</h2>
+
+<p>　画面(UI)は、Xamarin.Forms の恩恵で、Android/iOS 共通で実装できます。XAML も使えますが、よく知らないのでコードでUIを記述します。</p>
+
+<p>　PCL のプロジェクトに、 <code>FirstPage.cs</code> を作成し、以下のように実装します。</p>
+
+<figure class='code'><figcaption><span>FirstPage.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">FormsWithRxProperty.ViewModels</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FormsWithRxProperty.Pages</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstPage</span> <span class="p">:</span> <span class="n">ContentPage</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">public</span> <span class="nf">FirstPage</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// UI</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">entry</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Hello, Forms!&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">label</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Label</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">CenterAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">button</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;Clear (type &#39;clear&#39; to enable)&quot;</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Thickness</span><span class="p">(</span><span class="m">50f</span><span class="p">),</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Start</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Fill</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Orientation</span> <span class="p">=</span> <span class="n">StackOrientation</span><span class="p">.</span><span class="n">Vertical</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">entry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">label</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">button</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// ViewModel との Binding</span>
+</span><span class='line'>            <span class="k">this</span><span class="p">.</span><span class="n">BindingContext</span> <span class="p">=</span> <span class="k">new</span> <span class="n">FirstViewModel</span><span class="p">();</span>
+</span><span class='line'>            <span class="n">entry</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Entry</span><span class="p">.</span><span class="n">TextProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">InputText</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">label</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Label</span><span class="p">.</span><span class="n">TextProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">DisplayText</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">button</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Button</span><span class="p">.</span><span class="n">CommandProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">Clear</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　ちょっと長いですが、画面に「エディットボックス」「ラベル」「ボタン」が縦に並んでいるだけです。</p>
+
+<p>　下部の４行で、<code>FirstViewModel</code> の各プロパティ、コマンドと Bind しています。</p>
+
+<p>　もともとあった <code>App.cs</code> は、<code>FirstPage</code> を生成するだけにします。</p>
+
+<figure class='code'><figcaption><span>App.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
+</span><span class='line'><span class="k">using</span> <span class="nn">FormsWithRxProperty.Pages</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">namespace</span> <span class="nn">FormsWithRxProperty</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">class</span> <span class="nc">App</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">public</span> <span class="k">static</span> <span class="n">Page</span> <span class="nf">GetMainPage</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">{</span>  
+</span><span class='line'>            <span class="k">return</span> <span class="k">new</span> <span class="nf">FirstPage</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>動かす！</h2>
+
+<p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 <strong>そしてなにより楽しい！</strong></p>
+
+<p>　今回のサンプルプログラムは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XamarinFormsWithReactivePropertySample/tree/master">amay077/XamarinFormsWithReactivePropertySample</a></li>
+</ul>
+
+
+<p>　に置きましたので、是非試してみてください。</p>
+
+<h3>ReactiveProperty</h3>
+
+<ul>
+<li><a href="http://okazuki.hatenablog.com/entry/2014/05/07/014133">ReactiveProperty オーバービュー &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://reactiveproperty.codeplex.com/releases/view/132232">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Download: ReactiveProperty v1.0</a></li>
+<li><a href="http://neue.cc/2011/08/26_341.html">neue cc &ndash; ReactiveProperty : Rx + MVVMへの試み</a></li>
+<li><a href="http://yone64.wordpress.com/2014/06/20/reactiveproperty%E3%82%92%E4%BD%BF%E3%81%84%E3%81%9F%E3%81%84%E4%BA%BA%E3%81%AE%E3%81%9F%E3%82%81%E3%81%AE%E3%80%81reactiveextensions%E5%85%A5%E9%96%80%EF%BC%88%E3%81%9D%E3%81%AE%EF%BC%91%EF%BC%89/">ReactivePropertyを使いたい人のための、ReactiveExtensions入門（その１） | 泥庭</a></li>
+</ul>
+
+
+<h3>Xamarin.Forms</h3>
+
+<ul>
+<li><a href="http://developer.xamarin.com/guides/cross-platform/xamarin-forms/">Xamarin.Forms | Xamarin</a></li>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/14">Xamarin.Formsの基本構想と仕組み &ndash; Build Insider</a></li>
+<li><a href="http://www.buildinsider.net/tagcloud?tag=Xamarin.Forms">Xamarin.Forms &ndash; Build Insider</a></li>
+<li><a href="http://furuya02.hatenablog.com/entry/2014/08/08/003036">Xamarin.Forms ListViewでTwitter風のレイアウトを作成してみました（機種依存コードなし） &ndash; SIN@SAPPOROWORKSの覚書</a></li>
+</ul>
+
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/09/01/run-application-on-system-startup/" title="Previous Post: システムの起動時にアプリを起動する">&lt; システムの起動時にアプリを起動する</a>
+          
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2014 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/';
+        var disqus_url = 'http://blog.amay077.net/blog/2014/09/09/using-xamarin-forms-with-reactiveproperty/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>
