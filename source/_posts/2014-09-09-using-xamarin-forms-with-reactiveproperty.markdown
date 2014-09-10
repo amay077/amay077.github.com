@@ -187,6 +187,10 @@ namespace FormsWithRxProperty
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif)
 
+### 追記 2014.9.10
+
+実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
+実機でも問題なく動作しました！
 
 ## まとめ
 
