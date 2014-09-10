@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-10T11:29:34+09:00</updated>
+  <updated>2014-09-10T23:02:34+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms で複数ボタンの均等割り付けをする]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting/"/>
+    <updated>2014-09-10T22:57:08+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting</id>
+    <content type="html"><![CDATA[<p>　Android では、例えば画面の幅に対して、複数のボタンを同じ幅でいい感じに Fill させることができます。(これを均等割り付けというのが正しいのかはよくわかりませんが)</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://inujirushi123.blog.fc2.com/blog-entry-106.html">LinearLayout を使って均等割り付け : layout_weight &ndash; 戌印-INUJIRUSHI- （Androidあれこれ） &ndash;</a></li>
+<li><a href="http://blog.imho.jp/2011/08/android-linearlayout.html">Androidレイアウトの要点だけ: LinearLayoutでパーツを均等に配置したい | スマートフォン要点だけブログ</a></li>
+</ul>
+
+
+<p>これで画面の解像度が違っても、横向きになっても、同じ幅のボタンで埋まる、という事ができます。</p>
+
+<p><a href="http://xamarin.com/forms">Xamarin.Forms</a> でこれを実現するにはどうしたら良いか、試してみました。</p>
+
+<h2>StackLayout を利用した試み</h2>
+
+<p>Xamarin.Forms では、LinearLayout に相当するレイアウトとして <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.StackLayout">StackLayout</a> があります。</p>
+
+<p>まずはこれを利用してみます。</p>
+
+<p><code>StackLayout</code> を <code>Orientation = Horizontal</code> とし、<code>Children</code> にボタンを3つ配置しています。ボタンの幅は全て <code>HorizontalOptions = FillAndExpand</code> とします。</p>
+
+<p>```csharp App.cs
+public class App
+{</p>
+
+<pre><code>public static Page GetMainPage()
+{   
+    return new ContentPage
+    { 
+        Content = new StackLayout
+        {
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+            VerticalOptions = LayoutOptions.Center,
+            Orientation = StackOrientation.Horizontal,
+            Children = 
+            {
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "one",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Aqua,
+                },
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "two two",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Fuschia,
+                },   
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "three three three",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Lime,
+                },
+            },
+        },
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_01.png" alt="" /></p>
+
+<p>うーん、そうじゃない（汗
+どうやらボタンのテキストが全て表示されるように頑張ってくれちゃうようです。
+まあ、これはこれで使える感じもします。</p>
+
+<h2>Grid を利用した試み</h2>
+
+<p>他のレイアウトで考えてみます。Android の TableLayout に相当する <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.Grid">Grid</a> を使ってみます。</p>
+
+<p>さっきの <code>App.cs</code> の実装を次のように変えます。</p>
+
+<p><code>Grid</code> に1行3列の表を定義します。
+列の定義 <code>ColumnDefinition</code> で幅を <code>new GridLength(1, GridUnitType.Star)</code> としているのは、「3列とも同じ比率の幅とする」ことを意味しています。(ということは比率を2:1:1にしたければ、最初の列だけ<code>2</code>にすればOKです)</p>
+
+<p>```csharp App.cs
+public class App
+{</p>
+
+<pre><code>public static Page GetMainPage()
+{   
+    var grid = new Grid
+    {
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        VerticalOptions = LayoutOptions.Center,
+        RowDefinitions =
+        {
+            new RowDefinition() { Height = GridLength.Auto }
+        },
+        ColumnDefinitions = 
+        {
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+        }
+    };
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "one",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Aqua,
+    }, 0, 0);
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "two two",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Fuschia,
+    }, 1, 0);
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "three three three",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Lime,
+    }, 2, 0);
+
+    return new ContentPage
+    { 
+        Content = grid,
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_02.png" alt="" /></p>
+
+<p>　おーけー、意図したレイアウトになりました。ボタンに入りきらないテキストはiOSだと省略され、Androidだと折り返されるという違いはありますが、レイアウトの一貫性は保つことができました。</p>
+
+<p>　ちなみに横向きにしても大丈夫です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_03.png" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Xamarin.Forms でも、Android+LinearLayoutのような均等配置ができました。
+　クロスプラットフォームなので、iOSでも同じように動作します。
+iPhone6 が発表されてiOS開発でも多解像度対応が必須になるので、これは有用な感じがします。
+（というか Storyboard の AutoLayout では、これと同じことができる気がしないのですが。。。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
@@ -214,6 +385,11 @@ using FormsWithRxProperty.Pages;</p>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
 
+<h3>追記 2014.9.10</h3>
+
+<p>実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
+実機でも問題なく動作しました！</p>
+
 <h2>まとめ</h2>
 
 <p>　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 <strong>そしてなにより楽しい！</strong></p>
@@ -379,37 +555,6 @@ for x in arr do</p>
 
 <p>こんな感じで書けばいいのかなあ。
 なんかところどころ手続き型の書き方になってる気がしますが、C# で <code>while</code> で処理するよりはスマートにできた気がします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin で System.Data.SqlClient を使うには BUSINESS 版以上が必要です]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition/"/>
-    <updated>2014-07-01T01:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition</id>
-    <content type="html"><![CDATA[<p>当方 Xamarin INDIE 版しか買えないしがない個人開発者です。</p>
-
-<!--more-->
-
-
-<p>Xamarin で <code>System.Data.SqlClient.SqlCommand</code> などを使ったプロジェクトをビルドしたら、ビルド時にこんなダイアログボックスが。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_01.png" alt="" /></p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_02.png" alt="" /></p>
-
-<p>どうやら、特定のクラスを使用するには BUSINESS 版以上が必要なようです。</p>
-
-<ul>
-<li><a href="http://qiita.com/amay077/items/ab90c74e78dd87ba31fb">Xamarin でビルドを自動化するには Business 版以上が必要です</a></li>
-</ul>
-
-
-<p>といい、INDIE 版の制限事項が後出しで判明するのなんとかならないですかね。</p>
-
-<p>今回は .NET のプロジェクトを Xamarin に移植する際に発覚したもので、特に <code>SqlClient</code> は使ってなかったので削除して解決しました。</p>
-
-<p>Xamarin で <code>SqlClient</code> って何に使うんだろ？イントラ？あるいは SQL Server Compact が使える？まさかね。</p>
 ]]></content>
   </entry>
   

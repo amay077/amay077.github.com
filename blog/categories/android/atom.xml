@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-10T11:29:34+09:00</updated>
+  <updated>2014-09-10T23:02:34+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms で複数ボタンの均等割り付けをする]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting/"/>
+    <updated>2014-09-10T22:57:08+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting</id>
+    <content type="html"><![CDATA[<p>　Android では、例えば画面の幅に対して、複数のボタンを同じ幅でいい感じに Fill させることができます。(これを均等割り付けというのが正しいのかはよくわかりませんが)</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://inujirushi123.blog.fc2.com/blog-entry-106.html">LinearLayout を使って均等割り付け : layout_weight &ndash; 戌印-INUJIRUSHI- （Androidあれこれ） &ndash;</a></li>
+<li><a href="http://blog.imho.jp/2011/08/android-linearlayout.html">Androidレイアウトの要点だけ: LinearLayoutでパーツを均等に配置したい | スマートフォン要点だけブログ</a></li>
+</ul>
+
+
+<p>これで画面の解像度が違っても、横向きになっても、同じ幅のボタンで埋まる、という事ができます。</p>
+
+<p><a href="http://xamarin.com/forms">Xamarin.Forms</a> でこれを実現するにはどうしたら良いか、試してみました。</p>
+
+<h2>StackLayout を利用した試み</h2>
+
+<p>Xamarin.Forms では、LinearLayout に相当するレイアウトとして <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.StackLayout">StackLayout</a> があります。</p>
+
+<p>まずはこれを利用してみます。</p>
+
+<p><code>StackLayout</code> を <code>Orientation = Horizontal</code> とし、<code>Children</code> にボタンを3つ配置しています。ボタンの幅は全て <code>HorizontalOptions = FillAndExpand</code> とします。</p>
+
+<p>```csharp App.cs
+public class App
+{</p>
+
+<pre><code>public static Page GetMainPage()
+{   
+    return new ContentPage
+    { 
+        Content = new StackLayout
+        {
+            HorizontalOptions = LayoutOptions.FillAndExpand,
+            VerticalOptions = LayoutOptions.Center,
+            Orientation = StackOrientation.Horizontal,
+            Children = 
+            {
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "one",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Aqua,
+                },
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "two two",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Fuschia,
+                },   
+                new Button
+                {
+                    VerticalOptions = LayoutOptions.Center,
+                    HorizontalOptions = LayoutOptions.FillAndExpand,
+                    Text = "three three three",
+                    TextColor = Color.Black,
+                    BackgroundColor = Color.Lime,
+                },
+            },
+        },
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_01.png" alt="" /></p>
+
+<p>うーん、そうじゃない（汗
+どうやらボタンのテキストが全て表示されるように頑張ってくれちゃうようです。
+まあ、これはこれで使える感じもします。</p>
+
+<h2>Grid を利用した試み</h2>
+
+<p>他のレイアウトで考えてみます。Android の TableLayout に相当する <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.Grid">Grid</a> を使ってみます。</p>
+
+<p>さっきの <code>App.cs</code> の実装を次のように変えます。</p>
+
+<p><code>Grid</code> に1行3列の表を定義します。
+列の定義 <code>ColumnDefinition</code> で幅を <code>new GridLength(1, GridUnitType.Star)</code> としているのは、「3列とも同じ比率の幅とする」ことを意味しています。(ということは比率を2:1:1にしたければ、最初の列だけ<code>2</code>にすればOKです)</p>
+
+<p>```csharp App.cs
+public class App
+{</p>
+
+<pre><code>public static Page GetMainPage()
+{   
+    var grid = new Grid
+    {
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        VerticalOptions = LayoutOptions.Center,
+        RowDefinitions =
+        {
+            new RowDefinition() { Height = GridLength.Auto }
+        },
+        ColumnDefinitions = 
+        {
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
+        }
+    };
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "one",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Aqua,
+    }, 0, 0);
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "two two",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Fuschia,
+    }, 1, 0);
+
+    grid.Children.Add(new Button
+    {
+        VerticalOptions = LayoutOptions.Center,
+        HorizontalOptions = LayoutOptions.FillAndExpand,
+        Text = "three three three",
+        TextColor = Color.Black,
+        BackgroundColor = Color.Lime,
+    }, 2, 0);
+
+    return new ContentPage
+    { 
+        Content = grid,
+    };
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_02.png" alt="" /></p>
+
+<p>　おーけー、意図したレイアウトになりました。ボタンに入りきらないテキストはiOSだと省略され、Androidだと折り返されるという違いはありますが、レイアウトの一貫性は保つことができました。</p>
+
+<p>　ちなみに横向きにしても大丈夫です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_03.png" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Xamarin.Forms でも、Android+LinearLayoutのような均等配置ができました。
+　クロスプラットフォームなので、iOSでも同じように動作します。
+iPhone6 が発表されてiOS開発でも多解像度対応が必須になるので、これは有用な感じがします。
+（というか Storyboard の AutoLayout では、これと同じことができる気がしないのですが。。。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
@@ -213,6 +384,11 @@ using FormsWithRxProperty.Pages;</p>
 <p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h3>追記 2014.9.10</h3>
+
+<p>実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
+実機でも問題なく動作しました！</p>
 
 <h2>まとめ</h2>
 
@@ -451,357 +627,6 @@ public void onReceive(Context context, Intent intent) {
 
 
 <p>からどうぞ。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ドラッグ＆ドロップで並び替えできる ListView]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop/"/>
-    <updated>2014-07-01T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop</id>
-    <content type="html"><![CDATA[<p>最近こういうUI見たことないなあ、と思いながらも、実装の必要があったので、いろいろ先駆者さま達の足跡を辿り、最終的に、</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://shogogg.hatenablog.jp/entry/20110118/1295326773">ドラッグ＆ドロップで並び替えできる ListView &ndash; パンダのメモ帳</a></li>
-</ul>
-
-
-<p>が自分のやりたい事に最も近く、割と新し（といっても３年前…）かったので参考にしました。</p>
-
-<p>ただ、こちらの実装だと、ListView の上にマージンがあるとドラッグ中のアイテムの描画がすこしバグってたので、修正して使いました。</p>
-
-<p>こんな感じ↓です。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/drag_and_drop_listview_01.gif" alt="" /> capture by <a href="http://www.cockos.com/licecap/">LICEcap</a></p>
-
-<p>修正後のソースです。</p>
-
-<p>修正箇所は２つ</p>
-
-<ol>
-<li><code>mActionDownEvent</code> を参照の保持でなく、 <code>obtain</code> してクローンを保持するように（＋ <code>recycle</code> で破棄）。<code>onTouchEvent</code> の 引数 <code>event</code> は、内部で使いまわされるようで、参照のコピーでは、値が勝手に変わっていました。</li>
-<li><code>updateLayoutParams</code> はスクリーン座標を前提に。元は <code>listView.getTop() + event.getY()</code> でしたが、これではステータスバーとActionBarの高さが考慮されないようだったので、<code>event.getRawY()</code> を使うようにしました。</li>
-</ol>
-
-
-<p>```java SortableListView.java
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
-import android.util.AttributeSet;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemLongClickListener;
-import android.widget.ImageView;
-import android.widget.ListView;</p>
-
-<p>public class SortableListView extends ListView implements</p>
-
-<pre><code>    OnItemLongClickListener {
-private static final int SCROLL_SPEED_FAST = 25;
-private static final int SCROLL_SPEED_SLOW = 8;
-private static final Bitmap.Config DRAG_BITMAP_CONFIG = Bitmap.Config.ARGB_8888;
-
-private boolean mSortable = false;
-private boolean mDragging = false;
-private DragListener mDragListener = new SimpleDragListener();
-private int mBitmapBackgroundColor = Color.argb(128, 0xFF, 0xFF, 0xFF);
-private Bitmap mDragBitmap = null;
-private ImageView mDragImageView = null;
-private WindowManager.LayoutParams mLayoutParams = null;
-private MotionEvent mActionDownEvent;
-private int mPositionFrom = -1;
-
-/** コンストラクタ */
-public SortableListView(Context context) {
-    super(context);
-    setOnItemLongClickListener(this);
-}
-
-/** コンストラクタ */
-public SortableListView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-    setOnItemLongClickListener(this);
-}
-
-/** コンストラクタ */
-public SortableListView(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
-    setOnItemLongClickListener(this);
-}
-
-/** ドラッグイベントリスナの設定 */
-public void setDragListener(DragListener listener) {
-    mDragListener = listener;
-}
-
-/** ソートモードの切替 */
-public void setSortable(boolean sortable) {
-    this.mSortable = sortable;
-}
-
-/** ソート中アイテムの背景色を設定 */
-@Override
-public void setBackgroundColor(int color) {
-    mBitmapBackgroundColor = color;
-}
-
-/** ソートモードの設定 */
-public boolean getSortable() {
-    return mSortable;
-}
-
-/** MotionEvent から position を取得する */
-private int eventToPosition(MotionEvent event) {
-    return pointToPosition((int) event.getX(), (int) event.getY());
-}
-
-/** タッチイベント処理 */
-@Override
-public boolean onTouchEvent(MotionEvent event) {
-    if (!mSortable) {
-        return super.onTouchEvent(event);
-    }
-    switch (event.getAction()) {
-        case MotionEvent.ACTION_DOWN: {
-            storeMotionEvent(event);
-            break;
-        }
-        case MotionEvent.ACTION_MOVE: {
-            if (duringDrag(event)) {
-                return true;
-            }
-            break;
-        }
-        case MotionEvent.ACTION_UP: {
-            if (stopDrag(event, true)) {
-                return true;
-            }
-            break;
-        }
-        case MotionEvent.ACTION_CANCEL:
-        case MotionEvent.ACTION_OUTSIDE: {
-            if (stopDrag(event, false)) {
-                return true;
-            }
-            break;
-        }
-    }
-    return super.onTouchEvent(event);
-}
-
-/** リスト要素長押しイベント処理 */
-@Override
-public boolean onItemLongClick(AdapterView&lt;?&gt; parent, View view,
-        int position, long id) {
-    return startDrag();
-}
-
-/** ACTION_DOWN 時の MotionEvent をプロパティに格納 */
-private void storeMotionEvent(MotionEvent event) {
-    mActionDownEvent = MotionEvent.obtain(event); // 複製しないと値が勝手に変わる
-}
-
-/** ドラッグ開始 */
-private boolean startDrag() {
-    // イベントから position を取得
-    mPositionFrom = eventToPosition(mActionDownEvent);
-
-    // 取得した position が 0未満＝範囲外の場合はドラッグを開始しない
-    if (mPositionFrom &lt; 0) {
-        return false;
-    }
-    mDragging = true;
-
-    // View, Canvas, WindowManager の取得・生成
-    final View view = getChildByIndex(mPositionFrom);
-    final Canvas canvas = new Canvas();
-    final WindowManager wm = getWindowManager();
-
-    // ドラッグ対象要素の View を Canvas に描画
-    mDragBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
-            DRAG_BITMAP_CONFIG);
-    canvas.setBitmap(mDragBitmap);
-    view.draw(canvas);
-
-    // 前回使用した ImageView が残っている場合は除去（念のため？）
-    if (mDragImageView != null) {
-        wm.removeView(mDragImageView);
-    }
-
-    // ImageView 用の LayoutParams が未設定の場合は設定する
-    if (mLayoutParams == null) {
-        initLayoutParams();
-    }
-
-    // ImageView を生成し WindowManager に addChild する
-    mDragImageView = new ImageView(getContext());
-    mDragImageView.setBackgroundColor(mBitmapBackgroundColor);
-    mDragImageView.setImageBitmap(mDragBitmap);
-    wm.addView(mDragImageView, mLayoutParams);
-
-    // ドラッグ開始
-    if (mDragListener != null) {
-        mPositionFrom = mDragListener.onStartDrag(mPositionFrom);
-    }
-    return duringDrag(mActionDownEvent);
-}
-
-/** ドラッグ処理 */
-private boolean duringDrag(MotionEvent event) {
-    if (!mDragging || mDragImageView == null) {
-        return false;
-    }
-    final int x = (int) event.getX();
-    final int y = (int) event.getY();
-    final int height = getHeight();
-    final int middle = height / 2;
-
-    // スクロール速度の決定
-    final int speed;
-    final int fastBound = height / 9;
-    final int slowBound = height / 4;
-    if (event.getEventTime() - event.getDownTime() &lt; 500) {
-        // ドラッグの開始から500ミリ秒の間はスクロールしない
-        speed = 0;
-    } else if (y &lt; slowBound) {
-        speed = y &lt; fastBound ? -SCROLL_SPEED_FAST : -SCROLL_SPEED_SLOW;
-    } else if (y &gt; height - slowBound) {
-        speed = y &gt; height - fastBound ? SCROLL_SPEED_FAST
-                : SCROLL_SPEED_SLOW;
-    } else {
-        speed = 0;
-    }
-
-    // スクロール処理
-    if (speed != 0) {
-        // 横方向はとりあえず考えない
-        int middlePosition = pointToPosition(0, middle);
-        if (middlePosition == AdapterView.INVALID_POSITION) {
-            middlePosition = pointToPosition(0, middle + getDividerHeight()
-                    + 64);
-        }
-        final View middleView = getChildByIndex(middlePosition);
-        if (middleView != null) {
-            setSelectionFromTop(middlePosition, middleView.getTop() - speed);
-        }
-    }
-
-    // ImageView の表示や位置を更新
-    if (mDragImageView.getHeight() &lt; 0) {
-        mDragImageView.setVisibility(View.INVISIBLE);
-    } else {
-        mDragImageView.setVisibility(View.VISIBLE);
-    }
-    updateLayoutParams((int)event.getRawY()); // ここだけスクリーン座標を使う
-    getWindowManager().updateViewLayout(mDragImageView, mLayoutParams);
-    if (mDragListener != null) {
-        mPositionFrom = mDragListener.onDuringDrag(mPositionFrom,
-                pointToPosition(x, y));
-    }
-    return true;
-}
-
-/** ドラッグ終了 */
-private boolean stopDrag(MotionEvent event, boolean isDrop) {
-    if (!mDragging) {
-        return false;
-    }
-    if (isDrop &amp;&amp; mDragListener != null) {
-        mDragListener.onStopDrag(mPositionFrom, eventToPosition(event));
-    }
-    mDragging = false;
-    if (mDragImageView != null) {
-        getWindowManager().removeView(mDragImageView);
-        mDragImageView = null;
-        // リサイクルするとたまに死ぬけどタイミング分からない by vvakame
-        // mDragBitmap.recycle();
-        mDragBitmap = null;
-
-        mActionDownEvent.recycle();
-        mActionDownEvent = null;
-        return true;
-    }
-    return false;
-}
-
-/** 指定インデックスのView要素を取得する */
-private View getChildByIndex(int index) {
-    return getChildAt(index - getFirstVisiblePosition());
-}
-
-/** WindowManager の取得 */
-protected WindowManager getWindowManager() {
-    return (WindowManager) getContext().getSystemService(
-            Context.WINDOW_SERVICE);
-}
-
-/** ImageView 用 LayoutParams の初期化 */
-protected void initLayoutParams() {
-    mLayoutParams = new WindowManager.LayoutParams();
-    mLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
-    mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-    mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-    mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-            | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-    mLayoutParams.format = PixelFormat.TRANSLUCENT;
-    mLayoutParams.windowAnimations = 0;
-    mLayoutParams.x = getLeft();
-    mLayoutParams.y = getTop();
-}
-
-/** ImageView 用 LayoutParams の座標情報を更新 */
-protected void updateLayoutParams(int rawY) {
-    mLayoutParams.y =  rawY - 32;
-}
-
-/** ドラッグイベントリスナーインターフェース */
-public interface DragListener {
-    /** ドラッグ開始時の処理 */
-    public int onStartDrag(int position);
-
-    /** ドラッグ中の処理 */
-    public int onDuringDrag(int positionFrom, int positionTo);
-
-    /** ドラッグ終了＝ドロップ時の処理 */
-    public boolean onStopDrag(int positionFrom, int positionTo);
-}
-
-/** ドラッグイベントリスナー実装 */
-public static class SimpleDragListener implements DragListener {
-    /** ドラッグ開始時の処理 */
-    @Override
-    public int onStartDrag(int position) {
-        return position;
-    }
-
-    /** ドラッグ中の処理 */
-    @Override
-    public int onDuringDrag(int positionFrom, int positionTo) {
-        return positionFrom;
-    }
-
-    /** ドラッグ終了＝ドロップ時の処理 */
-    @Override
-    public boolean onStopDrag(int positionFrom, int positionTo) {
-        return positionFrom != positionTo &amp;&amp; positionFrom &gt;= 0
-                || positionTo &gt;= 0;
-    }
-}
-</code></pre>
-
-<p>}
-```</p>
 ]]></content>
   </entry>
   

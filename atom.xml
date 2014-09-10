@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-10T11:29:34+09:00</updated>
+  <updated>2014-09-10T23:02:34+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,266 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms で複数ボタンの均等割り付けをする]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting/"/>
+    <updated>2014-09-10T22:57:08+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting</id>
+    <content type="html"><![CDATA[<p>　Android では、例えば画面の幅に対して、複数のボタンを同じ幅でいい感じに Fill させることができます。(これを均等割り付けというのが正しいのかはよくわかりませんが)</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://inujirushi123.blog.fc2.com/blog-entry-106.html">LinearLayout を使って均等割り付け : layout_weight &ndash; 戌印-INUJIRUSHI- （Androidあれこれ） &ndash;</a></li>
+<li><a href="http://blog.imho.jp/2011/08/android-linearlayout.html">Androidレイアウトの要点だけ: LinearLayoutでパーツを均等に配置したい | スマートフォン要点だけブログ</a></li>
+</ul>
+
+
+<p>これで画面の解像度が違っても、横向きになっても、同じ幅のボタンで埋まる、という事ができます。</p>
+
+<p><a href="http://xamarin.com/forms">Xamarin.Forms</a> でこれを実現するにはどうしたら良いか、試してみました。</p>
+
+<h2>StackLayout を利用した試み</h2>
+
+<p>Xamarin.Forms では、LinearLayout に相当するレイアウトとして <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.StackLayout">StackLayout</a> があります。</p>
+
+<p>まずはこれを利用してみます。</p>
+
+<p><code>StackLayout</code> を <code>Orientation = Horizontal</code> とし、<code>Children</code> にボタンを3つ配置しています。ボタンの幅は全て <code>HorizontalOptions = FillAndExpand</code> とします。</p>
+
+<figure class='code'><figcaption><span>App.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">Page</span> <span class="nf">GetMainPage</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>  
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Orientation</span> <span class="p">=</span> <span class="n">StackOrientation</span><span class="p">.</span><span class="n">Horizontal</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;one&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Aqua</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">},</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;two two&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Fuschia</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">},</span>
+</span><span class='line'>                    <span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>                    <span class="p">{</span>
+</span><span class='line'>                        <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;three three three&quot;</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>                        <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Lime</span><span class="p">,</span>
+</span><span class='line'>                    <span class="p">},</span>
+</span><span class='line'>                <span class="p">},</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_01.png" alt="" /></p>
+
+<p>うーん、そうじゃない（汗
+どうやらボタンのテキストが全て表示されるように頑張ってくれちゃうようです。
+まあ、これはこれで使える感じもします。</p>
+
+<h2>Grid を利用した試み</h2>
+
+<p>他のレイアウトで考えてみます。Android の TableLayout に相当する <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.Grid">Grid</a> を使ってみます。</p>
+
+<p>さっきの <code>App.cs</code> の実装を次のように変えます。</p>
+
+<p><code>Grid</code> に1行3列の表を定義します。
+列の定義 <code>ColumnDefinition</code> で幅を <code>new GridLength(1, GridUnitType.Star)</code> としているのは、「3列とも同じ比率の幅とする」ことを意味しています。(ということは比率を2:1:1にしたければ、最初の列だけ<code>2</code>にすればOKです)</p>
+
+<figure class='code'><figcaption><span>App.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">static</span> <span class="n">Page</span> <span class="nf">GetMainPage</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>  
+</span><span class='line'>        <span class="kt">var</span> <span class="n">grid</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Grid</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">RowDefinitions</span> <span class="p">=</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">new</span> <span class="nf">RowDefinition</span><span class="p">()</span> <span class="p">{</span> <span class="n">Height</span> <span class="p">=</span> <span class="n">GridLength</span><span class="p">.</span><span class="n">Auto</span> <span class="p">}</span>
+</span><span class='line'>            <span class="p">},</span>
+</span><span class='line'>            <span class="n">ColumnDefinitions</span> <span class="p">=</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="k">new</span> <span class="nf">ColumnDefinition</span><span class="p">()</span> <span class="p">{</span> <span class="n">Width</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GridLength</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">GridUnitType</span><span class="p">.</span><span class="n">Star</span><span class="p">)</span> <span class="p">},</span>
+</span><span class='line'>                <span class="k">new</span> <span class="nf">ColumnDefinition</span><span class="p">()</span> <span class="p">{</span> <span class="n">Width</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GridLength</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">GridUnitType</span><span class="p">.</span><span class="n">Star</span><span class="p">)</span> <span class="p">},</span>
+</span><span class='line'>                <span class="k">new</span> <span class="nf">ColumnDefinition</span><span class="p">()</span> <span class="p">{</span> <span class="n">Width</span> <span class="p">=</span> <span class="k">new</span> <span class="n">GridLength</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">GridUnitType</span><span class="p">.</span><span class="n">Star</span><span class="p">)</span> <span class="p">},</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">grid</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;one&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Aqua</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">},</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">grid</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;two two&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Fuschia</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">},</span> <span class="m">1</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">grid</span><span class="p">.</span><span class="n">Children</span><span class="p">.</span><span class="n">Add</span><span class="p">(</span><span class="k">new</span> <span class="n">Button</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;three three three&quot;</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">TextColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Black</span><span class="p">,</span>
+</span><span class='line'>            <span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">Color</span><span class="p">.</span><span class="n">Lime</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">},</span> <span class="m">2</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="k">return</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="n">grid</span><span class="p">,</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_02.png" alt="" /></p>
+
+<p>　おーけー、意図したレイアウトになりました。ボタンに入りきらないテキストはiOSだと省略され、Androidだと折り返されるという違いはありますが、レイアウトの一貫性は保つことができました。</p>
+
+<p>　ちなみに横向きにしても大丈夫です。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_03.png" alt="" /></p>
+
+<h2>まとめ</h2>
+
+<p>　Xamarin.Forms でも、Android+LinearLayoutのような均等配置ができました。
+　クロスプラットフォームなので、iOSでも同じように動作します。
+iPhone6 が発表されてiOS開発でも多解像度対応が必須になるので、これは有用な感じがします。
+（というか Storyboard の AutoLayout では、これと同じことができる気がしないのですが。。。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
@@ -314,6 +574,11 @@
 <p> .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h3>追記 2014.9.10</h3>
+
+<p>実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
+実機でも問題なく動作しました！</p>
 
 <h2>まとめ</h2>
 
@@ -2588,114 +2853,6 @@ PageRenderer を拡張して ExportRenderer することで、すべての Page 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
 
 <p>Android の方も同じ要領でいけるは…ず。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms でどうにかしたい iOS と Android の違い]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms/"/>
-    <updated>2014-06-10T15:30:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/10/difference-ios-and-android-in-xamarin-forms</id>
-    <content type="html"><![CDATA[<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
-
-<!--more-->
-
-
-<h2><del>不可視の扱い</del></h2>
-
-<p><del>Forms 側のパーツには <code>IsVisible = true | false</code> がある。
-iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</del></p>
-
-<p><del>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</del></p>
-
-<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
-
-<h2>空文字の扱い</h2>
-
-<p>IsVisible と勘違いしてたのはこっちだった。</p>
-
-<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
-
-<p><a href="https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a">https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</a></p>
-
-<h2>画面回転時の再構築</h2>
-
-<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。
-Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
-
-<h2>回避方法</h2>
-
-<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>こんな感じっすね。</p>
-
-<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(MainLauncher = true, </span>
-</span><span class='line'><span class="na">    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
-</span><span class='line'><span class="p">{</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>BACKキーの扱い</h2>
-
-<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
-
-<h3>自己解決</h3>
-
-<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
-
-<h2>デフォルトスタイル</h2>
-
-<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。
-iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
-
-<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(Label = &quot;MyApp&quot;,  </span>
-</span><span class='line'><span class="na"> MainLauncher = true, </span>
-</span><span class='line'><span class="na"> Theme = &quot;@android:style/Theme.Holo.Light&quot;)]</span>
-</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
-</span><span class='line'><span class="p">{</span>
-</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">{</span>
-</span><span class='line'>        <span class="cm">/* 以下省略 */</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>起動時</h2>
-
-<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
-ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
-
-<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
-
-<h2>文字の自動縮小</h2>
-
-<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
-
-<h3>自己解決</h3>
-
-<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
-
-<h2>iPhone と iPad</h2>
-
-<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
-
-<p>他にも見つけたら書きます。</p>
 ]]></content>
   </entry>
   
