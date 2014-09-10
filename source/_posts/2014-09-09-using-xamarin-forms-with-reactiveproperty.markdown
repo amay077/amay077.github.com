@@ -23,7 +23,7 @@ Mac + Xamarin Studio を使いますが、Windows + Visual Studio + Xamarin-Addi
 
 ### PCL の Profile を変更
 
-　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を **PCL 4.5 - Profile49** に変更します。元々の Profile47 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。
+　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を **PCL 4.5 - Profile49** に変更します。元々の Profile78 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。
 
 ![](https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_01.png)
 
