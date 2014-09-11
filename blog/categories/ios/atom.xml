@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-10T23:02:34+09:00</updated>
+  <updated>2014-09-12T01:28:01+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -389,6 +389,55 @@ using FormsWithRxProperty.Pages;</p>
 
 <p>実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
 実機でも問題なく動作しました！</p>
+
+<h2>追記 2014.9.11 INotifyPropertyChanged の利用</h2>
+
+<p>ViewModel は <code>INotifyPropertyChanged</code> を実装して作成するのが一般的です。既にそのようにして作られた ViewModel でも <code>IObservable</code> 化して、ReactiveProperty で利用できます。</p>
+
+<p>```csharp SecondViewModel.cs
+public class SecondViewModel : INotifyPropertyChanged
+{</p>
+
+<pre><code>public ReactiveProperty&lt;string&gt; ValidationAttr { get; private set; }
+public event PropertyChangedEventHandler PropertyChanged;
+
+private string _myName = "HoGe";
+public string MyName 
+{
+    get { return _myName; }
+    set 
+    { 
+        if (_myName == value) return;
+
+        _myName = value;
+        PropertyChanged(this, new PropertyChangedEventArgs("MyName"));
+    }
+}
+
+public ReactiveProperty&lt;string&gt; LowerText { get; private set; }
+
+private ICommand _resetCommand;
+public ICommand ResetCommand
+{
+    get
+    {
+        return _resetCommand ?? (_resetCommand = 
+            new Xamarin.Forms.Command(() =&gt; MyName = "XAAAAMAAARIN!!"));
+    }
+}
+
+public SecondViewModel()
+{
+    this.LowerText = this.ObserveProperty(x =&gt; x.MyName)
+        .Select(x =&gt; x.ToLower())
+        .ToReactiveProperty();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_04.png" alt="" /></p>
 
 <h2>まとめ</h2>
 
