@@ -192,6 +192,52 @@ namespace FormsWithRxProperty
 実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
 実機でも問題なく動作しました！
 
+## 追記 2014.9.11 INotifyPropertyChanged の利用
+
+ViewModel は ``INotifyPropertyChanged`` を実装して作成するのが一般的です。既にそのようにして作られた ViewModel でも ``IObservable`` 化して、ReactiveProperty で利用できます。
+
+```csharp SecondViewModel.cs
+public class SecondViewModel : INotifyPropertyChanged
+{
+    public ReactiveProperty<string> ValidationAttr { get; private set; }
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    private string _myName = "HoGe";
+    public string MyName 
+    {
+        get { return _myName; }
+        set 
+        { 
+            if (_myName == value) return;
+
+            _myName = value;
+            PropertyChanged(this, new PropertyChangedEventArgs("MyName"));
+        }
+    }
+
+    public ReactiveProperty<string> LowerText { get; private set; }
+
+    private ICommand _resetCommand;
+    public ICommand ResetCommand
+    {
+        get
+        {
+            return _resetCommand ?? (_resetCommand = 
+                new Xamarin.Forms.Command(() => MyName = "XAAAAMAAARIN!!"));
+        }
+    }
+
+    public SecondViewModel()
+    {
+        this.LowerText = this.ObserveProperty(x => x.MyName)
+            .Select(x => x.ToLower())
+            .ToReactiveProperty();
+    }
+}
+```
+
+![](https://dl.dropboxusercontent.com/u/264530/qiita/using_xamarin_forms_with_reactiveproperty_04.png)
+
 ## まとめ
 
 　Reactive Extensions のメリットを活かして MVVM を構築できる ReactiveProperty と、ワンソースで Android/iOS の画面を定義でき、さらに Binding までも共通にできる Xamarin.Forms の組み合わせは、今後のモバイルアプリケーション開発をとても効率的にしてくれます、 **そしてなにより楽しい！**
