@@ -9,7 +9,7 @@ categories: [Xamarin, Android, iOS]
 
 　ざっとまとめて見ました。あ、ほぼ関東圏です。
 <!--more-->
-## 【9/14・品川】[Xamarin.iOS でデバイスを超えるプログラミング : ATND](https://atnd.org/events/55564)
+## 【9/20・品川】[Xamarin.iOS でデバイスを超えるプログラミング : ATND](https://atnd.org/events/55564)
 
 　Xamarin.iOS の、特に Objective-C で作成されたライブラリを Xamarin.iOS で使う「Binding」についてのお話が聞けるのは大変希少です。
 
