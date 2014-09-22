@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-16T10:06:48+09:00</updated>
+  <updated>2014-09-23T00:21:30+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,245 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ボタンを重ねた時の ZOrder に関する Tips]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/23/views-zorder/"/>
+    <updated>2014-09-23T00:20:38+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/23/views-zorder</id>
+    <content type="html"><![CDATA[<p>Android 開発でボタンを意図的に重ねたい時ってあんまりないんですけど、業務アプリなんか作ってますとたまにありまして。</p>
+
+<!--more-->
+
+
+<p>具体的には、</p>
+
+<ul>
+<li><a href="http://coliss.com/articles/build-websites/operation/css/10-css-breadcrumbs.html">デザインの勉強にもなる、CSSで実装するパンくずのまとめ | コリス</a></li>
+</ul>
+
+
+<p>みたいなパンくずリストを作りたい時。変な形のボタンを作るのは骨が折れるので、ボタンを重ねて、左側の方が手前に表示されるようにしたいわけです。(なぜそうしたいかはたぶん伝わらないので割愛)</p>
+
+<p>つまりはボタンを重ねた時の ZOrder（Z-index）を制御したいわけです。</p>
+
+<p>でいろいろトライ。</p>
+
+<h2>LinearLayout の場合</h2>
+
+<p>LinearLayout で横並びにする場合。</p>
+
+<figure class='code'><figcaption><span>main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;LinearLayout</span>
+</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;30dp&quot;</span>
+</span><span class='line'>    <span class="na">android:orientation=</span><span class="s">&quot;horizontal&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#FF0000&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;AAA&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#00FF00&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;BBB&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#0000FF&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;CCC&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/LinearLayout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_01.png" alt="" /></p>
+
+<p>だめだー。
+LinearLayout の Zorder は、並び順と連動してしまうので、右（若しくは下）ほど手前になってしまいます。</p>
+
+<p>ちなみに、「<code>view.bringToFront()</code> を叩けばいいんじゃね？」と思い、<code>buttonA.bringToFront()</code> を実行すると、</p>
+
+<p>じゃん↓</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_02.png" alt="" /></p>
+
+<p>見事に AAA が右端にいったｗ</p>
+
+<h2>RelativeLayout の場合（その１）</h2>
+
+<p>普通に RelativeLayout で、「BはAの右、CはBの右」と制約をつけてみます。</p>
+
+<figure class='code'><figcaption><span>main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;RelativeLayout</span>
+</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;30dp&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonA&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#FF0000&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;AAA&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonB&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_toRightOf=</span><span class="s">&quot;@+id/buttonA&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#00FF00&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;BBB&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonC&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_toRightOf=</span><span class="s">&quot;@+id/buttonB&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#0000FF&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;CCC&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/RelativeLayout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_03.png" alt="" /></p>
+
+<p>んんー、まだダメかー。</p>
+
+<h2>RelativeLayout の場合（その２）</h2>
+
+<p>その１の制約はそのままに、XML上での並び順のみ変えてみましょう。</p>
+
+<figure class='code'><figcaption><span>main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="nt">&lt;RelativeLayout</span>
+</span><span class='line'>    <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>    <span class="na">android:layout_height=</span><span class="s">&quot;30dp&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonA&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#FF0000&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;AAA&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonB&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_toRightOf=</span><span class="s">&quot;@+id/buttonA&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#00FF00&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;BBB&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;Button</span>
+</span><span class='line'>        <span class="na">android:id=</span><span class="s">&quot;@+id/buttonC&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_toRightOf=</span><span class="s">&quot;@+id/buttonB&quot;</span>
+</span><span class='line'>        <span class="na">android:background=</span><span class="s">&quot;#0000FF&quot;</span>
+</span><span class='line'>        <span class="na">android:text=</span><span class="s">&quot;CCC&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_marginLeft=</span><span class="s">&quot;-10dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;50dp&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'><span class="nt">&lt;/RelativeLayout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_04.png" alt="" /></p>
+
+<p>よしっ！期待した表示になりました。</p>
+
+<h2>まとめ</h2>
+
+<p>　総合しますと、ZOrder は、LinearLayout でも RelativeLayout でも、XMLでは後で記述したものが手前になります。</p>
+
+<p>　LinearLayout は、上から下、または左から右に並べるしかできないので、それに逆らうような ZOrder は付けられません。</p>
+
+<p> RelativeLayout は、制約に基づき描画されるので、XMLの記述順を工夫することで ZOrder をある程度コントロールできます。</p>
+
+<p>以上、誰得Tips でした。</p>
+
+<p>冒頭のようなパンくずリストをAndroidで作る方法教えてください。。。(FragmentBreadCrumbs もパンくずっぽくないじゃないですかぁ)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[秋の Xamarin 勉強会いろいろ]]></title>
@@ -2814,41 +3053,6 @@ PageRenderer を拡張して ExportRenderer することで、すべての Page 
 となっていて、<code>true</code> を返すと BACK キーを無効にできるようなのだけど、<code>sender</code> は <code>MainActivity</code>だし、<code>EventArgs</code> は Page を取得できないしで使えないじゃん。。。</p>
 
 <p>なんだかすごく発展途上な気がする、その内いろいろ整備されそうなので、それまで待った方が良い気がします。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Swift で @autoreleasepool どうやるの？]]></title>
-    <link href="http://blog.amay077.net/blog/2014/06/17/autoreleasepool-in-swift/"/>
-    <updated>2014-06-17T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/06/17/autoreleasepool-in-swift</id>
-    <content type="html"><![CDATA[<p><code>autoreleasepool {  }</code> だそうです。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://stackoverflow.com/questions/24152050/what-is-the-equivalent-of-autoreleasepool-in-swift">automatic ref counting &ndash; What is the equivalent of @autoreleasepool in Swift? &ndash; Stack Overflow</a></li>
-</ul>
-
-
-<p>こんな感じで使うようです。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>for i in 1...10000 {
-</span><span class='line'>  autoreleasepool {
-</span><span class='line'>    // do heavy work
-</span><span class='line'>  }
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p><a href="http://qiita.com/amay077/items/95a4139e6f553d8a56a1">iOS &ndash; ARC のメモリ解放タイミングを調べた</a> は Swift でも有効なようで。</p>
-
-<p><del><a href="http://swift-lang.org/tryswift/">http://swift-lang.org/tryswift/</a> で試してみたら &ldquo;unexpected token: autoreleasepool&rdquo; で怒られた。。。Xcode6 を入れないと動かせないんですかね。</del></p>
 ]]></content>
   </entry>
   

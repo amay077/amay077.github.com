@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-09-16T10:06:48+09:00</updated>
+  <updated>2014-09-23T00:21:30+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,177 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ボタンを重ねた時の ZOrder に関する Tips]]></title>
+    <link href="http://blog.amay077.net/blog/2014/09/23/views-zorder/"/>
+    <updated>2014-09-23T00:20:38+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/09/23/views-zorder</id>
+    <content type="html"><![CDATA[<p>Android 開発でボタンを意図的に重ねたい時ってあんまりないんですけど、業務アプリなんか作ってますとたまにありまして。</p>
+
+<!--more-->
+
+
+<p>具体的には、</p>
+
+<ul>
+<li><a href="http://coliss.com/articles/build-websites/operation/css/10-css-breadcrumbs.html">デザインの勉強にもなる、CSSで実装するパンくずのまとめ | コリス</a></li>
+</ul>
+
+
+<p>みたいなパンくずリストを作りたい時。変な形のボタンを作るのは骨が折れるので、ボタンを重ねて、左側の方が手前に表示されるようにしたいわけです。(なぜそうしたいかはたぶん伝わらないので割愛)</p>
+
+<p>つまりはボタンを重ねた時の ZOrder（Z-index）を制御したいわけです。</p>
+
+<p>でいろいろトライ。</p>
+
+<h2>LinearLayout の場合</h2>
+
+<p>LinearLayout で横並びにする場合。</p>
+
+<p>```xml main.xml
+&lt;LinearLayout</p>
+
+<pre><code>android:layout_width="match_parent"
+android:layout_height="30dp"
+android:orientation="horizontal"&gt;
+
+&lt;Button
+    android:background="#FF0000"
+    android:text="AAA"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:background="#00FF00"
+    android:text="BBB"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:background="#0000FF"
+    android:text="CCC"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+</code></pre>
+
+<p></LinearLayout>
+```</p>
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_01.png" alt="" /></p>
+
+<p>だめだー。
+LinearLayout の Zorder は、並び順と連動してしまうので、右（若しくは下）ほど手前になってしまいます。</p>
+
+<p>ちなみに、「<code>view.bringToFront()</code> を叩けばいいんじゃね？」と思い、<code>buttonA.bringToFront()</code> を実行すると、</p>
+
+<p>じゃん↓</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_02.png" alt="" /></p>
+
+<p>見事に AAA が右端にいったｗ</p>
+
+<h2>RelativeLayout の場合（その１）</h2>
+
+<p>普通に RelativeLayout で、「BはAの右、CはBの右」と制約をつけてみます。</p>
+
+<p>```xml main.xml
+&lt;RelativeLayout</p>
+
+<pre><code>android:layout_width="match_parent"
+android:layout_height="30dp"&gt;
+
+&lt;Button
+    android:id="@+id/buttonA"
+    android:background="#FF0000"
+    android:text="AAA"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:id="@+id/buttonB"
+    android:layout_toRightOf="@+id/buttonA"
+    android:background="#00FF00"
+    android:text="BBB"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:id="@+id/buttonC"
+    android:layout_toRightOf="@+id/buttonB"
+    android:background="#0000FF"
+    android:text="CCC"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+</code></pre>
+
+<p></RelativeLayout>
+```</p>
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_03.png" alt="" /></p>
+
+<p>んんー、まだダメかー。</p>
+
+<h2>RelativeLayout の場合（その２）</h2>
+
+<p>その１の制約はそのままに、XML上での並び順のみ変えてみましょう。</p>
+
+<p>```xml main.xml
+&lt;RelativeLayout</p>
+
+<pre><code>android:layout_width="match_parent"
+android:layout_height="30dp"&gt;
+
+&lt;Button
+    android:id="@+id/buttonA"
+    android:background="#FF0000"
+    android:text="AAA"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:id="@+id/buttonB"
+    android:layout_toRightOf="@+id/buttonA"
+    android:background="#00FF00"
+    android:text="BBB"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+&lt;Button
+    android:id="@+id/buttonC"
+    android:layout_toRightOf="@+id/buttonB"
+    android:background="#0000FF"
+    android:text="CCC"
+    android:layout_marginLeft="-10dp"
+    android:layout_width="50dp"
+    android:layout_height="match_parent" /&gt;
+</code></pre>
+
+<p></RelativeLayout>
+```</p>
+
+<h3>結果</h3>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/zorder_test_04.png" alt="" /></p>
+
+<p>よしっ！期待した表示になりました。</p>
+
+<h2>まとめ</h2>
+
+<p>　総合しますと、ZOrder は、LinearLayout でも RelativeLayout でも、XMLでは後で記述したものが手前になります。</p>
+
+<p>　LinearLayout は、上から下、または左から右に並べるしかできないので、それに逆らうような ZOrder は付けられません。</p>
+
+<p> RelativeLayout は、制約に基づき描画されるので、XMLの記述順を工夫することで ZOrder をある程度コントロールできます。</p>
+
+<p>以上、誰得Tips でした。</p>
+
+<p>冒頭のようなパンくずリストをAndroidで作る方法教えてください。。。(FragmentBreadCrumbs もパンくずっぽくないじゃないですかぁ)</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[秋の Xamarin 勉強会いろいろ]]></title>
@@ -619,53 +790,6 @@ public void onReceive(Context context, Intent intent) {
 <li><a href="https://groups.google.com/forum/#!topic/android-group-japan/D1EKohMIji0">BOOT_COMPLETEDが受信出来ない &ndash; Google グループ</a> SDカードにインストールされるとこのブロードキャストを受信できないそうです</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use/"/>
-    <updated>2014-08-28T17:42:04+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use</id>
-    <content type="html"><![CDATA[<p>Google Maps などを使用する時、開発中ならば <code>debug.keystore</code> のフィンガープリント(SHA1)を取得する必要がありますが、 debug.keystore がどこにあるのか分からなくてハマった。</p>
-
-<!--more-->
-
-
-<h2>結論</h2>
-
-<p>から書いておくと</p>
-
-<ul>
-<li><a href="http://developer.xamarin.com/guides/android/platform_features/maps_and_location/maps/obtaining_a_google_maps_api_key/">Obtaining a Google Maps API Key | Xamarin</a></li>
-</ul>
-
-
-<p>に書いてある通りで、</p>
-
-<ul>
-<li>Windows &ndash; <code>C:¥Users¥[USERNAME]¥AppData¥Local¥Xamarin¥Mono for Android¥debug.keystore</code></li>
-<li>OSX &ndash; <code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code></li>
-</ul>
-
-
-<p>がそれぞれ使われる。</p>
-
-<h2>なぜハマったか？</h2>
-
-<h3>Eclipse と同じだと思ってた</h3>
-
-<p>Java での Android 開発時に設定したディレクトリを使ってくれると思い込んでた。けどよく考えればあれは Android SDK ではなく Eclipse 固有の設定だったのよね。</p>
-
-<h3>ドキュメントが古いと思ってた</h3>
-
-<p>上記で紹介した「Obtaining a Google Maps…」の記事が古いと思ってた。なぜならディレクトリ名に <code>Mono for Android</code> が含まれていて、これは Xamarin.Android の旧製品名だったから。</p>
-
-<h3>Spotlight検索でヒットしなかった</h3>
-
-<p>Mac を使っているのだけど、Spotlight検索（所謂PC内検索）で <code>debug.keystore</code> がヒットしたのがいつもJava-Android開発で使ってる１つだけだったので、.local の中にあるとは気付けず。。。隠しディレクトリだからヒットしないよね。</p>
-
-<p>こんなことでハマるのは自分くらいだろうけど、メモしときます。。</p>
 ]]></content>
   </entry>
   
