@@ -10,9 +10,9 @@ footer: false
 
 位置情報エンジニア。C++ → VB → C# → Android とか HTML5 とか Rx とか Flex とか Obj-C とか js とか Xamarin とか OSM とか。
 
-よゐこ濱口に似てるらしいです。
+Build Insider にて、 [Xamarin逆引きTips](http://www.buildinsider.net/mobile/xamarintips) を連載してます、よろしくどうぞ。
 
-HexRinger - http://j.mp/hexringer よろしくです。
+よゐこ濱口に似てるらしいです。
 
 * [Twitter](https://twitter.com/amay077)
 * [Qiita](http://qiita.com/amay077)
