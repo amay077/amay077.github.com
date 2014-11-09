@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-10-30T01:38:35+09:00</updated>
+  <updated>2014-11-10T01:33:47+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,231 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[「チェックAがONならば、項目Bは入力必須とする」という Validation を RxJava + RxAndroid でやる]]></title>
+    <link href="http://blog.amay077.net/blog/2014/11/10/complex-validation-with-rxjava-and-rxandroid/"/>
+    <updated>2014-11-10T01:32:20+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/11/10/complex-validation-with-rxjava-and-rxandroid</id>
+    <content type="html"><![CDATA[<p>　例えばショッピングサイトとかの発送先指定のフォーム『登録されている住所とは違う住所に送りたい時、「別の住所に送る」をチェックする、すると「住所2」が必須入力となり、入力するまで次へ進めない』的なちょっと込み入ったValidationをReactive ExtensionsのJava版、<a href="https://github.com/ReactiveX/RxJava">RxJava</a>と<a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a>でやってみました。</p>
+
+<!--more-->
+
+
+<h1>動作イメージ</h1>
+
+<p>　まずいきなり動作結果から。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/complex_validation_with_rxjava_and_rxandroid.gif" alt="" /></p>
+
+<ul>
+<li>住所1は入力必須。</li>
+<li>住所2は「住所2へ配送する」がチェックされている場合のみ、入力必須。</li>
+<li>必須項目が入力されていない場合はボタンを押せない</li>
+</ul>
+
+
+<p>こんな仕様です。</p>
+
+<h1>実装</h1>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="nd">@Override</span>
+</span><span class='line'><span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_my</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 「注文を確定する」ボタン</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Button</span> <span class="n">buttonSubmit</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubmit</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// チェックボックスのON/OFFをObservable化</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">useSecondaryAddress</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">ViewObservable</span><span class="o">.</span><span class="na">input</span><span class="o">((</span><span class="n">CheckBox</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">checkUseSecondary</span><span class="o">),</span> <span class="kc">true</span><span class="o">)</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">OnCheckedChangeEvent</span><span class="o">,</span> <span class="n">Boolean</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="n">Boolean</span> <span class="nf">call</span><span class="o">(</span><span class="n">OnCheckedChangeEvent</span> <span class="n">onCheckedChangeEvent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">return</span> <span class="n">onCheckedChangeEvent</span><span class="o">.</span><span class="na">value</span><span class="o">;</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 住所1をObservable化</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">OnTextChangeEvent</span><span class="o">&gt;</span> <span class="n">primaryAddress</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">ViewObservable</span><span class="o">.</span><span class="na">text</span><span class="o">((</span><span class="n">EditText</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">editPrimaryAddress</span><span class="o">),</span> <span class="kc">true</span><span class="o">);</span>
+</span><span class='line'>    <span class="c1">// 住所2をObservable化</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">OnTextChangeEvent</span><span class="o">&gt;</span> <span class="n">secondaryAddress</span> <span class="o">=</span>
+</span><span class='line'>            <span class="n">ViewObservable</span><span class="o">.</span><span class="na">text</span><span class="o">((</span><span class="n">EditText</span><span class="o">)</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">editSecondaryAddress</span><span class="o">),</span> <span class="kc">true</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// チェックボックスと住所2の必須条件をObservable化</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">secondaryIsValid</span> <span class="o">=</span>
+</span><span class='line'>        <span class="n">Observable</span><span class="o">.</span><span class="na">combineLatest</span><span class="o">(</span><span class="n">useSecondaryAddress</span><span class="o">,</span> <span class="n">secondaryAddress</span><span class="o">,</span>
+</span><span class='line'>            <span class="k">new</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">,</span> <span class="n">OnTextChangeEvent</span><span class="o">,</span> <span class="n">Boolean</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="n">Boolean</span> <span class="nf">call</span><span class="o">(</span><span class="n">Boolean</span> <span class="n">useSecondary</span><span class="o">,</span> <span class="n">OnTextChangeEvent</span> <span class="n">secondaryAddress</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(!</span><span class="n">useSecondary</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="k">return</span> <span class="o">!</span><span class="n">TextUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">secondaryAddress</span><span class="o">.</span><span class="na">text</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 全部まとめると、</span>
+</span><span class='line'>    <span class="c1">//  住所1は入力必須、</span>
+</span><span class='line'>    <span class="c1">//  住所2はチェックボックスがONの時だけ入力必須</span>
+</span><span class='line'>    <span class="c1">//  必須条件を満たしていたらtrueを流す</span>
+</span><span class='line'>    <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="n">isValidAll</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">combineLatest</span><span class="o">(</span><span class="n">primaryAddress</span><span class="o">,</span> <span class="n">secondaryIsValid</span><span class="o">,</span>
+</span><span class='line'>            <span class="k">new</span> <span class="n">Func2</span><span class="o">&lt;</span><span class="n">OnTextChangeEvent</span><span class="o">,</span> <span class="n">Boolean</span><span class="o">,</span> <span class="n">Boolean</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="n">Boolean</span> <span class="nf">call</span><span class="o">(</span><span class="n">OnTextChangeEvent</span> <span class="n">primaryAddress</span><span class="o">,</span> <span class="n">Boolean</span> <span class="n">isValidSecondary</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="k">if</span> <span class="o">(!</span><span class="n">isValidSecondary</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>                    <span class="k">return</span> <span class="o">!</span><span class="n">TextUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">primaryAddress</span><span class="o">.</span><span class="na">text</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 購読、監視</span>
+</span><span class='line'>    <span class="n">isValidAll</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="k">new</span> <span class="n">Observer</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onNext</span><span class="o">(</span><span class="kd">final</span> <span class="n">Boolean</span> <span class="n">isValid</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// 必須条件を満たしていたら「注文を確定する」を有効にする</span>
+</span><span class='line'>            <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="nd">@Override</span>
+</span><span class='line'>                <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">buttonSubmit</span><span class="o">.</span><span class="na">setEnabled</span><span class="o">(</span><span class="n">isValid</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">});</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onCompleted</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nd">@Override</span>
+</span><span class='line'>        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onError</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="o">}</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　<code>ViewObservable.xxx</code> で、UI要素をObservable化します。これはRxAndroidの機能。これでテキストの変更とか、チェックボックスの変更のたびに、<code>OnNext</code>が発生するようになります。</p>
+
+<p>　Validationでは、RxJavaの機能である <code>Observable.combineLatest</code>がキモで、こいつに2つのObservableを渡してやると、その片方が値が変化した時に、<code>T3 call(T1 a, T2 b)</code> が呼ばれます。T1、T2 は渡すObservableの型、T3は後続へ流す型で、Validationなので<code>Boolean</code>です。
+上記 <code>secondaryIsValid</code> の実装では、「住所2に配送する」のチェックボックスと「住所2」のテキストボックスの2つのObservableを渡していて、</p>
+
+<ul>
+<li>「住所2に配送する」がOFFなら <code>true</code> を返す</li>
+<li>「住所2に配送する」がONで、且つ「住所2」が空でなければ <code>true</code> を返す</li>
+</ul>
+
+
+<p>としています。</p>
+
+<p>　次に、<code>isValidAll</code> の実装では、「住所1」と <code>secondaryIsValid</code> を渡していて、</p>
+
+<ul>
+<li><code>secondaryIsValid</code> が <code>false</code> なら <code>false</code> を返す</li>
+<li><code>secondaryIsValid</code> が <code>true</code> で、且つ「住所1」が空でなければ <code>true</code> を返す</li>
+</ul>
+
+
+<p>という実装です。</p>
+
+<p>　んで、こいつ(<code>isValidAll</code>)を購読(<code>subscribe</code>)すると、<code>onNext</code> にValidationの結果が通知されるので、ボタンの<code>Enabled</code>を切り替えます。</p>
+
+<h1>まとめ</h1>
+
+<p>　このレベルだと、すべてのUI要素に変更通知を仕込んで共通な関数を呼ぶ、的な実装で問題ないですが、要素や条件が増えてくると大変です。</p>
+
+<p>　Observable と combineLatest を使うと、制約の一部を(Observableに)部分化できて、それらを組み合わせるのも自由自在(Observableだから)。</p>
+
+<p>Javaなのでかなり長ったらしくて読みづらいコードになってしまいました。</p>
+
+<p><strong><a href="http://xamarin.com/">Xamarin.Android</a> + <a href="https://rx.codeplex.com/">本家Reactive Extensions</a> + <a href="https://reactiveproperty.codeplex.com/">ReactiveProporty</a> なら、相当スッキリするんだけどなあー</strong></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ReactiveX と MVVM と DataBinding の関係について図にしてみた]]></title>
@@ -2216,664 +2441,6 @@ MacBookAir には、<a href="http://www.amazon.co.jp/gp/product/B00456DWUA/ref=a
 <p>今回は .NET のプロジェクトを Xamarin に移植する際に発覚したもので、特に <code>SqlClient</code> は使ってなかったので削除して解決しました。</p>
 
 <p>Xamarin で <code>SqlClient</code> って何に使うんだろ？イントラ？あるいは SQL Server Compact が使える？まさかね。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ドラッグ＆ドロップで並び替えできる ListView]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop/"/>
-    <updated>2014-07-01T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/01/listview-supports-swapitem-by-dragdrop</id>
-    <content type="html"><![CDATA[<p>最近こういうUI見たことないなあ、と思いながらも、実装の必要があったので、いろいろ先駆者さま達の足跡を辿り、最終的に、</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://shogogg.hatenablog.jp/entry/20110118/1295326773">ドラッグ＆ドロップで並び替えできる ListView &ndash; パンダのメモ帳</a></li>
-</ul>
-
-
-<p>が自分のやりたい事に最も近く、割と新し（といっても３年前…）かったので参考にしました。</p>
-
-<p>ただ、こちらの実装だと、ListView の上にマージンがあるとドラッグ中のアイテムの描画がすこしバグってたので、修正して使いました。</p>
-
-<p>こんな感じ↓です。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/drag_and_drop_listview_01.gif" alt="" /> capture by <a href="http://www.cockos.com/licecap/">LICEcap</a></p>
-
-<p>修正後のソースです。</p>
-
-<p>修正箇所は２つ</p>
-
-<ol>
-<li><code>mActionDownEvent</code> を参照の保持でなく、 <code>obtain</code> してクローンを保持するように（＋ <code>recycle</code> で破棄）。<code>onTouchEvent</code> の 引数 <code>event</code> は、内部で使いまわされるようで、参照のコピーでは、値が勝手に変わっていました。</li>
-<li><code>updateLayoutParams</code> はスクリーン座標を前提に。元は <code>listView.getTop() + event.getY()</code> でしたが、これではステータスバーとActionBarの高さが考慮されないようだったので、<code>event.getRawY()</code> を使うようにしました。</li>
-</ol>
-
-
-<figure class='code'><figcaption><span>SortableListView.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-<span class='line-number'>114</span>
-<span class='line-number'>115</span>
-<span class='line-number'>116</span>
-<span class='line-number'>117</span>
-<span class='line-number'>118</span>
-<span class='line-number'>119</span>
-<span class='line-number'>120</span>
-<span class='line-number'>121</span>
-<span class='line-number'>122</span>
-<span class='line-number'>123</span>
-<span class='line-number'>124</span>
-<span class='line-number'>125</span>
-<span class='line-number'>126</span>
-<span class='line-number'>127</span>
-<span class='line-number'>128</span>
-<span class='line-number'>129</span>
-<span class='line-number'>130</span>
-<span class='line-number'>131</span>
-<span class='line-number'>132</span>
-<span class='line-number'>133</span>
-<span class='line-number'>134</span>
-<span class='line-number'>135</span>
-<span class='line-number'>136</span>
-<span class='line-number'>137</span>
-<span class='line-number'>138</span>
-<span class='line-number'>139</span>
-<span class='line-number'>140</span>
-<span class='line-number'>141</span>
-<span class='line-number'>142</span>
-<span class='line-number'>143</span>
-<span class='line-number'>144</span>
-<span class='line-number'>145</span>
-<span class='line-number'>146</span>
-<span class='line-number'>147</span>
-<span class='line-number'>148</span>
-<span class='line-number'>149</span>
-<span class='line-number'>150</span>
-<span class='line-number'>151</span>
-<span class='line-number'>152</span>
-<span class='line-number'>153</span>
-<span class='line-number'>154</span>
-<span class='line-number'>155</span>
-<span class='line-number'>156</span>
-<span class='line-number'>157</span>
-<span class='line-number'>158</span>
-<span class='line-number'>159</span>
-<span class='line-number'>160</span>
-<span class='line-number'>161</span>
-<span class='line-number'>162</span>
-<span class='line-number'>163</span>
-<span class='line-number'>164</span>
-<span class='line-number'>165</span>
-<span class='line-number'>166</span>
-<span class='line-number'>167</span>
-<span class='line-number'>168</span>
-<span class='line-number'>169</span>
-<span class='line-number'>170</span>
-<span class='line-number'>171</span>
-<span class='line-number'>172</span>
-<span class='line-number'>173</span>
-<span class='line-number'>174</span>
-<span class='line-number'>175</span>
-<span class='line-number'>176</span>
-<span class='line-number'>177</span>
-<span class='line-number'>178</span>
-<span class='line-number'>179</span>
-<span class='line-number'>180</span>
-<span class='line-number'>181</span>
-<span class='line-number'>182</span>
-<span class='line-number'>183</span>
-<span class='line-number'>184</span>
-<span class='line-number'>185</span>
-<span class='line-number'>186</span>
-<span class='line-number'>187</span>
-<span class='line-number'>188</span>
-<span class='line-number'>189</span>
-<span class='line-number'>190</span>
-<span class='line-number'>191</span>
-<span class='line-number'>192</span>
-<span class='line-number'>193</span>
-<span class='line-number'>194</span>
-<span class='line-number'>195</span>
-<span class='line-number'>196</span>
-<span class='line-number'>197</span>
-<span class='line-number'>198</span>
-<span class='line-number'>199</span>
-<span class='line-number'>200</span>
-<span class='line-number'>201</span>
-<span class='line-number'>202</span>
-<span class='line-number'>203</span>
-<span class='line-number'>204</span>
-<span class='line-number'>205</span>
-<span class='line-number'>206</span>
-<span class='line-number'>207</span>
-<span class='line-number'>208</span>
-<span class='line-number'>209</span>
-<span class='line-number'>210</span>
-<span class='line-number'>211</span>
-<span class='line-number'>212</span>
-<span class='line-number'>213</span>
-<span class='line-number'>214</span>
-<span class='line-number'>215</span>
-<span class='line-number'>216</span>
-<span class='line-number'>217</span>
-<span class='line-number'>218</span>
-<span class='line-number'>219</span>
-<span class='line-number'>220</span>
-<span class='line-number'>221</span>
-<span class='line-number'>222</span>
-<span class='line-number'>223</span>
-<span class='line-number'>224</span>
-<span class='line-number'>225</span>
-<span class='line-number'>226</span>
-<span class='line-number'>227</span>
-<span class='line-number'>228</span>
-<span class='line-number'>229</span>
-<span class='line-number'>230</span>
-<span class='line-number'>231</span>
-<span class='line-number'>232</span>
-<span class='line-number'>233</span>
-<span class='line-number'>234</span>
-<span class='line-number'>235</span>
-<span class='line-number'>236</span>
-<span class='line-number'>237</span>
-<span class='line-number'>238</span>
-<span class='line-number'>239</span>
-<span class='line-number'>240</span>
-<span class='line-number'>241</span>
-<span class='line-number'>242</span>
-<span class='line-number'>243</span>
-<span class='line-number'>244</span>
-<span class='line-number'>245</span>
-<span class='line-number'>246</span>
-<span class='line-number'>247</span>
-<span class='line-number'>248</span>
-<span class='line-number'>249</span>
-<span class='line-number'>250</span>
-<span class='line-number'>251</span>
-<span class='line-number'>252</span>
-<span class='line-number'>253</span>
-<span class='line-number'>254</span>
-<span class='line-number'>255</span>
-<span class='line-number'>256</span>
-<span class='line-number'>257</span>
-<span class='line-number'>258</span>
-<span class='line-number'>259</span>
-<span class='line-number'>260</span>
-<span class='line-number'>261</span>
-<span class='line-number'>262</span>
-<span class='line-number'>263</span>
-<span class='line-number'>264</span>
-<span class='line-number'>265</span>
-<span class='line-number'>266</span>
-<span class='line-number'>267</span>
-<span class='line-number'>268</span>
-<span class='line-number'>269</span>
-<span class='line-number'>270</span>
-<span class='line-number'>271</span>
-<span class='line-number'>272</span>
-<span class='line-number'>273</span>
-<span class='line-number'>274</span>
-<span class='line-number'>275</span>
-<span class='line-number'>276</span>
-<span class='line-number'>277</span>
-<span class='line-number'>278</span>
-<span class='line-number'>279</span>
-<span class='line-number'>280</span>
-<span class='line-number'>281</span>
-<span class='line-number'>282</span>
-<span class='line-number'>283</span>
-<span class='line-number'>284</span>
-<span class='line-number'>285</span>
-<span class='line-number'>286</span>
-<span class='line-number'>287</span>
-<span class='line-number'>288</span>
-<span class='line-number'>289</span>
-<span class='line-number'>290</span>
-<span class='line-number'>291</span>
-<span class='line-number'>292</span>
-<span class='line-number'>293</span>
-<span class='line-number'>294</span>
-<span class='line-number'>295</span>
-<span class='line-number'>296</span>
-<span class='line-number'>297</span>
-<span class='line-number'>298</span>
-<span class='line-number'>299</span>
-<span class='line-number'>300</span>
-<span class='line-number'>301</span>
-<span class='line-number'>302</span>
-<span class='line-number'>303</span>
-<span class='line-number'>304</span>
-<span class='line-number'>305</span>
-<span class='line-number'>306</span>
-<span class='line-number'>307</span>
-<span class='line-number'>308</span>
-<span class='line-number'>309</span>
-<span class='line-number'>310</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">import</span> <span class="nn">android.content.Context</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.graphics.Bitmap</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.graphics.Canvas</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.graphics.Color</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.graphics.PixelFormat</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.util.AttributeSet</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.Gravity</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.MotionEvent</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.WindowManager</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.AdapterView</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.AdapterView.OnItemLongClickListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.ImageView</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.ListView</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">SortableListView</span> <span class="kd">extends</span> <span class="n">ListView</span> <span class="kd">implements</span>
-</span><span class='line'>        <span class="n">OnItemLongClickListener</span> <span class="o">{</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SCROLL_SPEED_FAST</span> <span class="o">=</span> <span class="mi">25</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SCROLL_SPEED_SLOW</span> <span class="o">=</span> <span class="mi">8</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">Config</span> <span class="n">DRAG_BITMAP_CONFIG</span> <span class="o">=</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">Config</span><span class="o">.</span><span class="na">ARGB_8888</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mSortable</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">DragListener</span> <span class="n">mDragListener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleDragListener</span><span class="o">();</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">int</span> <span class="n">mBitmapBackgroundColor</span> <span class="o">=</span> <span class="n">Color</span><span class="o">.</span><span class="na">argb</span><span class="o">(</span><span class="mi">128</span><span class="o">,</span> <span class="mh">0xFF</span><span class="o">,</span> <span class="mh">0xFF</span><span class="o">,</span> <span class="mh">0xFF</span><span class="o">);</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">Bitmap</span> <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">ImageView</span> <span class="n">mDragImageView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">mLayoutParams</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">MotionEvent</span> <span class="n">mActionDownEvent</span><span class="o">;</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">int</span> <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** コンストラクタ */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** コンストラクタ */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** コンストラクタ */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyle</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">defStyle</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグイベントリスナの設定 */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setDragListener</span><span class="o">(</span><span class="n">DragListener</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">mDragListener</span> <span class="o">=</span> <span class="n">listener</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ソートモードの切替 */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setSortable</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">sortable</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">this</span><span class="o">.</span><span class="na">mSortable</span> <span class="o">=</span> <span class="n">sortable</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ソート中アイテムの背景色を設定 */</span>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setBackgroundColor</span><span class="o">(</span><span class="kt">int</span> <span class="n">color</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">mBitmapBackgroundColor</span> <span class="o">=</span> <span class="n">color</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ソートモードの設定 */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">getSortable</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="n">mSortable</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** MotionEvent から position を取得する */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">int</span> <span class="nf">eventToPosition</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nf">pointToPosition</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">(),</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">());</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** タッチイベント処理 */</span>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">mSortable</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">switch</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">())</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">:</span> <span class="o">{</span>
-</span><span class='line'>                <span class="n">storeMotionEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
-</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MOVE</span><span class="o">:</span> <span class="o">{</span>
-</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">duringDrag</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>                <span class="o">}</span>
-</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span> <span class="o">{</span>
-</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">stopDrag</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>                <span class="o">}</span>
-</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">:</span>
-</span><span class='line'>            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_OUTSIDE</span><span class="o">:</span> <span class="o">{</span>
-</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">stopDrag</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>                <span class="o">}</span>
-</span><span class='line'>                <span class="k">break</span><span class="o">;</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** リスト要素長押しイベント処理 */</span>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onItemLongClick</span><span class="o">(</span><span class="n">AdapterView</span><span class="o">&lt;?&gt;</span> <span class="n">parent</span><span class="o">,</span> <span class="n">View</span> <span class="n">view</span><span class="o">,</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">position</span><span class="o">,</span> <span class="kt">long</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nf">startDrag</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ACTION_DOWN 時の MotionEvent をプロパティに格納 */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">storeMotionEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">mActionDownEvent</span> <span class="o">=</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">obtain</span><span class="o">(</span><span class="n">event</span><span class="o">);</span> <span class="c1">// 複製しないと値が勝手に変わる</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグ開始 */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">startDrag</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="c1">// イベントから position を取得</span>
-</span><span class='line'>        <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">eventToPosition</span><span class="o">(</span><span class="n">mActionDownEvent</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// 取得した position が 0未満＝範囲外の場合はドラッグを開始しない</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mPositionFrom</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// View, Canvas, WindowManager の取得・生成</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="n">View</span> <span class="n">view</span> <span class="o">=</span> <span class="n">getChildByIndex</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">);</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="n">Canvas</span> <span class="n">canvas</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Canvas</span><span class="o">();</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="n">WindowManager</span> <span class="n">wm</span> <span class="o">=</span> <span class="n">getWindowManager</span><span class="o">();</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ドラッグ対象要素の View を Canvas に描画</span>
-</span><span class='line'>        <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">createBitmap</span><span class="o">(</span><span class="n">view</span><span class="o">.</span><span class="na">getWidth</span><span class="o">(),</span> <span class="n">view</span><span class="o">.</span><span class="na">getHeight</span><span class="o">(),</span>
-</span><span class='line'>                <span class="n">DRAG_BITMAP_CONFIG</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">canvas</span><span class="o">.</span><span class="na">setBitmap</span><span class="o">(</span><span class="n">mDragBitmap</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">view</span><span class="o">.</span><span class="na">draw</span><span class="o">(</span><span class="n">canvas</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// 前回使用した ImageView が残っている場合は除去（念のため？）</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">wm</span><span class="o">.</span><span class="na">removeView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ImageView 用の LayoutParams が未設定の場合は設定する</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mLayoutParams</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">initLayoutParams</span><span class="o">();</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ImageView を生成し WindowManager に addChild する</span>
-</span><span class='line'>        <span class="n">mDragImageView</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ImageView</span><span class="o">(</span><span class="n">getContext</span><span class="o">());</span>
-</span><span class='line'>        <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setBackgroundColor</span><span class="o">(</span><span class="n">mBitmapBackgroundColor</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setImageBitmap</span><span class="o">(</span><span class="n">mDragBitmap</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">wm</span><span class="o">.</span><span class="na">addView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">,</span> <span class="n">mLayoutParams</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ドラッグ開始</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">mDragListener</span><span class="o">.</span><span class="na">onStartDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nf">duringDrag</span><span class="o">(</span><span class="n">mActionDownEvent</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグ処理 */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">duringDrag</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">mDragging</span> <span class="o">||</span> <span class="n">mDragImageView</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="n">getHeight</span><span class="o">();</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">middle</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// スクロール速度の決定</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">speed</span><span class="o">;</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">fastBound</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">9</span><span class="o">;</span>
-</span><span class='line'>        <span class="kd">final</span> <span class="kt">int</span> <span class="n">slowBound</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">4</span><span class="o">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getEventTime</span><span class="o">()</span> <span class="o">-</span> <span class="n">event</span><span class="o">.</span><span class="na">getDownTime</span><span class="o">()</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="c1">// ドラッグの開始から500ミリ秒の間はスクロールしない</span>
-</span><span class='line'>            <span class="n">speed</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">slowBound</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">speed</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">fastBound</span> <span class="o">?</span> <span class="o">-</span><span class="n">SCROLL_SPEED_FAST</span> <span class="o">:</span> <span class="o">-</span><span class="n">SCROLL_SPEED_SLOW</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">-</span> <span class="n">slowBound</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">speed</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">-</span> <span class="n">fastBound</span> <span class="o">?</span> <span class="n">SCROLL_SPEED_FAST</span>
-</span><span class='line'>                    <span class="o">:</span> <span class="n">SCROLL_SPEED_SLOW</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">speed</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// スクロール処理</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">speed</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="c1">// 横方向はとりあえず考えない</span>
-</span><span class='line'>            <span class="kt">int</span> <span class="n">middlePosition</span> <span class="o">=</span> <span class="n">pointToPosition</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">middle</span><span class="o">);</span>
-</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">middlePosition</span> <span class="o">==</span> <span class="n">AdapterView</span><span class="o">.</span><span class="na">INVALID_POSITION</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                <span class="n">middlePosition</span> <span class="o">=</span> <span class="n">pointToPosition</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">middle</span> <span class="o">+</span> <span class="n">getDividerHeight</span><span class="o">()</span>
-</span><span class='line'>                        <span class="o">+</span> <span class="mi">64</span><span class="o">);</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>            <span class="kd">final</span> <span class="n">View</span> <span class="n">middleView</span> <span class="o">=</span> <span class="n">getChildByIndex</span><span class="o">(</span><span class="n">middlePosition</span><span class="o">);</span>
-</span><span class='line'>            <span class="k">if</span> <span class="o">(</span><span class="n">middleView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                <span class="n">setSelectionFromTop</span><span class="o">(</span><span class="n">middlePosition</span><span class="o">,</span> <span class="n">middleView</span><span class="o">.</span><span class="na">getTop</span><span class="o">()</span> <span class="o">-</span> <span class="n">speed</span><span class="o">);</span>
-</span><span class='line'>            <span class="o">}</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// ImageView の表示や位置を更新</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span><span class="o">.</span><span class="na">getHeight</span><span class="o">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setVisibility</span><span class="o">(</span><span class="n">View</span><span class="o">.</span><span class="na">INVISIBLE</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setVisibility</span><span class="o">(</span><span class="n">View</span><span class="o">.</span><span class="na">VISIBLE</span><span class="o">);</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="n">updateLayoutParams</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span><span class="n">event</span><span class="o">.</span><span class="na">getRawY</span><span class="o">());</span> <span class="c1">// ここだけスクリーン座標を使う</span>
-</span><span class='line'>        <span class="n">getWindowManager</span><span class="o">().</span><span class="na">updateViewLayout</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">,</span> <span class="n">mLayoutParams</span><span class="o">);</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">mDragListener</span><span class="o">.</span><span class="na">onDuringDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">,</span>
-</span><span class='line'>                    <span class="n">pointToPosition</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">));</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグ終了 */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">stopDrag</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">isDrop</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(!</span><span class="n">mDragging</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">isDrop</span> <span class="o">&amp;&amp;</span> <span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">mDragListener</span><span class="o">.</span><span class="na">onStopDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">,</span> <span class="n">eventToPosition</span><span class="o">(</span><span class="n">event</span><span class="o">));</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="n">getWindowManager</span><span class="o">().</span><span class="na">removeView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">);</span>
-</span><span class='line'>            <span class="n">mDragImageView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>            <span class="c1">// リサイクルするとたまに死ぬけどタイミング分からない by vvakame</span>
-</span><span class='line'>            <span class="c1">// mDragBitmap.recycle();</span>
-</span><span class='line'>            <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>            <span class="n">mActionDownEvent</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
-</span><span class='line'>            <span class="n">mActionDownEvent</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
-</span><span class='line'>            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** 指定インデックスのView要素を取得する */</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">View</span> <span class="nf">getChildByIndex</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="nf">getChildAt</span><span class="o">(</span><span class="n">index</span> <span class="o">-</span> <span class="n">getFirstVisiblePosition</span><span class="o">());</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** WindowManager の取得 */</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="n">WindowManager</span> <span class="nf">getWindowManager</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="k">return</span> <span class="o">(</span><span class="n">WindowManager</span><span class="o">)</span> <span class="n">getContext</span><span class="o">().</span><span class="na">getSystemService</span><span class="o">(</span>
-</span><span class='line'>                <span class="n">Context</span><span class="o">.</span><span class="na">WINDOW_SERVICE</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ImageView 用 LayoutParams の初期化 */</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">initLayoutParams</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">();</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">gravity</span> <span class="o">=</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">TOP</span> <span class="o">|</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">LEFT</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">height</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">width</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">flags</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_NOT_FOCUSABLE</span>
-</span><span class='line'>                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_NOT_TOUCHABLE</span>
-</span><span class='line'>                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_KEEP_SCREEN_ON</span>
-</span><span class='line'>                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_LAYOUT_NO_LIMITS</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">format</span> <span class="o">=</span> <span class="n">PixelFormat</span><span class="o">.</span><span class="na">TRANSLUCENT</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">windowAnimations</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">x</span> <span class="o">=</span> <span class="n">getLeft</span><span class="o">();</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span> <span class="n">getTop</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ImageView 用 LayoutParams の座標情報を更新 */</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">updateLayoutParams</span><span class="o">(</span><span class="kt">int</span> <span class="n">rawY</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span>  <span class="n">rawY</span> <span class="o">-</span> <span class="mi">32</span><span class="o">;</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグイベントリスナーインターフェース */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">DragListener</span> <span class="o">{</span>
-</span><span class='line'>        <span class="cm">/** ドラッグ開始時の処理 */</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onStartDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="cm">/** ドラッグ中の処理 */</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onDuringDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="cm">/** ドラッグ終了＝ドロップ時の処理 */</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onStopDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="cm">/** ドラッグイベントリスナー実装 */</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SimpleDragListener</span> <span class="kd">implements</span> <span class="n">DragListener</span> <span class="o">{</span>
-</span><span class='line'>        <span class="cm">/** ドラッグ開始時の処理 */</span>
-</span><span class='line'>        <span class="nd">@Override</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onStartDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">position</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="cm">/** ドラッグ中の処理 */</span>
-</span><span class='line'>        <span class="nd">@Override</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onDuringDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">positionFrom</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="cm">/** ドラッグ終了＝ドロップ時の処理 */</span>
-</span><span class='line'>        <span class="nd">@Override</span>
-</span><span class='line'>        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onStopDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>            <span class="k">return</span> <span class="n">positionFrom</span> <span class="o">!=</span> <span class="n">positionTo</span> <span class="o">&amp;&amp;</span> <span class="n">positionFrom</span> <span class="o">&gt;=</span> <span class="mi">0</span>
-</span><span class='line'>                    <span class="o">||</span> <span class="n">positionTo</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;</span>
-</span><span class='line'>        <span class="o">}</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   
