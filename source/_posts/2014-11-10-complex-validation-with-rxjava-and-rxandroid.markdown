@@ -122,6 +122,8 @@ protected void onCreate(Bundle savedInstanceState) {
 
 　んで、こいつ(``isValidAll``)を購読(``subscribe``)すると、``onNext`` にValidationの結果が通知されるので、ボタンの``Enabled``を切り替えます。
 
+　conbimeLatest は、本家Rxなら obsA.CombineLatest(obsB, (tA, tB) => tX).CombineLatest(obsC, (tX, tC) => tY)... とチェインして書けるのですが、RxJava の combineLatest はなぜか static メソッドしかなくてチェインできません、残念。
+
 # まとめ
 
 　このレベルだと、すべてのUI要素に変更通知を仕込んで共通な関数を呼ぶ、的な実装で問題ないですが、要素や条件が増えてくると大変です。
