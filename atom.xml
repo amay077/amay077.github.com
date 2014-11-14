@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2014-11-10T12:42:38+09:00</updated>
+  <updated>2014-11-14T19:35:44+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,68 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms をガチで使うときのプロジェクト構成案]]></title>
+    <link href="http://blog.amay077.net/blog/2014/11/14/project-design-using-xamarin-forms/"/>
+    <updated>2014-11-14T19:34:02+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/11/14/project-design-using-xamarin-forms</id>
+    <content type="html"><![CDATA[<p>　<a href="http://xamarin.com/forms">Xamarin.Forms</a>（以下 XF とします）を本格的に開発に導入してみようと思ってるんだけど、その時のプロジェクト(アセンブリ)構成はこんな感じかな、というのを考えてみた。</p>
+
+<!--more-->
+
+
+<h2>コンセプト</h2>
+
+<ul>
+<li>XF を使う理由は、Viewのワンソース化よりも <em>DataBinding機構が使えること</em></li>
+<li>いざという時逃げられるように XF への依存を最小限にする</li>
+<li>iOS/Android 対応アプリ開発のこと、他は知らん</li>
+<li>MVVM で PCL で、PCL のところを最大化する</li>
+</ul>
+
+
+<h2>プロジェクト構成図</h2>
+
+<p>　角丸四角形がプロジェクトを、矢印は依存を示す。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/project_design_using_xamarin_forms_01.png" alt="" /></p>
+
+<p>左から説明。</p>
+
+<h3>XF.Android, XF.iOS, XF.Core</h3>
+
+<p>　Xamarin.Forms ソリューションを作成するとテンプレで作られるプロジェクト群。
+　XF.Core でプラットフォームに依存しないView（ボタンとか）を、XF.Android/XF.iOS でプラットフォーム固有のView（スライドメニューとかNotificationなど）を提供する。
+　これらは BindableProperty を介して ViewModel とデータバインディングする。
+　XF は他に、ServiceLocator や MessageCenter を提供するが、それらは使用しない（ロックインを防ぐため）
+　結局この案では、「XF=View層のみ」となる。</p>
+
+<h3>App.Core</h3>
+
+<p>　アプリのView以外の共通部分のプロジェクト。ViewModel と Model を含む。
+　ViewModel から View へシグナルを送るために &ldquo;XFではない&rdquo; Messengerを使う。（MvvmLight とか Prism とかから引っこ抜いてくればいいかな？）
+　Model にはビジネスロジックのみを記述し、通信処理やデータI/Oなどのプラットフォーム共通なAPIはModelから直接使い、プラットフォーム固有の機能は、ServiceInterface を使う。
+　ServiceInteface は、ServiceLocator によって App.Android/iOS から実体が Inject される。ServiceLocator は &ldquo;XFではない&#8221;…以下略
+　Rx を使うので、たぶん Model のメソッドの返り値は全部 IObservable<T> になります。</p>
+
+<h3>App.Android, App.iOS</h3>
+
+<p>　プラットフォーム固有のAPI層。例えば GPS とか、アプリ連携とか、アイテム課金とか。ServiceInterface に定義されている Interface を実装するところ。</p>
+
+<h2>懸案</h2>
+
+<ul>
+<li>PUSH通知受信とか、本来は Platform Specific APIs で担当したいが、プラットフォームの都合で、View で受信しなければならない機能の落としどころ。</li>
+<li>App.core をもっと分割した方がよい「ViewModelからAPI呼ばないよね？」とか「App.AndroidからModelにアクセスできるのがイヤ」とかを厳格に制限しようと思ったら分割した方が良さそう。</li>
+<li>Model から左側を全部 IObservable<T> 化しようと思っているが、Callback→Observable変換をModelでやるか、API層でやるか。&#8221;ビジネス&#8221;ロジックではないので、右側かな。</li>
+<li>XF.Core にどれだけ詰め込むか。画面レイアウトもXFでできるだけ頑張る、画面遷移フレームワークもXFで用意する、か？Sketches がどこまで活用できるか？</li>
+</ul>
+
+
+<p>さて、どんなもんでしょ？</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[「チェックAがONならば、項目Bは入力必須とする」という Validation を RxJava + RxAndroid でやる]]></title>
@@ -2412,37 +2474,6 @@ MacBookAir には、<a href="http://www.amazon.co.jp/gp/product/B00456DWUA/ref=a
 
 <p>こんな感じで書けばいいのかなあ。
 なんかところどころ手続き型の書き方になってる気がしますが、C# で <code>while</code> で処理するよりはスマートにできた気がします。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin で System.Data.SqlClient を使うには BUSINESS 版以上が必要です]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition/"/>
-    <updated>2014-07-01T01:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/01/sqlclient-require-business-edition</id>
-    <content type="html"><![CDATA[<p>当方 Xamarin INDIE 版しか買えないしがない個人開発者です。</p>
-
-<!--more-->
-
-
-<p>Xamarin で <code>System.Data.SqlClient.SqlCommand</code> などを使ったプロジェクトをビルドしたら、ビルド時にこんなダイアログボックスが。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_01.png" alt="" /></p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_requires_business_edition_when_using_sqlclient_02.png" alt="" /></p>
-
-<p>どうやら、特定のクラスを使用するには BUSINESS 版以上が必要なようです。</p>
-
-<ul>
-<li><a href="http://qiita.com/amay077/items/ab90c74e78dd87ba31fb">Xamarin でビルドを自動化するには Business 版以上が必要です</a></li>
-</ul>
-
-
-<p>といい、INDIE 版の制限事項が後出しで判明するのなんとかならないですかね。</p>
-
-<p>今回は .NET のプロジェクトを Xamarin に移植する際に発覚したもので、特に <code>SqlClient</code> は使ってなかったので削除して解決しました。</p>
-
-<p>Xamarin で <code>SqlClient</code> って何に使うんだろ？イントラ？あるいは SQL Server Compact が使える？まさかね。</p>
 ]]></content>
   </entry>
   
