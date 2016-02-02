@@ -1,0 +1,436 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>RxAndroid でスクリーンセーバー的な機能を作る - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,rxandroid,rxjava,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    RxAndroid でスクリーンセーバー的な機能を作る
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2014-12-09T00:00:00+09:00" pubdate data-updated="true">Dec 9<sup>th</sup>, 2014</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/rxandroid/'>rxandroid</a>, <a class='category' href='/blog/categories/rxjava/'>rxjava</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>　これは <a href="http://qiita.com/advent-calendar/2014/android">Android Advent Calendar 2014 8日目</a> の記事です。</p>
+
+<p>　例えば◯秒間操作がなかったらパスキーロック画面を表示する、とかそういうの。普通に作るとタイマーを使って面倒な感じになっちゃいますが、<a href="https://github.com/ReactiveX/RxJava">RxJava</a> と <a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a> を使うととても簡単にできます。</p>
+
+<!--more-->
+
+
+<h2>RxJava + RxAnroid の場合</h2>
+
+<p>　例えば、画面に <code>EditBox</code> と <code>Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
+
+<figure class='code'><figcaption><span>MyActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;MyActivity&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_my</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">EditText</span> <span class="n">editName</span> <span class="o">=</span> <span class="o">(</span><span class="n">EditText</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">editName</span><span class="o">);</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">View</span> <span class="n">buttonOk</span> <span class="o">=</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonOk</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="n">signalizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="n">Void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Object</span> <span class="n">onClickEvent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 文字入力イベントのストリームと…</span>
+</span><span class='line'>        <span class="n">_subscription</span> <span class="o">=</span> <span class="n">ViewObservable</span><span class="o">.</span><span class="na">text</span><span class="o">(</span><span class="n">editName</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">)</span>
+</span><span class='line'>                <span class="c1">// ボタン押されたのストリームを合体</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">mergeWith</span><span class="o">(</span><span class="n">ViewObservable</span><span class="o">.</span><span class="na">clicks</span><span class="o">(</span><span class="n">buttonOk</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">))</span>
+</span><span class='line'>                <span class="c1">// 3秒間なんもなかったらエラーにする</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">timeout</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="nd">@Override</span>
+</span><span class='line'>                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Void</span> <span class="n">dummy</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// 何かアクションがあったらこっち</span>
+</span><span class='line'>                        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;文字が入力されたか、ボタンが押されたよ&quot;</span><span class="o">);</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">},</span> <span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Throwable</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="nd">@Override</span>
+</span><span class='line'>                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">throwable</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// 3秒間何もなかったらこっち</span>
+</span><span class='line'>                        <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="nd">@Override</span>
+</span><span class='line'>                            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="n">MyActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span>
+</span><span class='line'>                                    <span class="s">&quot;３秒間何も操作がありませんでした&quot;</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">)</span>
+</span><span class='line'>                                    <span class="o">.</span><span class="na">show</span><span class="o">();</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                        <span class="o">});</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">});</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// イベント系は無限ストリームだから開放してやらないとリークするはず</span>
+</span><span class='line'>        <span class="n">_subscription</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　<code>ViewObservable.text(editName)</code> がテキストが入力される度にシグナルを発するストリーム、<code>ViewObservable.clicks(buttonOk)</code>がボタンが押される度にシグナルを発するストリームです。これらを <a href="http://rxmarbles.com/#merge"><code>mergeWith</code></a> で合体させます。</p>
+
+<p>　あとは <a href="https://github.com/ReactiveX/RxJava/wiki/Filtering-Observables#timeout"><code>timeout</code></a> につなげるだけ。３秒以内にシグナルがあったら onNext→<code>new Action&lt;Void&gt;()</code>のとこ、3秒以上何も操作がなかったらタイムアウトして onError→<code>new Action&lt;Throwable&gt;()</code> のとこに飛びます。あとはご自由に、ここでは <code>Toast</code> を表示してるだけです。</p>
+
+<p>　注意点は、イベントから生成されたストリームは無限、つまり <code>onComplete</code> は来ない。こういう <code>Observable</code> は自力での購読解除（<code>unsubscribe</code>）が必須です。</p>
+
+<p>これを動かすとこんな感じになります</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make_screensaver_using_rxjava_01.gif" alt="" /></p>
+
+<h2>Xamarin.Android + Rx本家の場合</h2>
+
+<p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(Label = &quot;RxJavaSample&quot;, MainLauncher = true, Icon = &quot;@drawable/icon&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
+</span><span class='line'>        <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">editName</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">EditText</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">editName</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">buttonOk</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">buttonOk</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">TextChangedEventArgs</span><span class="p">&gt;(</span><span class="n">editName</span><span class="p">,</span> <span class="s">&quot;TextChanged&quot;</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Merge</span><span class="p">(</span><span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">(</span><span class="n">buttonOk</span><span class="p">,</span> <span class="s">&quot;Click&quot;</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">3</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="p">{}</span> <span class="p">,</span>
+</span><span class='line'>            <span class="n">e</span> <span class="p">=&gt;</span> <span class="n">RunOnUiThread</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">Toast</span><span class="p">.</span><span class="n">MakeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&quot;３秒間何も操作がありませんでした&quot;</span><span class="p">,</span> <span class="n">ToastLength</span><span class="p">.</span><span class="n">Short</span><span class="p">).</span><span class="n">Show</span><span class="p">()));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
+　さあみんなで Rx にロックインされましょう！</p>
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/12/02/mac-user-have-misunderstood-about-xamarin/" title="Previous Post: マカーの人が Xamarin について勘違いしていそうな５つのこと">&lt; マカーの人が Xamarin について勘違いしていそうな５つのこと</a>
+          
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/';
+        var disqus_url = 'http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

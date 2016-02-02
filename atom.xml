@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T02:29:06+09:00</updated>
+  <updated>2016-02-03T02:36:34+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,201 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxAndroid でスクリーンセーバー的な機能を作る]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/"/>
+    <updated>2014-12-09T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/android">Android Advent Calendar 2014 8日目</a> の記事です。</p>
+
+<p>　例えば◯秒間操作がなかったらパスキーロック画面を表示する、とかそういうの。普通に作るとタイマーを使って面倒な感じになっちゃいますが、<a href="https://github.com/ReactiveX/RxJava">RxJava</a> と <a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a> を使うととても簡単にできます。</p>
+
+<!--more-->
+
+
+<h2>RxJava + RxAnroid の場合</h2>
+
+<p>　例えば、画面に <code>EditBox</code> と <code>Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
+
+<figure class='code'><figcaption><span>MyActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;MyActivity&quot;</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription</span><span class="o">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_my</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">EditText</span> <span class="n">editName</span> <span class="o">=</span> <span class="o">(</span><span class="n">EditText</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">editName</span><span class="o">);</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">View</span> <span class="n">buttonOk</span> <span class="o">=</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonOk</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="n">signalizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="n">Void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Object</span> <span class="n">onClickEvent</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 文字入力イベントのストリームと…</span>
+</span><span class='line'>        <span class="n">_subscription</span> <span class="o">=</span> <span class="n">ViewObservable</span><span class="o">.</span><span class="na">text</span><span class="o">(</span><span class="n">editName</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">)</span>
+</span><span class='line'>                <span class="c1">// ボタン押されたのストリームを合体</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">mergeWith</span><span class="o">(</span><span class="n">ViewObservable</span><span class="o">.</span><span class="na">clicks</span><span class="o">(</span><span class="n">buttonOk</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">))</span>
+</span><span class='line'>                <span class="c1">// 3秒間なんもなかったらエラーにする</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">timeout</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+</span><span class='line'>                <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="nd">@Override</span>
+</span><span class='line'>                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Void</span> <span class="n">dummy</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// 何かアクションがあったらこっち</span>
+</span><span class='line'>                        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;文字が入力されたか、ボタンが押されたよ&quot;</span><span class="o">);</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">},</span> <span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Throwable</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="nd">@Override</span>
+</span><span class='line'>                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">throwable</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                        <span class="c1">// 3秒間何もなかったらこっち</span>
+</span><span class='line'>                        <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                            <span class="nd">@Override</span>
+</span><span class='line'>                            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                                <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="n">MyActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span>
+</span><span class='line'>                                    <span class="s">&quot;３秒間何も操作がありませんでした&quot;</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">)</span>
+</span><span class='line'>                                    <span class="o">.</span><span class="na">show</span><span class="o">();</span>
+</span><span class='line'>                            <span class="o">}</span>
+</span><span class='line'>                        <span class="o">});</span>
+</span><span class='line'>                    <span class="o">}</span>
+</span><span class='line'>                <span class="o">});</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// イベント系は無限ストリームだから開放してやらないとリークするはず</span>
+</span><span class='line'>        <span class="n">_subscription</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　<code>ViewObservable.text(editName)</code> がテキストが入力される度にシグナルを発するストリーム、<code>ViewObservable.clicks(buttonOk)</code>がボタンが押される度にシグナルを発するストリームです。これらを <a href="http://rxmarbles.com/#merge"><code>mergeWith</code></a> で合体させます。</p>
+
+<p>　あとは <a href="https://github.com/ReactiveX/RxJava/wiki/Filtering-Observables#timeout"><code>timeout</code></a> につなげるだけ。３秒以内にシグナルがあったら onNext→<code>new Action&lt;Void&gt;()</code>のとこ、3秒以上何も操作がなかったらタイムアウトして onError→<code>new Action&lt;Throwable&gt;()</code> のとこに飛びます。あとはご自由に、ここでは <code>Toast</code> を表示してるだけです。</p>
+
+<p>　注意点は、イベントから生成されたストリームは無限、つまり <code>onComplete</code> は来ない。こういう <code>Observable</code> は自力での購読解除（<code>unsubscribe</code>）が必須です。</p>
+
+<p>これを動かすとこんな感じになります</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make_screensaver_using_rxjava_01.gif" alt="" /></p>
+
+<h2>Xamarin.Android + Rx本家の場合</h2>
+
+<p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(Label = &quot;RxJavaSample&quot;, MainLauncher = true, Icon = &quot;@drawable/icon&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// Set our view from the &quot;main&quot; layout resource</span>
+</span><span class='line'>        <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">editName</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">EditText</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">editName</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">buttonOk</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">buttonOk</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">TextChangedEventArgs</span><span class="p">&gt;(</span><span class="n">editName</span><span class="p">,</span> <span class="s">&quot;TextChanged&quot;</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Merge</span><span class="p">(</span><span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">(</span><span class="n">buttonOk</span><span class="p">,</span> <span class="s">&quot;Click&quot;</span><span class="p">).</span><span class="n">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="n">FromSeconds</span><span class="p">(</span><span class="m">3</span><span class="p">))</span>
+</span><span class='line'>            <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="p">{}</span> <span class="p">,</span>
+</span><span class='line'>            <span class="n">e</span> <span class="p">=&gt;</span> <span class="n">RunOnUiThread</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">Toast</span><span class="p">.</span><span class="n">MakeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span>
+</span><span class='line'>                <span class="s">&quot;３秒間何も操作がありませんでした&quot;</span><span class="p">,</span> <span class="n">ToastLength</span><span class="p">.</span><span class="n">Short</span><span class="p">).</span><span class="n">Show</span><span class="p">()));</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
+　さあみんなで Rx にロックインされましょう！</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[マカーの人が Xamarin について勘違いしていそうな５つのこと]]></title>
@@ -2415,58 +2610,6 @@ MacBookAir には、<a href="http://www.amazon.co.jp/gp/product/B00456DWUA/ref=a
 あと、保護フィルム要るのかな？</p>
 
 <p>これで Windows Store Apps の開発もできるぞ。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[git で過去との差分のサマリーを表示する]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/16/display-git-diff-summary/"/>
-    <updated>2014-07-16T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/16/display-git-diff-summary</id>
-    <content type="html"><![CDATA[<p>「現在のソースコードは、過去のバージョンからどのくらい修正したか？」を知りたい時に使います。</p>
-
-<!--more-->
-
-
-<h2>コマンド</h2>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>git diff --stat &lt;コミットID&gt;
-</span><span class='line'>
-</span><span class='line'>例）git diff --stat c7378a8</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>結果</h2>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'> amay077lib                                         |   0
-</span><span class='line'> .../android/fujiphoto/logic/PhotoItemLogic.java    |   1 -
-</span><span class='line'> .../android/fujiphoto/viewmodel/YmapBinder.java    |  24 +-
-</span><span class='line'> graphics/app_icon.svg                              | 436 +++++++++++++++++++++
-</span><span class='line'> graphics/camera.svg                                |  97 +++++
-</span><span class='line'> graphics/circle_small.svg                          |  87 ++++
-</span><span class='line'> graphics/fuji.svg                                  | 118 ++++++
-</span><span class='line'> graphics/loading.svg                               | 142 +++++++
-</span><span class='line'> graphics/pegman.svg                                | 176 +++++++++
-</span><span class='line'> graphics/photo_loading.svg                         | 142 +++++++
-</span><span class='line'> graphics/photo_loading_large.svg                   |  92 +++++
-</span><span class='line'>
-</span><span class='line'> 11 files changed, 1301 insertions(+), 14 deletions(-)</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   

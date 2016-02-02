@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rxandroid | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/rxandroid/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T02:29:06+09:00</updated>
+  <updated>2016-02-03T02:36:34+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,131 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxAndroid でスクリーンセーバー的な機能を作る]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/"/>
+    <updated>2014-12-09T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/android">Android Advent Calendar 2014 8日目</a> の記事です。</p>
+
+<p>　例えば◯秒間操作がなかったらパスキーロック画面を表示する、とかそういうの。普通に作るとタイマーを使って面倒な感じになっちゃいますが、<a href="https://github.com/ReactiveX/RxJava">RxJava</a> と <a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a> を使うととても簡単にできます。</p>
+
+<!--more-->
+
+
+<h2>RxJava + RxAnroid の場合</h2>
+
+<p>　例えば、画面に <code>EditBox</code> と <code>Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
+
+<p>```java MyActivity.java
+public class MyActivity extends Activity {</p>
+
+<pre><code>private static final String TAG = "MyActivity";
+private Subscription _subscription;
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_my);
+
+    final EditText editName = (EditText)findViewById(R.id.editName);
+    final View buttonOk = findViewById(R.id.buttonOk);
+
+    // OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換
+    final Func1&lt;Object, Void&gt; signalizer = new Func1&lt;Object, Void&gt;() {
+        @Override
+        public Void call(Object onClickEvent) {
+            return null;
+        }
+    };
+
+    // 文字入力イベントのストリームと…
+    _subscription = ViewObservable.text(editName).map(signalizer)
+            // ボタン押されたのストリームを合体
+            .mergeWith(ViewObservable.clicks(buttonOk).map(signalizer))
+            // 3秒間なんもなかったらエラーにする
+            .timeout(3, TimeUnit.SECONDS)
+            .subscribe(new Action1&lt;Void&gt;() {
+                @Override
+                public void call(Void dummy) {
+                    // 何かアクションがあったらこっち
+                    Log.d(TAG, "文字が入力されたか、ボタンが押されたよ");
+                }
+            }, new Action1&lt;Throwable&gt;() {
+                @Override
+                public void call(Throwable throwable) {
+                    // 3秒間何もなかったらこっち
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(MyActivity.this, 
+                                "３秒間何も操作がありませんでした", Toast.LENGTH_SHORT)
+                                .show();
+                        }
+                    });
+                }
+            });
+}
+
+@Override
+protected void onDestroy() {
+    // イベント系は無限ストリームだから開放してやらないとリークするはず
+    _subscription.unsubscribe();
+    super.onDestroy();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>　<code>ViewObservable.text(editName)</code> がテキストが入力される度にシグナルを発するストリーム、<code>ViewObservable.clicks(buttonOk)</code>がボタンが押される度にシグナルを発するストリームです。これらを <a href="http://rxmarbles.com/#merge"><code>mergeWith</code></a> で合体させます。</p>
+
+<p>　あとは <a href="https://github.com/ReactiveX/RxJava/wiki/Filtering-Observables#timeout"><code>timeout</code></a> につなげるだけ。３秒以内にシグナルがあったら onNext→<code>new Action&lt;Void&gt;()</code>のとこ、3秒以上何も操作がなかったらタイムアウトして onError→<code>new Action&lt;Throwable&gt;()</code> のとこに飛びます。あとはご自由に、ここでは <code>Toast</code> を表示してるだけです。</p>
+
+<p>　注意点は、イベントから生成されたストリームは無限、つまり <code>onComplete</code> は来ない。こういう <code>Observable</code> は自力での購読解除（<code>unsubscribe</code>）が必須です。</p>
+
+<p>これを動かすとこんな感じになります</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make_screensaver_using_rxjava_01.gif" alt="" /></p>
+
+<h2>Xamarin.Android + Rx本家の場合</h2>
+
+<p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = &ldquo;RxJavaSample&rdquo;, MainLauncher = true, Icon = &ldquo;@drawable/icon&rdquo;)]
+public class MainActivity : Activity
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle bundle)
+{
+    base.OnCreate(bundle);
+
+    // Set our view from the "main" layout resource
+    SetContentView(Resource.Layout.Main);
+
+    var editName = FindViewById&lt;EditText&gt;(Resource.Id.editName);
+    var buttonOk = FindViewById&lt;Button&gt;(Resource.Id.buttonOk);
+
+    Observable.FromEventPattern&lt;TextChangedEventArgs&gt;(editName, "TextChanged").Select(_=&gt;true)
+        .Merge(Observable.FromEventPattern(buttonOk, "Click").Select(_=&gt;true))
+        .Timeout(TimeSpan.FromSeconds(3))
+        .Subscribe(_ =&gt; {} , 
+        e =&gt; RunOnUiThread(() =&gt; Toast.MakeText(this, 
+            "３秒間何も操作がありませんでした", ToastLength.Short).Show()));
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>まとめ</h2>
+
+<p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
+　さあみんなで Rx にロックインされましょう！</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[「チェックAがONならば、項目Bは入力必須とする」という Validation を RxJava + RxAndroid でやる]]></title>
