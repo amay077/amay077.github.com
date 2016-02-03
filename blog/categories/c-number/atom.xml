@@ -4,7 +4,7 @@
   <title><![CDATA[Category: c# | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/c-number/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T03:06:54+09:00</updated>
+  <updated>2016-02-04T02:23:50+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,158 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[UIAlertController を async/await 対応させて便利に使う]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await/"/>
+    <updated>2014-12-24T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014 23日目</a> の記事です。</p>
+
+<p>　なんか空いてたのでエントリーしましたが、急だったので軽い話です。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/56abeeaa188f33cd56de">iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた &ndash; Qiita</a></li>
+</ul>
+
+
+<p>の焼き直しみたいなものです。</p>
+
+<p>　iOS8 では、<code>UIAlertDialog</code> が非推奨になり、代わりに <code>UIAlertController</code> を使えとのこと。</p>
+
+<p>　普通に使うとこうなります。</p>
+
+<p>```csharp
+button1.TouchUpInside += (sender, e) =>
+{</p>
+
+<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create("はい", 
+    UIAlertActionStyle.Default, x=&gt; label1.Text = "こんぼう をすてました")); 
+alert.AddAction(UIAlertAction.Create("いいえ",  
+    UIAlertActionStyle.Default, x=&gt; {})); 
+
+this.PresentViewController(alert, true, null);
+</code></pre>
+
+<p>};
+```</p>
+
+<p>　このくらいなら問題ありません。</p>
+
+<p>　次に、こんぼう をすてる前にもう一度問いかけるようにします。
+２つ目の <code>UIAlertController</code> が入れ子になってしまって見づらい、 <strong>残念な感じ</strong> です。</p>
+
+<p>```csharp
+button1.TouchUpInside += (sender, e) =>
+{</p>
+
+<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create("はい", 
+    UIAlertActionStyle.Default, x=&gt; 
+    {
+        // 念押しの確認ダイアログ（入れ子でつらい
+        var alert2 = UIAlertController.Create("", "ほんとうにすてますか？", UIAlertControllerStyle.Alert);
+        alert2.AddAction(UIAlertAction.Create("もちろん", UIAlertActionStyle.Default, _=&gt; 
+        {
+            label1.Text = "こんぼう をすてました"
+        }));
+    alert2.AddAction(UIAlertAction.Create("やめる",  UIAlertActionStyle.Default, _=&gt; {})); 
+
+    // アラート２の表示
+    this.PresentViewController(alert2, true, null);
+})); 
+
+// アラート１の表示
+alert.AddAction(UIAlertAction.Create("いいえ",  UIAlertActionStyle.Default, x=&gt; {})); 
+
+this.PresentViewController(alert, true, null);
+</code></pre>
+
+<p>};
+```</p>
+
+<p>　Objective-C や Swift なら、ここで打つ手は今のところ無いでしょう。
+しかし <strong>Xamarin には、C# には async/await がありまぁす！</strong>
+アラートの表示を async/await（というか Task）対応してみましょう。</p>
+
+<p>```csharp
+private Task<int> ShowDialog(string message, string button1Title, string button2Title)
+{</p>
+
+<pre><code>var comp = new TaskCompletionSource&lt;int&gt;();
+
+var alert = UIAlertController.Create("", message, UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create(button1Title, UIAlertActionStyle.Default, x=&gt; 
+{
+    comp.SetResult(1); // OKボタン
+})); 
+alert.AddAction(UIAlertAction.Create(button2Title,  UIAlertActionStyle.Default, x=&gt; 
+{
+    comp.SetResult(0); // Cancel
+})); 
+
+this.PresentViewController(alert, true, null);
+
+return comp.Task;
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>Task&lt;int&gt;</code> を返すメソッド <code>ShowDialog</code> です。<code>UIAlertController</code> のボタンが押されたら <code>SetResult</code> して Task の値を決定します。</p>
+
+<p>　このメソッドを使う方は、こうなります。</p>
+
+<p>```csharp
+button1.TouchUpInside += async (sender, e) =>
+{</p>
+
+<pre><code>if (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 0) 
+    return;
+
+if (await ShowDialog("ほんとうにすてますか？", "もちろん", "やめる") == 0) 
+    return;
+
+label1.Text = "こんぼう をすてました";
+</code></pre>
+
+<p>};
+```</p>
+
+<p>なんて見やすいコードになったことでしょう。すばらしい！</p>
+
+<p>入れ子でなく、フラットに書けるので、こんな事もできます。</p>
+
+<p>```csharp
+button1.TouchUpInside += async (sender, e) =>
+{</p>
+
+<pre><code>while (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 1) 
+{
+    label1.Text = "それをすてるなんてとんでもない！";
+}
+
+label1.Text = "すてるのをやめました";
+</code></pre>
+
+<p>};
+```</p>
+
+<p>こんぼうを捨てるのをあきらめるまで、なんどでも聞いてきます。
+コールバックスタイルのメソッドでループとか、ベタに書くと頭痛いです。</p>
+
+<p>動かすとこんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/uialertcontroller_with_async_await_01.gif" alt="" /></p>
+
+<p><code>ShowDialog</code> は拡張メソッドとして作成しておくと、呼び出しに便利かもしれません。
+コールバックスタイルの機能を、Task化するパターンはよく使いそうな気がします。<code>TaskCompletionSource</code>、覚えておきましょう。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ReactiveX と MVVM と DataBinding の関係について図にしてみた]]></title>
@@ -373,77 +525,6 @@ IObservable<string> CreateManager(string managerTitle, string document, Predicat
 <p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
 
 <p>んーどうしようか。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
-    <updated>2014-04-03T15:29:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
-</ul>
-
-
-<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
-
-<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
-
-<p><code>csharp
-MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
-</code></p>
-
-<p>これを FromEventPattern を使うとこう書けます。</p>
-
-<p><code>csharp DoesNotWorkOnDevice.cs
-Observable.FromEventPattern(MyButton, "TouchUpInside")
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
-
-<blockquote><p>System.InvalidOperationException: Could not find event &lsquo;TouchUpInside&rsquo; on object of type &lsquo;MonoTouch.UIKit.UIButton&rsquo;.</p></blockquote>
-
-<p><code>TouchUpInside</code> が無いと言われます。</p>
-
-<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
-
-<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 &ndash; Build Insider</a></li>
-</ul>
-
-
-<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
-
-<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
-
-<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
-
-<p><code>csharp WorkOnDevice.cs
-Observable.FromEventPattern(
-  h =&gt; MyButton.TouchUpInside+=h,
-  h =&gt; MyButton.TouchUpInside-=h)
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>Xamarin.iOS の制限事項は以下に。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
-</ul>
-
-
-<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
-
-<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
 ]]></content>
   </entry>
   

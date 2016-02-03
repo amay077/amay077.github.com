@@ -1,0 +1,312 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>図形の移動が、こんなに簡単に実装できる時代になりました - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="foss4g,reactivex,xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    図形の移動が、こんなに簡単に実装できる時代になりました
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2014-12-13T00:00:00+09:00" pubdate data-updated="true">Dec 13<sup>th</sup>, 2014</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/foss4g/'>foss4g</a>, <a class='category' href='/blog/categories/reactivex/'>reactivex</a>, <a class='category' href='/blog/categories/xamarin/'>xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>　これは <a href="http://qiita.com/advent-calendar/2014/foss4goss4g">FOSS4G Advent Calendar 2014 12日目</a> の記事です。</p>
+
+<p>　FOSS4G と言えば GIS、GIS と言えば図形編集ですね。図形を追加したり移動したり回転したりできる機能です。面倒なんですよ、これプログラミングするの。</p>
+
+<p>　なにが面倒かというと、色んな状態（マウスの状態＜左/右ボタンが押されている/押されてない、マウスダウン時の座標、現在の座標＞、図形の状態＜選択されている/いない＞）などなどがコードの中に入り乱れて、スパゲッティコードになりがちというか「なります」。</p>
+
+<!--more-->
+
+
+<p>　例えば「図形の移動」のフローは、</p>
+
+<ol>
+<li>図形をマウスダウン（＝選択）</li>
+<li>そのままマウスムーブ（＝移動）</li>
+<li>マウスボタンを離して終了</li>
+</ol>
+
+
+<p>と、極めて単純なんですね。これが普通にコーディングするとフラグや状態管理の嵐になってしまう。</p>
+
+<p>　と言ってた時代は終わりました。
+　例えば、下の画面。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/simply_shape_dragging_using_rx_01.gif" alt="" /></p>
+
+<p>　これは、白い四角形をドラッグで移動できるというスマホアプリの例ですが、これの実装の主要部分はたったの <strong>６行</strong> です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">rectangle</span><span class="p">.</span><span class="n">DownEvent</span><span class="p">()</span> <span class="c1">// 1.図形をマウスダウン</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">rectangle</span><span class="p">.</span><span class="n">MoveEvent</span><span class="p">())</span>  <span class="c1">// 2.そのままマウスムーブ</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">rectangle</span><span class="p">.</span><span class="n">SetX</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">RawX</span><span class="p">);</span> <span class="c1">// 移動の度に図形を移動</span>
+</span><span class='line'>        <span class="n">rectangle</span><span class="p">.</span><span class="n">SetY</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">RawY</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　このコードをよく見ると、上に書いたフローと似ているのが分かります。人が考えたままコードに落とし込める。しかもフラグとか状態管理とかのゴミが一切ない。素晴らしい！(3. に該当するコードが必要な気がするけどまあいいや）</p>
+
+<p>　これを実現しているのは<a href="http://ninjinkun.hatenablog.com/entry/introrxja">リアクティブプログラミング</a>という概念。なんでもかんでもストリーム(時系列にデータが降ってくる何か)で捉えよう、イベントでさえも。イベントはストリームであるので、あとはストリームの加工や他のストリームとの合成でどうにかできてしまいます。</p>
+
+<p>　リアクティブ＋図形うんぬんの他の例は、</p>
+
+<ul>
+<li><a href="http://act.neue.cc/rxjs/canvas.htm">RxJS + Canvas</a></li>
+</ul>
+
+
+<p>などがあります。これは HTML なのですぐ試せますしコード（Javascript）も見られます。</p>
+
+<p>　リアクティブプログラミング用の著名なライブラリはほとんどオープンソース、リアクティブプログラミング＋FOSS4G で <strong>RxGIS</strong> （なんかカッコいいから言ってみたかっただけ）</p>
+
+<p>　いつかまたGIS作るみたいな仕事があったら、絶対 Rx 使ってつくるぞ！と思ってますのでよろしくお願いします。</p>
+
+<p>（上のコード例の全コードは <a href="https://gist.github.com/amay077/1d22ba8ffa8ad95e9393">gist</a> にあります。）</p>
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/12/09/making-like-screensaver-using-rxandroid/" title="Previous Post: RxAndroid でスクリーンセーバー的な機能を作る">&lt; RxAndroid でスクリーンセーバー的な機能を作る</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2014/12/24/using-uialertcontroller-with-async-await/" title="Next Post: UIAlertController を async/await 対応させて便利に使う">UIAlertController を async/await 対応させて便利に使う &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/';
+        var disqus_url = 'http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

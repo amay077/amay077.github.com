@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T03:06:54+09:00</updated>
+  <updated>2016-02-04T02:23:50+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,890 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
+    <link href="http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/"/>
+    <updated>2015-12-24T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 24日目</a> の記事です。</p>
+
+<p>先日、</p>
+
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/entry/2015/12/20/012007">JXUGC #9 Xamarin.Forms Mvvm 実装方法 Teachathon を開催しました &ndash; Xamarin 日本語情報</a></li>
+</ul>
+
+
+<p>というイベントがありまして、エクセルソフトの田淵さんが作成したストップウォッチのアプリケーション(注:田淵さんはプログラマではないｗ)を、MVVM識者の方々が「MVVMとしてはこうあるべきだ」と叩きまくる、という恐ろしい?ものでした。</p>
+
+<!--more-->
+
+
+<p>私はこの勉強会には参加できなかったのですが、ストリーミングとか見て、</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">僕もストップウォッチ作ってみるかー</p>&mdash; ジェットあめいカスタム (@amay077) <a href="https://twitter.com/amay077/status/677561989359472640">2015, 12月 17</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>などとつぶやいたらご指名されてしまいました(^^)
+このイベントは Xamarin を使ったアプリ製作でしたが、せっかくなので <strong>RxJava + MVVM</strong> で作ってみました。
+(ご指名に応えないといけないのでその後 Xamarin版も製作)</p>
+
+<h1>ストップウォッチアプリの仕様</h1>
+
+<p>上記リンクからの引用です。</p>
+
+<ul>
+<li>Start/Stop ボタン、Lap ボタン</li>
+<li>StartするとラップボタンはEnable.ストップするとDisable
+
+<ul>
+<li>スタートしてからの経過時間をXX'XX.XXXみたいな感じで表示</li>
+</ul>
+</li>
+<li>履歴をListViewで残す</li>
+<li>ストップしたら結果をダイアログで出して分岐？</li>
+<li>今までのラップよりMin, Maxなどをダイアログに表示して次のページに遷移 ←ここ勝手に Toast に仕様変更しましたｗ</li>
+<li>スイッチの切り替えで、ミリ秒の桁を表示/非表示</li>
+</ul>
+
+
+<p>こんな機能を満たすサンプルを</p>
+
+<ol>
+<li>RxJava を使った Android アプリ(Java言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</li>
+</ol>
+
+
+<p>でそれぞれ作ってみました。</p>
+
+<h1>とりあえず、作ったもの</h1>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_00.gif" alt="つくったもの" /></p>
+
+<p>左は Android-Java製、右は Xamarin.iOS製です。(Xamarin.Android製は省略)</p>
+
+<h1>1. RxJava を使った Android アプリ(Java言語)</h1>
+
+<h2>Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>構成図っぽいものを描くとこんな感じになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_01.png" alt="クラス図的なの" /></p>
+
+<h3>Model</h3>
+
+<p>　この仕様だと、ストップウォッチの一通りの機能を満たすクラスが Model になります。これを <code>StopWatchModel</code> という名前にしました。</p>
+
+<p>  <strong>「ロジック」は、すべてこの層（このクラス）に書きます。</strong>
+　
+　例えば、ストップウォッチのタイマーを実行するには、 RxJava で <code>Observable.interval</code> としますが、これを ViewModel層に書いたら「負け」です。
+　
+また、ストップウォッチの実行は、画面の表示/破棄と連動しなくてよい(画面遷移しても計測し続けるべき)なので、StopWatchModel の生存期間は、アプリケーションの起動時から終了まで、という事になります。</p>
+
+<p>　RxJava を全面的に使いたいので、 StopWatchModel のプロパティは全て <code>Observable&lt;T&gt;</code> にしました。RxJava を使わなかったらプロパティではなくコールバックですね。
+　何かメソッドを実行したら、その結果は全て <code>Observable&lt;T&gt;</code> を通じて通知される仕組みです。なので原則として Model のメソッドの戻り値は <code>void</code> です。</p>
+
+<h3>ViewModel</h3>
+
+<p>　しつこいようですが <strong>ここにロジックを書いたら負け</strong> です。
+個人としては、条件分岐もしたくない、変数宣言もしたくない、くらいのつもりでいます。もし書いてしまったら「それはModelの方が適切ではないか？」を検討します。</p>
+
+<p>　ViewModel の役割は、Model のプロパティ(コールバック)を、View用に変換して流すこと、Viewのための機能をコマンドとして公開することです。</p>
+
+<p>　例えば、仕様の内、</p>
+
+<blockquote><p>スイッチの切り替えで、ミリ秒の桁を表示/非表示</p></blockquote>
+
+<p>　が、「View用に変換」の良い例になります。
+　私の実装では、ミリ秒の桁を表示するか否かの bool 値を、format関数の書式文字列に変換しています。(View側で format して表示しています。)
+　↓のような感じです。</p>
+
+<p>```java
+/<em>* 時間の表示フォーマット </em>/
+public final Observable<String> timeFormat; // field</p>
+
+<p>this.timeFormat = _stopWatch.isVisibleMillis.map(visible &ndash;></p>
+
+<pre><code>visible ? "mm:ss.SSS" : "mm:ss");
+</code></pre>
+
+<p>```</p>
+
+<p>RxJava で「変換」とくれば、 <code>map</code> など、 <code>Observable</code> の投影系のメソッドの出番となります。</p>
+
+<p>ViewModel が公開するプロパティも、基本的には <code>Observable&lt;T&gt;</code> になりました。(これはこのアプリの仕様上、OneWayバインディング＜=Modelによるデータの変化をViewに表示する＞だけで済んだためです。TwoWayバインディング＜=Viewからのデータの入力を受け付ける＞が必要な場合は、<code>Subject</code>など、データをセットできる機能が必要になります。)</p>
+
+<p>コマンドとは、Modelのメソッドを呼ぶためのものですが、それに加えて「そのコマンドが実行可能か？」を示すフラグも持ちます。さらにこのフラグも <code>Observable&lt;boolean&gt;</code> で表します。
+こうする事で、「機能が利用可能な時のみボタンを Enable にする」のようなバインディングが可能になります。今回の仕様で言えば</p>
+
+<blockquote><p>StartするとラップボタンはEnable.ストップするとDisable</p></blockquote>
+
+<p>に該当します。</p>
+
+<p>コマンドのインターフェースは↓のようになります。</p>
+
+<p>```java
+public interface Command {</p>
+
+<pre><code>/** このコマンドが実行可能かを示すフラグの更新を通知するObservable */
+Observable&lt;Boolean&gt; canExecuteObservable();
+
+/** このコマンドの処理を実装する */
+void execute();
+</code></pre>
+
+<p>}
+```</p>
+
+<p>今回は、このインターフェースを ViewModel で匿名クラスを作ることで実装しました。↓のような感じです。この <code>commandLap</code> をラップボタンとバインドさせます。</p>
+
+<p>```java
+/<em>* 経過時間の記録 </em>/
+public final Command commandLap = new Command() {</p>
+
+<pre><code>@Override
+public Observable&lt;Boolean&gt; canExecuteObservable() {
+    return _stopWatch.isRunning; // 実行中のみ記録可能
+}
+
+@Override
+public void execute() {
+    _stopWatch.lap();
+}
+</code></pre>
+
+<p>};
+```</p>
+
+<p>あ、ViewModel は View とは疎結合に作ります。Viewを参照してはいけないのはもちろん、<code>TextView</code> や <code>Activity</code> などが import されていたら「負け」です。</p>
+
+<p>他には、Viewの状態を保持する役割も担いますが、本アプリの仕様では、それに該当する処理はありませんでした。</p>
+
+<h3>View</h3>
+
+<p>　View層で行うことは、画面要素のレイアウトとViewModelとのバインディングです。それ以外の事は行いません。.NETの世界では、View層において値の変換を行う機能=ValueConverterが存在しますが、ValueConverterを使うべきかViewModelで行うべきかでよく議論になります。
+　
+　バインディングの実体は、ViewModelのプロパティである <code>Observable&lt;T&gt;</code> を <code>subscribe</code> して、Viewのプロパティにセットしているだけです。前述の通り今回は TwoWay は無いので楽です。TwoWay が出てくるとバインディングのフレームワークにお願いした方がよいです。
+　
+　例えば、 <code>Observalbe&lt;String&gt;</code> と TextViewのtextプロパティのバインディングは、下のようになります。</p>
+
+<p>```java
+public TextViewBinder toTextOneWay(Observable<String> prop) {</p>
+
+<pre><code>_subscriptions.add(
+    prop.observeOn(AndroidSchedulers.mainThread())
+    .subscribe(x -&gt; _textView.setText(x)));
+
+return this; // メソッドチェーンで連続して呼べるようにしてるだけ
+</code></pre>
+
+<p>}
+```</p>
+
+<p>.NETの世界では、このバインディングを画面定義ファイル(.xaml)に直接記述できます。
+Androidでも一部のライブラリや、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">今後公式にデータバインディングがサポートされる模様</a>ですが、xml でのバンディングの記述は、デバッグしづらくなるので個人的にはそれほどメリットを感じないです。デザイナーとの分業と言っても別な理由で不可能なケースが多いと思います。</p>
+
+<h2>画面遷移や Toast の表示は誰の責務？</h2>
+
+<p>大抵の MVVMフレームワーク に備わっている <code>Messenger</code> という機能を使います。Android界隈の人には「EventBus」と言った方がわかりやすいかも知れません。</p>
+
+<p>ViewModelが「画面遷移を要求するメッセージ」を投げ、それをViewが受信して画面遷移を行います。</p>
+
+<p>```java メッセージ送信側(MainViewModel.java)
+public final Command commandNextView = new Command() {</p>
+
+<pre><code>@Override
+public void execute() {
+    // LapActivity へ遷移させる
+    // ほんとは LapViewModel.class を指定すべき(LapActivity は使いたくない)
+    messenger.send(new StartActivityMessage(LapActivity.class));
+}
+</code></pre>
+
+<p>};
+```</p>
+
+<p>```java メッセージ受信側(MainActivity.java)
+// 画面遷移のメッセージ受信
+_viewModel.messenger.register(StartActivityMessage.class.getName(), new Action1<Message>() {</p>
+
+<pre><code>@Override
+public void call(final Message message) {
+    runOnUiThread(new Runnable() {
+        @Override
+        public void run() {
+            final StartActivityMessage m = (StartActivityMessage)message;
+            Intent intent = new Intent(MainActivity.this, m.activityClass);
+            MainActivity.this.startActivity(intent);
+        }
+    });
+}
+</code></pre>
+
+<p>});
+```</p>
+
+<p>今回は簡単な Messenger を実装しました。VM->Vの通知にしか使わないのでVM毎に一つ持つようにしています。</p>
+
+<h1>2.3. Reactive Extensions, ReactiveProperty を使った Android/iOS アプリ(Xamarin, C#言語)</h1>
+
+<p><a href="https://xamarin.com/">Xamarin</a> は、 C# で Android/iOS が作れるプロダクトです。
+RubyMotion のように、CocoaTouch や Android SDK の API をラップし、同じ名称のクラス,メソッドで C# から呼び出せるようにしています。</p>
+
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/">Xamarin 日本語情報</a></li>
+<li><a href="http://qiita.com/amay077/items/2e86b44e5f274a34b2e9">マカーの人が Xamarin について勘違いしていそうな５つのこと &ndash; Qiita</a></li>
+</ul>
+
+
+<p>.NETのオープンソース実装である mono 由来の製品であり、また Microsoft とのパートナーシップも結んでいることから、.NET の資産の多くが利用可能です。</p>
+
+<p>何が言いたいかと言うと、RxJava も MVVM パターンも、元は .NET のアプリケーション開発の分野で発案・成熟してきた考え方であり、豊富な.NET製ライブラリ(今回だと Reactive Extensions と ReactiveProperty)を使って Android/iOS アプリを開発できる、という事です。</p>
+
+<h2>Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>Xamarin でも MVVM の役割はまったく同じですが、
+<strong>「Model-ViewModel を Android/iOS で使いまわせる」</strong>
+という大きなメリットがあります。</p>
+
+<p>Model と ViewModel からは、プラットフォームに依存するコードは排除できます(すべきです)。
+Xamarin(というか .NET) ではプラットフォーム非依存の処理をライブラリ化できます(これを PCL=Portable Class Library と言います)。</p>
+
+<p>Android と iOS でそれぞれに実装が必要なのは、View と、そのバインディングのみです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_02.png" alt="クラス図的なの" /></p>
+
+<h2>Reactive Extensions について</h2>
+
+<p>本家<a href="https://github.com/Reactive-Extensions/Rx.NET">Rx.NET</a>です。RxJava はこの Reactive Extensions を Java にポートしたものです。
+RxJava には、いくつか便利なメソッドが追加されています(<code>compose</code> とか)が、殆ど同じです。
+また、 C# はラムダ式を標準でサポートしていることから、 retrolambda などに頼らなくても見やすいコードが書けるのは言うまでもないでしょう。</p>
+
+<h2>ReactiveProperty について</h2>
+
+<p><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> は、Rxの機能を活かしてMVVMパターンの実装を手助けしてくれるライブラリです。</p>
+
+<ul>
+<li><a href="http://blog.okazuki.jp/entry/2015/02/22/212827">MVVMとリアクティブプログラミングを支援するライブラリ「ReactiveProperty v2.0」オーバービュー &ndash; かずきのBlog@hatena</a></li>
+</ul>
+
+
+<p>Java版ストップウォッチでは、<code>StopWatchModel</code> や ViewModel のプロパティを全て <code>Observable&lt;T&gt;</code> としましたが、 Xamarin版では <code>ReactiveProperty&lt;T&gt;</code> としています。 <code>ReactiveProperty&lt;T&gt;</code> は <code>Observable&lt;T&gt;</code> から継承しているので、それほど大差はありませんが、<code>Subject</code> のように値の設定をサポートしていたり、バリデーション、エラー通知の仕組みが備わっています。</p>
+
+<p>また、ReactiveProperty は、 Android の View要素とのバインディング機能も持ちます。これを使うとバインディングが以下のように書けます。</p>
+
+<p>```csharp
+// TextView(textTime) と viewModel.Time のバインド
+FindViewById<TextView>(Resource.Id.textTime)</p>
+
+<pre><code>.SetBinding(v =&gt; v.Text, 
+    _viewModel.Time.Select(x =&gt; x.ToString())
+    .ObserveOnUIDispatcher()
+    .ToReactiveProperty());
+</code></pre>
+
+<p>```</p>
+
+<p>iOS のバインディングはありませんが、 <del>ソースの一部を持ってくる事で、殆ど解決します</del> <a href="https://twitter.com/okazuki/status/679256704689684480">ツイートしたら取り込んでもらえました(^^)</a> 。</p>
+
+<h1>作ったアプリのソース</h1>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample">amay077/StopWatchSample</a></li>
+</ul>
+
+
+<p>それぞれ、</p>
+
+<ol>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppAndroid">RxJava を使った Android アプリ(Java言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Android">Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.iOS">Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Core">Xamarin版アプリの Model, ViewModel</a></li>
+</ol>
+
+
+<p>にあります。</p>
+
+<p>Java版は、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a></li>
+</ul>
+
+
+<p>を見るとだいたい分かると思います。</p>
+
+<p>また、Java版 と Xamarin版では、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/Models/StopWatchModel.cs">StopWatchModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/ViewModels/MainViewModel.cs">MainViewModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Android/Views/MainActivity.cs">MainActivity.cs</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.iOS/Views/MainViewController.cs">MainViewController.cs</a></li>
+</ul>
+
+
+<p>あたりを見比べるといいと思います。</p>
+
+<h1>まとめ</h1>
+
+<p>MVVM と RxJava はとても相性がよいと感じました。</p>
+
+<p>Model → ViewModel → View と通知を伝搬させるのに、そのまま <code>Observable&lt;T&gt;</code> を繋げればよいのですから。加工が必要なら <code>map</code> などのオペレータを挟むだけ。
+これがコールバックだったら…恐ろしくて想像したくありません。</p>
+
+<p>Model が使用するDB層やWebAPIなども RxJava をサポートしていたら、もっと便利になると思います。(Realm は RxJava サポートが追加されたようですね！)</p>
+
+<p>View &ndash; ViewModel のデータバインディングにも RxJava は有効ですが、こちらは、Android公式の Data Binding がどう実装されるかで未来が変わってきそうです。</p>
+
+<p>Android-Java には、まだメジャーな MVVMフレームワークが無いので、登場が待たれるところです。</p>
+
+<h1>おまけ：反省など</h1>
+
+<h2>View か ViewModel か Model か問題</h2>
+
+<p>下は View に書かれている「現在時刻と表示書式文字列のどちらかが更新されたら、時刻をフォーマットして流す」という Observable です。</p>
+
+<p>```java
+// フォーマットされた時間を表す Observable（time と timeFormat のどちらかが変更されたら更新）
+final Observable<String> formattedTime = Observable.combineLatest(</p>
+
+<pre><code>    _viewModel.time,
+    _viewModel.timeFormat, (Long time, String format) -&gt; {
+        final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
+        return sdf.format(new Date(time));
+    });
+</code></pre>
+
+<p>```</p>
+
+<p>これは、ViewModel に用意すべきだったかも知れません。いやいや、フォーマットされた時間を通知する機能が Model にあってもおかしくないとも言えます。
+実際、 <code>LapActivity</code> でも同じコードを書いているので D.R.Y原則にも反します。やっぱ Model に持たせるべきだったと反省。</p>
+
+<h2>Model に戻り値が void でないメソッドを作っちゃった問題</h2>
+
+<blockquote><p>原則として Model のメソッドの戻り値は void です</p></blockquote>
+
+<p>の原則に反して、戻り値で最速、最遅ラップ値を返してしまいました。
+Toast表示のためだけに取得できればいいやと思いこうしたのですが、これでは「最速、最遅ラップを常に画面に表示する」という仕様変更があっただけで破綻します。これは悪手でした、反省。</p>
+
+<p>だいたいラップの最大、最小の取得は、 <code>Observable&lt;List&lt;Long&gt;&gt; laps</code>  を <code>map</code> で変換すればよいだけの話ですね。LINQ あるいは Stream API が使えれば <code>List&lt;Long&gt;</code> から min/max を取得するのも簡単ですし。</p>
+
+<h2>Timer を 1ms 間隔にしちゃった問題</h2>
+
+<p><code>Observable.interval(1ms)</code> ってやっちゃいましたが、START の時間を覚えておいて、LAP, STOP された時に、現在時刻との差分を取ればよかったですね。基本的なムダで反省。</p>
+
+<p><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> より</p>
+
+<blockquote><p>Lap ボタンを押したタイミングで DateTime.Now を取得すればよいわけで、何も定期的に内部データを更新する必要はありません</p></blockquote>
+
+<p>その通りですね。。。</p>
+
+<h2>UIスレッドへの変換をだれがやるのか問題</h2>
+
+<p>今回は、以下のように、自作したバインディングの中で <code>observeOn(AndroidSchedulers.mainThread())</code> 行っています。</p>
+
+<p>```java
+public TextViewBinder toTextOneWay(Observable<String> prop) {</p>
+
+<pre><code>_subscriptions.add(
+    prop.observeOn(AndroidSchedulers.mainThread())
+        .subscribe(x -&gt; _textView.setText(x)));
+
+return this;
+</code></pre>
+
+<p>}
+```</p>
+
+<p>これを ViewModel で行うこと(ViewModel が公開する Observable は必ずUIスレッドで実行されるというルール)もできます。
+が、セオリーが分かっていません。とりあえず View側で observeOn しとけば安全かなと思って上記のようにしているだけです。使用するMVVMフレームワークの仕様にも依存しそうです。</p>
+
+<h2>StopWatchModel のプロパティは Hot？ それとも Cold？</h2>
+
+<p>StopWatchModel の各プロパティである <code>Observable&lt;T&gt;</code> は、 <strong><code>subscribe</code> をトリガーに値が流れ始めるものではないので Hot</strong> ですね。</p>
+
+<p>また、<code>BehaviorSubject</code> を使っているので、 <code>subscribe</code> 時には、その時点の最新の値が流れてきます。</p>
+
+<p>シングルトンの <code>StopWatchModel</code> に対して、 <code>MainActivity</code> に続いて <code>LapActivity</code> でも購読した時に、正しくラップタイム群が表示できるのは、<code>BehaviorSubject</code> であるためですね。</p>
+
+<p><code>refCount</code> してないけど、ちゃんと破棄されているのかは未確認。。。</p>
+
+<h2>Observalbe&lt;List&lt;T>></h2>
+
+<p>ラップタイム群を通知するプロパティは <code>Observalbe&lt;List&lt;T&gt;&gt;</code> にしています。
+この場合、List の中身を変更されても通知されないので  <code>Collections.unmodifiableList</code> で変更不可にしてから onNext で通知しています。LAPボタンが押される度に List を作りなおしている感じになります。</p>
+
+<p>ListView とのバインディングも同じで、onNext を受信する度に、ListView を洗い替えしています。
+このムダが嫌、大量データでパフォーマンスに問題が出る場合は、.NET にある <a href="https://msdn.microsoft.com/ja-jp/library/ms668604(v=vs.110"><code>ObservableCollection&lt;T&gt;</code></a>.aspx) のような仕組みを作る必要があります。(Rx.NET, RxJava では管轄外かな？)</p>
+
+<p><code>ObservableCollection&lt;T&gt;</code> は、リストへの追加、削除、変更をアイテム毎に通知／監視できます(「 <em>項目X</em> が <em>2番目</em> に <em>追加</em> された」のような)。適切な通知とバインディングを実装すれば、ListView の差分更新が可能です（面倒ですが）。</p>
+
+<h1>参考</h1>
+
+<ul>
+<li><a href="http://ugaya40.hateblo.jp/entry/model-mistake">MVVMのModelにまつわる誤解 &ndash; the sea of fertility</a></li>
+<li><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> &ndash; タイマを View/ViewModel/Model に持つそれぞれの理由が解説されています。</li>
+<li><a href="http://qiita.com/hide92795/items/f7205c8171826cc2153b">RxJava &ndash; Rxで知っておくと便利なSubjectたち &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/amay077/items/4bb6b09a1911b074f50c">RxJava &ndash; Hot Observable と ConnectableObservable について &ndash; Qiita</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する]]></title>
+    <link href="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/"/>
+    <updated>2015-12-01T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/xamarin">Xamarin Advent Calendar 2015 1日目</a> の記事です。</p>
+
+<p>Xamarin Advent Calendar 2015、今日から開始です。
+3年目になってもネタに尽きない Xamarin 、まだまだ盛り上がっております。</p>
+
+<p>かくいう自分は、<a href="http://qiita.com/amay077/items/0a3fa3dfac7f29a2807d">前回の投稿</a> が約1年前と、完全に時代遅れになっております（仕事とスプラ&hellip;いえ何でもないです）。
+最近のトピックスは他の方にお任せして、1年前からのネタを書きます。</p>
+
+<!--more-->
+
+
+<p>Xamarin でギョームアプリを開発している時に、Android/iOS で使える ORM を探していたというか、JSON のデータをお手軽に保存・読み出し→インスタンス化できるライブラリないかなーと探していました。</p>
+
+<p>Xamarin の公式ドキュメント</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/">Cross-Platform Data Access &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>には、 SQLite.NET や ADO.NET などが紹介されていますが、どれも面倒そう。そこで使ってみようと思ったのが <a href="http://qiita.com/amay077/items/f14e04d4e86c8a782c15">2年前の投稿</a> でチラッと触れていた Akavache です。</p>
+
+<h1>Akavache とは</h1>
+
+<ul>
+<li>akavache/Akavache &ndash; <a href="https://github.com/akavache/Akavache">https://github.com/akavache/Akavache</a></li>
+</ul>
+
+
+<p>以下、README から引用です。</p>
+
+<blockquote><p>Akavache is an asynchronous, persistent (i.e. writes to disk) key-value store created for writing desktop and mobile applications in C#, based on SQLite3. Akavache is great for both storing important data (i.e. user settings) as well as cached local data that expires.</p></blockquote>
+
+<p>(意訳)Akavacheは、C# による、SQLite3 をベースとした非同期で永続的なデスクトップとモバイルアプリケーション向けのキーバリューストアです。 ユーザー設定やキャッシュなどのローカルデータを保存するのに最適です。</p>
+
+<p>バックエンドは SQLite3 なので、まあ得体の知れないデータ形式ではない、と。ちなみに <a href="https://github.com/paulcbetts/AkavacheExplorer">AkavacheExplorer</a> というデータビューアもあります。</p>
+
+<h1>対応プラットフォーム</h1>
+
+<blockquote><p>Akavache is currently compatible with:</p>
+
+<ul>
+<li>Xamarin.iOS / Xamarin.Mac 32-bit</li>
+<li>Xamarin.Android</li>
+<li>.NET 4.5 Desktop (WPF)</li>
+<li>Windows Phone 8</li>
+<li>WinRT (Windows Store)</li>
+<li>Windows Phone 8.1 Universal Apps</li>
+</ul>
+</blockquote>
+
+<p>ほぼ全てやないかい！</p>
+
+<h1>使ってみよう</h1>
+
+<p>せっかくなので Xamarin.Form で Akavache を使ったアプリを作ってみます。</p>
+
+<h3>1. プロジェクト（ソリューション）の作成</h3>
+
+<p>Xamarin.Forms App で、新しいプロジェクトを作成します。プロジェクト名は AkavacheSample とでもします。</p>
+
+<p>Shared Code: は、'Use Portable Class Library' を選択します。</p>
+
+<p>プロジェクトが3つ（AkavacheSample, AkavacheSample.Droid, AkavacheSample.iOS）作成されます。</p>
+
+<h3>2. Akavache と、依存ライブラリの導入</h3>
+
+<p><strong>3つのプロジェクトそれぞれで</strong> 、NuGet(メニュー → プロジェクト → Add NuGet Packages&hellip;) から、以下のパッケージを追加します（執筆時点の Akavache の最新バージョンは 4.1.2 です。）。</p>
+
+<ul>
+<li>Akavache.Core</li>
+<li>SQLitePCL.raw</li>
+<li>Akavache.SQLite3</li>
+<li>Akavache</li>
+</ul>
+
+
+<p>検索ボックスに 「sqlite akavache」と入力すると全部表示されると思います(↓こんな感じに)。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_01.png" alt="" /></p>
+
+<p>追加に失敗する場合は、上のリストの順番で一つずつ追加するとうまくいくと思います。</p>
+
+<h3>3. サンプルアプリの画面を作る</h3>
+
+<p>サンプルアプリの画面レイアウトを作ります。XAML とか面倒なのでコードでバリッと。</p>
+
+<p>AkavacheSample プロジェクトの App.cs を以下のようにします。テキストボックス２つとボタン２つが縦に並んでいるだけの簡単な画面です。</p>
+
+<p>```csharp AkavacheSample.cs
+public class App : Application
+{</p>
+
+<pre><code>public App()
+{
+    var nameEntry  = new Entry { Placeholder = "名前を入力" };
+    var ageEntry   = new Entry { Placeholder = "年齢を入力(数値のみ)" };
+    var saveButton = new Button { Text = "保存" };
+    var loadButton = new Button { Text = "読み出し" };
+
+    // The root page of your application
+    MainPage = new ContentPage
+    {
+        Padding = new Thickness(20),
+        Content = new StackLayout
+        {
+            VerticalOptions = LayoutOptions.Center,
+            Children =
+            {
+                nameEntry,
+                ageEntry,
+                saveButton,
+                loadButton
+            }
+        }
+    };
+}
+
+// 以下省略
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>4. Akavache を使って保存と読み出し</h3>
+
+<p>名前と年齢をひとまとめに保存したいので、Person というクラスを作ります。</p>
+
+<p>```csharp Person.cs
+public class Person
+{</p>
+
+<pre><code>public string PersonName { get; set; }
+public int PersonAge { get; set; }
+</code></pre>
+
+<p>}
+```</p>
+
+<p>あとはもう、一気に実装するだけです。
+保存ボタンを押した時に、入力値を Person に詰めて、Akavache を使って保存します。
+読み出しボタンを押した時に、Akavache から Person を読みだし、各テキストボックスにバラして設定します。</p>
+
+<p>Akavache はキー・バリュー・ストアなので、保存・読み出し時のキーを <code>"person"</code> としています。</p>
+
+<p>```csharp AkavacheSample.cs</p>
+
+<p>public class App : Application
+{</p>
+
+<pre><code>public App()
+{
+    var nameEntry  = new Entry { Placeholder = "名前を入力" };
+    var ageEntry   = new Entry { Placeholder = "年齢を入力(数値のみ)" };
+    var saveButton = new Button { Text = "保存" };
+    var loadButton = new Button { Text = "読み出し" };
+
+    saveButton.Clicked += async (sender, e) =&gt; 
+    {
+        // Person に詰めて…
+        var person = new Person { 
+            PersonName = nameEntry.Text, 
+            PersonAge  = Convert.ToInt16(ageEntry.Text) 
+        };
+
+        // 保存
+        await BlobCache.LocalMachine.InsertObject("person", person); 
+    };
+
+    loadButton.Clicked += async (sender, e) =&gt; 
+    {
+        // Akavache で Person を読み出し
+        var loaded = await BlobCache.LocalMachine.GetObject&lt;Person&gt;("person");
+        // 各テキストボックスに設定
+        nameEntry.Text = loaded.PersonName;
+        ageEntry.Text  = loaded.PersonAge.ToString();
+    };
+
+    // The root page of your application
+    MainPage = new ContentPage
+    {
+        Padding = new Thickness(20),
+        Content = new StackLayout
+        {
+            VerticalOptions = LayoutOptions.Center,
+            Children =
+            {
+                nameEntry,
+                ageEntry,
+                saveButton,
+                loadButton
+            }
+        }
+    };
+}
+
+// 以下省略
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>5. 動かす！</h3>
+
+<p>Android Player と iOS Simulater で動かしてみた、の図です。(途中、iPhone でキーボード出すのに苦労してるところは無視してください、Take2 の時間が無かったのですｗ)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_02.gif" alt="" /></p>
+
+<p>さすが Xamarin.Forms だ、(Android でも iPhone で動かしても)何とも無いぜ！</p>
+
+<h1>まとめ</h1>
+
+<p>Akavache を使って保存と読み出しを行う超簡単なサンプルを作ってみました。
+作ったサンプルは <a href="https://github.com/amay077/AkavacheSample">GitHub &ndash; amay077/AkavacheSample</a> においておきます。</p>
+
+<p>仕組みは理解できないけど、とても簡単に使えることが分かると思います。
+追加されたパッケージを見ると、 JSON.NET とか、Reactive Extensions とかが入っているので、まあだいたい察しが付くかと。。。</p>
+
+<p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
+
+<p>というわけで Advent Calendar 初日のネタは以上です。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[UIAlertController を async/await 対応させて便利に使う]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await/"/>
+    <updated>2014-12-24T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014 23日目</a> の記事です。</p>
+
+<p>　なんか空いてたのでエントリーしましたが、急だったので軽い話です。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/56abeeaa188f33cd56de">iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた &ndash; Qiita</a></li>
+</ul>
+
+
+<p>の焼き直しみたいなものです。</p>
+
+<p>　iOS8 では、<code>UIAlertDialog</code> が非推奨になり、代わりに <code>UIAlertController</code> を使えとのこと。</p>
+
+<p>　普通に使うとこうなります。</p>
+
+<p>```csharp
+button1.TouchUpInside += (sender, e) =>
+{</p>
+
+<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create("はい", 
+    UIAlertActionStyle.Default, x=&gt; label1.Text = "こんぼう をすてました")); 
+alert.AddAction(UIAlertAction.Create("いいえ",  
+    UIAlertActionStyle.Default, x=&gt; {})); 
+
+this.PresentViewController(alert, true, null);
+</code></pre>
+
+<p>};
+```</p>
+
+<p>　このくらいなら問題ありません。</p>
+
+<p>　次に、こんぼう をすてる前にもう一度問いかけるようにします。
+２つ目の <code>UIAlertController</code> が入れ子になってしまって見づらい、 <strong>残念な感じ</strong> です。</p>
+
+<p>```csharp
+button1.TouchUpInside += (sender, e) =>
+{</p>
+
+<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create("はい", 
+    UIAlertActionStyle.Default, x=&gt; 
+    {
+        // 念押しの確認ダイアログ（入れ子でつらい
+        var alert2 = UIAlertController.Create("", "ほんとうにすてますか？", UIAlertControllerStyle.Alert);
+        alert2.AddAction(UIAlertAction.Create("もちろん", UIAlertActionStyle.Default, _=&gt; 
+        {
+            label1.Text = "こんぼう をすてました"
+        }));
+    alert2.AddAction(UIAlertAction.Create("やめる",  UIAlertActionStyle.Default, _=&gt; {})); 
+
+    // アラート２の表示
+    this.PresentViewController(alert2, true, null);
+})); 
+
+// アラート１の表示
+alert.AddAction(UIAlertAction.Create("いいえ",  UIAlertActionStyle.Default, x=&gt; {})); 
+
+this.PresentViewController(alert, true, null);
+</code></pre>
+
+<p>};
+```</p>
+
+<p>　Objective-C や Swift なら、ここで打つ手は今のところ無いでしょう。
+しかし <strong>Xamarin には、C# には async/await がありまぁす！</strong>
+アラートの表示を async/await（というか Task）対応してみましょう。</p>
+
+<p>```csharp
+private Task<int> ShowDialog(string message, string button1Title, string button2Title)
+{</p>
+
+<pre><code>var comp = new TaskCompletionSource&lt;int&gt;();
+
+var alert = UIAlertController.Create("", message, UIAlertControllerStyle.Alert);
+alert.AddAction(UIAlertAction.Create(button1Title, UIAlertActionStyle.Default, x=&gt; 
+{
+    comp.SetResult(1); // OKボタン
+})); 
+alert.AddAction(UIAlertAction.Create(button2Title,  UIAlertActionStyle.Default, x=&gt; 
+{
+    comp.SetResult(0); // Cancel
+})); 
+
+this.PresentViewController(alert, true, null);
+
+return comp.Task;
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>Task&lt;int&gt;</code> を返すメソッド <code>ShowDialog</code> です。<code>UIAlertController</code> のボタンが押されたら <code>SetResult</code> して Task の値を決定します。</p>
+
+<p>　このメソッドを使う方は、こうなります。</p>
+
+<p>```csharp
+button1.TouchUpInside += async (sender, e) =>
+{</p>
+
+<pre><code>if (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 0) 
+    return;
+
+if (await ShowDialog("ほんとうにすてますか？", "もちろん", "やめる") == 0) 
+    return;
+
+label1.Text = "こんぼう をすてました";
+</code></pre>
+
+<p>};
+```</p>
+
+<p>なんて見やすいコードになったことでしょう。すばらしい！</p>
+
+<p>入れ子でなく、フラットに書けるので、こんな事もできます。</p>
+
+<p>```csharp
+button1.TouchUpInside += async (sender, e) =>
+{</p>
+
+<pre><code>while (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 1) 
+{
+    label1.Text = "それをすてるなんてとんでもない！";
+}
+
+label1.Text = "すてるのをやめました";
+</code></pre>
+
+<p>};
+```</p>
+
+<p>こんぼうを捨てるのをあきらめるまで、なんどでも聞いてきます。
+コールバックスタイルのメソッドでループとか、ベタに書くと頭痛いです。</p>
+
+<p>動かすとこんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/uialertcontroller_with_async_await_01.gif" alt="" /></p>
+
+<p><code>ShowDialog</code> は拡張メソッドとして作成しておくと、呼び出しに便利かもしれません。
+コールバックスタイルの機能を、Task化するパターンはよく使いそうな気がします。<code>TaskCompletionSource</code>、覚えておきましょう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[図形の移動が、こんなに簡単に実装できる時代になりました]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/"/>
+    <updated>2014-12-13T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/foss4goss4g">FOSS4G Advent Calendar 2014 12日目</a> の記事です。</p>
+
+<p>　FOSS4G と言えば GIS、GIS と言えば図形編集ですね。図形を追加したり移動したり回転したりできる機能です。面倒なんですよ、これプログラミングするの。</p>
+
+<p>　なにが面倒かというと、色んな状態（マウスの状態＜左/右ボタンが押されている/押されてない、マウスダウン時の座標、現在の座標＞、図形の状態＜選択されている/いない＞）などなどがコードの中に入り乱れて、スパゲッティコードになりがちというか「なります」。</p>
+
+<!--more-->
+
+
+<p>　例えば「図形の移動」のフローは、</p>
+
+<ol>
+<li>図形をマウスダウン（＝選択）</li>
+<li>そのままマウスムーブ（＝移動）</li>
+<li>マウスボタンを離して終了</li>
+</ol>
+
+
+<p>と、極めて単純なんですね。これが普通にコーディングするとフラグや状態管理の嵐になってしまう。</p>
+
+<p>　と言ってた時代は終わりました。
+　例えば、下の画面。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/simply_shape_dragging_using_rx_01.gif" alt="" /></p>
+
+<p>　これは、白い四角形をドラッグで移動できるというスマホアプリの例ですが、これの実装の主要部分はたったの <strong>６行</strong> です。</p>
+
+<p>```csharp
+rectangle.DownEvent() // 1.図形をマウスダウン</p>
+
+<pre><code>.SelectMany(rectangle.MoveEvent())  // 2.そのままマウスムーブ
+.Subscribe(e =&gt; {
+    rectangle.SetX(e.RawX); // 移動の度に図形を移動
+    rectangle.SetY(e.RawY);
+});
+</code></pre>
+
+<p>```</p>
+
+<p>　このコードをよく見ると、上に書いたフローと似ているのが分かります。人が考えたままコードに落とし込める。しかもフラグとか状態管理とかのゴミが一切ない。素晴らしい！(3. に該当するコードが必要な気がするけどまあいいや）</p>
+
+<p>　これを実現しているのは<a href="http://ninjinkun.hatenablog.com/entry/introrxja">リアクティブプログラミング</a>という概念。なんでもかんでもストリーム(時系列にデータが降ってくる何か)で捉えよう、イベントでさえも。イベントはストリームであるので、あとはストリームの加工や他のストリームとの合成でどうにかできてしまいます。</p>
+
+<p>　リアクティブ＋図形うんぬんの他の例は、</p>
+
+<ul>
+<li><a href="http://act.neue.cc/rxjs/canvas.htm">RxJS + Canvas</a></li>
+</ul>
+
+
+<p>などがあります。これは HTML なのですぐ試せますしコード（Javascript）も見られます。</p>
+
+<p>　リアクティブプログラミング用の著名なライブラリはほとんどオープンソース、リアクティブプログラミング＋FOSS4G で <strong>RxGIS</strong> （なんかカッコいいから言ってみたかっただけ）</p>
+
+<p>　いつかまたGIS作るみたいな仕事があったら、絶対 Rx 使ってつくるぞ！と思ってますのでよろしくお願いします。</p>
+
+<p>（上のコード例の全コードは <a href="https://gist.github.com/amay077/1d22ba8ffa8ad95e9393">gist</a> にあります。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[マカーの人が Xamarin について勘違いしていそうな５つのこと]]></title>
@@ -70,339 +954,6 @@
 <p>　これは、.NET Framework は今まであまり使った事がない iOS/Android アプリ開発者をターゲットにしていて、説明もほぼ全てが Mac+Xamarin Studio を使って書いています。興味持ったら読んでもらえると嬉しいです。</p>
 
 <p>　本日まったく登場しなかった Visual Studio や Windows Phone などの話は、明日以降登場すると思いますので、お楽しみに！それでは初日はこの辺で。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms をガチで使うときのプロジェクト構成案]]></title>
-    <link href="http://blog.amay077.net/blog/2014/11/14/project-design-using-xamarin-forms/"/>
-    <updated>2014-11-14T19:34:02+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/11/14/project-design-using-xamarin-forms</id>
-    <content type="html"><![CDATA[<p>　<a href="http://xamarin.com/forms">Xamarin.Forms</a>（以下 XF とします）を本格的に開発に導入してみようと思ってるんだけど、その時のプロジェクト(アセンブリ)構成はこんな感じかな、というのを考えてみた。</p>
-
-<!--more-->
-
-
-<h2>コンセプト</h2>
-
-<ul>
-<li>XF を使う理由は、Viewのワンソース化よりも <em>DataBinding機構が使えること</em></li>
-<li>いざという時逃げられるように XF への依存を最小限にする</li>
-<li>iOS/Android 対応アプリ開発のこと、他は知らん</li>
-<li>MVVM で PCL で、PCL のところを最大化する</li>
-</ul>
-
-
-<h2>プロジェクト構成図</h2>
-
-<p>　角丸四角形がプロジェクトを、矢印は依存を示す。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/project_design_using_xamarin_forms_01.png" alt="" /></p>
-
-<p>左から説明。</p>
-
-<h3>XF.Android, XF.iOS, XF.Core</h3>
-
-<p>　Xamarin.Forms ソリューションを作成するとテンプレで作られるプロジェクト群。
-　XF.Core でプラットフォームに依存しないView（ボタンとか）を、XF.Android/XF.iOS でプラットフォーム固有のView（スライドメニューとかNotificationなど）を提供する。
-　これらは BindableProperty を介して ViewModel とデータバインディングする。
-　XF は他に、ServiceLocator や MessageCenter を提供するが、それらは使用しない（ロックインを防ぐため）
-　結局この案では、「XF=View層のみ」となる。</p>
-
-<h3>App.Core</h3>
-
-<p>　アプリのView以外の共通部分のプロジェクト。ViewModel と Model を含む。
-　ViewModel から View へシグナルを送るために &ldquo;XFではない&rdquo; Messengerを使う。（MvvmLight とか Prism とかから引っこ抜いてくればいいかな？）
-　Model にはビジネスロジックのみを記述し、通信処理やデータI/Oなどのプラットフォーム共通なAPIはModelから直接使い、プラットフォーム固有の機能は、ServiceInterface を使う。
-　ServiceInteface は、ServiceLocator によって App.Android/iOS から実体が Inject される。ServiceLocator は &ldquo;XFではない"…以下略
-　Rx を使うので、たぶん Model のメソッドの返り値は全部 IObservable<T> になります。</p>
-
-<h3>App.Android, App.iOS</h3>
-
-<p>　プラットフォーム固有のAPI層。例えば GPS とか、アプリ連携とか、アイテム課金とか。ServiceInterface に定義されている Interface を実装するところ。</p>
-
-<h2>懸案</h2>
-
-<ul>
-<li>PUSH通知受信とか、本来は Platform Specific APIs で担当したいが、プラットフォームの都合で、View で受信しなければならない機能の落としどころ。</li>
-<li>App.core をもっと分割した方がよい「ViewModelからAPI呼ばないよね？」とか「App.AndroidからModelにアクセスできるのがイヤ」とかを厳格に制限しようと思ったら分割した方が良さそう。</li>
-<li>Model から左側を全部 IObservable<T> 化しようと思っているが、Callback→Observable変換をModelでやるか、API層でやるか。"ビジネス"ロジックではないので、右側かな。</li>
-<li>XF.Core にどれだけ詰め込むか。画面レイアウトもXFでできるだけ頑張る、画面遷移フレームワークもXFで用意する、か？Sketches がどこまで活用できるか？</li>
-</ul>
-
-
-<p>さて、どんなもんでしょ？</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ReactiveX と MVVM と DataBinding の関係について図にしてみた]]></title>
-    <link href="http://blog.amay077.net/blog/2014/10/30/reactivex-mvvm-databindings-relations/"/>
-    <updated>2014-10-30T01:17:39+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/10/30/reactivex-mvvm-databindings-relations</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://connpass.com/event/8680/">ReactiveCocoa Tokyo #rac_tokyo &ndash; connpass</a></li>
-<li><a href="http://connpass.com/event/9061/">RxJava Night #rxjnight &ndash; connpass</a></li>
-<li><a href="http://mozaic.fm/post/100741841543/10-node-js-sideshow">#10 node.js sideshow | mozaic.fm</a></li>
-</ul>
-
-
-<!--more-->
-
-
-<p>などなどをいろいろ眺めておりまして（東京うらやましい）、Reactive Extensions とか MVVM とかいろいろ熱い！楽しい！と思っているわけですが、いろいろなライブラリがあって、それらのカバーする範囲がいまいち明確になってない気がしたので、自分なりに整理してみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/reactive_mvvm_databindings_relations_01.png" alt="" /></p>
-
-<p>MVVM っていうと、Messenger とか DIコンテナ的なものとかもあるわけですが、主に DataBinding と Rx の違いにフィーチャーしたかったので除外しました。</p>
-
-<p>　DataBinding は、<a href="http://www.atmarkit.co.jp/ait/articles/1008/03/news097_3.html">DependencyProperty</a> や <a href="http://blog.falafel.com/learning-xamarin-custom-renderers-in-xamarin-forms/">BindableProperty</a> みたいなものがあるかどうかという感じで考えていて、「XAMLとかのマークアップでバインディング指定できなければならない」という考えではないです。</p>
-
-<p>　View, DataBinding, ViewModel, ReactiveX の各ブロックは基本的にはどの組み合わせでもよくて（特に ReactiveX は他とは別の世界のものなので）、しかし中には ReactiveProperty のように ReactiveX に依存しつつ ViewModel の機能を提供するものがあったり、ReactiveCocoa のように「全部入り」のものがあったりします。また、View と ViewModel を繋ぐためにはなんらかの DataBinding が必要です。</p>
-
-<p>という理解なんですが、あってますかね？</p>
-
-<p>　私は Xamarin 推しの人なので、 <strong>Xamarin.Forms + ReactiveProperty が、MVVM+Rx のパワーをフル活用できて、しかも iOS/Android で大部分のコードが共有できるという最強の組み合わせなんですよ！</strong> というのを言いたいわけです。</p>
-
-<h2>Links</h2>
-
-<ul>
-<li>Xamarin.Forms &ndash; <a href="http://xamarin.com/forms">Build a Native Android UI &amp; iOS UI with Xamarin.Forms &ndash; Xamarin</a></li>
-<li>Prism &ndash; <a href="http://compositewpf.codeplex.com/releases/view/117297">patterns &amp; practices: Prism &ndash; Download: Prism 5.0 for .NET 4.5</a></li>
-<li>MVVM Light Toolkit &ndash; <a href="https://mvvmlight.codeplex.com/">MVVM Light Toolkit &ndash; Home</a></li>
-<li>Reactive Extensions &ndash; <a href="https://rx.codeplex.com/">Rx (Reactive Extensions) &ndash; Home</a></li>
-<li>ReactiveProperty &ndash; <a href="https://reactiveproperty.codeplex.com/">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Home</a></li>
-<li>ReactiveUI &ndash; <a href="https://github.com/reactiveui/reactiveui">reactiveui/ReactiveUI</a></li>
-<li>MvvmCross &ndash; <a href="https://github.com/MvvmCross/MvvmCross">MvvmCross/MvvmCross</a></li>
-<li>RxJava &ndash; <a href="https://github.com/ReactiveX/RxJava">ReactiveX/RxJava</a></li>
-<li>RxAndroid &ndash; <a href="https://github.com/ReactiveX/RxAndroid">ReactiveX/RxAndroid</a></li>
-<li>android-binding &ndash; <a href="https://github.com/gueei/AndroidBinding">gueei/AndroidBinding</a></li>
-<li>ReactiveCocoa &ndash; <a href="https://github.com/ReactiveCocoa/ReactiveCocoa">ReactiveCocoa/ReactiveCocoa</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[秋の Xamarin 勉強会いろいろ]]></title>
-    <link href="http://blog.amay077.net/blog/2014/09/16/xamarin-user-meetup-in-autum-2014/"/>
-    <updated>2014-09-16T00:13:28+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/09/16/xamarin-user-meetup-in-autum-2014</id>
-    <content type="html"><![CDATA[<p>　なんか今年(2014年)の秋は Xamarin についての勉強会がめじろ押しで、嬉しいというか羨ましい限りです。</p>
-
-<p>　ざっとまとめて見ました。あ、ほぼ関東圏です。</p>
-
-<!--more-->
-
-
-<h2>【9/20・品川】<a href="https://atnd.org/events/55564">Xamarin.iOS でデバイスを超えるプログラミング : ATND</a></h2>
-
-<p>　Xamarin.iOS の、特に Objective-C で作成されたライブラリを Xamarin.iOS で使う「Binding」についてのお話が聞けるのは大変希少です。</p>
-
-<h2>【9/20・品川】<a href="http://kokucheese.com/event/index/215384/">9月20日 .NETラボ 勉強会 2014年9月(東京都)</a></h2>
-
-<p>セッションの一つに</p>
-
-<ul>
-<li>「Xamarin.FormsのMVVM」のお話（Microsoft MVP for Visual C# 増田 智明）</li>
-</ul>
-
-
-<p>があります。Xamarin.Forms は iOS/Android/WinPhone でUIを共通化する新しいフレームワークで、且つ、MVVMフレームワークでもあります。これも大変価値のあるセッションです。</p>
-
-<h2>【9/30・渋谷】<a href="http://connpass.com/event/8706/">「Xamarin」って何？ Wエバンジェリストによる特濃「Xamarin」勉強会 &ndash; connpass</a></h2>
-
-<p>「Xamarinって何？」というタイトルの通り、Xamarin を知らない／興味のある方向けのセッションと思います。エクセルソフト田淵さんとMS渡辺さんは Xamarin について各所でプレゼンしまくってるので、これからXamarinを始めてみようという方にはピッタリだと思います。</p>
-
-<h2>【10/18・渋谷】<a href="http://www.wankuma.com/seminar/20141018tokyo92/">Xamarin Day &ndash; わんくま同盟</a></h2>
-
-<p>　わんくま同盟で、一日Xamarinぶち抜きしてくれるとは嬉しい限りですね。
-勝手なイメージですが、わんくまはマイクロソフト系開発者が多いと思うので、Windows や Visual Studio での Xamarin 開発についてのセッションが多いのではないでしょうか。</p>
-
-<h2>【10/6-10・アメリカ】<a href="https://evolve.xamarin.com/">Xamarin Evolve 2014</a></h2>
-
-<p>　Xamarin 社主催の年に一度の大イベント「Evolve 2014」です。Apple でいうところの WWDC、Google で言えば I/O のような大きなイベントです。
-Microsoft, IBM, Amazon, Salesforce とかなんだこの豪華なスポンサーは！
-昨年は KeyNote がライブ配信されたので、今年もあるんじゃないかと思います。新しい Feature の発表もあるかもしれないので、必見です。日本のXamarin開発の第一人者 @iseebi さんも現地で参加されるとのことで、Live で盛り上がりましょう！</p>
-
-<h2>【時期未定】第2回 Japan Xamarin User Group Conference</h2>
-
-<p>日本唯一の Xamarin ユーザーコミュニティ JXUG の第2回コンファレンス、秋くらいに開催されるんじゃないかなーと、期待も込めて書かせて頂きました。</p>
-
-<p>最新情報は <a href="https://www.facebook.com/groups/778386365523431/">Japan Xamarin User Group (JXUG)</a> に参加してチェックしましょう。</p>
-
-<p>　すごい！１年前からは想像もできないくらいに Xamarin が盛り上がってきていて、ひたすら Qiita にネタを投稿してきた身としてはとても嬉しいです。地方在住者にはなかなか参加が厳しいですが、関東から次第に全国にコミュニティが広がっていってくれたらいいなと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Forms で複数ボタンの均等割り付けをする]]></title>
-    <link href="http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting/"/>
-    <updated>2014-09-10T22:57:08+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/09/10/xamarin-forms-view-equal-width-and-fill-layouting</id>
-    <content type="html"><![CDATA[<p>　Android では、例えば画面の幅に対して、複数のボタンを同じ幅でいい感じに Fill させることができます。(これを均等割り付けというのが正しいのかはよくわかりませんが)</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://inujirushi123.blog.fc2.com/blog-entry-106.html">LinearLayout を使って均等割り付け : layout_weight &ndash; 戌印-INUJIRUSHI- （Androidあれこれ） &ndash;</a></li>
-<li><a href="http://blog.imho.jp/2011/08/android-linearlayout.html">Androidレイアウトの要点だけ: LinearLayoutでパーツを均等に配置したい | スマートフォン要点だけブログ</a></li>
-</ul>
-
-
-<p>これで画面の解像度が違っても、横向きになっても、同じ幅のボタンで埋まる、という事ができます。</p>
-
-<p><a href="http://xamarin.com/forms">Xamarin.Forms</a> でこれを実現するにはどうしたら良いか、試してみました。</p>
-
-<h2>StackLayout を利用した試み</h2>
-
-<p>Xamarin.Forms では、LinearLayout に相当するレイアウトとして <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.StackLayout">StackLayout</a> があります。</p>
-
-<p>まずはこれを利用してみます。</p>
-
-<p><code>StackLayout</code> を <code>Orientation = Horizontal</code> とし、<code>Children</code> にボタンを3つ配置しています。ボタンの幅は全て <code>HorizontalOptions = FillAndExpand</code> とします。</p>
-
-<p>```csharp App.cs
-public class App
-{</p>
-
-<pre><code>public static Page GetMainPage()
-{   
-    return new ContentPage
-    { 
-        Content = new StackLayout
-        {
-            HorizontalOptions = LayoutOptions.FillAndExpand,
-            VerticalOptions = LayoutOptions.Center,
-            Orientation = StackOrientation.Horizontal,
-            Children = 
-            {
-                new Button
-                {
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalOptions = LayoutOptions.FillAndExpand,
-                    Text = "one",
-                    TextColor = Color.Black,
-                    BackgroundColor = Color.Aqua,
-                },
-                new Button
-                {
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalOptions = LayoutOptions.FillAndExpand,
-                    Text = "two two",
-                    TextColor = Color.Black,
-                    BackgroundColor = Color.Fuschia,
-                },   
-                new Button
-                {
-                    VerticalOptions = LayoutOptions.Center,
-                    HorizontalOptions = LayoutOptions.FillAndExpand,
-                    Text = "three three three",
-                    TextColor = Color.Black,
-                    BackgroundColor = Color.Lime,
-                },
-            },
-        },
-    };
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_01.png" alt="" /></p>
-
-<p>うーん、そうじゃない（汗
-どうやらボタンのテキストが全て表示されるように頑張ってくれちゃうようです。
-まあ、これはこれで使える感じもします。</p>
-
-<h2>Grid を利用した試み</h2>
-
-<p>他のレイアウトで考えてみます。Android の TableLayout に相当する <a href="http://iosapi.xamarin.com/?link=T%3aXamarin.Forms.Grid">Grid</a> を使ってみます。</p>
-
-<p>さっきの <code>App.cs</code> の実装を次のように変えます。</p>
-
-<p><code>Grid</code> に1行3列の表を定義します。
-列の定義 <code>ColumnDefinition</code> で幅を <code>new GridLength(1, GridUnitType.Star)</code> としているのは、「3列とも同じ比率の幅とする」ことを意味しています。(ということは比率を2:1:1にしたければ、最初の列だけ<code>2</code>にすればOKです)</p>
-
-<p>```csharp App.cs
-public class App
-{</p>
-
-<pre><code>public static Page GetMainPage()
-{   
-    var grid = new Grid
-    {
-        HorizontalOptions = LayoutOptions.FillAndExpand,
-        VerticalOptions = LayoutOptions.Center,
-        RowDefinitions =
-        {
-            new RowDefinition() { Height = GridLength.Auto }
-        },
-        ColumnDefinitions = 
-        {
-            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
-            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
-            new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) },
-        }
-    };
-
-    grid.Children.Add(new Button
-    {
-        VerticalOptions = LayoutOptions.Center,
-        HorizontalOptions = LayoutOptions.FillAndExpand,
-        Text = "one",
-        TextColor = Color.Black,
-        BackgroundColor = Color.Aqua,
-    }, 0, 0);
-
-    grid.Children.Add(new Button
-    {
-        VerticalOptions = LayoutOptions.Center,
-        HorizontalOptions = LayoutOptions.FillAndExpand,
-        Text = "two two",
-        TextColor = Color.Black,
-        BackgroundColor = Color.Fuschia,
-    }, 1, 0);
-
-    grid.Children.Add(new Button
-    {
-        VerticalOptions = LayoutOptions.Center,
-        HorizontalOptions = LayoutOptions.FillAndExpand,
-        Text = "three three three",
-        TextColor = Color.Black,
-        BackgroundColor = Color.Lime,
-    }, 2, 0);
-
-    return new ContentPage
-    { 
-        Content = grid,
-    };
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>　これを iOS/Android 双方で実行すると、こうなりました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_02.png" alt="" /></p>
-
-<p>　おーけー、意図したレイアウトになりました。ボタンに入りきらないテキストはiOSだと省略され、Androidだと折り返されるという違いはありますが、レイアウトの一貫性は保つことができました。</p>
-
-<p>　ちなみに横向きにしても大丈夫です。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_view_equal_width_and_fill_layouting_03.png" alt="" /></p>
-
-<h2>まとめ</h2>
-
-<p>　Xamarin.Forms でも、Android+LinearLayoutのような均等配置ができました。
-　クロスプラットフォームなので、iOSでも同じように動作します。
-iPhone6 が発表されてiOS開発でも多解像度対応が必須になるので、これは有用な感じがします。
-（というか Storyboard の AutoLayout では、これと同じことができる気がしないのですが。。。）</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T03:06:54+09:00</updated>
+  <updated>2016-02-04T02:23:50+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,1390 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
+    <link href="http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/"/>
+    <updated>2015-12-24T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 24日目</a> の記事です。</p>
+
+<p>先日、</p>
+
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/entry/2015/12/20/012007">JXUGC #9 Xamarin.Forms Mvvm 実装方法 Teachathon を開催しました &ndash; Xamarin 日本語情報</a></li>
+</ul>
+
+
+<p>というイベントがありまして、エクセルソフトの田淵さんが作成したストップウォッチのアプリケーション(注:田淵さんはプログラマではないｗ)を、MVVM識者の方々が「MVVMとしてはこうあるべきだ」と叩きまくる、という恐ろしい?ものでした。</p>
+
+<!--more-->
+
+
+<p>私はこの勉強会には参加できなかったのですが、ストリーミングとか見て、</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">僕もストップウォッチ作ってみるかー</p>&mdash; ジェットあめいカスタム (@amay077) <a href="https://twitter.com/amay077/status/677561989359472640">2015, 12月 17</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>などとつぶやいたらご指名されてしまいました(^^)
+このイベントは Xamarin を使ったアプリ製作でしたが、せっかくなので <strong>RxJava + MVVM</strong> で作ってみました。
+(ご指名に応えないといけないのでその後 Xamarin版も製作)</p>
+
+<h1>ストップウォッチアプリの仕様</h1>
+
+<p>上記リンクからの引用です。</p>
+
+<ul>
+<li>Start/Stop ボタン、Lap ボタン</li>
+<li>StartするとラップボタンはEnable.ストップするとDisable
+
+<ul>
+<li>スタートしてからの経過時間をXX&#8217;XX.XXXみたいな感じで表示</li>
+</ul>
+</li>
+<li>履歴をListViewで残す</li>
+<li>ストップしたら結果をダイアログで出して分岐？</li>
+<li>今までのラップよりMin, Maxなどをダイアログに表示して次のページに遷移 ←ここ勝手に Toast に仕様変更しましたｗ</li>
+<li>スイッチの切り替えで、ミリ秒の桁を表示/非表示</li>
+</ul>
+
+
+<p>こんな機能を満たすサンプルを</p>
+
+<ol>
+<li>RxJava を使った Android アプリ(Java言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</li>
+</ol>
+
+
+<p>でそれぞれ作ってみました。</p>
+
+<h1>とりあえず、作ったもの</h1>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_00.gif" alt="つくったもの" /></p>
+
+<p>左は Android-Java製、右は Xamarin.iOS製です。(Xamarin.Android製は省略)</p>
+
+<h1>1. RxJava を使った Android アプリ(Java言語)</h1>
+
+<h2>Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>構成図っぽいものを描くとこんな感じになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_01.png" alt="クラス図的なの" /></p>
+
+<h3>Model</h3>
+
+<p>　この仕様だと、ストップウォッチの一通りの機能を満たすクラスが Model になります。これを <code>StopWatchModel</code> という名前にしました。</p>
+
+<p>  <strong>「ロジック」は、すべてこの層（このクラス）に書きます。</strong>
+　
+　例えば、ストップウォッチのタイマーを実行するには、 RxJava で <code>Observable.interval</code> としますが、これを ViewModel層に書いたら「負け」です。
+　
+また、ストップウォッチの実行は、画面の表示/破棄と連動しなくてよい(画面遷移しても計測し続けるべき)なので、StopWatchModel の生存期間は、アプリケーションの起動時から終了まで、という事になります。</p>
+
+<p>　RxJava を全面的に使いたいので、 StopWatchModel のプロパティは全て <code>Observable&lt;T&gt;</code> にしました。RxJava を使わなかったらプロパティではなくコールバックですね。
+　何かメソッドを実行したら、その結果は全て <code>Observable&lt;T&gt;</code> を通じて通知される仕組みです。なので原則として Model のメソッドの戻り値は <code>void</code> です。</p>
+
+<h3>ViewModel</h3>
+
+<p>　しつこいようですが <strong>ここにロジックを書いたら負け</strong> です。
+個人としては、条件分岐もしたくない、変数宣言もしたくない、くらいのつもりでいます。もし書いてしまったら「それはModelの方が適切ではないか？」を検討します。</p>
+
+<p>　ViewModel の役割は、Model のプロパティ(コールバック)を、View用に変換して流すこと、Viewのための機能をコマンドとして公開することです。</p>
+
+<p>　例えば、仕様の内、</p>
+
+<blockquote><p>スイッチの切り替えで、ミリ秒の桁を表示/非表示</p></blockquote>
+
+<p>　が、「View用に変換」の良い例になります。
+　私の実装では、ミリ秒の桁を表示するか否かの bool 値を、format関数の書式文字列に変換しています。(View側で format して表示しています。)
+　↓のような感じです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/** 時間の表示フォーマット */</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">timeFormat</span><span class="o">;</span> <span class="c1">// field</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="k">this</span><span class="o">.</span><span class="na">timeFormat</span> <span class="o">=</span> <span class="n">_stopWatch</span><span class="o">.</span><span class="na">isVisibleMillis</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">visible</span> <span class="o">-&gt;</span>
+</span><span class='line'>    <span class="n">visible</span> <span class="o">?</span> <span class="s">&quot;mm:ss.SSS&quot;</span> <span class="o">:</span> <span class="s">&quot;mm:ss&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>RxJava で「変換」とくれば、 <code>map</code> など、 <code>Observable</code> の投影系のメソッドの出番となります。</p>
+
+<p>ViewModel が公開するプロパティも、基本的には <code>Observable&lt;T&gt;</code> になりました。(これはこのアプリの仕様上、OneWayバインディング＜=Modelによるデータの変化をViewに表示する＞だけで済んだためです。TwoWayバインディング＜=Viewからのデータの入力を受け付ける＞が必要な場合は、<code>Subject</code>など、データをセットできる機能が必要になります。)</p>
+
+<p>コマンドとは、Modelのメソッドを呼ぶためのものですが、それに加えて「そのコマンドが実行可能か？」を示すフラグも持ちます。さらにこのフラグも <code>Observable&lt;boolean&gt;</code> で表します。
+こうする事で、「機能が利用可能な時のみボタンを Enable にする」のようなバインディングが可能になります。今回の仕様で言えば</p>
+
+<blockquote><p>StartするとラップボタンはEnable.ストップするとDisable</p></blockquote>
+
+<p>に該当します。</p>
+
+<p>コマンドのインターフェースは↓のようになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Command</span> <span class="o">{</span>
+</span><span class='line'>    <span class="cm">/** このコマンドが実行可能かを示すフラグの更新を通知するObservable */</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="nf">canExecuteObservable</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/** このコマンドの処理を実装する */</span>
+</span><span class='line'>    <span class="kt">void</span> <span class="nf">execute</span><span class="o">();</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今回は、このインターフェースを ViewModel で匿名クラスを作ることで実装しました。↓のような感じです。この <code>commandLap</code> をラップボタンとバインドさせます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="cm">/** 経過時間の記録 */</span>
+</span><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="n">Command</span> <span class="n">commandLap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Command</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="nf">canExecuteObservable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="k">return</span> <span class="n">_stopWatch</span><span class="o">.</span><span class="na">isRunning</span><span class="o">;</span> <span class="c1">// 実行中のみ記録可能</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_stopWatch</span><span class="o">.</span><span class="na">lap</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あ、ViewModel は View とは疎結合に作ります。Viewを参照してはいけないのはもちろん、<code>TextView</code> や <code>Activity</code> などが import されていたら「負け」です。</p>
+
+<p>他には、Viewの状態を保持する役割も担いますが、本アプリの仕様では、それに該当する処理はありませんでした。</p>
+
+<h3>View</h3>
+
+<p>　View層で行うことは、画面要素のレイアウトとViewModelとのバインディングです。それ以外の事は行いません。.NETの世界では、View層において値の変換を行う機能=ValueConverterが存在しますが、ValueConverterを使うべきかViewModelで行うべきかでよく議論になります。
+　
+　バインディングの実体は、ViewModelのプロパティである <code>Observable&lt;T&gt;</code> を <code>subscribe</code> して、Viewのプロパティにセットしているだけです。前述の通り今回は TwoWay は無いので楽です。TwoWay が出てくるとバインディングのフレームワークにお願いした方がよいです。
+　
+　例えば、 <code>Observalbe&lt;String&gt;</code> と TextViewのtextプロパティのバインディングは、下のようになります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">TextViewBinder</span> <span class="nf">toTextOneWay</span><span class="o">(</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">prop</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">_subscriptions</span><span class="o">.</span><span class="na">add</span><span class="o">(</span>
+</span><span class='line'>        <span class="n">prop</span><span class="o">.</span><span class="na">observeOn</span><span class="o">(</span><span class="n">AndroidSchedulers</span><span class="o">.</span><span class="na">mainThread</span><span class="o">())</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">_textView</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">x</span><span class="o">)));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">this</span><span class="o">;</span> <span class="c1">// メソッドチェーンで連続して呼べるようにしてるだけ</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>.NETの世界では、このバインディングを画面定義ファイル(.xaml)に直接記述できます。
+Androidでも一部のライブラリや、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">今後公式にデータバインディングがサポートされる模様</a>ですが、xml でのバンディングの記述は、デバッグしづらくなるので個人的にはそれほどメリットを感じないです。デザイナーとの分業と言っても別な理由で不可能なケースが多いと思います。</p>
+
+<h2>画面遷移や Toast の表示は誰の責務？</h2>
+
+<p>大抵の MVVMフレームワーク に備わっている <code>Messenger</code> という機能を使います。Android界隈の人には「EventBus」と言った方がわかりやすいかも知れません。</p>
+
+<p>ViewModelが「画面遷移を要求するメッセージ」を投げ、それをViewが受信して画面遷移を行います。</p>
+
+<figure class='code'><figcaption><span>メッセージ送信側(MainViewModel.java)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">final</span> <span class="n">Command</span> <span class="n">commandNextView</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Command</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="c1">// LapActivity へ遷移させる</span>
+</span><span class='line'>        <span class="c1">// ほんとは LapViewModel.class を指定すべき(LapActivity は使いたくない)</span>
+</span><span class='line'>        <span class="n">messenger</span><span class="o">.</span><span class="na">send</span><span class="o">(</span><span class="k">new</span> <span class="n">StartActivityMessage</span><span class="o">(</span><span class="n">LapActivity</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>メッセージ受信側(MainActivity.java)</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// 画面遷移のメッセージ受信</span>
+</span><span class='line'><span class="n">_viewModel</span><span class="o">.</span><span class="na">messenger</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">StartActivityMessage</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Message</span><span class="o">&gt;()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="kd">final</span> <span class="n">Message</span> <span class="n">message</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>                <span class="kd">final</span> <span class="n">StartActivityMessage</span> <span class="n">m</span> <span class="o">=</span> <span class="o">(</span><span class="n">StartActivityMessage</span><span class="o">)</span><span class="n">message</span><span class="o">;</span>
+</span><span class='line'>                <span class="n">Intent</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">m</span><span class="o">.</span><span class="na">activityClass</span><span class="o">);</span>
+</span><span class='line'>                <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>今回は簡単な Messenger を実装しました。VM->Vの通知にしか使わないのでVM毎に一つ持つようにしています。</p>
+
+<h1>2.3. Reactive Extensions, ReactiveProperty を使った Android/iOS アプリ(Xamarin, C#言語)</h1>
+
+<p><a href="https://xamarin.com/">Xamarin</a> は、 C# で Android/iOS が作れるプロダクトです。
+RubyMotion のように、CocoaTouch や Android SDK の API をラップし、同じ名称のクラス,メソッドで C# から呼び出せるようにしています。</p>
+
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/">Xamarin 日本語情報</a></li>
+<li><a href="http://qiita.com/amay077/items/2e86b44e5f274a34b2e9">マカーの人が Xamarin について勘違いしていそうな５つのこと &ndash; Qiita</a></li>
+</ul>
+
+
+<p>.NETのオープンソース実装である mono 由来の製品であり、また Microsoft とのパートナーシップも結んでいることから、.NET の資産の多くが利用可能です。</p>
+
+<p>何が言いたいかと言うと、RxJava も MVVM パターンも、元は .NET のアプリケーション開発の分野で発案・成熟してきた考え方であり、豊富な.NET製ライブラリ(今回だと Reactive Extensions と ReactiveProperty)を使って Android/iOS アプリを開発できる、という事です。</p>
+
+<h2>Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>Xamarin でも MVVM の役割はまったく同じですが、
+<strong>「Model-ViewModel を Android/iOS で使いまわせる」</strong>
+という大きなメリットがあります。</p>
+
+<p>Model と ViewModel からは、プラットフォームに依存するコードは排除できます(すべきです)。
+Xamarin(というか .NET) ではプラットフォーム非依存の処理をライブラリ化できます(これを PCL=Portable Class Library と言います)。</p>
+
+<p>Android と iOS でそれぞれに実装が必要なのは、View と、そのバインディングのみです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_02.png" alt="クラス図的なの" /></p>
+
+<h2>Reactive Extensions について</h2>
+
+<p>本家<a href="https://github.com/Reactive-Extensions/Rx.NET">Rx.NET</a>です。RxJava はこの Reactive Extensions を Java にポートしたものです。
+RxJava には、いくつか便利なメソッドが追加されています(<code>compose</code> とか)が、殆ど同じです。
+また、 C# はラムダ式を標準でサポートしていることから、 retrolambda などに頼らなくても見やすいコードが書けるのは言うまでもないでしょう。</p>
+
+<h2>ReactiveProperty について</h2>
+
+<p><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> は、Rxの機能を活かしてMVVMパターンの実装を手助けしてくれるライブラリです。</p>
+
+<ul>
+<li><a href="http://blog.okazuki.jp/entry/2015/02/22/212827">MVVMとリアクティブプログラミングを支援するライブラリ「ReactiveProperty v2.0」オーバービュー &ndash; かずきのBlog@hatena</a></li>
+</ul>
+
+
+<p>Java版ストップウォッチでは、<code>StopWatchModel</code> や ViewModel のプロパティを全て <code>Observable&lt;T&gt;</code> としましたが、 Xamarin版では <code>ReactiveProperty&lt;T&gt;</code> としています。 <code>ReactiveProperty&lt;T&gt;</code> は <code>Observable&lt;T&gt;</code> から継承しているので、それほど大差はありませんが、<code>Subject</code> のように値の設定をサポートしていたり、バリデーション、エラー通知の仕組みが備わっています。</p>
+
+<p>また、ReactiveProperty は、 Android の View要素とのバインディング機能も持ちます。これを使うとバインディングが以下のように書けます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="c1">// TextView(textTime) と viewModel.Time のバインド</span>
+</span><span class='line'><span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">TextView</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">textTime</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SetBinding</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">Text</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">_viewModel</span><span class="p">.</span><span class="n">Time</span><span class="p">.</span><span class="n">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">ToString</span><span class="p">())</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ObserveOnUIDispatcher</span><span class="p">()</span>
+</span><span class='line'>        <span class="p">.</span><span class="n">ToReactiveProperty</span><span class="p">());</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>iOS のバインディングはありませんが、 <del>ソースの一部を持ってくる事で、殆ど解決します</del> <a href="https://twitter.com/okazuki/status/679256704689684480">ツイートしたら取り込んでもらえました(^^)</a> 。</p>
+
+<h1>作ったアプリのソース</h1>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample">amay077/StopWatchSample</a></li>
+</ul>
+
+
+<p>それぞれ、</p>
+
+<ol>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppAndroid">RxJava を使った Android アプリ(Java言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Android">Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.iOS">Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Core">Xamarin版アプリの Model, ViewModel</a></li>
+</ol>
+
+
+<p>にあります。</p>
+
+<p>Java版は、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a></li>
+</ul>
+
+
+<p>を見るとだいたい分かると思います。</p>
+
+<p>また、Java版 と Xamarin版では、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/Models/StopWatchModel.cs">StopWatchModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/ViewModels/MainViewModel.cs">MainViewModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Android/Views/MainActivity.cs">MainActivity.cs</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.iOS/Views/MainViewController.cs">MainViewController.cs</a></li>
+</ul>
+
+
+<p>あたりを見比べるといいと思います。</p>
+
+<h1>まとめ</h1>
+
+<p>MVVM と RxJava はとても相性がよいと感じました。</p>
+
+<p>Model → ViewModel → View と通知を伝搬させるのに、そのまま <code>Observable&lt;T&gt;</code> を繋げればよいのですから。加工が必要なら <code>map</code> などのオペレータを挟むだけ。
+これがコールバックだったら…恐ろしくて想像したくありません。</p>
+
+<p>Model が使用するDB層やWebAPIなども RxJava をサポートしていたら、もっと便利になると思います。(Realm は RxJava サポートが追加されたようですね！)</p>
+
+<p>View &ndash; ViewModel のデータバインディングにも RxJava は有効ですが、こちらは、Android公式の Data Binding がどう実装されるかで未来が変わってきそうです。</p>
+
+<p>Android-Java には、まだメジャーな MVVMフレームワークが無いので、登場が待たれるところです。</p>
+
+<h1>おまけ：反省など</h1>
+
+<h2>View か ViewModel か Model か問題</h2>
+
+<p>下は View に書かれている「現在時刻と表示書式文字列のどちらかが更新されたら、時刻をフォーマットして流す」という Observable です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// フォーマットされた時間を表す Observable（time と timeFormat のどちらかが変更されたら更新）</span>
+</span><span class='line'><span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">formattedTime</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">combineLatest</span><span class="o">(</span>
+</span><span class='line'>        <span class="n">_viewModel</span><span class="o">.</span><span class="na">time</span><span class="o">,</span>
+</span><span class='line'>        <span class="n">_viewModel</span><span class="o">.</span><span class="na">timeFormat</span><span class="o">,</span> <span class="o">(</span><span class="n">Long</span> <span class="n">time</span><span class="o">,</span> <span class="n">String</span> <span class="n">format</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>            <span class="kd">final</span> <span class="n">SimpleDateFormat</span> <span class="n">sdf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleDateFormat</span><span class="o">(</span><span class="n">format</span><span class="o">,</span> <span class="n">Locale</span><span class="o">.</span><span class="na">getDefault</span><span class="o">());</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">sdf</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="k">new</span> <span class="n">Date</span><span class="o">(</span><span class="n">time</span><span class="o">));</span>
+</span><span class='line'>        <span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これは、ViewModel に用意すべきだったかも知れません。いやいや、フォーマットされた時間を通知する機能が Model にあってもおかしくないとも言えます。
+実際、 <code>LapActivity</code> でも同じコードを書いているので D.R.Y原則にも反します。やっぱ Model に持たせるべきだったと反省。</p>
+
+<h2>Model に戻り値が void でないメソッドを作っちゃった問題</h2>
+
+<blockquote><p>原則として Model のメソッドの戻り値は void です</p></blockquote>
+
+<p>の原則に反して、戻り値で最速、最遅ラップ値を返してしまいました。
+Toast表示のためだけに取得できればいいやと思いこうしたのですが、これでは「最速、最遅ラップを常に画面に表示する」という仕様変更があっただけで破綻します。これは悪手でした、反省。</p>
+
+<p>だいたいラップの最大、最小の取得は、 <code>Observable&lt;List&lt;Long&gt;&gt; laps</code>  を <code>map</code> で変換すればよいだけの話ですね。LINQ あるいは Stream API が使えれば <code>List&lt;Long&gt;</code> から min/max を取得するのも簡単ですし。</p>
+
+<h2>Timer を 1ms 間隔にしちゃった問題</h2>
+
+<p><code>Observable.interval(1ms)</code> ってやっちゃいましたが、START の時間を覚えておいて、LAP, STOP された時に、現在時刻との差分を取ればよかったですね。基本的なムダで反省。</p>
+
+<p><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> より</p>
+
+<blockquote><p>Lap ボタンを押したタイミングで DateTime.Now を取得すればよいわけで、何も定期的に内部データを更新する必要はありません</p></blockquote>
+
+<p>その通りですね。。。</p>
+
+<h2>UIスレッドへの変換をだれがやるのか問題</h2>
+
+<p>今回は、以下のように、自作したバインディングの中で <code>observeOn(AndroidSchedulers.mainThread())</code> 行っています。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="n">TextViewBinder</span> <span class="nf">toTextOneWay</span><span class="o">(</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">prop</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">_subscriptions</span><span class="o">.</span><span class="na">add</span><span class="o">(</span>
+</span><span class='line'>        <span class="n">prop</span><span class="o">.</span><span class="na">observeOn</span><span class="o">(</span><span class="n">AndroidSchedulers</span><span class="o">.</span><span class="na">mainThread</span><span class="o">())</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">_textView</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">x</span><span class="o">)));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>これを ViewModel で行うこと(ViewModel が公開する Observable は必ずUIスレッドで実行されるというルール)もできます。
+が、セオリーが分かっていません。とりあえず View側で observeOn しとけば安全かなと思って上記のようにしているだけです。使用するMVVMフレームワークの仕様にも依存しそうです。</p>
+
+<h2>StopWatchModel のプロパティは Hot？ それとも Cold？</h2>
+
+<p>StopWatchModel の各プロパティである <code>Observable&lt;T&gt;</code> は、 <strong><code>subscribe</code> をトリガーに値が流れ始めるものではないので Hot</strong> ですね。</p>
+
+<p>また、<code>BehaviorSubject</code> を使っているので、 <code>subscribe</code> 時には、その時点の最新の値が流れてきます。</p>
+
+<p>シングルトンの <code>StopWatchModel</code> に対して、 <code>MainActivity</code> に続いて <code>LapActivity</code> でも購読した時に、正しくラップタイム群が表示できるのは、<code>BehaviorSubject</code> であるためですね。</p>
+
+<p><code>refCount</code> してないけど、ちゃんと破棄されているのかは未確認。。。</p>
+
+<h2>Observalbe&lt;List&lt;T>></h2>
+
+<p>ラップタイム群を通知するプロパティは <code>Observalbe&lt;List&lt;T&gt;&gt;</code> にしています。
+この場合、List の中身を変更されても通知されないので  <code>Collections.unmodifiableList</code> で変更不可にしてから onNext で通知しています。LAPボタンが押される度に List を作りなおしている感じになります。</p>
+
+<p>ListView とのバインディングも同じで、onNext を受信する度に、ListView を洗い替えしています。
+このムダが嫌、大量データでパフォーマンスに問題が出る場合は、.NET にある <a href="https://msdn.microsoft.com/ja-jp/library/ms668604(v=vs.110"><code>ObservableCollection&lt;T&gt;</code></a>.aspx) のような仕組みを作る必要があります。(Rx.NET, RxJava では管轄外かな？)</p>
+
+<p><code>ObservableCollection&lt;T&gt;</code> は、リストへの追加、削除、変更をアイテム毎に通知／監視できます(「 <em>項目X</em> が <em>2番目</em> に <em>追加</em> された」のような)。適切な通知とバインディングを実装すれば、ListView の差分更新が可能です（面倒ですが）。</p>
+
+<h1>参考</h1>
+
+<ul>
+<li><a href="http://ugaya40.hateblo.jp/entry/model-mistake">MVVMのModelにまつわる誤解 &ndash; the sea of fertility</a></li>
+<li><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> &ndash; タイマを View/ViewModel/Model に持つそれぞれの理由が解説されています。</li>
+<li><a href="http://qiita.com/hide92795/items/f7205c8171826cc2153b">RxJava &ndash; Rxで知っておくと便利なSubjectたち &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/amay077/items/4bb6b09a1911b074f50c">RxJava &ndash; Hot Observable と ConnectableObservable について &ndash; Qiita</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Hot Observable と ConnectableObservable について]]></title>
+    <link href="http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/"/>
+    <updated>2015-12-17T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 17日目</a> の記事です。</p>
+
+<p>空いてたので参加してみました。
+普段は Xamarin(C#) + Reactive Extensions + ReactiveProperty で、Reactive + MVVM な Android/iOS両対応アプリを開発しています。</p>
+
+<!--more-->
+
+
+<h2>Cold vs Hot</h2>
+
+<p>Cold Observable は「あなただけの」Stream、Hot は「みんなの」Stream 。
+（私的にはニコ動かニコ生か、みたいに理解してますが、その話はいいや）</p>
+
+<p>Cold は、あなたが subscribe した瞬間からデータが流れ始めます。
+Hot は、あなたが subscribe してもデータは流れ始めません(流れるかも知れません？)。</p>
+
+<p>では Hot Observable はいつからデータが流れ始める？Observable が生成された瞬間から？
+その答え(の一つ)が <strong>ConnectableObservable</strong> 。</p>
+
+<h2>ConnectableObservable のデータ放流の開始と停止</h2>
+
+<p>Cold Observable を Hot化する publish メソッドの返り値は ConnectableObservable。
+Hot は必ず ConnectableObservable。（←これ後で否定します）</p>
+
+<p>ConnectableObservable には connect メソッドがあります。
+Hot Observable のデータが流れ始めるのは、このメソッドを呼んだ瞬間から。
+なので、どれだけ subscriber が居ようとも connect を呼ばなければデータは流れません。逆に subscriber が居なくても connect を呼べばデータが流れ始めます。</p>
+
+<p>connect メソッドの返り値は Subscription です。
+Subscription の unsubscribe メソッドを呼ぶと、データの放流が停止します。これも subscriber が居ようが居まいが停止します。
+再度 connect すると、 <strong>最初から</strong> データが流れ出します。再開ではありません。</p>
+
+<h2>実例</h2>
+
+<h3>Cold Observable</h3>
+
+<p>Observable.interval は、一定時間置きにインクリメントされた値を流す <strong>Cold</strong> Observable。
+なので、複数の subscriber が居たら、各々に独立した値を流します。</p>
+
+<p>Android の画面にボタンが２つ（buttonSubscribe1 と buttonSubscribe2）並んでるだけのサンプルです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 可視性向上の為のなんちゃってラムダ</span>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 8<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 2<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押すとデータ(０から連番)が流れ始めます。
+しばらくして buttonSubscribe2 を押すと、1 とは関係なく、また 0 から流れ始めます。</p>
+
+<h3>Hot(Connectable) Observable</h3>
+
+<p>publish で Hot 化します。
+connect と unsubscribe を呼ぶためのボタン（buttonConnect, buttonDisConnect）を画面に追加してます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_connection</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="kd">final</span> <span class="n">ConnectableObservable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">publish</span><span class="o">();</span> <span class="c1">// publish で Hot化</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonConnect</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonConnect click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_connection</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span> <span class="c1">// データ放流開始</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonDisConnect</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonDisConnect click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_connection</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_connection</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// データ放流停止</span>
+</span><span class='line'>        <span class="n">_connection</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: buttonConnect click!      // ←数秒経過している<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: buttonDisConnect click!<br/>
+-これ以降 onNext は出力されない-<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押しても、まだデータは流れてきません。
+数秒後、buttonConnect を押すとデータが流れ始めます。
+buttonSubscribe2 を押すと、subscriber2 が増えますが、Hot(みんなの)Observable なので、流れてくる値とタイミングは subscriber1 と全く同じです。</p>
+
+<p>buttonDisConnect を押すと、データの放流が停止されます。(ちなみにもう一度 CONNECT すると、また 0 から値が流れます)
+subscriber1, subscriber2 にはもう onNext は呼ばれません。</p>
+
+<p>※サンプルでは onNext しか受信していませんが、 buttonDisConnect を押しても、 subscriber1, subscriber2 の onComplete や onError も呼ばれません。つまり、 <strong>「データの放流が停止されても、 subscriber はそれに気付けない」</strong> ということになります。これはこれでいいんだろか、という感じです。</p>
+
+<h2>ConnectableObservable.refCount について</h2>
+
+<blockquote><p>Hot は必ず ConnectableObservable。（←これ後で否定します）</p></blockquote>
+
+<p>否定始めます。</p>
+
+<p>ConnectableObservable では、データ放流の開始と停止は、 connect と unsubscribe に委ねられていました。</p>
+
+<p>refCount() を使うとそれを自動化できます。(refCount？参照カウントを返すメソッド？そう思っていましたが全然違いました。)
+どういうことかと言うと、最初の subscriber が現れたらデータ放流を開始し、誰も subscriber が居なくなったら放流を停止する、というものです。
+refCount() の返値はただの Observable です、でも Hot です。はい否定しましたー。</p>
+
+<h3>実例</h3>
+
+<p>publish した Hot Observable を refCount してデータ放流を自動制御してもらいます。
+画面には、 buttonConnect, buttonDisConnect に代わり、buttonUnsubscribe1, buttonUnsubscribe2 を用意します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription1</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription2</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_connection</span><span class="o">;</span>    <span class="c1">// field です</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">publish</span><span class="o">().</span><span class="na">refCount</span><span class="o">();</span> <span class="c1">// 返値は Connectable ではない</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_subscription1</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_subscription2</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonUnsubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonUnsubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_subscription1</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_subscription1</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// 1購読終了</span>
+</span><span class='line'>        <span class="n">_subscription1</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonUnsubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonUnsubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_subscription2</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_subscription2</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// 2購読終了</span>
+</span><span class='line'>        <span class="n">_subscription2</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: buttonUnsubscribe1 click!<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 8<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 9<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 10<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 11<br/>
+D/MainActivity: buttonUnsubscribe2 click!<br/>
+-これ以降 onNext は出力されない-<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押すと、その時点でデータが流れ始めます(refCount による自動制御)。
+buttonSubscribe2 を押すと、subscriber1 と同じタイミングで、同じ値を受信できます(Hot だから)。
+buttonUnsubscribe1 を押すと、 subscriber1 は購読をやめますが、subscriber2 はまだ受信しています。
+buttonUnsubscribe2 を押すと、subscriber2 も購読をやめ、この時点でデータ放流が停止します(refCount による自動制御)。</p>
+
+<p>※ほんとにデータ放流終わってんの？を確認するには、 tickObservable に doOnNext を繋げて確認するとよいと思います。</p>
+
+<h2>まとめ</h2>
+
+<p>Hot Observable は、ほとんどの場合(publish により生成されるので) ConnectableObservable。
+ConnectableObservable は、購読者の有無に関係なく connect でデータ放流開始、Subscription.unsubscribe でデータ放流停止。
+refCount により購読者の有無に連動したデータ放流の自動制御が可能。この場合 Hot だけど普通の Observable型。</p>
+
+<p>実際に Hot Observable を使う場合は、refCount() しとくのが無難かなー、と思いました。(購読者の unsubscribe を厳密に管理しておけば、という前提で)</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html">Intro to Rx &ndash; Hot and Cold observables</a></li>
+<li><a href="https://github.com/ReactiveX/RxJava/wiki/Connectable-Observable-Operators">Connectable Observable Operators · ReactiveX/RxJava Wiki</a></li>
+<li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する]]></title>
+    <link href="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/"/>
+    <updated>2015-12-01T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/xamarin">Xamarin Advent Calendar 2015 1日目</a> の記事です。</p>
+
+<p>Xamarin Advent Calendar 2015、今日から開始です。
+3年目になってもネタに尽きない Xamarin 、まだまだ盛り上がっております。</p>
+
+<p>かくいう自分は、<a href="http://qiita.com/amay077/items/0a3fa3dfac7f29a2807d">前回の投稿</a> が約1年前と、完全に時代遅れになっております（仕事とスプラ&hellip;いえ何でもないです）。
+最近のトピックスは他の方にお任せして、1年前からのネタを書きます。</p>
+
+<!--more-->
+
+
+<p>Xamarin でギョームアプリを開発している時に、Android/iOS で使える ORM を探していたというか、JSON のデータをお手軽に保存・読み出し→インスタンス化できるライブラリないかなーと探していました。</p>
+
+<p>Xamarin の公式ドキュメント</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/">Cross-Platform Data Access &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>には、 SQLite.NET や ADO.NET などが紹介されていますが、どれも面倒そう。そこで使ってみようと思ったのが <a href="http://qiita.com/amay077/items/f14e04d4e86c8a782c15">2年前の投稿</a> でチラッと触れていた Akavache です。</p>
+
+<h1>Akavache とは</h1>
+
+<ul>
+<li>akavache/Akavache &ndash; <a href="https://github.com/akavache/Akavache">https://github.com/akavache/Akavache</a></li>
+</ul>
+
+
+<p>以下、README から引用です。</p>
+
+<blockquote><p>Akavache is an asynchronous, persistent (i.e. writes to disk) key-value store created for writing desktop and mobile applications in C#, based on SQLite3. Akavache is great for both storing important data (i.e. user settings) as well as cached local data that expires.</p></blockquote>
+
+<p>(意訳)Akavacheは、C# による、SQLite3 をベースとした非同期で永続的なデスクトップとモバイルアプリケーション向けのキーバリューストアです。 ユーザー設定やキャッシュなどのローカルデータを保存するのに最適です。</p>
+
+<p>バックエンドは SQLite3 なので、まあ得体の知れないデータ形式ではない、と。ちなみに <a href="https://github.com/paulcbetts/AkavacheExplorer">AkavacheExplorer</a> というデータビューアもあります。</p>
+
+<h1>対応プラットフォーム</h1>
+
+<blockquote><p>Akavache is currently compatible with:</p>
+
+<ul>
+<li>Xamarin.iOS / Xamarin.Mac 32-bit</li>
+<li>Xamarin.Android</li>
+<li>.NET 4.5 Desktop (WPF)</li>
+<li>Windows Phone 8</li>
+<li>WinRT (Windows Store)</li>
+<li>Windows Phone 8.1 Universal Apps</li>
+</ul>
+</blockquote>
+
+<p>ほぼ全てやないかい！</p>
+
+<h1>使ってみよう</h1>
+
+<p>せっかくなので Xamarin.Form で Akavache を使ったアプリを作ってみます。</p>
+
+<h3>1. プロジェクト（ソリューション）の作成</h3>
+
+<p>Xamarin.Forms App で、新しいプロジェクトを作成します。プロジェクト名は AkavacheSample とでもします。</p>
+
+<p>Shared Code: は、&#8217;Use Portable Class Library&#8217; を選択します。</p>
+
+<p>プロジェクトが3つ（AkavacheSample, AkavacheSample.Droid, AkavacheSample.iOS）作成されます。</p>
+
+<h3>2. Akavache と、依存ライブラリの導入</h3>
+
+<p><strong>3つのプロジェクトそれぞれで</strong> 、NuGet(メニュー → プロジェクト → Add NuGet Packages&hellip;) から、以下のパッケージを追加します（執筆時点の Akavache の最新バージョンは 4.1.2 です。）。</p>
+
+<ul>
+<li>Akavache.Core</li>
+<li>SQLitePCL.raw</li>
+<li>Akavache.SQLite3</li>
+<li>Akavache</li>
+</ul>
+
+
+<p>検索ボックスに 「sqlite akavache」と入力すると全部表示されると思います(↓こんな感じに)。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_01.png" alt="" /></p>
+
+<p>追加に失敗する場合は、上のリストの順番で一つずつ追加するとうまくいくと思います。</p>
+
+<h3>3. サンプルアプリの画面を作る</h3>
+
+<p>サンプルアプリの画面レイアウトを作ります。XAML とか面倒なのでコードでバリッと。</p>
+
+<p>AkavacheSample プロジェクトの App.cs を以下のようにします。テキストボックス２つとボタン２つが縦に並んでいるだけの簡単な画面です。</p>
+
+<figure class='code'><figcaption><span>AkavacheSample.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span> <span class="p">:</span> <span class="n">Application</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">App</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">nameEntry</span>  <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;名前を入力&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ageEntry</span>   <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;年齢を入力(数値のみ)&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">saveButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;保存&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">loadButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;読み出し&quot;</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// The root page of your application</span>
+</span><span class='line'>        <span class="n">MainPage</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Thickness</span><span class="p">(</span><span class="m">20</span><span class="p">),</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">nameEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">ageEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">saveButton</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">loadButton</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 以下省略</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>4. Akavache を使って保存と読み出し</h3>
+
+<p>名前と年齢をひとまとめに保存したいので、Person というクラスを作ります。</p>
+
+<figure class='code'><figcaption><span>Person.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Person</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">PersonName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">PersonAge</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あとはもう、一気に実装するだけです。
+保存ボタンを押した時に、入力値を Person に詰めて、Akavache を使って保存します。
+読み出しボタンを押した時に、Akavache から Person を読みだし、各テキストボックスにバラして設定します。</p>
+
+<p>Akavache はキー・バリュー・ストアなので、保存・読み出し時のキーを <code>"person"</code> としています。</p>
+
+<figure class='code'><figcaption><span>AkavacheSample.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span> <span class="p">:</span> <span class="n">Application</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">App</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">nameEntry</span>  <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;名前を入力&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ageEntry</span>   <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;年齢を入力(数値のみ)&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">saveButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;保存&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">loadButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;読み出し&quot;</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">saveButton</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Person に詰めて…</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">PersonName</span> <span class="p">=</span> <span class="n">nameEntry</span><span class="p">.</span><span class="n">Text</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">PersonAge</span>  <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">ToInt16</span><span class="p">(</span><span class="n">ageEntry</span><span class="p">.</span><span class="n">Text</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 保存</span>
+</span><span class='line'>            <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">InsertObject</span><span class="p">(</span><span class="s">&quot;person&quot;</span><span class="p">,</span> <span class="n">person</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">loadButton</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Akavache で Person を読み出し</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">loaded</span> <span class="p">=</span> <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">GetObject</span><span class="p">&lt;</span><span class="n">Person</span><span class="p">&gt;(</span><span class="s">&quot;person&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="c1">// 各テキストボックスに設定</span>
+</span><span class='line'>            <span class="n">nameEntry</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">loaded</span><span class="p">.</span><span class="n">PersonName</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">ageEntry</span><span class="p">.</span><span class="n">Text</span>  <span class="p">=</span> <span class="n">loaded</span><span class="p">.</span><span class="n">PersonAge</span><span class="p">.</span><span class="n">ToString</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// The root page of your application</span>
+</span><span class='line'>        <span class="n">MainPage</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Thickness</span><span class="p">(</span><span class="m">20</span><span class="p">),</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">nameEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">ageEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">saveButton</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">loadButton</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 以下省略</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>5. 動かす！</h3>
+
+<p>Android Player と iOS Simulater で動かしてみた、の図です。(途中、iPhone でキーボード出すのに苦労してるところは無視してください、Take2 の時間が無かったのですｗ)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_02.gif" alt="" /></p>
+
+<p>さすが Xamarin.Forms だ、(Android でも iPhone で動かしても)何とも無いぜ！</p>
+
+<h1>まとめ</h1>
+
+<p>Akavache を使って保存と読み出しを行う超簡単なサンプルを作ってみました。
+作ったサンプルは <a href="https://github.com/amay077/AkavacheSample">GitHub &ndash; amay077/AkavacheSample</a> においておきます。</p>
+
+<p>仕組みは理解できないけど、とても簡単に使えることが分かると思います。
+追加されたパッケージを見ると、 JSON.NET とか、Reactive Extensions とかが入っているので、まあだいたい察しが付くかと。。。</p>
+
+<p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
+
+<p>というわけで Advent Calendar 初日のネタは以上です。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[UIAlertController を async/await 対応させて便利に使う]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await/"/>
+    <updated>2014-12-24T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014 23日目</a> の記事です。</p>
+
+<p>　なんか空いてたのでエントリーしましたが、急だったので軽い話です。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/56abeeaa188f33cd56de">iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた &ndash; Qiita</a></li>
+</ul>
+
+
+<p>の焼き直しみたいなものです。</p>
+
+<p>　iOS8 では、<code>UIAlertDialog</code> が非推奨になり、代わりに <code>UIAlertController</code> を使えとのこと。</p>
+
+<p>　普通に使うとこうなります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">button1</span><span class="p">.</span><span class="n">TouchUpInside</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="n">UIAlertController</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;こんぼう をすてますか？&quot;</span><span class="p">,</span> <span class="n">UIAlertControllerStyle</span><span class="p">.</span><span class="n">Alert</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;はい&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span> <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;こんぼう をすてました&quot;</span><span class="p">));</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;いいえ&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span> <span class="p">{}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">PresentViewController</span><span class="p">(</span><span class="n">alert</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　このくらいなら問題ありません。</p>
+
+<p>　次に、こんぼう をすてる前にもう一度問いかけるようにします。
+２つ目の <code>UIAlertController</code> が入れ子になってしまって見づらい、 <strong>残念な感じ</strong> です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">button1</span><span class="p">.</span><span class="n">TouchUpInside</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="n">UIAlertController</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;こんぼう をすてますか？&quot;</span><span class="p">,</span> <span class="n">UIAlertControllerStyle</span><span class="p">.</span><span class="n">Alert</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;はい&quot;</span><span class="p">,</span>
+</span><span class='line'>        <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// 念押しの確認ダイアログ（入れ子でつらい</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">alert2</span> <span class="p">=</span> <span class="n">UIAlertController</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="s">&quot;ほんとうにすてますか？&quot;</span><span class="p">,</span> <span class="n">UIAlertControllerStyle</span><span class="p">.</span><span class="n">Alert</span><span class="p">);</span>
+</span><span class='line'>            <span class="n">alert2</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;もちろん&quot;</span><span class="p">,</span> <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">_</span><span class="p">=&gt;</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;こんぼう をすてました&quot;</span>
+</span><span class='line'>            <span class="p">}));</span>
+</span><span class='line'>        <span class="n">alert2</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;やめる&quot;</span><span class="p">,</span>  <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">_</span><span class="p">=&gt;</span> <span class="p">{}));</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// アラート２の表示</span>
+</span><span class='line'>        <span class="k">this</span><span class="p">.</span><span class="n">PresentViewController</span><span class="p">(</span><span class="n">alert2</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// アラート１の表示</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;いいえ&quot;</span><span class="p">,</span>  <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span> <span class="p">{}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">PresentViewController</span><span class="p">(</span><span class="n">alert</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　Objective-C や Swift なら、ここで打つ手は今のところ無いでしょう。
+しかし <strong>Xamarin には、C# には async/await がありまぁす！</strong>
+アラートの表示を async/await（というか Task）対応してみましょう。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">private</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">ShowDialog</span><span class="p">(</span><span class="kt">string</span> <span class="n">message</span><span class="p">,</span> <span class="kt">string</span> <span class="n">button1Title</span><span class="p">,</span> <span class="kt">string</span> <span class="n">button2Title</span><span class="p">)</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">comp</span> <span class="p">=</span> <span class="k">new</span> <span class="n">TaskCompletionSource</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="n">UIAlertController</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="s">&quot;&quot;</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">UIAlertControllerStyle</span><span class="p">.</span><span class="n">Alert</span><span class="p">);</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="n">button1Title</span><span class="p">,</span> <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">comp</span><span class="p">.</span><span class="n">SetResult</span><span class="p">(</span><span class="m">1</span><span class="p">);</span> <span class="c1">// OKボタン</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'>    <span class="n">alert</span><span class="p">.</span><span class="n">AddAction</span><span class="p">(</span><span class="n">UIAlertAction</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="n">button2Title</span><span class="p">,</span>  <span class="n">UIAlertActionStyle</span><span class="p">.</span><span class="n">Default</span><span class="p">,</span> <span class="n">x</span><span class="p">=&gt;</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">comp</span><span class="p">.</span><span class="n">SetResult</span><span class="p">(</span><span class="m">0</span><span class="p">);</span> <span class="c1">// Cancel</span>
+</span><span class='line'>    <span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="n">PresentViewController</span><span class="p">(</span><span class="n">alert</span><span class="p">,</span> <span class="k">true</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">return</span> <span class="n">comp</span><span class="p">.</span><span class="n">Task</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Task&lt;int&gt;</code> を返すメソッド <code>ShowDialog</code> です。<code>UIAlertController</code> のボタンが押されたら <code>SetResult</code> して Task の値を決定します。</p>
+
+<p>　このメソッドを使う方は、こうなります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">button1</span><span class="p">.</span><span class="n">TouchUpInside</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">await</span> <span class="n">ShowDialog</span><span class="p">(</span><span class="s">&quot;こんぼう をすてますか？&quot;</span><span class="p">,</span> <span class="s">&quot;はい&quot;</span><span class="p">,</span> <span class="s">&quot;いいえ&quot;</span><span class="p">)</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">if</span> <span class="p">(</span><span class="k">await</span> <span class="n">ShowDialog</span><span class="p">(</span><span class="s">&quot;ほんとうにすてますか？&quot;</span><span class="p">,</span> <span class="s">&quot;もちろん&quot;</span><span class="p">,</span> <span class="s">&quot;やめる&quot;</span><span class="p">)</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+</span><span class='line'>        <span class="k">return</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;こんぼう をすてました&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>なんて見やすいコードになったことでしょう。すばらしい！</p>
+
+<p>入れ子でなく、フラットに書けるので、こんな事もできます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">button1</span><span class="p">.</span><span class="n">TouchUpInside</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">while</span> <span class="p">(</span><span class="k">await</span> <span class="n">ShowDialog</span><span class="p">(</span><span class="s">&quot;こんぼう をすてますか？&quot;</span><span class="p">,</span> <span class="s">&quot;はい&quot;</span><span class="p">,</span> <span class="s">&quot;いいえ&quot;</span><span class="p">)</span> <span class="p">==</span> <span class="m">1</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;それをすてるなんてとんでもない！&quot;</span><span class="p">;</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;すてるのをやめました&quot;</span><span class="p">;</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>こんぼうを捨てるのをあきらめるまで、なんどでも聞いてきます。
+コールバックスタイルのメソッドでループとか、ベタに書くと頭痛いです。</p>
+
+<p>動かすとこんな感じです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/uialertcontroller_with_async_await_01.gif" alt="" /></p>
+
+<p><code>ShowDialog</code> は拡張メソッドとして作成しておくと、呼び出しに便利かもしれません。
+コールバックスタイルの機能を、Task化するパターンはよく使いそうな気がします。<code>TaskCompletionSource</code>、覚えておきましょう。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[図形の移動が、こんなに簡単に実装できる時代になりました]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/"/>
+    <updated>2014-12-13T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/foss4goss4g">FOSS4G Advent Calendar 2014 12日目</a> の記事です。</p>
+
+<p>　FOSS4G と言えば GIS、GIS と言えば図形編集ですね。図形を追加したり移動したり回転したりできる機能です。面倒なんですよ、これプログラミングするの。</p>
+
+<p>　なにが面倒かというと、色んな状態（マウスの状態＜左/右ボタンが押されている/押されてない、マウスダウン時の座標、現在の座標＞、図形の状態＜選択されている/いない＞）などなどがコードの中に入り乱れて、スパゲッティコードになりがちというか「なります」。</p>
+
+<!--more-->
+
+
+<p>　例えば「図形の移動」のフローは、</p>
+
+<ol>
+<li>図形をマウスダウン（＝選択）</li>
+<li>そのままマウスムーブ（＝移動）</li>
+<li>マウスボタンを離して終了</li>
+</ol>
+
+
+<p>と、極めて単純なんですね。これが普通にコーディングするとフラグや状態管理の嵐になってしまう。</p>
+
+<p>　と言ってた時代は終わりました。
+　例えば、下の画面。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/simply_shape_dragging_using_rx_01.gif" alt="" /></p>
+
+<p>　これは、白い四角形をドラッグで移動できるというスマホアプリの例ですが、これの実装の主要部分はたったの <strong>６行</strong> です。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">rectangle</span><span class="p">.</span><span class="n">DownEvent</span><span class="p">()</span> <span class="c1">// 1.図形をマウスダウン</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">SelectMany</span><span class="p">(</span><span class="n">rectangle</span><span class="p">.</span><span class="n">MoveEvent</span><span class="p">())</span>  <span class="c1">// 2.そのままマウスムーブ</span>
+</span><span class='line'>    <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>        <span class="n">rectangle</span><span class="p">.</span><span class="n">SetX</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">RawX</span><span class="p">);</span> <span class="c1">// 移動の度に図形を移動</span>
+</span><span class='line'>        <span class="n">rectangle</span><span class="p">.</span><span class="n">SetY</span><span class="p">(</span><span class="n">e</span><span class="p">.</span><span class="n">RawY</span><span class="p">);</span>
+</span><span class='line'>    <span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>　このコードをよく見ると、上に書いたフローと似ているのが分かります。人が考えたままコードに落とし込める。しかもフラグとか状態管理とかのゴミが一切ない。素晴らしい！(3. に該当するコードが必要な気がするけどまあいいや）</p>
+
+<p>　これを実現しているのは<a href="http://ninjinkun.hatenablog.com/entry/introrxja">リアクティブプログラミング</a>という概念。なんでもかんでもストリーム(時系列にデータが降ってくる何か)で捉えよう、イベントでさえも。イベントはストリームであるので、あとはストリームの加工や他のストリームとの合成でどうにかできてしまいます。</p>
+
+<p>　リアクティブ＋図形うんぬんの他の例は、</p>
+
+<ul>
+<li><a href="http://act.neue.cc/rxjs/canvas.htm">RxJS + Canvas</a></li>
+</ul>
+
+
+<p>などがあります。これは HTML なのですぐ試せますしコード（Javascript）も見られます。</p>
+
+<p>　リアクティブプログラミング用の著名なライブラリはほとんどオープンソース、リアクティブプログラミング＋FOSS4G で <strong>RxGIS</strong> （なんかカッコいいから言ってみたかっただけ）</p>
+
+<p>　いつかまたGIS作るみたいな仕事があったら、絶対 Rx 使ってつくるぞ！と思ってますのでよろしくお願いします。</p>
+
+<p>（上のコード例の全コードは <a href="https://gist.github.com/amay077/1d22ba8ffa8ad95e9393">gist</a> にあります。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxAndroid でスクリーンセーバー的な機能を作る]]></title>
@@ -1912,704 +3296,6 @@ iPhone6 が発表されてiOS開発でも多解像度対応が必須になるの
 
 <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=4774156019" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Elasticsearch の Auto-Rebalancing を Docker で試す]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/06/trying-auto-rebalancing-by-elasticsearch-on-docker/"/>
-    <updated>2014-08-06T23:39:51+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/06/trying-auto-rebalancing-by-elasticsearch-on-docker</id>
-    <content type="html"><![CDATA[<p>Linuxど素人の Docker 入門第二弾です。
-ちょっと Docker おもしろくなってきたかも。</p>
-
-<!--more-->
-
-
-<p><a href="http://www.elasticsearch.org/">Elasticsearch</a> というのは、Apache Solr と並ぶ（むしろ Solr より流行ってきた？）全文検索システムなんですが、複数のサーバにデータを分散配置して並列処理やフェイルオーバーができたりします。</p>
-
-<p>んで、Auto-Rebalancing というのは、サーバ（ノードというらしい）を追加した時に、そのサーバの役割が自動的に決まって、他のサーバからデータを分けて貰って、全体としてデータの平衡化が行われる事です。</p>
-
-<p>Docker なら、サーバーの起動が容易なので、Auto-Rebalancing を試すのに持ってこいだと思い、やってみました。</p>
-
-<p>全体的には、</p>
-
-<ul>
-<li><a href="http://inokara.hateblo.jp/entry/2013/11/15/042752">elasticsearch と elasticsearch-head を docker でサクッと試す &ndash; ようへいの日々精進 XP</a></li>
-</ul>
-
-
-<p>を参考にしています。</p>
-
-<h2>ubuntu の Docker コンテナに Elasticsearch をインストール</h2>
-
-<p><a href="http://blog.amay077.net/blog/2014/08/05/docker-try-first/">昨日</a>使った ubuntu のコンテナに Elasticsearch をインストールします。</p>
-
-<p>Elasticsearch のインストールは、</p>
-
-<ul>
-<li><a href="https://gist.github.com/wingdspur/2026107">Install ElasticSearch on Ubuntu 12.04</a></li>
-</ul>
-
-
-<p>を参考にしました。（なんか Elasticsearch を導入済みのコンテナとか Dockerfile もあったみたい）</p>
-
-<p>次に、Elasticsearch の管理GUIを提供するプラグイン elasticsearch-head を導入します。</p>
-
-<p>elasticsearch-head については、こちらがとても参考になりました。</p>
-
-<ul>
-<li><a href="http://yuheikagaya.hatenablog.jp/entry/2013/07/14/185752">elasticsearchのGUI「elasticsearch-head」がとても便利 &ndash; yuhei.kagaya</a></li>
-</ul>
-
-
-<p>インストールは、以下のコマンド一発です。(./ を付けないとうまく動いてくれなかった)</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span><span class="nb">cd </span>elasticsearch/bin
-</span><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>./plugin -install mobz/elasticsearch-head
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Elasticsearch のクラスタの設定</h2>
-
-<p>複数の Elasticsearch を動かす場合、共通のグループ名を付ける必要があります。</p>
-
-<p><code>elasticsearch.yml</code> を編集して、グループ名を付けます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>vim elasticsearch/config/elasticsearch.yml
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<figure class='code'><figcaption><span>elasticsearch.yml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">cluster.name:</span> <span class="err">amaycluster</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>Elasticsearch の分散環境での使用については、</p>
-
-<ul>
-<li><a href="http://dev.classmethod.jp/cloud/aws/use-elasticsearch-2-use-cluster/">Cluster機能を使う – AWSで始めるElasticSearch(2) ｜ Developers.IO</a></li>
-</ul>
-
-
-<p>を参考にしました。
-「EC2ではマルチキャストが使えない」などと書かれていますが、これは Docker なのでスルーで。結果的には <code>elasticsearch.yml</code> は上記の修正しかしていません。</p>
-
-<h2>Elasticsearch 設定済のイメージを作る</h2>
-
-<p>ここまでで一旦コンテナを終了し、<code>docker commit</code> で保存します。
-<code>docker images</code> でイメージが作成できたのが確認できます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker commit -m <span class="s2">&quot;Setting Elasticsearch cluster&quot;</span> bb638d1f825f amay077/es_cluster
-</span><span class='line'>
-</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker images
-</span><span class='line'>REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-</span><span class='line'>amay077/es_cluster         latest              b9d05b77d71a        9 hours ago         1.075 GB
-</span><span class='line'>ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>複数の Docker コンテナを起動し、それぞれで Elasticsearch を起動する</h2>
-
-<p>下のようなコマンドで、コンテナを起動し、Elasticsearch を開始します。
-（<code>/bin/bash</code> の代わりに直接 elasticsearch を開始してもよいと思いますが、後で直接コンソールに接続したいかなーと思いまして。）</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker run -i -t -p 9200:9200 -p 9300:9300 amay077/es_cluster /bin/bash
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
-</span><span class='line'><span class="c">#Control+p, Control+q でデタッチ</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>1つ起動した時点で、ホストPC（Mac）のブラウザから <a href="http://localhost:9200/_plugin/head/">http://localhost:9200/_plugin/head/</a> にアクセスします。
-あ、その前に VirtualBox の設定で、9200と9300のポートフォワーディングを行う必要があります。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_04.png" alt="" /></p>
-
-<p>設定できたら先のアドレスにアクセスすると elasticsearch-head の管理画面が表示されるはずです。</p>
-
-<p>続いて、さっきのコマンドを複数回実行し、複数の Elasticsearch を起動します。
-<code>-p 9200:9200</code> のところが重複するとエラーになるので <code>-p 9201:9200</code> などとズラしましたが、これで正しかったのかわかりません。</p>
-
-<h2>Elasticsearch にデータ投入</h2>
-
-<p>Elasticsearch へのデータ投入は、ホストPC（Mac）の Terminal から、</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test1&quot; }&#39;</span>
-</span><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test2&quot; }&#39;</span>
-</span><span class='line'>curl -XPOST <span class="s1">&#39;http://localhost:9200/mytest/memo/&#39;</span> -d <span class="s1">&#39;{ &quot;name&quot; : &quot;kappa&quot;, &quot;date&quot; : &quot;2013-09-07&quot;, &quot;message&quot; : &quot;test3&quot; }&#39;</span>
-</span><span class='line'>…続く
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>のような感じで、3万件ほど投入しました。</p>
-
-<p>投入後、 <a href="http://localhost:9200/_plugin/head/">http://localhost:9200/_plugin/head/</a> を見ると、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_01.png" alt="" /></p>
-
-<p>となっています。４台のサーバにデータが分散して登録されたことが分かります。四角内の数字（0〜4）は、「データが5つに分割され」て、その「ブロックがどのサーバに配置されているか」を示していて、太枠がプライマリ、細枠がスレーブであることを示しています。
-いずれのサーバが死んでも、データの欠損なくサービス継続できることを示しています。</p>
-
-<h2>ノードを追加してみる</h2>
-
-<p>５台目の Elasticsearh を追加してみます。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker run -i -t -p 9204:9200 -p 9304:9300 amay077/es_cluster /bin/bash
-</span><span class='line'>
-</span><span class='line'><span class="o">[</span> root@de6d825fa34d:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
-</span><span class='line'><span class="c">#Control+p, Control+q でデタッチ</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>その後 elasticsearch-head を見ると、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_01.png" alt="" /></p>
-
-<p>となり、しばらくしてから Refresh すると、</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/trying-auto-rebalancing-by-elasticsearch-on-docker_03.png" alt="" /></p>
-
-<p>となります。</p>
-
-<p>追加された「Isaiah Bradley」サーバには、データブロック１と３のスレーブの役割が与えられ、データが移動されたことが分かります。（移動中は色が変わったけどスクショ撮れなかった）</p>
-
-<p>このように Elasticsearch の Auto-Rebalancing を、Docker を使うことでお手軽に試すことができました。（実運用では Elasticsearch に Docker は、、、使わないですよねたぶん）</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=4048662023" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[いまさら Docker やってみた]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/05/docker-try-first/"/>
-    <updated>2014-08-05T21:39:53+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/05/docker-try-first</id>
-    <content type="html"><![CDATA[<p>いまさら感満載なんですが、Docker やってみました。</p>
-
-<!--more-->
-
-
-<p>ホストPCはMacです。</p>
-
-<h2>Docker のインストール</h2>
-
-<p>Macなので事前に VirtualBox を入れて置く必要があります。</p>
-
-<p>あとは、</p>
-
-<ul>
-<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
-</ul>
-
-
-<p>を参考に。</p>
-
-<p>Docker と boot2docker のバージョンはこんな感じでした。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>docker -v
-</span><span class='line'>Docker version 1.1.2, build d84a070
-</span><span class='line'>
-</span><span class='line'><span class="nv">$ </span>boot2docker version
-</span><span class='line'>Client version: v1.1.2
-</span><span class='line'>Git commit: a229ac1
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>boot2docker 経由で Docker の起動</h2>
-
-<p><code>boot2docker up</code> で Docker (というか Tiny Core Linux らしい)を起動。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>boot2docker up
-</span><span class='line'>2014/08/05 21:47:19 Waiting <span class="k">for </span>VM to be started...
-</span><span class='line'>.......
-</span><span class='line'>2014/08/05 21:47:41 Started.
-</span><span class='line'>2014/08/05 21:47:41 Your DOCKER_HOST env variable is already <span class="nb">set </span>correctly.
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>set:export DOCKER_HOST=</code> とか出たらホスト（Mac） .bash_profile にそのまま追記します。（上はすでに追加済なので <code>already</code> と出てます）</p>
-
-<h2>boot2docker から Docker に接続</h2>
-
-<p><code>boot2docker ssh</code> で Docker に接続。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'><span class="nv">$ </span>boot2docker ssh
-</span><span class='line'>                        <span class="c">##        .</span>
-</span><span class='line'>                  <span class="c">## ## ##       ==</span>
-</span><span class='line'>               <span class="c">## ## ## ##      ===</span>
-</span><span class='line'>           /<span class="s2">&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;&quot;</span><span class="se">\_</span>__/ <span class="o">===</span>
-</span><span class='line'>      ~~~ <span class="o">{</span>~~ ~~~~ ~~~ ~~~~ ~~ ~ /  <span class="o">===</span>- ~~~
-</span><span class='line'>           <span class="se">\_</span>_____ o          __/
-</span><span class='line'>             <span class="se">\ </span>   <span class="se">\ </span>       __/
-</span><span class='line'>              <span class="se">\_</span>___<span class="se">\_</span>_____/
-</span><span class='line'> _                 _   ____     _            _
-</span><span class='line'><span class="p">|</span> <span class="p">|</span>__   ___   ___ <span class="p">|</span> <span class="p">|</span>_<span class="p">|</span>___ <span class="se">\ </span>__<span class="p">|</span> <span class="p">|</span> ___   ___<span class="p">|</span> <span class="p">|</span> _____ _ __
-</span><span class='line'><span class="p">|</span> <span class="s1">&#39;_ \ / _ \ / _ \| __| __) / _` |/ _ \ / __| |/ / _ \ &#39;</span>__<span class="p">|</span>
-</span><span class='line'><span class="p">|</span> <span class="p">|</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="p">|</span>_ / __/ <span class="o">(</span>_<span class="p">|</span> <span class="p">|</span> <span class="o">(</span>_<span class="o">)</span> <span class="p">|</span> <span class="o">(</span>__<span class="p">|</span>   &lt;  __/ <span class="p">|</span>
-</span><span class='line'><span class="p">|</span>_.__/ <span class="se">\_</span>__/ <span class="se">\_</span>__/ <span class="se">\_</span>_<span class="p">|</span>_____<span class="se">\_</span>_,_<span class="p">|</span><span class="se">\_</span>__/ <span class="se">\_</span>__<span class="p">|</span>_<span class="p">|</span><span class="se">\_\_</span>__<span class="p">|</span>_<span class="p">|</span>
-</span><span class='line'>boot2docker: 1.1.2
-</span><span class='line'>             master : 740106c - Thu Jul 24 03:24:10 UTC 2014
-</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>Docker 内で ubuntu を起動する</h2>
-
-<p><code>docker run</code> で docker のイメージを（無ければダウンロードして）起動し、後続のコマンドを実行して終わる。
-下記の場合 bash を起動しているので、<code>exit</code> すると終わる。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>sudo docker run -i -t ubuntu /bin/bash ＜--docker内
-</span><span class='line'>Unable to find image <span class="s1">&#39;ubuntu&#39;</span> locally
-</span><span class='line'>Pulling repository ubuntu
-</span><span class='line'>ba5877dc9bec: Download <span class="nb">complete </span>
-</span><span class='line'>511136ea3c5a: Download <span class="nb">complete </span>
-</span><span class='line'>9bad880da3d2: Download <span class="nb">complete </span>
-</span><span class='line'>25f11f5fb0cb: Download <span class="nb">complete </span>
-</span><span class='line'>ebc34468f71d: Download <span class="nb">complete </span>
-</span><span class='line'>2318d26665ef: Download <span class="nb">complete </span>
-</span><span class='line'>root@c8b319b2b306:/# ＜--ubuntu に入った
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>アタッチとかデタッチとか</h2>
-
-<p>CTRL+p → CTRL+q と押すと、Ubuntu からデタッチして docker に戻る。（ubuntu は終わらない）</p>
-
-<p><code>docker ps</code> とすると起動している ubuntu の一覧が見える。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>ocker@boot2docker:~<span class="nv">$ </span>docker ps
-</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-</span><span class='line'>c8b319b2b306        ubuntu:latest       /bin/bash           5 minutes ago       Up 5 minutes                            prickly_tesla
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>もう一度 <code>sudo docker run -i -t ubuntu /bin/bash</code> とすると、ubuntu がもう１個起動する。
-CTRL+p → CTRL+q でデタッチして、<code>docker ps</code> すると、２つになってるのが分かる。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps
-</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           4 seconds ago       Up 4 seconds                            distracted_einstein
-</span><span class='line'>c8b319b2b306        ubuntu:latest       /bin/bash           8 minutes ago       Up 8 minutes                            prickly_tesla
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>起動中の ubuntu に入るには、<code>docker attach c8b319b2b306</code> などとする。この場合 bash が実行中なので ubuntu のコンソールになる。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker attach c8b319b2b306
-</span><span class='line'>
-</span><span class='line'>root@c8b319b2b306:/#
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>起動しているOSの削除</h2>
-
-<p><code>docker attach</code> して <code>exit</code> するか、docker側から <code>docker kill c8b319b2b306</code> などとする。</p>
-
-<p><code>docker ps</code> すると、削除されたのが分かる。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps
-</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           3 minutes ago       Up 3 minutes                            distracted_einstein
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>OSの状態の保存と復元</h2>
-
-<p>docker から起動した ubuntu は揮発性なので、終了すると状態が消えてしまう。
-が、ほんとは消えてなくて、終了した後で、履歴からイメージを作成することができる。</p>
-
-<p>まず、ubuntu にて適当なファイルを作成。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>root@4744cf404fda:/# <span class="nb">echo</span> <span class="s1">&#39;Hello&#39;</span> &gt;&gt; mytext
-</span><span class='line'>
-</span><span class='line'>root@4744cf404fda:/# ls
-</span><span class='line'>bin   dev  home  lib64    mnt opt   root  sbin  sys  usr
-</span><span class='line'>boot  etc  lib     media  mytext  proc  run   srv   tmp  var
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>確かに <code>mytext</code> が作成されているのを確認したら、<code>exit</code> で終了、docker に戻る。</p>
-
-<p><code>sudo docker run -i -t ubuntu /bin/bash</code> で ubuntu を起動し、<code>ls</code> で、内容を確認。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>root@3d15ee0cc161:/# ls
-</span><span class='line'>bin  boot  dev    etc  home  lib  lib64  media  mnt  opt  proc  root  run  sbin  srv  sys  tmp  usr  var
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>mytext</code> は消えている。
-確認後 <code>exit</code> で終了。</p>
-
-<p><code>docker ps -a</code> で履歴も含めて状態を見る。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps -a
-</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS                      PORTS               NAMES
-</span><span class='line'>3d15ee0cc161        ubuntu:latest       /bin/bash           19 seconds ago      Exited <span class="o">(</span>0<span class="o">)</span> 12 seconds ago                       dreamy_hawking
-</span><span class='line'>4744cf404fda        ubuntu:latest       /bin/bash           8 minutes ago       Exited <span class="o">(</span>0<span class="o">)</span> 30 seconds ago                       distracted_einstein
-</span><span class='line'>16d24570a714        ubuntu:latest       /bin/bash           12 minutes ago      Exited <span class="o">(</span>0<span class="o">)</span> 12 minutes ago                       focused_wilson
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>mytext</code> を保存したのは 4744cf404fda の ubuntu なので、これを保存する。
-<code>docker commit</code> で git ライクにコミットすると保存される。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker commit -m <span class="s2">&quot;Add mytext&quot;</span> 4744cf404fda amay077/mytext_container
-</span><span class='line'>
-</span><span class='line'>467f6424ae4a7b813f51356a019ef6ee2467fe2f1f52d8ea7a2e32ddc0b63edd
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>docker images</code> を実行して保存されているイメージのリストを見る。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-</span><span class='line'>amay077/mytext_container   latest              467f6424ae4a        50 seconds ago      192.7 MB
-</span><span class='line'>ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
-</span><span class='line'>d
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>amay077/mytext_container</code> が確かに保存されてる。</p>
-
-<p>そのイメージを使ってインスタンスを起動する。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>sudo docker run -i -t amay077/mytext_container /bin/bash
-</span><span class='line'>
-</span><span class='line'>root@0f6e755990ff:/# ls
-</span><span class='line'>bin   dev  home  lib64    mnt opt   root  sbin  sys  usr
-</span><span class='line'>boot  etc  lib     media  mytext  proc  run   srv   tmp  var
-</span><span class='line'>
-</span><span class='line'>root@0f6e755990ff:/# cat mytext
-</span><span class='line'>Hello
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>確かに mytext が保存された状態になっている。</p>
-
-<h2>コンテナとイメージの削除</h2>
-
-<p>いきなり「コンテナ」ってｗ</p>
-
-<p>イメージから起動した「モノ」をコンテナというらしい。
-起動して終了したもの（<code>docker ps -a</code> で見られるもの）もコンテナというらしい。</p>
-
-<p>OSを終了してから、<code>docker rm 3d15ee0cc161</code> などで個別に削除してもよいが、面倒なので、
-<code>docker rm `docker ps -a -q</code> とすると、起動してないコンテナを一括削除できる。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker rm <span class="sb">`</span>docker ps -a -q<span class="sb">`</span>
-</span><span class='line'>3d15ee0cc161
-</span><span class='line'>4744cf404fda
-</span><span class='line'>16d24570a714
-</span><span class='line'>57ee3aa4a7d2
-</span><span class='line'>c8b319b2b306
-</span><span class='line'>
-</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker ps -a
-</span><span class='line'>CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>続いて、イメージの削除は <code>docker rmi amay077/mytext_container</code> などで行う。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker rmi amay077/mytext_container
-</span><span class='line'>
-</span><span class='line'>docker@boot2docker:~<span class="nv">$ </span>docker images
-</span><span class='line'>REPOSITORY          TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
-</span><span class='line'>ubuntu              latest              ba5877dc9bec        2 weeks ago         192.7 MB
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>ubuntu だけになった。
-<code>docker rmi ubuntu</code> もするときれいサッパリ。</p>
-
-<p>今日はここまで。</p>
-
-<h2>参考サイト</h2>
-
-<ul>
-<li><a href="http://dev.classmethod.jp/tool/docker/getting-started-docker-on-osx/">はじめてのDocker on Mac OS X ｜ Developers.IO</a></li>
-<li><a href="http://apatheia.info/blog/2013/06/17/docker/">仮想環境構築に docker を使う &ndash; apatheia.info</a></li>
-<li><a href="http://blog.n-z.jp/blog/2013-12-24-docker-rm.html">Dockerで不要になったコンテナやイメージを削除する &ndash; @znz blog</a></li>
-</ul>
-
-
-<p>WEB+DB PRESS vol.81 の Immutable Infrastructure の特集も、参考になりました。</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=4774165069" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[いまさら Raspberry Pi やってみた]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/04/raspberry-try-first/"/>
-    <updated>2014-08-04T21:03:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/04/raspberry-try-first</id>
-    <content type="html"><![CDATA[<p>昨年の秋に買って以来放置してしまってた Raspberry Pi、ふと思い立って動かしてみました。</p>
-
-<!--more-->
-
-
-<p>当時は、買ったはよかったものの、余ってるSDカードがなくてそのまま「寝て」しまってました。</p>
-
-<h2>OS のインストール</h2>
-
-<ul>
-<li><a href="http://qiita.com/tomk79/items/cdc1b88358afba2c6337">RaspberryPi &ndash; Raspberry Pi に入門してみた。 &ndash; Qiita</a></li>
-</ul>
-
-
-<p>に沿ってやりました。ZIPファイルのダウンロードが300MBほど経過したところで終わってしまったので、BitTorrent を使ってみました。
-Mac なので、<a href="https://www.transmissionbt.com/">Transmission</a> というクライアントを使用しました。速いっすね BitTorrent。</p>
-
-<p>RaspberryPiへの給電は MacMini のUSBポートから、ディスプレイはHDMIで行いました。
-SDカードは、以前使っていたスマホに刺さっていたmicroSDカード＋SDカードアダプタにて、そのためか、少し衝撃を与えるとOSが再起動してしまうという gkbr な環境です。</p>
-
-<h2>WiFi に接続する</h2>
-
-<p>有線LANが余ってなかったので、WiFiでやることにしました。ちょうど使わなくなったノートPCにWiFiドングルが刺さってました。</p>
-
-<p>WiFi に接続するための設定は、</p>
-
-<ul>
-<li><a href="http://kingyo-bachi.blogspot.jp/2013/07/raspberry-pilan.html">コチョナナバ: Raspberry Piを無線LAN対応させてみた</a></li>
-</ul>
-
-
-<p>を参考にしましたが、設定後再起動してもIPアドレスが取得できず、結局 <code>startx</code> で GUI を立ち上げ、GUIのWiFi設定ツールで設定したところ、接続できるようになりました。その後の再起動でも自動的にWiFiに接続できるようになりました。</p>
-
-<p>Raspberry Pi のUSBポートは２つしかないのに、GUIでのWiFi設定を行うにはマウスとキーボードとWiFiドングルが必要で、キーボードとマウスを抜き差ししながら、しかも本体にできるだけ衝撃を与えないようにするのが大変でした（^_^;）</p>
-
-<p>GUIのWiFi設定ツールで設定した後の <code>wpa_supplicant.conf</code> はこんな感じになっていました。</p>
-
-<figure class='code'><figcaption><span>wpa_supplicant.conf</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='json'><span class='line'><span class="err">ctrl_interface=DIR=/var/run/wpa_supplicant</span> <span class="err">GROUP=netdev</span>
-</span><span class='line'><span class="err">update_config=</span><span class="mi">1</span>
-</span><span class='line'>
-</span><span class='line'><span class="err">network=</span><span class="p">{</span>
-</span><span class='line'>  <span class="err">ssid=</span><span class="nt">&quot;&lt;WiFi-APのSSID&gt;&quot;</span>
-</span><span class='line'>  <span class="err">psk=</span><span class="s2">&quot;&lt;WiFi-APの接続生パスワード&gt;&quot;</span>
-</span><span class='line'>  <span class="err">proto=RSN</span>
-</span><span class='line'>  <span class="err">key_mgmt=WPA-PSK</span>
-</span><span class='line'>  <span class="err">pairwise=TKIP</span>
-</span><span class='line'>  <span class="err">auth_alg=OPEN</span>
-</span><span class='line'><span class="p">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>root のパスワードを設定</h2>
-
-<p><code>sudo passwd root</code> で root のパスワードを設定しました。（こんなことすらググらないと分からない程度のLinux力ですorz）</p>
-
-<h2>SSHで接続</h2>
-
-<p>前出のコチョバナナさんの続きで、 <code>avahi-deamon</code> を導入して、DHCPでIPアドレスが変わっても、<code>ssh raspberrypi.local</code> で接続できるようにしました。</p>
-
-<p>とりあえずここまで。
-カメラとかセンサーはないので、これから何しようか考えます。</p>
-
-<p>一連のセットアップで一番苦労したのは vi のテキスト入力です。。。</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00CBWMXVE" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B003NSAMW2" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00ISP0MOI" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[タイプカバーを買いました]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/30/bought-type-cover/"/>
-    <updated>2014-07-30T15:27:57+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/30/bought-type-cover</id>
-    <content type="html"><![CDATA[<p><a href="http://blog.amay077.net/blog/2014/07/18/welcome-surface-pro-3/">先日買った Surface Pro 3</a> 用のタイプカバーを買いました。</p>
-
-<!--more-->
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/bought_type_cover_01.jpg" alt="" /></p>
-
-<p><a href="http://xamarin.com">Xamarin</a> カラーの <strong>シアン！</strong></p>
-
-<p>キーボードの打感は、個人的には良好。普段 MacBookAir やApple純正のあのうす～いキーボードに慣れているので、なんなく順応できますね。</p>
-
-<p>これでお出かけ時に持っていけるぞ。</p>
-
-<p>こうなってくると次は外出時のバッテリー問題を解決したい！
-MacBookAir には、<a href="http://www.amazon.co.jp/gp/product/B00456DWUA/ref=as_li_ss_tl?ie=UTF8&amp;camp=247&amp;creative=7399&amp;creativeASIN=B00456DWUA&amp;linkCode=as2&amp;tag=oku2008-22">HyperJuice</a> を使っていて、実質半日くらいは持つのですが、こいつで Surface にも給電できないかなーと思ってます。変換コネクタみたいなのでないかな？</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00KQ5CKCA" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00KQ5A9KA" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-
-
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=B00456DWUA" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Surface Pro 3 買いました]]></title>
-    <link href="http://blog.amay077.net/blog/2014/07/18/welcome-surface-pro-3/"/>
-    <updated>2014-07-18T14:48:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/07/18/welcome-surface-pro-3</id>
-    <content type="html"><![CDATA[<p><a href="http://www.amazon.co.jp/gp/product/B00KQ5AAUY?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=B00KQ5AAUY&amp;linkCode=shr&amp;tag=oku2008-22">Surface Pro 3</a> を買いました。</p>
-
-<!--more-->
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/welcome-surface-pro-3_01.png" alt="" /></p>
-
-<p>このところ Mac ばかり使ってたので、Windows 機は久しく買ってませんでした。自作でないものはホントに久しぶり。</p>
-
-<p>Macbook Air と並べてみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/welcome-surface-pro-3_02.png" alt="" /></p>
-
-<p>重さはそんなに変わらないですね。</p>
-
-<p>まだタイプカバーを買ってないのでがつがつ使い倒せません。（ヤマダでテレビ買った時に半ば強制的に作らされたカード付属のポイントで買いたい）
-あと、保護フィルム要るのかな？</p>
-
-<p>これで Windows Store Apps の開発もできるぞ。</p>
 ]]></content>
   </entry>
   

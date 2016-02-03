@@ -1,0 +1,562 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Hot Observable と ConnectableObservable について - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,java,reactivex,rxjava,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Hot Observable と ConnectableObservable について
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2015-12-17T23:59:59+09:00" pubdate data-updated="true">Dec 17<sup>th</sup>, 2015</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/java/'>java</a>, <a class='category' href='/blog/categories/reactivex/'>reactivex</a>, <a class='category' href='/blog/categories/rxjava/'>rxjava</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 17日目</a> の記事です。</p>
+
+<p>空いてたので参加してみました。
+普段は Xamarin(C#) + Reactive Extensions + ReactiveProperty で、Reactive + MVVM な Android/iOS両対応アプリを開発しています。</p>
+
+<!--more-->
+
+
+<h2>Cold vs Hot</h2>
+
+<p>Cold Observable は「あなただけの」Stream、Hot は「みんなの」Stream 。
+（私的にはニコ動かニコ生か、みたいに理解してますが、その話はいいや）</p>
+
+<p>Cold は、あなたが subscribe した瞬間からデータが流れ始めます。
+Hot は、あなたが subscribe してもデータは流れ始めません(流れるかも知れません？)。</p>
+
+<p>では Hot Observable はいつからデータが流れ始める？Observable が生成された瞬間から？
+その答え(の一つ)が <strong>ConnectableObservable</strong> 。</p>
+
+<h2>ConnectableObservable のデータ放流の開始と停止</h2>
+
+<p>Cold Observable を Hot化する publish メソッドの返り値は ConnectableObservable。
+Hot は必ず ConnectableObservable。（←これ後で否定します）</p>
+
+<p>ConnectableObservable には connect メソッドがあります。
+Hot Observable のデータが流れ始めるのは、このメソッドを呼んだ瞬間から。
+なので、どれだけ subscriber が居ようとも connect を呼ばなければデータは流れません。逆に subscriber が居なくても connect を呼べばデータが流れ始めます。</p>
+
+<p>connect メソッドの返り値は Subscription です。
+Subscription の unsubscribe メソッドを呼ぶと、データの放流が停止します。これも subscriber が居ようが居まいが停止します。
+再度 connect すると、 <strong>最初から</strong> データが流れ出します。再開ではありません。</p>
+
+<h2>実例</h2>
+
+<h3>Cold Observable</h3>
+
+<p>Observable.interval は、一定時間置きにインクリメントされた値を流す <strong>Cold</strong> Observable。
+なので、複数の subscriber が居たら、各々に独立した値を流します。</p>
+
+<p>Android の画面にボタンが２つ（buttonSubscribe1 と buttonSubscribe2）並んでるだけのサンプルです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// 可視性向上の為のなんちゃってラムダ</span>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 8<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 2<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押すとデータ(０から連番)が流れ始めます。
+しばらくして buttonSubscribe2 を押すと、1 とは関係なく、また 0 から流れ始めます。</p>
+
+<h3>Hot(Connectable) Observable</h3>
+
+<p>publish で Hot 化します。
+connect と unsubscribe を呼ぶためのボタン（buttonConnect, buttonDisConnect）を画面に追加してます。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_connection</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="kd">final</span> <span class="n">ConnectableObservable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">publish</span><span class="o">();</span> <span class="c1">// publish で Hot化</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonConnect</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonConnect click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_connection</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span> <span class="c1">// データ放流開始</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonDisConnect</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonDisConnect click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_connection</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_connection</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// データ放流停止</span>
+</span><span class='line'>        <span class="n">_connection</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: buttonConnect click!      // ←数秒経過している<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: buttonDisConnect click!<br/>
+-これ以降 onNext は出力されない-<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押しても、まだデータは流れてきません。
+数秒後、buttonConnect を押すとデータが流れ始めます。
+buttonSubscribe2 を押すと、subscriber2 が増えますが、Hot(みんなの)Observable なので、流れてくる値とタイミングは subscriber1 と全く同じです。</p>
+
+<p>buttonDisConnect を押すと、データの放流が停止されます。(ちなみにもう一度 CONNECT すると、また 0 から値が流れます)
+subscriber1, subscriber2 にはもう onNext は呼ばれません。</p>
+
+<p>※サンプルでは onNext しか受信していませんが、 buttonDisConnect を押しても、 subscriber1, subscriber2 の onComplete や onError も呼ばれません。つまり、 <strong>「データの放流が停止されても、 subscriber はそれに気付けない」</strong> ということになります。これはこれでいいんだろか、という感じです。</p>
+
+<h2>ConnectableObservable.refCount について</h2>
+
+<blockquote><p>Hot は必ず ConnectableObservable。（←これ後で否定します）</p></blockquote>
+
+<p>否定始めます。</p>
+
+<p>ConnectableObservable では、データ放流の開始と停止は、 connect と unsubscribe に委ねられていました。</p>
+
+<p>refCount() を使うとそれを自動化できます。(refCount？参照カウントを返すメソッド？そう思っていましたが全然違いました。)
+どういうことかと言うと、最初の subscriber が現れたらデータ放流を開始し、誰も subscriber が居なくなったら放流を停止する、というものです。
+refCount() の返値はただの Observable です、でも Hot です。はい否定しましたー。</p>
+
+<h3>実例</h3>
+
+<p>publish した Hot Observable を refCount してデータ放流を自動制御してもらいます。
+画面には、 buttonConnect, buttonDisConnect に代わり、buttonUnsubscribe1, buttonUnsubscribe2 を用意します。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription1</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription2</span><span class="o">;</span> <span class="c1">// field です</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_connection</span><span class="o">;</span>    <span class="c1">// field です</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Long</span><span class="o">&gt;</span> <span class="n">tickObservable</span> <span class="o">=</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">).</span><span class="na">publish</span><span class="o">().</span><span class="na">refCount</span><span class="o">();</span> <span class="c1">// 返値は Connectable ではない</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_subscription1</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber1 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonSubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonSubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="n">_subscription2</span> <span class="o">=</span> <span class="n">tickObservable</span><span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;subscriber2 - onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonUnsubscribe1</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonUnsubscribe1 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_subscription1</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_subscription1</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// 1購読終了</span>
+</span><span class='line'>        <span class="n">_subscription1</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonUnsubscribe2</span><span class="o">).</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="n">v</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;buttonUnsubscribe2 click!&quot;</span><span class="o">);</span>
+</span><span class='line'>    <span class="k">if</span> <span class="o">(</span><span class="n">_subscription2</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_subscription2</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span> <span class="c1">// 2購読終了</span>
+</span><span class='line'>        <span class="n">_subscription2</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<blockquote><p>結果:<br/>
+D/MainActivity: buttonSubscribe1 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
+D/MainActivity: buttonSubscribe2 click!<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 3<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
+D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 7<br/>
+D/MainActivity: buttonUnsubscribe1 click!<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 8<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 9<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 10<br/>
+D/MainActivity: subscriber2 &ndash; onNext &ndash; 11<br/>
+D/MainActivity: buttonUnsubscribe2 click!<br/>
+-これ以降 onNext は出力されない-<br/></p></blockquote>
+
+<p>buttonSubscribe1 を押すと、その時点でデータが流れ始めます(refCount による自動制御)。
+buttonSubscribe2 を押すと、subscriber1 と同じタイミングで、同じ値を受信できます(Hot だから)。
+buttonUnsubscribe1 を押すと、 subscriber1 は購読をやめますが、subscriber2 はまだ受信しています。
+buttonUnsubscribe2 を押すと、subscriber2 も購読をやめ、この時点でデータ放流が停止します(refCount による自動制御)。</p>
+
+<p>※ほんとにデータ放流終わってんの？を確認するには、 tickObservable に doOnNext を繋げて確認するとよいと思います。</p>
+
+<h2>まとめ</h2>
+
+<p>Hot Observable は、ほとんどの場合(publish により生成されるので) ConnectableObservable。
+ConnectableObservable は、購読者の有無に関係なく connect でデータ放流開始、Subscription.unsubscribe でデータ放流停止。
+refCount により購読者の有無に連動したデータ放流の自動制御が可能。この場合 Hot だけど普通の Observable型。</p>
+
+<p>実際に Hot Observable を使う場合は、refCount() しとくのが無難かなー、と思いました。(購読者の unsubscribe を厳密に管理しておけば、という前提で)</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html">Intro to Rx &ndash; Hot and Cold observables</a></li>
+<li><a href="https://github.com/ReactiveX/RxJava/wiki/Connectable-Observable-Operators">Connectable Observable Operators · ReactiveX/RxJava Wiki</a></li>
+<li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
+</ul>
+
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2015/12/01/save-your-data-using-akavache/" title="Previous Post: クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する">&lt; クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/" title="Next Post: RxJava + MVVM パターンで作るストップウォッチアプリ">RxJava + MVVM パターンで作るストップウォッチアプリ &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/';
+        var disqus_url = 'http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

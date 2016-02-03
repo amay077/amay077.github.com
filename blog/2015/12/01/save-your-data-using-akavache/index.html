@@ -1,0 +1,547 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,ios,xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2015-12-01T23:59:59+09:00" pubdate data-updated="true">Dec 1<sup>st</sup>, 2015</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/ios/'>ios</a>, <a class='category' href='/blog/categories/xamarin/'>xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>　これは <a href="http://qiita.com/advent-calendar/2015/xamarin">Xamarin Advent Calendar 2015 1日目</a> の記事です。</p>
+
+<p>Xamarin Advent Calendar 2015、今日から開始です。
+3年目になってもネタに尽きない Xamarin 、まだまだ盛り上がっております。</p>
+
+<p>かくいう自分は、<a href="http://qiita.com/amay077/items/0a3fa3dfac7f29a2807d">前回の投稿</a> が約1年前と、完全に時代遅れになっております（仕事とスプラ&hellip;いえ何でもないです）。
+最近のトピックスは他の方にお任せして、1年前からのネタを書きます。</p>
+
+<!--more-->
+
+
+<p>Xamarin でギョームアプリを開発している時に、Android/iOS で使える ORM を探していたというか、JSON のデータをお手軽に保存・読み出し→インスタンス化できるライブラリないかなーと探していました。</p>
+
+<p>Xamarin の公式ドキュメント</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/">Cross-Platform Data Access &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>には、 SQLite.NET や ADO.NET などが紹介されていますが、どれも面倒そう。そこで使ってみようと思ったのが <a href="http://qiita.com/amay077/items/f14e04d4e86c8a782c15">2年前の投稿</a> でチラッと触れていた Akavache です。</p>
+
+<h1>Akavache とは</h1>
+
+<ul>
+<li>akavache/Akavache &ndash; <a href="https://github.com/akavache/Akavache">https://github.com/akavache/Akavache</a></li>
+</ul>
+
+
+<p>以下、README から引用です。</p>
+
+<blockquote><p>Akavache is an asynchronous, persistent (i.e. writes to disk) key-value store created for writing desktop and mobile applications in C#, based on SQLite3. Akavache is great for both storing important data (i.e. user settings) as well as cached local data that expires.</p></blockquote>
+
+<p>(意訳)Akavacheは、C# による、SQLite3 をベースとした非同期で永続的なデスクトップとモバイルアプリケーション向けのキーバリューストアです。 ユーザー設定やキャッシュなどのローカルデータを保存するのに最適です。</p>
+
+<p>バックエンドは SQLite3 なので、まあ得体の知れないデータ形式ではない、と。ちなみに <a href="https://github.com/paulcbetts/AkavacheExplorer">AkavacheExplorer</a> というデータビューアもあります。</p>
+
+<h1>対応プラットフォーム</h1>
+
+<blockquote><p>Akavache is currently compatible with:</p>
+
+<ul>
+<li>Xamarin.iOS / Xamarin.Mac 32-bit</li>
+<li>Xamarin.Android</li>
+<li>.NET 4.5 Desktop (WPF)</li>
+<li>Windows Phone 8</li>
+<li>WinRT (Windows Store)</li>
+<li>Windows Phone 8.1 Universal Apps</li>
+</ul>
+</blockquote>
+
+<p>ほぼ全てやないかい！</p>
+
+<h1>使ってみよう</h1>
+
+<p>せっかくなので Xamarin.Form で Akavache を使ったアプリを作ってみます。</p>
+
+<h3>1. プロジェクト（ソリューション）の作成</h3>
+
+<p>Xamarin.Forms App で、新しいプロジェクトを作成します。プロジェクト名は AkavacheSample とでもします。</p>
+
+<p>Shared Code: は、&#8217;Use Portable Class Library&#8217; を選択します。</p>
+
+<p>プロジェクトが3つ（AkavacheSample, AkavacheSample.Droid, AkavacheSample.iOS）作成されます。</p>
+
+<h3>2. Akavache と、依存ライブラリの導入</h3>
+
+<p><strong>3つのプロジェクトそれぞれで</strong> 、NuGet(メニュー → プロジェクト → Add NuGet Packages&hellip;) から、以下のパッケージを追加します（執筆時点の Akavache の最新バージョンは 4.1.2 です。）。</p>
+
+<ul>
+<li>Akavache.Core</li>
+<li>SQLitePCL.raw</li>
+<li>Akavache.SQLite3</li>
+<li>Akavache</li>
+</ul>
+
+
+<p>検索ボックスに 「sqlite akavache」と入力すると全部表示されると思います(↓こんな感じに)。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_01.png" alt="" /></p>
+
+<p>追加に失敗する場合は、上のリストの順番で一つずつ追加するとうまくいくと思います。</p>
+
+<h3>3. サンプルアプリの画面を作る</h3>
+
+<p>サンプルアプリの画面レイアウトを作ります。XAML とか面倒なのでコードでバリッと。</p>
+
+<p>AkavacheSample プロジェクトの App.cs を以下のようにします。テキストボックス２つとボタン２つが縦に並んでいるだけの簡単な画面です。</p>
+
+<figure class='code'><figcaption><span>AkavacheSample.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span> <span class="p">:</span> <span class="n">Application</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">App</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">nameEntry</span>  <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;名前を入力&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ageEntry</span>   <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;年齢を入力(数値のみ)&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">saveButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;保存&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">loadButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;読み出し&quot;</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// The root page of your application</span>
+</span><span class='line'>        <span class="n">MainPage</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Thickness</span><span class="p">(</span><span class="m">20</span><span class="p">),</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">nameEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">ageEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">saveButton</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">loadButton</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 以下省略</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>4. Akavache を使って保存と読み出し</h3>
+
+<p>名前と年齢をひとまとめに保存したいので、Person というクラスを作ります。</p>
+
+<figure class='code'><figcaption><span>Person.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">Person</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">string</span> <span class="n">PersonName</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">public</span> <span class="kt">int</span> <span class="n">PersonAge</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>あとはもう、一気に実装するだけです。
+保存ボタンを押した時に、入力値を Person に詰めて、Akavache を使って保存します。
+読み出しボタンを押した時に、Akavache から Person を読みだし、各テキストボックスにバラして設定します。</p>
+
+<p>Akavache はキー・バリュー・ストアなので、保存・読み出し時のキーを <code>"person"</code> としています。</p>
+
+<figure class='code'><figcaption><span>AkavacheSample.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">App</span> <span class="p">:</span> <span class="n">Application</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">public</span> <span class="nf">App</span><span class="p">()</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">nameEntry</span>  <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;名前を入力&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">ageEntry</span>   <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span> <span class="p">{</span> <span class="n">Placeholder</span> <span class="p">=</span> <span class="s">&quot;年齢を入力(数値のみ)&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">saveButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;保存&quot;</span> <span class="p">};</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">loadButton</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span> <span class="p">{</span> <span class="n">Text</span> <span class="p">=</span> <span class="s">&quot;読み出し&quot;</span> <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">saveButton</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Person に詰めて…</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">person</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Person</span> <span class="p">{</span>
+</span><span class='line'>                <span class="n">PersonName</span> <span class="p">=</span> <span class="n">nameEntry</span><span class="p">.</span><span class="n">Text</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">PersonAge</span>  <span class="p">=</span> <span class="n">Convert</span><span class="p">.</span><span class="n">ToInt16</span><span class="p">(</span><span class="n">ageEntry</span><span class="p">.</span><span class="n">Text</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>            <span class="c1">// 保存</span>
+</span><span class='line'>            <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">InsertObject</span><span class="p">(</span><span class="s">&quot;person&quot;</span><span class="p">,</span> <span class="n">person</span><span class="p">);</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">loadButton</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// Akavache で Person を読み出し</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">loaded</span> <span class="p">=</span> <span class="k">await</span> <span class="n">BlobCache</span><span class="p">.</span><span class="n">LocalMachine</span><span class="p">.</span><span class="n">GetObject</span><span class="p">&lt;</span><span class="n">Person</span><span class="p">&gt;(</span><span class="s">&quot;person&quot;</span><span class="p">);</span>
+</span><span class='line'>            <span class="c1">// 各テキストボックスに設定</span>
+</span><span class='line'>            <span class="n">nameEntry</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">loaded</span><span class="p">.</span><span class="n">PersonName</span><span class="p">;</span>
+</span><span class='line'>            <span class="n">ageEntry</span><span class="p">.</span><span class="n">Text</span>  <span class="p">=</span> <span class="n">loaded</span><span class="p">.</span><span class="n">PersonAge</span><span class="p">.</span><span class="n">ToString</span><span class="p">();</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// The root page of your application</span>
+</span><span class='line'>        <span class="n">MainPage</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ContentPage</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Thickness</span><span class="p">(</span><span class="m">20</span><span class="p">),</span>
+</span><span class='line'>            <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+</span><span class='line'>                <span class="n">Children</span> <span class="p">=</span>
+</span><span class='line'>                <span class="p">{</span>
+</span><span class='line'>                    <span class="n">nameEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">ageEntry</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">saveButton</span><span class="p">,</span>
+</span><span class='line'>                    <span class="n">loadButton</span>
+</span><span class='line'>                <span class="p">}</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 以下省略</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>5. 動かす！</h3>
+
+<p>Android Player と iOS Simulater で動かしてみた、の図です。(途中、iPhone でキーボード出すのに苦労してるところは無視してください、Take2 の時間が無かったのですｗ)</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_02.gif" alt="" /></p>
+
+<p>さすが Xamarin.Forms だ、(Android でも iPhone で動かしても)何とも無いぜ！</p>
+
+<h1>まとめ</h1>
+
+<p>Akavache を使って保存と読み出しを行う超簡単なサンプルを作ってみました。
+作ったサンプルは <a href="https://github.com/amay077/AkavacheSample">GitHub &ndash; amay077/AkavacheSample</a> においておきます。</p>
+
+<p>仕組みは理解できないけど、とても簡単に使えることが分かると思います。
+追加されたパッケージを見ると、 JSON.NET とか、Reactive Extensions とかが入っているので、まあだいたい察しが付くかと。。。</p>
+
+<p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
+
+<p>というわけで Advent Calendar 初日のネタは以上です。</p>
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2014/12/24/using-uialertcontroller-with-async-await/" title="Previous Post: UIAlertController を async/await 対応させて便利に使う">&lt; UIAlertController を async/await 対応させて便利に使う</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2015/12/17/about-hot-observable-and-connectableobservable/" title="Next Post: Hot Observable と ConnectableObservable について">Hot Observable と ConnectableObservable について &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/';
+        var disqus_url = 'http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

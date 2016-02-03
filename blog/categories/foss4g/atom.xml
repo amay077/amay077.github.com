@@ -4,7 +4,7 @@
   <title><![CDATA[Category: foss4g | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/foss4g/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-03T03:06:54+09:00</updated>
+  <updated>2016-02-04T02:23:50+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,71 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[図形の移動が、こんなに簡単に実装できる時代になりました]]></title>
+    <link href="http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy/"/>
+    <updated>2014-12-13T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2014/12/13/moving-shapes-its-easy</id>
+    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/foss4goss4g">FOSS4G Advent Calendar 2014 12日目</a> の記事です。</p>
+
+<p>　FOSS4G と言えば GIS、GIS と言えば図形編集ですね。図形を追加したり移動したり回転したりできる機能です。面倒なんですよ、これプログラミングするの。</p>
+
+<p>　なにが面倒かというと、色んな状態（マウスの状態＜左/右ボタンが押されている/押されてない、マウスダウン時の座標、現在の座標＞、図形の状態＜選択されている/いない＞）などなどがコードの中に入り乱れて、スパゲッティコードになりがちというか「なります」。</p>
+
+<!--more-->
+
+
+<p>　例えば「図形の移動」のフローは、</p>
+
+<ol>
+<li>図形をマウスダウン（＝選択）</li>
+<li>そのままマウスムーブ（＝移動）</li>
+<li>マウスボタンを離して終了</li>
+</ol>
+
+
+<p>と、極めて単純なんですね。これが普通にコーディングするとフラグや状態管理の嵐になってしまう。</p>
+
+<p>　と言ってた時代は終わりました。
+　例えば、下の画面。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/simply_shape_dragging_using_rx_01.gif" alt="" /></p>
+
+<p>　これは、白い四角形をドラッグで移動できるというスマホアプリの例ですが、これの実装の主要部分はたったの <strong>６行</strong> です。</p>
+
+<p>```csharp
+rectangle.DownEvent() // 1.図形をマウスダウン</p>
+
+<pre><code>.SelectMany(rectangle.MoveEvent())  // 2.そのままマウスムーブ
+.Subscribe(e =&gt; {
+    rectangle.SetX(e.RawX); // 移動の度に図形を移動
+    rectangle.SetY(e.RawY);
+});
+</code></pre>
+
+<p>```</p>
+
+<p>　このコードをよく見ると、上に書いたフローと似ているのが分かります。人が考えたままコードに落とし込める。しかもフラグとか状態管理とかのゴミが一切ない。素晴らしい！(3. に該当するコードが必要な気がするけどまあいいや）</p>
+
+<p>　これを実現しているのは<a href="http://ninjinkun.hatenablog.com/entry/introrxja">リアクティブプログラミング</a>という概念。なんでもかんでもストリーム(時系列にデータが降ってくる何か)で捉えよう、イベントでさえも。イベントはストリームであるので、あとはストリームの加工や他のストリームとの合成でどうにかできてしまいます。</p>
+
+<p>　リアクティブ＋図形うんぬんの他の例は、</p>
+
+<ul>
+<li><a href="http://act.neue.cc/rxjs/canvas.htm">RxJS + Canvas</a></li>
+</ul>
+
+
+<p>などがあります。これは HTML なのですぐ試せますしコード（Javascript）も見られます。</p>
+
+<p>　リアクティブプログラミング用の著名なライブラリはほとんどオープンソース、リアクティブプログラミング＋FOSS4G で <strong>RxGIS</strong> （なんかカッコいいから言ってみたかっただけ）</p>
+
+<p>　いつかまたGIS作るみたいな仕事があったら、絶対 Rx 使ってつくるぞ！と思ってますのでよろしくお願いします。</p>
+
+<p>（上のコード例の全コードは <a href="https://gist.github.com/amay077/1d22ba8ffa8ad95e9393">gist</a> にあります。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[FOSS4G 開発者の為の、図形演算ライブラリガイド]]></title>
