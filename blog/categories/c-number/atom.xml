@@ -4,7 +4,7 @@
   <title><![CDATA[Category: c# | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/c-number/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-04T02:23:50+09:00</updated>
+  <updated>2016-02-05T01:34:02+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,142 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Task→Observable 変換でハマったこと]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion/"/>
+    <updated>2016-01-16T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion</id>
+    <content type="html"><![CDATA[<p>.NET の <code>Task&lt;T&gt;</code> は、Reactive Extensions が提供する拡張メソッド <code>ToObservable()</code> で <code>IObservable&lt;T&gt;</code> に変換できます。</p>
+
+<p>なにも考えずに <code>ToObservable()</code> を連発していたら、盛大にハマったのでメモ。</p>
+
+<!--more-->
+
+
+<h2>Task.Run().ToObservable() とか、意味ないっしょ</h2>
+
+<p>ダメなコード。</p>
+
+<p>```csharp
+var i = 0;
+IObservable<int> incrementObservable = Task.Run (() => {</p>
+
+<pre><code>i++;
+Debug.WriteLine($"increment! - {i}");
+return i;
+</code></pre>
+
+<p>})
+.ToObservable ();</p>
+
+<p>Debug.WriteLine(&ldquo;Ready&hellip;&rdquo;);</p>
+
+<p>incrementObservable // インクリメント</p>
+
+<pre><code>.Repeat(3) // ３回繰り返す
+.Subscribe(
+    x  =&gt; Debug.WriteLine($"OnNext({x})"),
+    ex =&gt; Debug.WriteLine($"OnError({ex.ToString()})"),
+    () =&gt; Debug.WriteLine("OnCompleted"));
+</code></pre>
+
+<p>```</p>
+
+<p><code>incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code>IObservable&lt;int&gt;</code> です。
+　これを <code>.Repeat(3)</code> して <code>.Subscribe</code> してますから、
+　</p>
+
+<blockquote><p>Ready&hellip;
+increment! &ndash; 1
+OnNext(1)
+increment! &ndash; 2
+OnNext(2)
+increment! &ndash; 3
+OnNext(3)
+OnCompleted</p></blockquote>
+
+<p>という出力を期待してました。
+が、実際の出力はこう。</p>
+
+<blockquote><p>increment! &ndash; 1
+Ready&hellip;
+OnNext(1)
+OnNext(1)
+OnNext(1)
+OnCompleted</p></blockquote>
+
+<p>Subscribe する前に Task が実行されてるし、 repeat してるのに increment されない。。。</p>
+
+<p>「・・・ん？ Task.Run().ToObservable() って、タスクを実行した結果を IObservable 化してるだけじゃね？」</p>
+
+<p>コード見たまんまなんですが、これに気づくのに１時間かかりました。。。</p>
+
+<p>期待通り動くのはこう↓。</p>
+
+<p>```csharp
+var i = 0;
+IObservable<int> incrementObservable = Observable.FromAsync(()=>Task.Run(() => {</p>
+
+<pre><code>i++;
+Debug.WriteLine($"increment! - {i}");
+return i;
+</code></pre>
+
+<p>}));</p>
+
+<p>Debug.WriteLine(&ldquo;Ready&hellip;&rdquo;);</p>
+
+<p>incrementObservable // インクリメント</p>
+
+<pre><code>.Repeat(3) // ３回繰り返す
+.Subscribe(
+    x  =&gt; Debug.WriteLine($"OnNext({x})"),
+    ex =&gt; Debug.WriteLine($"OnError({ex.ToString()})"),
+    () =&gt; Debug.WriteLine("OnCompleted"));
+</code></pre>
+
+<p>```</p>
+
+<p><code>Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。
+これの結果は正しくこう↓なりました。</p>
+
+<blockquote><p>Ready&hellip;
+increment! &ndash; 1
+OnNext(1)
+increment! &ndash; 2
+OnNext(2)
+increment! &ndash; 3
+OnNext(3)
+OnCompleted</p></blockquote>
+
+<h2>Task は１回しか実行できない</h2>
+
+<p>ところで、 <code>Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
+
+<p>```csharp
+var i = 0;
+Task<int> incrementTask = new Task<int>(() => {</p>
+
+<pre><code>i++;
+Debug.WriteLine($"increment! - {i}");
+return i;
+</code></pre>
+
+<p>});</p>
+
+<p>incrementTask.RunSynchronously();
+incrementTask.RunSynchronously();
+```</p>
+
+<p>このコードは２回目の <code>RunSynchronously()</code> で例外がでます。</p>
+
+<p>となると、 <code>incrementTask.ToObservable()</code> したとしても、期待通り動いてくれなさそうです。
+（そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
+
+<p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[UIAlertController を async/await 対応させて便利に使う]]></title>
@@ -463,68 +599,6 @@ using MonoTouch.UIKit;</p>
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_uilabel_from_xamarin_forms.png" alt="" /></p>
 
 <p>Android の方も同じ要領でいけるは…ず。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Rx で Chain of Responsibility]]></title>
-    <link href="http://blog.amay077.net/blog/2014/05/13/chain-of-resposibility-using-rx/"/>
-    <updated>2014-05-13T15:24:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/05/13/chain-of-resposibility-using-rx</id>
-    <content type="html"><![CDATA[<p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。</p>
-
-<!--more-->
-
-
-<p>```csharp
-void Main()
-{</p>
-
-<pre><code>var document = "有給届";
-
-var kakariCho = CreateManager("係長", document, d =&gt; String.Equals(document, "遅刻届"));
-var kaCho = CreateManager("課長", document, d =&gt; String.Equals(document, "有給届"));
-var buCho = CreateManager("部長", document, d =&gt; String.Equals(document, "退職届"));
-
-Observable.Concat(new [] { 
-    kakariCho,  // 係長
-    kaCho,      // 課長
-    buCho       // 部長
-})
-.FirstOrDefault() // 最初の１人に承認されたら終了
-.Timeout(TimeSpan.FromDays(1)) // 猶予１日
-.Subscribe(x =&gt; Debug.WriteLine(String.IsNullOrEmpty(x) 
-    ? "あなたの届書は却下されました" 
-    : x + "が承認しました"));
-</code></pre>
-
-<p>}</p>
-
-<p>/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）
-IObservable<string> CreateManager(string managerTitle, string document, Predicate<string> canIAccept)
-{</p>
-
-<pre><code>return Observable.Create&lt;string&gt;(o =&gt; Task.Run(() =&gt; 
-{
-    if (canIAccept(document)) 
-    {
-        o.OnNext(managerTitle); // 承認
-    }
-    o.OnCompleted();
-}));
-</code></pre>
-
-<p>}
-```</p>
-
-<p>管理職の人を <code>IObservable</code> に見立てて、自分が処理できるなら <code>OnNext</code> を呼ぶ、処理できないなら <code>OnNext</code> は呼ばずに <code>OnComplete</code> しちゃう。
-で、係長・課長・部長の IObservable を <code>Concat</code> で役職の低い順につなげて、 <code>FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
-
-<p>係長・課長・部長が誰も承認しなかった時、タイムアウトするまで待ちが発生しちゃうのが難点。→ <code>Take(1)</code> じゃなくて <code>FirstOrDefault</code> すればいいみたい。誰も承認しなかった場合 <code>default(string)</code> つまり空文字が流れてくる。</p>
-
-<p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
-
-<p>んーどうしようか。。。</p>
 ]]></content>
   </entry>
   

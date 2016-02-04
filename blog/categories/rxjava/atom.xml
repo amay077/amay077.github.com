@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rxjava | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/rxjava/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-04T02:23:50+09:00</updated>
+  <updated>2016-02-05T01:34:02+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,410 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava の ImmediateScheduler と TrampolineScheduler の違い]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/05/difference-immediatescheduler-and-trumpolinescheduler/"/>
+    <updated>2016-02-05T01:30:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/05/difference-immediatescheduler-and-trumpolinescheduler</id>
+    <content type="html"><![CDATA[<p>RxJava のスケジューラの中に <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/TrampolineScheduler.html"><code>TrampolineScheduler</code></a> というのがあり、<a href="https://twitter.com/amay077/status/693341525464346624">なんじゃこれ？</a>とつぶやいたところ、 <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/TrampolineScheduler.html">Rx.NET の <code>CurrentThreadScheduler</code> と同じっぽい</a> と教えてもらいました。</p>
+
+<!--more-->
+
+
+<p>その流れで、類似の Scheduler である <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/ImmediateScheduler.html">ImmediateScheduler</a> との違いについて語られているトピックを紹介してもらいました。</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr"><a href="https://twitter.com/amay077">@amay077</a> この辺読みとくと良いと思います（tranpolineというキーワードも登場します） <a href="https://t.co/A5TzOiobsC">https://t.co/A5TzOiobsC</a></p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/status/693396949643317248">2016, 1月 30</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<h1>CurrentThreadScheduler vs ImmediateScheduler</h1>
+
+<ul>
+<li><a href="https://social.msdn.microsoft.com/Forums/en-US/7f75482f-eff2-4938-9491-47fe870989e8/currentthreadscheduler-vs-immediatescheduler?forum=rx">CurrentThreadScheduler vs ImmediateScheduler</a></li>
+</ul>
+
+
+<p>紹介してもらったこのディスカッションを、頑張って翻訳してみました（めちゃくちゃなとこは訂正願います）。
+RxJava では <code>CurrentThreadScheduler</code> を <code>TrampolineScheduler</code> に読み替えてください。</p>
+
+<p>－－訳ここから－－</p>
+
+<h2>Ohad 氏の質問</h2>
+
+<blockquote><p>Hi
+ImmediateScheduler&rsquo;s Schedule method is pretty straightforward &ndash; it simply invokes the action.
+In contrast, CurrentThreadScheduler seems more involved &ndash; it creates something called a trampoline, which in turn iterates over an action queue, sleeping between invocations of items in the queue and so forth</p></blockquote>
+
+<p>やあ、
+<code>ImmediateScheduler.Schedule</code> メソッドは単純をアクションを呼び出します。
+対照的に、 <code>CurrentThreadScheduler</code> は複雑に見えます。トランポリンと呼ばれるものを作り、それはアクション・キューで、順次スリープの間に呼び出されます。</p>
+
+<blockquote><p>I&rsquo;ve been trying to follow the code with reflector but I&rsquo;m having a hard time understanding the difference. As far as I can tell, CurrentThreadSchedule&rsquo;s schedule method calls Trampoline &rsquo;s Run method, which will end up blocking the current thread until the queued action is performed (on the current thread as well) &ndash; apparently just like in the case of ImmediateScheduler</p></blockquote>
+
+<p>私はコードを追ってみましたが、理解するのに苦労しています。分かる範囲では、 <code>CurrentThreadSchedule.Schedule</code> メソッドは <code>Trampoline.Run</code> メソッドを呼び出しています。これは現在のスレッドを、キューのアクションが実行されるまで(カレントスレッドも同様に)ブロックしようとします。 &ndash; どうも <code>ImmediateScheduler</code> のようにみえます。</p>
+
+<blockquote><p>I realize I&rsquo;m missing something, so an explanation would be really appreciated
+Thanks !</p></blockquote>
+
+<p>何か理解が足りないと思うので、説明してもらえると嬉しいです。</p>
+
+<blockquote><p>EDIT &ndash; In the meantime I&rsquo;ve found a couple of resources that may shed light on the subject, if anyone&rsquo;s interested:</p></blockquote>
+
+<p>２つのリソースを見つけました。何かの手がかりになれば。</p>
+
+<p><a href="http://channel9.msdn.com/blogs/j.van.gogh/controlling-concurrency-in-rx">http://channel9.msdn.com/blogs/j.van.gogh/controlling-concurrency-in-rx</a></p>
+
+<p><a href="http://community.bartdesmet.net/blogs/bart/archive/2009/11/08/jumping-the-trampoline-in-c-stack-friendly-recursion.aspx">http://community.bartdesmet.net/blogs/bart/archive/2009/11/08/jumping-the-trampoline-in-c-stack-friendly-recursion.aspx</a></p>
+
+<h2>Dave 氏の回答</h2>
+
+<blockquote><p>Hi,</p>
+
+<p>The trampoline seems to serve three purposes:</p></blockquote>
+
+<p>やあ、
+トランポリンは３つの目的を持っているように見えます。</p>
+
+<blockquote><p>1- Prevents dead-locks from scheduler reentrancy.</p></blockquote>
+
+<p>1- スケジューラーの割り込みからデッドロックを防ぎます。</p>
+
+<blockquote><p>2- Prevents infinite loops in observables that require recursion through scheduler reentrancy.</p></blockquote>
+
+<p>2- スケジューラーの割り込みを使った再帰が必要な Observable の無限ループを防ぎます。</p>
+
+<blockquote><p>3- Cooperative single-threaded multitasking; I guess it&rsquo;s similar to the proposed async/await feature in C# 5.0.  Calling CurrentThreadScheduler.Schedule is sort of like using await when the currently executing code was also scheduled via CurrentThreadScheduler.</p></blockquote>
+
+<p>3- シングルスレッドでの「<a href="http://www.sophia-it.com/content/%E3%83%8E%E3%83%B3%E3%83%97%E3%83%AA%E3%82%A8%E3%83%B3%E3%83%97%E3%83%86%E3%82%A3%E3%83%96%E3%83%9E%E3%83%AB%E3%83%81%E3%82%BF%E3%82%B9%E3%82%AF">協調的マルチタスキング</a>」; 私は C# 5.0 に提案されている async/await に近いものだと思います。<code>CurrentThreadScheduler.Schedule</code> の呼び出しは、現在実行中のコードも <code>CurrentThreadScheduler</code> でスケジュールされていたときに await を使用するようなものです。（訳注: C# の async/await は協調的マルチタスキングではないと思います。これは async/await 登場以前に予想で書かれたものかと。</p>
+
+<blockquote><p>In the observable world, calling Subscribe should be an asynchronous operation.  There&rsquo;s a problem if the scheduling of an observable dead-locks or blocks the current thread indefinitely because it attempts to execute immediately and never completes.</p></blockquote>
+
+<p>Observable の世界では、<code>Subscribe</code> の呼び出しは、非同期処理で行わなければなりません。Observable のスケジューリングがデッドロックまたはカレントスレッドを無期限にブロックする場合、すぐに実行しようとしても完了しないので、問題になります。</p>
+
+<blockquote><p>Ignore the type of scheduler for a moment and consider a scheduled action that eventually, through some sequence of method calls, uses the same scheduler to schedule another action.</p></blockquote>
+
+<p>ちょっとこのスケジューラを無視して、いずれは、いくつかのシーケンスは別のアクションをスケジュールするために、同じスケジューラを使用することを考えてみてください。</p>
+
+<blockquote><p>With the ImmediateScheduler, the inner action is executed immediately.</p></blockquote>
+
+<p><code>ImmediateScheduler</code> では、”内側のアクション” はすぐに実行されます。</p>
+
+<blockquote><ul>
+<li>If the outer action acquires some resource on which the inner action depends, and the inner action cannot acquire this resource until it&rsquo;s released by the outer action, then these actions dead-lock.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが、内側のアクションが依存しているリソースを取得した場合、
+内側のアクションは外側のアクションがリソースを開放するまでそれを取得できず、これらのアクションはデッドロックします。</li>
+</ul>
+
+
+<blockquote><ul>
+<li>If the outer action depends upon the inner action, and the inner action depends upon the outer action, then this could result in an infinite loop that never yields control to other actions.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションは内部アクションに依存し、内部アクションは外側の行動に依存している場合、他のアクションに制御が移らない無限ループになります。</li>
+</ul>
+
+
+<blockquote><p>For example: Observable.Return(1).Repeat().Take(1)</p></blockquote>
+
+<p>例: <code>Observable.Return(1).Repeat().Take(1)</code></p>
+
+<blockquote><p>By default, Return uses the ImmediateScheduler to call OnNext(1) then OnCompleted().  Repeat does not introduce any concurrency, so it sees OnCompleted immediately and then immediately resubscribes to Return.  Because there&rsquo;s no trampoline in Return, this pattern repeats itself, blocking the current thread indefinitely.  Calling Subscribe on this observable never returns.  See <a href="https://social.msdn.microsoft.com/Forums/en-US/f9c1a7a6-d6a3-44fd-ba8c-e6845b1717b2/possible-bug-repeat-observables-using-immediate-scheduler?forum=rx">this discussion</a> for more information.</p></blockquote>
+
+<p>既定では、<code>Return</code> は <code>ImmediateScheduler</code> を使って <code>OnNext(1)</code> そして <code>OnCompleted()</code> を呼び出します。 <code>Repeat</code> はどんな並列性も使用しません、なのですぐに <code>OnCompleted</code> を検知して、すぐに <code>Return</code> を再購読します。なぜなら、 <code>Return</code> にはトランポリンがないので、このパターンは自分自身を繰り返し、無期限に現在のスレッドをブロックし続けます。この Observable を <code>Subscribe</code> すると処理が返ってきません。詳細については、<a href="https://social.msdn.microsoft.com/Forums/en-US/f9c1a7a6-d6a3-44fd-ba8c-e6845b1717b2/possible-bug-repeat-observables-using-immediate-scheduler?forum=rx">この説明</a>を参照してください。</p>
+
+<blockquote><p>With the CurrentThreadScheduler, the inner action is scheduled (queued) for execution when the outer action ends.  Conceptually, inner actions are bounced on the trampoline until the current thread is ready to execute them.</p></blockquote>
+
+<p><code>CurrentThreadScheduler</code> では、内側のアクションは、外側のアクションが終了された時に実行されるようにスケジュールされます。コンセプトとしては、内側のアクションは、現在のスレッドが実行可能になるまでトランポリンの上で跳ねます。</p>
+
+<blockquote><ul>
+<li>If the outer action acquires some resource on which the inner action depends, and the inner action cannot acquire this resource until it&rsquo;s released by the outer action, then these actions do not dead-lock because the inner action is not executed until the outer action completes.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが、内側のアクションが依存しているリソースを取得し、内側のアクションは外側のアクションによってそれらが解放されるまで取得できない場合、これらのアクションはデッドロックしません、なぜなら。内側のアクションは外側のアクションが終了するまで実行されないためです。</li>
+</ul>
+
+
+<blockquote><ul>
+<li>If the outer action recurses when the inner action completes, then there won&rsquo;t be an immediately infinite loop because the inner action does not complete until the outer action completes first.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが内側のアクションが終了した時に再帰的な場合、無限ループになりません。なぜなら、内側のアクションは外側のアクションが完了するまで完了しないためです。</li>
+</ul>
+
+
+<blockquote><p>For example: Observable.Return(1, Scheduler.CurrentThread).Repeat().Take(1)</p></blockquote>
+
+<p>例: <code>Observable.Return(1, Scheduler.CurrentThread).Repeat().Take(1)</code></p>
+
+<blockquote><p>Here, Return is using the CurrentTheadScheduler to call OnNext(1) then OnCompleted().  Repeat does not introduce any concurrency, so it sees OnCompleted immediately and then immediately resubscribes to Return; however, this second subscription to Return schedules its (inner) actions on the trampoline because it&rsquo;s still executing on the OnCompleted callback from the first scheduled (outer) action, thus the repetition does not occur immediately.  This allows Repeat to return a disposable to Take, which eventually calls OnCompleted, cancels the repetition by disposing Repeat, and ultimately the call from Subscribe returns.</p></blockquote>
+
+<p>ここでは、 <code>Return</code> は <code>CurrentTheadScheduler</code> を使って <code>OnNext(1)</code> そして <code>OnCompleted()</code> を呼び出します。 <code>Repeat</code> はどんな並列性も使用しません、なのですぐに <code>OnCompleted</code> を検知して、すぐに <code>Return</code> を再購読します。しかし、この２回目の <code>Return</code> の購読（内側のアクション）はトランポリンの上にあります、なぜなら、最初にスケジュールされたアクション（外側のアクション）の <code>OnCompleted</code> コールバックの上でまだ実行中であるからです、なので繰り返しはすぐに発生しません。
+これは、<code>Repeat</code> は <code>Take</code> に disposable(subscription) を返すことができます、それはやがて <code>OnCompleted</code> を呼び出し、<code>Subscribe</code> の返値から <code>Repeat</code> の破棄により繰り返しをキャンセルします。</p>
+
+<blockquote><p>Keep in mind that the examples with Return and Repeat do not introduce any concurrency.  When you call Subscribe, it will not return until the observable completes regardless of which of these schedulers you choose.  With the ImmediateScheduler, Take calls OnCompleted but it cannot cancel the repetition, so Subscribe blocks indefinitely.  Alternatively, the CurrentThreadScheduler allows for cooperative single-threaded multitasking between the Return and Repeat operators, thus allowing Take to cancel the repetition without having to introduce any concurrency.</p></blockquote>
+
+<p>覚えておいて欲しいのは、 <code>Return</code> → <code>Repeat</code> はどんな並列性も使用しないことです。<code>Subscribe</code> を呼び出すと、あなたが選択した Scheduler に関係なく、Observable が終了するまで処理を返しません。 <code>ImmediateScheduler</code> では、<code>Take</code> は <code>OnCompleted</code> を呼び出しますが、繰り返しをキャンセルできません。なので <code>Subscribe</code> は無期限にブロックしてしまいます。代わりに <code>CurrentThreadScheduler</code> は <code>Return</code> と <code>Repeat</code> 操作の間、協調的マルチタスキングが可能になります、なので、並行性を使用することなく、繰り返しをキャンセルすることができます。</p>
+
+<p>－－訳ここまで－－</p>
+
+<h1>つまり？</h1>
+
+<p><code>ImmediateScheduler</code> が処理をただ単に(割り込んで)実行するだけであるのに対し、 <code>CurrentScheduler</code>(<code>TrampolineScheduler</code>) は、擬似的なマルチタスクを行う（懐かしの VB の <a href="http://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1112681621"><code>DoEvents</code></a> かぁ？）ことでデッドロックを防いでいる、と理解しました。</p>
+
+<p>Dave 氏の回答にあった例</p>
+
+<p><code>csharp
+Observable.Return(1).Repeat().Take(1).Subscribe(...);
+Debug.WriteLine("Hoge");
+</code></p>
+
+<p>を実行すると、確かに処理が帰ってこない、<code>Debug.WriteLine</code> へ進まないんです。</p>
+
+<p>これはヤバい、<code>ImmediateScheduler</code> マジやべえと。
+で、 RxJava でも同じだよねえと、</p>
+
+<p><code>java
+// just が ImmediateScheduler 使うのか不安だったから subscribeOn しているよ
+Observable.just(1).subscribeOn(Schedulers.immediate()).repeat().take(1).subscribe(...);
+Log.debug(TAG, "Hoge");
+</code></p>
+
+<p>と書いて実行してみたら、処理が帰ってくる！ <code>Log.debug</code> も実行される！
+なんだこの違いは？改善されているのか、試し方が悪いのか。。。</p>
+
+<p>なんだかモヤモヤした終わりかたですが、今回は <code>ImmediateScheduler</code> はちょっと要注意だというところまでです。</p>
+
+<blockquote><p>In the observable world, calling Subscribe should be an asynchronous operation.</p></blockquote>
+
+<p>との言葉通り、Rx.NET/RxJava を使うときは非同期にしたい事が全てだと思いますが、オペレータによっては既定で <code>ImmediateScheduler</code> を使うものもあるので、必ず <code>subscribeOn/observeOn</code> をするクセをつけておいた方がいいのかな？と思いました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android Data Binding + MVVMパターンのサンプルを書いてみた]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/"/>
+    <updated>2016-01-28T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample</id>
+    <content type="html"><![CDATA[<p><code>notifyPropertyChanged</code> とか、<a href="https://ufcpp.wordpress.com/2009/12/28/inotifypropertychanged-%E3%81%AE%E5%AE%9F%E8%A3%85/">どこかで見たことのある</a>機能が満載の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Android Data Binding</a> ですが、登場以来あまり追えてなかったのでやっとサンプルをつくってみました。</p>
+
+<!--more-->
+
+
+<p>といっても</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/8464a22e3063642112ed">RxJava + MVVM パターンで作るストップウォッチアプリ &ndash; Qiita</a></li>
+</ul>
+
+
+<p>で作ったストップウォッチアプリを Data Binding 化しただけです。</p>
+
+<p><a href="http://qiita.com/amay077/items/8464a22e3063642112ed#model-viewmodel-viewmvvm-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">前回</a> との違いを図に示します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_03.png" alt="" /></p>
+
+<ul>
+<li>View-ViewModel で全面的に使用していた <code>rx.Observable&lt;T&gt;</code> の代わりに、<code>ObservableField&lt;T&gt;</code> を使用。</li>
+<li>View側で「オレオレDataBinding」を実装していた箇所を、Android の Data Binding に置き換え。つまりバインディングの定義はレイアウトxmlへ記述。</li>
+<li>Model は相変わらず <code>rx.Observable&lt;T&gt;</code> のまま。なので ViewModel で <code>rx.Observable&lt;T&gt;</code> → <code>ObservableField&lt;T&gt;</code> へ変換。</li>
+<li>メソッドとのバインドに <code>Command</code> を使用していたが、Android Data Binding の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#binding_events">Binding Events</a> に置き換え。</li>
+<li>ListView とデータ群のバインディングの方法が分からなかったので、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#custom_setters">カスタムBinding</a>で対応。(listItem のバインディングじゃなくて、リストの件数の増減を反映させるやつ。)</li>
+<li>ArrayAdapter 使ってたんだけどこいつは Binding に対応していない？ので Adapter を自作。</li>
+</ul>
+
+
+<h2>MainActivity のバインディングの定義</h2>
+
+<p><code>activity_main.xml</code> はこんな感じ。</p>
+
+<p><code>@{ }</code> で  <code>MainViewModel</code> に用意した <code>ObservableField&lt;T&gt;</code> または、イベントハンドラとバインドしてます。</p>
+
+<p>```xml activity_main.xml
+&lt;?xml version=&ldquo;1.0&rdquo; encoding=&ldquo;utf-8&rdquo;?>
+&lt;layout xmlns:android=&ldquo;<a href="http://schemas.android.com/apk/res/android">http://schemas.android.com/apk/res/android</a>&rdquo;</p>
+
+<pre><code>xmlns:tools="http://schemas.android.com/tools"
+xmlns:app="http://schemas.android.com/apk/res-auto"&gt;
+
+&lt;data&gt;
+    &lt;variable name="viewModel"
+        type="com.amay077.stopwatchapp.viewmodel.MainViewModel"/&gt;
+&lt;/data&gt;
+&lt;LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:orientation="vertical"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"&gt;
+
+    &lt;TextView android:id="@+id/textTime"
+        tools:text="00:00.000"
+        android:text="@{viewModel.formattedTime}"
+        android:textSize="50sp"
+        android:gravity="center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+
+    &lt;Button
+        android:id="@+id/buttonStartStop"
+        android:text="@{viewModel.runButtonTitle}"
+        android:onClick="@{viewModel.onClickStartOrStop}"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+    &lt;Button
+        android:id="@+id/buttonLap"
+        android:text="Lap"
+        android:enabled="@{viewModel.isRunning}"
+        android:onClick="@{viewModel.onClickLap}"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+    &lt;Switch
+        android:id="@+id/switchVisibleMillis"
+        android:checked="@{viewModel.isVisibleMillis}"
+        android:onClick="@{viewModel.onClickToggleVisibleMillis}"
+        android:text="小数点以下を表示"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" /&gt;
+
+    &lt;ListView
+        android:id="@+id/listLaps"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:formattedLaps="@{viewModel}" /&gt;
+&lt;/LinearLayout&gt;
+</code></pre>
+
+<p></layout>
+```</p>
+
+<p>ListView で <code>app:formattedLaps="@{viewModel}"</code> としているところだけが特殊で、これは <code>MainActivity.java</code> に定義したカスタムSetter を呼び出します。</p>
+
+<p><code>MainActivity.java</code> はこんな感じ。</p>
+
+<p>```java MainActivity.java
+public class MainActivity extends AppCompatActivity {</p>
+
+<pre><code>private /* final */  MainViewModel _viewModel;
+private CompositeSubscription _subscriptions = new CompositeSubscription();
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    final ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+
+    _viewModel = new MainViewModel(this.getApplicationContext());
+    binding.setViewModel(_viewModel);
+
+    // ■ViewModel からの Message の受信（省略）
+}
+
+/**
+ * ListView と ViewModel のカスタムバインディング
+ *
+ * TODO 本当は viewModel.formattedLaps とバインドしたい
+ */
+@BindingAdapter("formattedLaps")
+public static void setFormattedLaps(ListView listView, final MainViewModel viewModel) {
+    final LapAdapter adapter = new LapAdapter(listView.getContext());
+    listView.setAdapter(adapter);
+
+    // formattedLaps が変化した時に呼ばれるイベントで、Adapterを洗い替え。
+    viewModel.formattedLaps.addOnPropertyChangedCallback(new android.databinding.Observable.OnPropertyChangedCallback() {
+        @Override
+        public void onPropertyChanged(android.databinding.Observable sender, int propertyId) {
+            adapter.clear();
+            adapter.addAll(viewModel.formattedLaps.get());
+        }
+    });
+
+    // バインド時に値を更新
+    adapter.clear();
+    adapter.addAll(viewModel.formattedLaps.get());
+}
+
+@Override
+protected void onDestroy() {
+    _viewModel.unsubscribe();
+    super.onDestroy();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>オレオレBindingがごっそり消えてスッキリ。
+<code>setFormattedLaps</code> がカスタムSetterで、この中で <code>MainViewModel.formatterLaps</code> を監視し、値が変わったら Adapter を総入れ替えしてます。が、これが正しいやり方かわからない。
+<a href="https://android.googlesource.com/platform/frameworks/data-binding/+/android-6.0.0_r7/extensions/baseAdapters/src/main/java/android/databinding/adapters">extensions/baseAdapters/src/main/java/android/databinding/adapters</a> にはそれらしいのがないでござるよ。。。</p>
+
+<h2>ViewModel 側</h2>
+
+<p>この辺みてください。大したことはやってないです。（急に雑になったw）</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">StopWatchSample/MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/ObservableUtil.java">StopWatchSample/ObservableUtil.java</a></li>
+</ul>
+
+
+<p><code>ObservableUtil.toObservableField</code> とか、もうどっかの誰かがやってそうだし、事実上標準の何かが出てきそうな気がすごくします。</p>
+
+<h2>おまけ</h2>
+
+<h3>Messenger を RxJava ベースにした</h3>
+
+<ul>
+<li><a href="http://qiita.com/yyaammaa/items/57d8baa1e80346e67e47">OttoからRxJavaへの移行ガイド &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/kubode/items/a4ece37834446c9a39c8">Android &ndash; RxJavaでEventBusを作った &ndash; Qiita</a></li>
+</ul>
+
+
+<p>らしいので、自作してた <code>Messenger</code> を <a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/frameworks/messengers/Messenger.java">RxJava ベースにしてみました</a>。
+ViewModel→Viewの通知
+にしか使ってないので、あまり <code>rx.Observable&lt;T&gt;</code> にする旨味はなかったですね。あ、<code>ofType</code> って便利ですね。</p>
+
+<h2>まとめ</h2>
+
+<p>今回作ったアプリの全ソースは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/android_data_binding_v1_20160128/StopWatchAppXamarin/StopWatchApp.Android">StopWatchApp.Android</a></li>
+</ul>
+
+
+<p>です。</p>
+
+<p>.NETアプリケーション開発では、ViewModel を View にバインドすることが殆どなので、典型的な例としてやってみました。</p>
+
+<p>レイアウトに直接バインドを定義できるので、コードビハインド(Javaのソース)はスッキリしますが、個人的にはあまり好きではありません。
+コードビハインドに(<code>textTime.SetBinding(v =&gt; v.Text, viewModel.Time)</code> みたく)書いた方が、定義情報がまとまっていて管理しやすい、デバッグしやすいと思うからです。（同じ理由で、xmlに直接記述する <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#expression_language">Expression Language</a> も好きではありません。）
+が、今のところ、Android Data Binding では、レイアウトXMLでしかバインディングを定義できないようですね。</p>
+
+<p>ともあれ、<a href="https://github.com/gueei/AndroidBinding">AndroidBinding</a> とか Butter Knife はこれで駆逐されていく（前者はすでに息してなさそうですが）と思うので、新しいアプリ開発では積極的に使っていこうかなと思います。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Data Binding Guide | Android Developers</a></li>
+<li><a href="http://qiita.com/izumin5210/items/2784576d86ce6b9b51e6#after-listview">Android &ndash; Butter Knife、今までありがとう。 Data Binding、これからよろしく。 &ndash; Qiita</a></li>
+<li><a href="http://tech.recruit-mp.co.jp/mobile/android-data-binding/">[Android] – Data Bindingつかってみた – NET BIZ DIV. TECH BLOG</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
@@ -850,205 +1254,6 @@ public class MainActivity : Activity
 
 <p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
 　さあみんなで Rx にロックインされましょう！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[「チェックAがONならば、項目Bは入力必須とする」という Validation を RxJava + RxAndroid でやる]]></title>
-    <link href="http://blog.amay077.net/blog/2014/11/10/complex-validation-with-rxjava-and-rxandroid/"/>
-    <updated>2014-11-10T01:32:20+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/11/10/complex-validation-with-rxjava-and-rxandroid</id>
-    <content type="html"><![CDATA[<p>　例えばショッピングサイトとかの発送先指定のフォーム『登録されている住所とは違う住所に送りたい時、「別の住所に送る」をチェックする、すると「住所2」が必須入力となり、入力するまで次へ進めない』的なちょっと込み入ったValidationをReactive ExtensionsのJava版、<a href="https://github.com/ReactiveX/RxJava">RxJava</a>と<a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a>でやってみました。</p>
-
-<!--more-->
-
-
-<h1>動作イメージ</h1>
-
-<p>　まずいきなり動作結果から。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/complex_validation_with_rxjava_and_rxandroid.gif" alt="" /></p>
-
-<ul>
-<li>住所1は入力必須。</li>
-<li>住所2は「住所2へ配送する」がチェックされている場合のみ、入力必須。</li>
-<li>必須項目が入力されていない場合はボタンを押せない</li>
-</ul>
-
-
-<p>こんな仕様です。</p>
-
-<h1>実装</h1>
-
-<p>```java
-@Override
-protected void onCreate(Bundle savedInstanceState) {</p>
-
-<pre><code>super.onCreate(savedInstanceState);
-setContentView(R.layout.activity_my);
-
-// 「注文を確定する」ボタン
-final Button buttonSubmit = (Button)findViewById(R.id.buttonSubmit);
-
-// チェックボックスのON/OFFをObservable化
-final Observable&lt;Boolean&gt; useSecondaryAddress =
-        ViewObservable.input((CheckBox) findViewById(R.id.checkUseSecondary), true)
-        .map(new Func1&lt;OnCheckedChangeEvent, Boolean&gt;() {
-            @Override
-            public Boolean call(OnCheckedChangeEvent onCheckedChangeEvent) {
-                return onCheckedChangeEvent.value;
-            }
-        });
-
-// 住所1をObservable化
-final Observable&lt;OnTextChangeEvent&gt; primaryAddress =
-        ViewObservable.text((EditText) findViewById(R.id.editPrimaryAddress), true);
-// 住所2をObservable化
-final Observable&lt;OnTextChangeEvent&gt; secondaryAddress =
-        ViewObservable.text((EditText) findViewById(R.id.editSecondaryAddress), true);
-
-// チェックボックスと住所2の必須条件をObservable化
-final Observable&lt;Boolean&gt; secondaryIsValid = 
-    Observable.combineLatest(useSecondaryAddress, secondaryAddress,
-        new Func2&lt;Boolean, OnTextChangeEvent, Boolean&gt;() {
-            @Override
-            public Boolean call(Boolean useSecondary, OnTextChangeEvent secondaryAddress) {
-                if (!useSecondary) {
-                    return true;
-                }
-
-                return !TextUtils.isEmpty(secondaryAddress.text);
-            }
-        });
-
-
-// 全部まとめると、
-//  住所1は入力必須、
-//  住所2はチェックボックスがONの時だけ入力必須
-//  必須条件を満たしていたらtrueを流す
-final Observable&lt;Boolean&gt; isValidAll = Observable.combineLatest(primaryAddress, secondaryIsValid,
-        new Func2&lt;OnTextChangeEvent, Boolean, Boolean&gt;() {
-            @Override
-            public Boolean call(OnTextChangeEvent primaryAddress, Boolean isValidSecondary) {
-                if (!isValidSecondary) {
-                    return false;
-                }
-
-                return !TextUtils.isEmpty(primaryAddress.text);
-            }
-        });
-
-
-// 購読、監視
-isValidAll.subscribe(new Observer&lt;Boolean&gt;() {
-    @Override
-    public void onNext(final Boolean isValid) {
-        // 必須条件を満たしていたら「注文を確定する」を有効にする
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                buttonSubmit.setEnabled(isValid);
-            }
-        });
-    }
-
-    @Override
-    public void onCompleted() {
-    }
-
-    @Override
-    public void onError(Throwable e) {
-    }
-});
-</code></pre>
-
-<p>}
-```</p>
-
-<p>　<code>ViewObservable.xxx</code> で、UI要素をObservable化します。これはRxAndroidの機能。これでテキストの変更とか、チェックボックスの変更のたびに、<code>OnNext</code>が発生するようになります。</p>
-
-<p>　Validationでは、RxJavaの機能である <code>Observable.combineLatest</code>がキモで、こいつに2つのObservableを渡してやると、その片方が値が変化した時に、<code>T3 call(T1 a, T2 b)</code> が呼ばれます。T1、T2 は渡すObservableの型、T3は後続へ流す型で、Validationなので<code>Boolean</code>です。
-上記 <code>secondaryIsValid</code> の実装では、「住所2に配送する」のチェックボックスと「住所2」のテキストボックスの2つのObservableを渡していて、</p>
-
-<ul>
-<li>「住所2に配送する」がOFFなら <code>true</code> を返す</li>
-<li>「住所2に配送する」がONで、且つ「住所2」が空でなければ <code>true</code> を返す</li>
-</ul>
-
-
-<p>としています。</p>
-
-<p>　次に、<code>isValidAll</code> の実装では、「住所1」と <code>secondaryIsValid</code> を渡していて、</p>
-
-<ul>
-<li><code>secondaryIsValid</code> が <code>false</code> なら <code>false</code> を返す</li>
-<li><code>secondaryIsValid</code> が <code>true</code> で、且つ「住所1」が空でなければ <code>true</code> を返す</li>
-</ul>
-
-
-<p>という実装です。</p>
-
-<p>　んで、こいつ(<code>isValidAll</code>)を購読(<code>subscribe</code>)すると、<code>onNext</code> にValidationの結果が通知されるので、ボタンの<code>Enabled</code>を切り替えます。</p>
-
-<p>　conbimeLatest は、本家Rxなら obsA.CombineLatest(obsB, (tA, tB) => tX).CombineLatest(obsC, (tX, tC) => tY)&hellip; とチェインして書けるのですが、RxJava の combineLatest はなぜか static メソッドしかなくてチェインできません、残念。</p>
-
-<h1>まとめ</h1>
-
-<p>　このレベルだと、すべてのUI要素に変更通知を仕込んで共通な関数を呼ぶ、的な実装で問題ないですが、要素や条件が増えてくると大変です。</p>
-
-<p>　Observable と combineLatest を使うと、制約の一部を(Observableに)部分化できて、それらを組み合わせるのも自由自在(Observableだから)。</p>
-
-<p>Javaなのでかなり長ったらしくて読みづらいコードになってしまいました。</p>
-
-<p><strong><a href="http://xamarin.com/">Xamarin.Android</a> + <a href="https://rx.codeplex.com/">本家Reactive Extensions</a> + <a href="https://reactiveproperty.codeplex.com/">ReactiveProporty</a> なら、相当スッキリするんだけどなあー</strong></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ReactiveX と MVVM と DataBinding の関係について図にしてみた]]></title>
-    <link href="http://blog.amay077.net/blog/2014/10/30/reactivex-mvvm-databindings-relations/"/>
-    <updated>2014-10-30T01:17:39+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/10/30/reactivex-mvvm-databindings-relations</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://connpass.com/event/8680/">ReactiveCocoa Tokyo #rac_tokyo &ndash; connpass</a></li>
-<li><a href="http://connpass.com/event/9061/">RxJava Night #rxjnight &ndash; connpass</a></li>
-<li><a href="http://mozaic.fm/post/100741841543/10-node-js-sideshow">#10 node.js sideshow | mozaic.fm</a></li>
-</ul>
-
-
-<!--more-->
-
-
-<p>などなどをいろいろ眺めておりまして（東京うらやましい）、Reactive Extensions とか MVVM とかいろいろ熱い！楽しい！と思っているわけですが、いろいろなライブラリがあって、それらのカバーする範囲がいまいち明確になってない気がしたので、自分なりに整理してみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/reactive_mvvm_databindings_relations_01.png" alt="" /></p>
-
-<p>MVVM っていうと、Messenger とか DIコンテナ的なものとかもあるわけですが、主に DataBinding と Rx の違いにフィーチャーしたかったので除外しました。</p>
-
-<p>　DataBinding は、<a href="http://www.atmarkit.co.jp/ait/articles/1008/03/news097_3.html">DependencyProperty</a> や <a href="http://blog.falafel.com/learning-xamarin-custom-renderers-in-xamarin-forms/">BindableProperty</a> みたいなものがあるかどうかという感じで考えていて、「XAMLとかのマークアップでバインディング指定できなければならない」という考えではないです。</p>
-
-<p>　View, DataBinding, ViewModel, ReactiveX の各ブロックは基本的にはどの組み合わせでもよくて（特に ReactiveX は他とは別の世界のものなので）、しかし中には ReactiveProperty のように ReactiveX に依存しつつ ViewModel の機能を提供するものがあったり、ReactiveCocoa のように「全部入り」のものがあったりします。また、View と ViewModel を繋ぐためにはなんらかの DataBinding が必要です。</p>
-
-<p>という理解なんですが、あってますかね？</p>
-
-<p>　私は Xamarin 推しの人なので、 <strong>Xamarin.Forms + ReactiveProperty が、MVVM+Rx のパワーをフル活用できて、しかも iOS/Android で大部分のコードが共有できるという最強の組み合わせなんですよ！</strong> というのを言いたいわけです。</p>
-
-<h2>Links</h2>
-
-<ul>
-<li>Xamarin.Forms &ndash; <a href="http://xamarin.com/forms">Build a Native Android UI &amp; iOS UI with Xamarin.Forms &ndash; Xamarin</a></li>
-<li>Prism &ndash; <a href="http://compositewpf.codeplex.com/releases/view/117297">patterns &amp; practices: Prism &ndash; Download: Prism 5.0 for .NET 4.5</a></li>
-<li>MVVM Light Toolkit &ndash; <a href="https://mvvmlight.codeplex.com/">MVVM Light Toolkit &ndash; Home</a></li>
-<li>Reactive Extensions &ndash; <a href="https://rx.codeplex.com/">Rx (Reactive Extensions) &ndash; Home</a></li>
-<li>ReactiveProperty &ndash; <a href="https://reactiveproperty.codeplex.com/">ReactiveProperty &ndash; MVVM Extensions for Rx &ndash; Home</a></li>
-<li>ReactiveUI &ndash; <a href="https://github.com/reactiveui/reactiveui">reactiveui/ReactiveUI</a></li>
-<li>MvvmCross &ndash; <a href="https://github.com/MvvmCross/MvvmCross">MvvmCross/MvvmCross</a></li>
-<li>RxJava &ndash; <a href="https://github.com/ReactiveX/RxJava">ReactiveX/RxJava</a></li>
-<li>RxAndroid &ndash; <a href="https://github.com/ReactiveX/RxAndroid">ReactiveX/RxAndroid</a></li>
-<li>android-binding &ndash; <a href="https://github.com/gueei/AndroidBinding">gueei/AndroidBinding</a></li>
-<li>ReactiveCocoa &ndash; <a href="https://github.com/ReactiveCocoa/ReactiveCocoa">ReactiveCocoa/ReactiveCocoa</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-04T02:23:50+09:00</updated>
+  <updated>2016-02-05T01:34:02+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,449 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Android Data Binding + MVVMパターンのサンプルを書いてみた]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/"/>
+    <updated>2016-01-28T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample</id>
+    <content type="html"><![CDATA[<p><code>notifyPropertyChanged</code> とか、<a href="https://ufcpp.wordpress.com/2009/12/28/inotifypropertychanged-%E3%81%AE%E5%AE%9F%E8%A3%85/">どこかで見たことのある</a>機能が満載の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Android Data Binding</a> ですが、登場以来あまり追えてなかったのでやっとサンプルをつくってみました。</p>
+
+<!--more-->
+
+
+<p>といっても</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/8464a22e3063642112ed">RxJava + MVVM パターンで作るストップウォッチアプリ &ndash; Qiita</a></li>
+</ul>
+
+
+<p>で作ったストップウォッチアプリを Data Binding 化しただけです。</p>
+
+<p><a href="http://qiita.com/amay077/items/8464a22e3063642112ed#model-viewmodel-viewmvvm-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">前回</a> との違いを図に示します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_03.png" alt="" /></p>
+
+<ul>
+<li>View-ViewModel で全面的に使用していた <code>rx.Observable&lt;T&gt;</code> の代わりに、<code>ObservableField&lt;T&gt;</code> を使用。</li>
+<li>View側で「オレオレDataBinding」を実装していた箇所を、Android の Data Binding に置き換え。つまりバインディングの定義はレイアウトxmlへ記述。</li>
+<li>Model は相変わらず <code>rx.Observable&lt;T&gt;</code> のまま。なので ViewModel で <code>rx.Observable&lt;T&gt;</code> → <code>ObservableField&lt;T&gt;</code> へ変換。</li>
+<li>メソッドとのバインドに <code>Command</code> を使用していたが、Android Data Binding の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#binding_events">Binding Events</a> に置き換え。</li>
+<li>ListView とデータ群のバインディングの方法が分からなかったので、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#custom_setters">カスタムBinding</a>で対応。(listItem のバインディングじゃなくて、リストの件数の増減を反映させるやつ。)</li>
+<li>ArrayAdapter 使ってたんだけどこいつは Binding に対応していない？ので Adapter を自作。</li>
+</ul>
+
+
+<h2>MainActivity のバインディングの定義</h2>
+
+<p><code>activity_main.xml</code> はこんな感じ。</p>
+
+<p><code>@{ }</code> で  <code>MainViewModel</code> に用意した <code>ObservableField&lt;T&gt;</code> または、イベントハンドラとバインドしてます。</p>
+
+<p>```xml activity_main.xml
+&lt;?xml version=&ldquo;1.0&rdquo; encoding=&ldquo;utf-8&rdquo;?>
+&lt;layout xmlns:android=&ldquo;<a href="http://schemas.android.com/apk/res/android">http://schemas.android.com/apk/res/android</a>&rdquo;</p>
+
+<pre><code>xmlns:tools="http://schemas.android.com/tools"
+xmlns:app="http://schemas.android.com/apk/res-auto"&gt;
+
+&lt;data&gt;
+    &lt;variable name="viewModel"
+        type="com.amay077.stopwatchapp.viewmodel.MainViewModel"/&gt;
+&lt;/data&gt;
+&lt;LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:orientation="vertical"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    android:paddingBottom="@dimen/activity_vertical_margin" tools:context=".MainActivity"&gt;
+
+    &lt;TextView android:id="@+id/textTime"
+        tools:text="00:00.000"
+        android:text="@{viewModel.formattedTime}"
+        android:textSize="50sp"
+        android:gravity="center_horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+
+    &lt;Button
+        android:id="@+id/buttonStartStop"
+        android:text="@{viewModel.runButtonTitle}"
+        android:onClick="@{viewModel.onClickStartOrStop}"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+    &lt;Button
+        android:id="@+id/buttonLap"
+        android:text="Lap"
+        android:enabled="@{viewModel.isRunning}"
+        android:onClick="@{viewModel.onClickLap}"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" /&gt;
+    &lt;Switch
+        android:id="@+id/switchVisibleMillis"
+        android:checked="@{viewModel.isVisibleMillis}"
+        android:onClick="@{viewModel.onClickToggleVisibleMillis}"
+        android:text="小数点以下を表示"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" /&gt;
+
+    &lt;ListView
+        android:id="@+id/listLaps"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:formattedLaps="@{viewModel}" /&gt;
+&lt;/LinearLayout&gt;
+</code></pre>
+
+<p></layout>
+```</p>
+
+<p>ListView で <code>app:formattedLaps="@{viewModel}"</code> としているところだけが特殊で、これは <code>MainActivity.java</code> に定義したカスタムSetter を呼び出します。</p>
+
+<p><code>MainActivity.java</code> はこんな感じ。</p>
+
+<p>```java MainActivity.java
+public class MainActivity extends AppCompatActivity {</p>
+
+<pre><code>private /* final */  MainViewModel _viewModel;
+private CompositeSubscription _subscriptions = new CompositeSubscription();
+
+@Override
+protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    final ActivityMainBinding binding = DataBindingUtil.setContentView(this, R.layout.activity_main);
+
+    _viewModel = new MainViewModel(this.getApplicationContext());
+    binding.setViewModel(_viewModel);
+
+    // ■ViewModel からの Message の受信（省略）
+}
+
+/**
+ * ListView と ViewModel のカスタムバインディング
+ *
+ * TODO 本当は viewModel.formattedLaps とバインドしたい
+ */
+@BindingAdapter("formattedLaps")
+public static void setFormattedLaps(ListView listView, final MainViewModel viewModel) {
+    final LapAdapter adapter = new LapAdapter(listView.getContext());
+    listView.setAdapter(adapter);
+
+    // formattedLaps が変化した時に呼ばれるイベントで、Adapterを洗い替え。
+    viewModel.formattedLaps.addOnPropertyChangedCallback(new android.databinding.Observable.OnPropertyChangedCallback() {
+        @Override
+        public void onPropertyChanged(android.databinding.Observable sender, int propertyId) {
+            adapter.clear();
+            adapter.addAll(viewModel.formattedLaps.get());
+        }
+    });
+
+    // バインド時に値を更新
+    adapter.clear();
+    adapter.addAll(viewModel.formattedLaps.get());
+}
+
+@Override
+protected void onDestroy() {
+    _viewModel.unsubscribe();
+    super.onDestroy();
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>オレオレBindingがごっそり消えてスッキリ。
+<code>setFormattedLaps</code> がカスタムSetterで、この中で <code>MainViewModel.formatterLaps</code> を監視し、値が変わったら Adapter を総入れ替えしてます。が、これが正しいやり方かわからない。
+<a href="https://android.googlesource.com/platform/frameworks/data-binding/+/android-6.0.0_r7/extensions/baseAdapters/src/main/java/android/databinding/adapters">extensions/baseAdapters/src/main/java/android/databinding/adapters</a> にはそれらしいのがないでござるよ。。。</p>
+
+<h2>ViewModel 側</h2>
+
+<p>この辺みてください。大したことはやってないです。（急に雑になったw）</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">StopWatchSample/MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/ObservableUtil.java">StopWatchSample/ObservableUtil.java</a></li>
+</ul>
+
+
+<p><code>ObservableUtil.toObservableField</code> とか、もうどっかの誰かがやってそうだし、事実上標準の何かが出てきそうな気がすごくします。</p>
+
+<h2>おまけ</h2>
+
+<h3>Messenger を RxJava ベースにした</h3>
+
+<ul>
+<li><a href="http://qiita.com/yyaammaa/items/57d8baa1e80346e67e47">OttoからRxJavaへの移行ガイド &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/kubode/items/a4ece37834446c9a39c8">Android &ndash; RxJavaでEventBusを作った &ndash; Qiita</a></li>
+</ul>
+
+
+<p>らしいので、自作してた <code>Messenger</code> を <a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/frameworks/messengers/Messenger.java">RxJava ベースにしてみました</a>。
+ViewModel→Viewの通知
+にしか使ってないので、あまり <code>rx.Observable&lt;T&gt;</code> にする旨味はなかったですね。あ、<code>ofType</code> って便利ですね。</p>
+
+<h2>まとめ</h2>
+
+<p>今回作ったアプリの全ソースは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/android_data_binding_v1_20160128/StopWatchAppXamarin/StopWatchApp.Android">StopWatchApp.Android</a></li>
+</ul>
+
+
+<p>です。</p>
+
+<p>.NETアプリケーション開発では、ViewModel を View にバインドすることが殆どなので、典型的な例としてやってみました。</p>
+
+<p>レイアウトに直接バインドを定義できるので、コードビハインド(Javaのソース)はスッキリしますが、個人的にはあまり好きではありません。
+コードビハインドに(<code>textTime.SetBinding(v =&gt; v.Text, viewModel.Time)</code> みたく)書いた方が、定義情報がまとまっていて管理しやすい、デバッグしやすいと思うからです。（同じ理由で、xmlに直接記述する <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#expression_language">Expression Language</a> も好きではありません。）
+が、今のところ、Android Data Binding では、レイアウトXMLでしかバインディングを定義できないようですね。</p>
+
+<p>ともあれ、<a href="https://github.com/gueei/AndroidBinding">AndroidBinding</a> とか Butter Knife はこれで駆逐されていく（前者はすでに息してなさそうですが）と思うので、新しいアプリ開発では積極的に使っていこうかなと思います。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Data Binding Guide | Android Developers</a></li>
+<li><a href="http://qiita.com/izumin5210/items/2784576d86ce6b9b51e6#after-listview">Android &ndash; Butter Knife、今までありがとう。 Data Binding、これからよろしく。 &ndash; Qiita</a></li>
+<li><a href="http://tech.recruit-mp.co.jp/mobile/android-data-binding/">[Android] – Data Bindingつかってみた – NET BIZ DIV. TECH BLOG</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android-Java でリスト操作するなら IxJava が決定版だと思う]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/21/ixjava-the-best-library-of-list-operations/"/>
+    <updated>2016-01-21T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/21/ixjava-the-best-library-of-list-operations</id>
+    <content type="html"><![CDATA[<p>Android では Java8 が使えないため、 &lsquo;Yet another Stream API&rsquo; なライブラリがいくつかあります。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://qiita.com/tsumuchan/items/8e438a2ea653fa786c23">Androidでリスト操作するなら、Lightweight-Stream-APIが便利 &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/k--kato/items/ec7ab8b392fa8bb0a732">JavaにC#のLINQを移植してみた &ndash; jLinqer &ndash; Qiita</a></li>
+<li><a href="http://stackoverflow.com/questions/1217228/what-is-the-java-equivalent-for-linq">What is the Java equivalent for LINQ? &ndash; Stack Overflow</a></li>
+</ul>
+
+
+<p>普段 C# を使っているため LINQ to Objects の便利さをなんとか Androidアプリ開発でも享受したい。
+そこで個人的に「これだ！」と思っているライブラリが IxJava です。</p>
+
+<ul>
+<li><a href="https://github.com/akarnokd/ixjava">akarnokd/ixjava: Interactive Extensions for Java</a></li>
+</ul>
+
+
+<h2>IxJava とは？</h2>
+
+<p>一言でいえば <em>「LINQ to Objects の Java版」</em> です。</p>
+
+<p>README より、</p>
+
+<blockquote><p>Interactive Extensions for Java, the dual of RxJava. Originally implemented in the Reactive4Java framework, now converted to work with RxJava.</p>
+
+<p>The aim is to provide pull-based datastream support with the same naming as in RxJava mainly for the pre-Java-8 world.</p></blockquote>
+
+<p>開発者の akarnokd 氏は、 RxJava の登場以前から <a href="https://code.google.com/p/reactive4java/">Reactive4Java</a> という「Java版Rx」を開発しており、これには大きく２つの機能が含まれていました。</p>
+
+<ul>
+<li><code>Reactive&lt;T&gt;</code> : Reactive Extension の Java実装</li>
+<li><code>Interactive&lt;T&gt;</code> : LINQ to Objects の Java実装</li>
+</ul>
+
+
+<p>そう、 akarnokd 氏は、Rx と共に LINQ も Java に移植していたのです。
+その後、彼は RxJava への参加を表明し、 reactive4java は開発終了となりましたが、RxJava には LINQ 相当の機能は含まれません。
+そこで彼は、 <code>Interactive&lt;T&gt;</code> だけを <em>IxJava</em> として切り離し、純粋な <em>「LINQ to Object for Java」</em> として開発続行したのです。</p>
+
+<p>akarnokd 氏は RxJava の <a href="https://github.com/ReactiveX/RxJava/graphs/contributors">Contributors</a> を見ると中心的な開発者であると思われます。そんな彼が開発した ixjava も安心できる品質ではないかと思います。（ちょっと ixjava の知名度が低いのが残念ですが。ただ reactive4java の <code>Interactive&lt;T&gt;</code> を使ってきましたが問題はありません。）</p>
+
+<h2>使い方（Android の場合）</h2>
+
+<h3>導入方法</h3>
+
+<p>Module の <code>build.gradle</code> に以下を追加するだけです。</p>
+
+<p>```java
+dependencies {</p>
+
+<pre><code>compile "com.github.akarnokd:ixjava:0.90.0"
+</code></pre>
+
+<p>}
+```</p>
+
+<h3>使用例</h3>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302">LINQ to Objects と Java8-Stream API の対応表 &ndash; Qiita</a></li>
+</ul>
+
+
+<p>のサンプルコードの一部を IxJava で書いてみました。</p>
+
+<h4>抽出(filter)、並べ替え(orderBy)、射影(map)</h4>
+
+<p><code>java ixjava
+Ix.from(Arrays.asList(0, 1, 2, 3, 4, 5, 6, 7, 8, 9))
+  .filter(x -&gt; x % 2 == 0) // 可視性向上の為のなんちゃってラムダ
+  .orderBy(x-&gt; -x)  // OrderByDescending がないので
+  .map(x -&gt; x * 10)
+  .toList();
+</code></p>
+
+<p><code>
+//出力
+80 60 40 20 0
+</code></p>
+
+<h4>平坦化して射影(flatMap)</h4>
+
+<p><code>java ixjava
+Ix.from(Arrays.asList(1, 2, 3, 4, 5))
+  .flatMap(x −&gt; Ix.range(x * 10, x))
+  .toList();
+</code></p>
+
+<p><code>
+//出力
+10
+20 21
+30 31 32
+40 41 42 43
+50 51 52 53 54
+</code></p>
+
+<h4>2つの値を揃えて流す(zip)</h4>
+
+<p>Stream API には無いが IxJava にはあるのだよ。</p>
+
+<p>```java ixjava
+Ix.from(Arrays.asList(1, 2, 3, 4, 5))
+  .zip(Ix.from(Arrays.asList(&ldquo;hoge&rdquo;, &ldquo;fuga&rdquo;, &ldquo;piyo&rdquo;)),</p>
+
+<pre><code>(x, y) -&gt; new Pair&lt;Integer, String&gt;(x, y))
+</code></pre>
+
+<p>  .toList();
+```</p>
+
+<p><code>
+//出力
+{ first = 1, second = hoge }
+{ first = 2, second = fuga }
+{ first = 3, second = piyo }
+</code></p>
+
+<h4>Ix<T> のメソッド一覧</h4>
+
+<p>あとはテキトーに抜き出したメソッド一覧を置いておきますね。
+RxJava や LINQ とほとんど同じなのでだいたい想像付くと思います。
+（何気に <code>toObservable</code> で <code>Observable&lt;T&gt;</code> にも変換できますね。）
+あ、あとタイトルには Androidの〜 と書きましたが、普通の Java でもフツーに使えますので。</p>
+
+<ul>
+<li>aggregate</li>
+<li>all</li>
+<li>any</li>
+<li>argAndMax</li>
+<li>argAndMin</li>
+<li>averageBigDecimal</li>
+<li>averageBigInteger</li>
+<li>averageDouble</li>
+<li>averageFloat</li>
+<li>averageInt</li>
+<li>averageLong</li>
+<li>buffer</li>
+<li>call</li>
+<li>concat</li>
+<li>concatWith</li>
+<li>concatWithAll</li>
+<li>contains</li>
+<li>count</li>
+<li>countLong</li>
+<li>defer</li>
+<li>dematerialize</li>
+<li>distinct</li>
+<li>distinctNext</li>
+<li>doOnCompleted</li>
+<li>doOnNext</li>
+<li>doWhile</li>
+<li>empty</li>
+<li>endWith</li>
+<li>error</li>
+<li>filter</li>
+<li>filterIndexed</li>
+<li>first</li>
+<li>flatMap</li>
+<li>forEach</li>
+<li>from</li>
+<li>fromPart</li>
+<li>generate</li>
+<li>groupBy</li>
+<li>into</li>
+<li>isEmpty</li>
+<li>iterator</li>
+<li>join</li>
+<li>just</li>
+<li>last</li>
+<li>map</li>
+<li>mapIndexed</li>
+<li>materialize</li>
+<li>max</li>
+<li>maxBy</li>
+<li>mayBy</li>
+<li>memoize</li>
+<li>memoizeAll</li>
+<li>min</li>
+<li>minBy</li>
+<li>minxBy</li>
+<li>newBuilder</li>
+<li>ofType</li>
+<li>orderBy</li>
+<li>print</li>
+<li>println</li>
+<li>prune</li>
+<li>publish</li>
+<li>range</li>
+<li>removeAll</li>
+<li>repeat</li>
+<li>replay</li>
+<li>run</li>
+<li>scan</li>
+<li>share</li>
+<li>skipLast</li>
+<li>startWith</li>
+<li>subsequent</li>
+<li>sumBigDecimal</li>
+<li>sumBigInteger</li>
+<li>sumDouble</li>
+<li>sumFloat</li>
+<li>sumInt</li>
+<li>sumIntAsDouble</li>
+<li>sumLong</li>
+<li>sumLongAsDouble</li>
+<li>take</li>
+<li>takeLast</li>
+<li>toArray</li>
+<li>toBuilder</li>
+<li>toHashMap</li>
+<li>toHashMultimap</li>
+<li>toList</li>
+<li>toMap</li>
+<li>toMultimap</li>
+<li>toObservable</li>
+<li>zip</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
@@ -954,191 +1397,6 @@ public int PersonAge { get; set; }
 <p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
 
 <p>というわけで Advent Calendar 初日のネタは以上です。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RxAndroid でスクリーンセーバー的な機能を作る]]></title>
-    <link href="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/"/>
-    <updated>2014-12-09T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/android">Android Advent Calendar 2014 8日目</a> の記事です。</p>
-
-<p>　例えば◯秒間操作がなかったらパスキーロック画面を表示する、とかそういうの。普通に作るとタイマーを使って面倒な感じになっちゃいますが、<a href="https://github.com/ReactiveX/RxJava">RxJava</a> と <a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a> を使うととても簡単にできます。</p>
-
-<!--more-->
-
-
-<h2>RxJava + RxAnroid の場合</h2>
-
-<p>　例えば、画面に <code>EditBox</code> と <code>Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
-
-<p>```java MyActivity.java
-public class MyActivity extends Activity {</p>
-
-<pre><code>private static final String TAG = "MyActivity";
-private Subscription _subscription;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_my);
-
-    final EditText editName = (EditText)findViewById(R.id.editName);
-    final View buttonOk = findViewById(R.id.buttonOk);
-
-    // OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換
-    final Func1&lt;Object, Void&gt; signalizer = new Func1&lt;Object, Void&gt;() {
-        @Override
-        public Void call(Object onClickEvent) {
-            return null;
-        }
-    };
-
-    // 文字入力イベントのストリームと…
-    _subscription = ViewObservable.text(editName).map(signalizer)
-            // ボタン押されたのストリームを合体
-            .mergeWith(ViewObservable.clicks(buttonOk).map(signalizer))
-            // 3秒間なんもなかったらエラーにする
-            .timeout(3, TimeUnit.SECONDS)
-            .subscribe(new Action1&lt;Void&gt;() {
-                @Override
-                public void call(Void dummy) {
-                    // 何かアクションがあったらこっち
-                    Log.d(TAG, "文字が入力されたか、ボタンが押されたよ");
-                }
-            }, new Action1&lt;Throwable&gt;() {
-                @Override
-                public void call(Throwable throwable) {
-                    // 3秒間何もなかったらこっち
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MyActivity.this, 
-                                "３秒間何も操作がありませんでした", Toast.LENGTH_SHORT)
-                                .show();
-                        }
-                    });
-                }
-            });
-}
-
-@Override
-protected void onDestroy() {
-    // イベント系は無限ストリームだから開放してやらないとリークするはず
-    _subscription.unsubscribe();
-    super.onDestroy();
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>　<code>ViewObservable.text(editName)</code> がテキストが入力される度にシグナルを発するストリーム、<code>ViewObservable.clicks(buttonOk)</code>がボタンが押される度にシグナルを発するストリームです。これらを <a href="http://rxmarbles.com/#merge"><code>mergeWith</code></a> で合体させます。</p>
-
-<p>　あとは <a href="https://github.com/ReactiveX/RxJava/wiki/Filtering-Observables#timeout"><code>timeout</code></a> につなげるだけ。３秒以内にシグナルがあったら onNext→<code>new Action&lt;Void&gt;()</code>のとこ、3秒以上何も操作がなかったらタイムアウトして onError→<code>new Action&lt;Throwable&gt;()</code> のとこに飛びます。あとはご自由に、ここでは <code>Toast</code> を表示してるだけです。</p>
-
-<p>　注意点は、イベントから生成されたストリームは無限、つまり <code>onComplete</code> は来ない。こういう <code>Observable</code> は自力での購読解除（<code>unsubscribe</code>）が必須です。</p>
-
-<p>これを動かすとこんな感じになります</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make_screensaver_using_rxjava_01.gif" alt="" /></p>
-
-<h2>Xamarin.Android + Rx本家の場合</h2>
-
-<p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;RxJavaSample&rdquo;, MainLauncher = true, Icon = &ldquo;@drawable/icon&rdquo;)]
-public class MainActivity : Activity
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle bundle)
-{
-    base.OnCreate(bundle);
-
-    // Set our view from the "main" layout resource
-    SetContentView(Resource.Layout.Main);
-
-    var editName = FindViewById&lt;EditText&gt;(Resource.Id.editName);
-    var buttonOk = FindViewById&lt;Button&gt;(Resource.Id.buttonOk);
-
-    Observable.FromEventPattern&lt;TextChangedEventArgs&gt;(editName, "TextChanged").Select(_=&gt;true)
-        .Merge(Observable.FromEventPattern(buttonOk, "Click").Select(_=&gt;true))
-        .Timeout(TimeSpan.FromSeconds(3))
-        .Subscribe(_ =&gt; {} , 
-        e =&gt; RunOnUiThread(() =&gt; Toast.MakeText(this, 
-            "３秒間何も操作がありませんでした", ToastLength.Short).Show()));
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h2>まとめ</h2>
-
-<p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
-　さあみんなで Rx にロックインされましょう！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[マカーの人が Xamarin について勘違いしていそうな５つのこと]]></title>
-    <link href="http://blog.amay077.net/blog/2014/12/02/mac-user-have-misunderstood-about-xamarin/"/>
-    <updated>2014-12-02T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/12/02/mac-user-have-misunderstood-about-xamarin</id>
-    <content type="html"><![CDATA[<p>　今年も始まりました <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014</a> 。
-　思えば<a href="http://qiita.com/advent-calendar/2013/xamarin">昨年の Advent Calendar</a> は、5名の方に参加していただいたものの「ほとんど俺」みたいな感じでしたが、今年はたくさん方に登録してもらえてとても嬉しいです。この1年の Xamarin の躍進ぶりを象徴していると思います。</p>
-
-<!--more-->
-
-
-<p>　そんな Xamarin ですが、Microsoft とのパートナーシップが強力なおかげで、Windows系の開発者には広く知られて（そういう戦略なのは分かります）いますが、普段 Mac で iOS/Android アプリを開発してますみたいな人にはあまりリーチできていないかなあと思います。</p>
-
-<p>　そこで初日の今日は、マカーの人が、勘違い・思い込んでいそうなことをいくつか払拭してみたいと思います。</p>
-
-<h2>Q1. Xamarin を使うには、Visual Studio が必要なんでしょ？</h2>
-
-<p>A1: <strong>必要ありません。</strong> 「Xamarin Studio」という専用の統合開発環境で開発できます。私は Mac + Xamarin Studio で開発していますが、まったく問題を感じていません。
-　また、iOSアプリのView部分は、Xcodeと同じ <code>.storyboard</code> ファイルを使用しますが、Xcode を使う必要もありません。Interface Builder と同じ（か部分的にはそれ以上）の機能を持つ <a href="http://developer.xamarin.com/guides/ios/user_interface/designer/">UIデザイナー</a>が、Xamarin Studio には搭載されています。</p>
-
-<h2>Q2. Xamarin を使うには、Windows が必要なんでしょ？</h2>
-
-<p>A2: <strong>必要ありません。</strong> Mac のみで完結します。むしろ Windows だけでは iOSアプリのビルドができないので、<a href="http://developer.xamarin.com/guides/ios/getting_started/installation/windows/introduction_to_xamarin_ios_for_visual_studio/">Mac にリモート接続</a>する必要があり、これがしばしばトラブルになります。（主にデモでｗ
-　Microsoft がアピールするとどうしても Windows+Visual Studioの説明になってしまいますが、それはまやかしです（言い切った！</p>
-
-<h2>Q3. Xamarin社って、Microsoft の子分みたいなもんでしょ？</h2>
-
-<p>A3: Xamarin社は独立した企業であり、Microsoftとは対等な立場です（と私は思っています）。「Microsoft に買収されればいいのに」という声をよく聞きますが、私は独立した企業である現在のポジションが Xamarin社にとってベストだと思っています。Microsoftにとってはモバイル開発者にリーチする重要なピースであり、Xamarin社としても他にないマーケットです。
- また、今年の Xamarin の大イベント <a href="https://evolve.xamarin.com/">Evolve2014</a> には、Microsoft の他に IBM, Amazon, Google, Salesforce, Dropbox と言った、他ではちょっと見られないような豪華なスポンサー群になりました。これも Xamarin の中立な立ち位置がなせる技だと思います。
-あ、最近の <a href="http://www.publickey1.jp/blog/14/jitnet_core_rutimenet_framework.html">.NETのオープン化</a> の流れは、Xamarin の CTO であり Monoプロジェクトの生みの親であるスーパーハッカー、<a href="https://twitter.com/migueldeicaza">ミゲル・デ・イカザ</a>氏が少なからず関係していると思っています。</p>
-
-<h2>Q4. C# 覚えるのしんどい</h2>
-
-<p>A4. <strong>あなたはあの Objective-C を覚えたのでしょう？</strong></p>
-
-<h2>Q5. Swift の方が C# よりイケてるじゃん？</h2>
-
-<p>A5. 後発である Swift がイケてるのは誰もが認めるところでしょう（かつて Java に対する C# がそうであったように）「Swift は関数型言語だ」という意見には、Xamarin は F# を提案します。<a href="http://blog.xamarin.com/introduction-to-f-with-xamarin/">Xamarinには F# の MVP（勝手に”数学ガール”だと思っている）</a>も居ます(←訂正:Xamarinの人じゃなかったです)し、日本でも <a href="http://www.slideshare.net/kusokuzeshiki/xamarinmvvm-crossf">F#+Xamarin でアプリ開発されている型</a>も居らっしゃいます。</p>
-
-<h1>まとめ</h1>
-
-<p>　ちょっと宗教論争っぽくなりかけたので、ここまでにしておきます。強く主張したいのは、モバイルアプリ開発者なら iOS だけ、Android だけ知っていても良いアプリは作れないでしょう。両方のプラットフォーム、開発言語、哲学を理解する必要があります。 <strong>Xamarin だから Swift を覚えなくていいという事はありません。</strong>
-　
-　でも、同じ（少なくとも同じような機能をもった）アプリの同じロジックを、異なる言語でそれぞれ書いて、その後数年保守し続ける現状は、本当に最適なのでしょうか？同じコード、あるいは同じバイナリが iOS/Android で動作すれば、保守費用は半分です（SIer みたいな言い方だｗ）。</p>
-
-<p>　「共通にできる選択肢、あるいはプラットフォームの文化にあわせて別々にできる選択肢」を自然な形で提供するのが Xamarin、 Java も Swift も C# も覚えて C# で D.R.Y するのが Xamarin です。</p>
-
-<p>　最後に宣伝ですが、 <strong>Build INSIDER</strong> というWebサイトで「Xamarin逆引きTips」という連載をしています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/xamarintips">Xamarin逆引きTips &ndash; Build Insider</a></li>
-</ul>
-
-
-<p>　これは、.NET Framework は今まであまり使った事がない iOS/Android アプリ開発者をターゲットにしていて、説明もほぼ全てが Mac+Xamarin Studio を使って書いています。興味持ったら読んでもらえると嬉しいです。</p>
-
-<p>　本日まったく登場しなかった Visual Studio や Windows Phone などの話は、明日以降登場すると思いますので、お楽しみに！それでは初日はこの辺で。</p>
 ]]></content>
   </entry>
   

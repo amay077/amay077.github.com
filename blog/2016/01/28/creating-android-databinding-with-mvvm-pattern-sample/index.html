@@ -1,0 +1,551 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Android Data Binding + MVVMパターンのサンプルを書いてみた - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,databinding,mvvm,rxjava,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Android Data Binding + MVVMパターンのサンプルを書いてみた
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2016-01-28T23:59:59+09:00" pubdate data-updated="true">Jan 28<sup>th</sup>, 2016</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/databinding/'>databinding</a>, <a class='category' href='/blog/categories/mvvm/'>mvvm</a>, <a class='category' href='/blog/categories/rxjava/'>rxjava</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p><code>notifyPropertyChanged</code> とか、<a href="https://ufcpp.wordpress.com/2009/12/28/inotifypropertychanged-%E3%81%AE%E5%AE%9F%E8%A3%85/">どこかで見たことのある</a>機能が満載の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Android Data Binding</a> ですが、登場以来あまり追えてなかったのでやっとサンプルをつくってみました。</p>
+
+<!--more-->
+
+
+<p>といっても</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/8464a22e3063642112ed">RxJava + MVVM パターンで作るストップウォッチアプリ &ndash; Qiita</a></li>
+</ul>
+
+
+<p>で作ったストップウォッチアプリを Data Binding 化しただけです。</p>
+
+<p><a href="http://qiita.com/amay077/items/8464a22e3063642112ed#model-viewmodel-viewmvvm-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">前回</a> との違いを図に示します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_03.png" alt="" /></p>
+
+<ul>
+<li>View-ViewModel で全面的に使用していた <code>rx.Observable&lt;T&gt;</code> の代わりに、<code>ObservableField&lt;T&gt;</code> を使用。</li>
+<li>View側で「オレオレDataBinding」を実装していた箇所を、Android の Data Binding に置き換え。つまりバインディングの定義はレイアウトxmlへ記述。</li>
+<li>Model は相変わらず <code>rx.Observable&lt;T&gt;</code> のまま。なので ViewModel で <code>rx.Observable&lt;T&gt;</code> → <code>ObservableField&lt;T&gt;</code> へ変換。</li>
+<li>メソッドとのバインドに <code>Command</code> を使用していたが、Android Data Binding の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#binding_events">Binding Events</a> に置き換え。</li>
+<li>ListView とデータ群のバインディングの方法が分からなかったので、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#custom_setters">カスタムBinding</a>で対応。(listItem のバインディングじゃなくて、リストの件数の増減を反映させるやつ。)</li>
+<li>ArrayAdapter 使ってたんだけどこいつは Binding に対応していない？ので Adapter を自作。</li>
+</ul>
+
+
+<h2>MainActivity のバインディングの定義</h2>
+
+<p><code>activity_main.xml</code> はこんな感じ。</p>
+
+<p><code>@{ }</code> で  <code>MainViewModel</code> に用意した <code>ObservableField&lt;T&gt;</code> または、イベントハンドラとバインドしてます。</p>
+
+<figure class='code'><figcaption><span>activity_main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;layout</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">xmlns:tools=</span><span class="s">&quot;http://schemas.android.com/tools&quot;</span>
+</span><span class='line'>    <span class="na">xmlns:app=</span><span class="s">&quot;http://schemas.android.com/apk/res-auto&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;data&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;variable</span> <span class="na">name=</span><span class="s">&quot;viewModel&quot;</span>
+</span><span class='line'>            <span class="na">type=</span><span class="s">&quot;com.amay077.stopwatchapp.viewmodel.MainViewModel&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/data&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;LinearLayout</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="na">android:paddingLeft=</span><span class="s">&quot;@dimen/activity_horizontal_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:orientation=</span><span class="s">&quot;vertical&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingRight=</span><span class="s">&quot;@dimen/activity_horizontal_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingTop=</span><span class="s">&quot;@dimen/activity_vertical_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingBottom=</span><span class="s">&quot;@dimen/activity_vertical_margin&quot;</span> <span class="na">tools:context=</span><span class="s">&quot;.MainActivity&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;TextView</span> <span class="na">android:id=</span><span class="s">&quot;@+id/textTime&quot;</span>
+</span><span class='line'>            <span class="na">tools:text=</span><span class="s">&quot;00:00.000&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;@{viewModel.formattedTime}&quot;</span>
+</span><span class='line'>            <span class="na">android:textSize=</span><span class="s">&quot;50sp&quot;</span>
+</span><span class='line'>            <span class="na">android:gravity=</span><span class="s">&quot;center_horizontal&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;Button</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/buttonStartStop&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;@{viewModel.runButtonTitle}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickStartOrStop}&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Button</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/buttonLap&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;Lap&quot;</span>
+</span><span class='line'>            <span class="na">android:enabled=</span><span class="s">&quot;@{viewModel.isRunning}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickLap}&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Switch</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/switchVisibleMillis&quot;</span>
+</span><span class='line'>            <span class="na">android:checked=</span><span class="s">&quot;@{viewModel.isVisibleMillis}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickToggleVisibleMillis}&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;小数点以下を表示&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;ListView</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/listLaps&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">app:formattedLaps=</span><span class="s">&quot;@{viewModel}&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/LinearLayout&gt;</span>
+</span><span class='line'><span class="nt">&lt;/layout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ListView で <code>app:formattedLaps="@{viewModel}"</code> としているところだけが特殊で、これは <code>MainActivity.java</code> に定義したカスタムSetter を呼び出します。</p>
+
+<p><code>MainActivity.java</code> はこんな感じ。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">AppCompatActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="cm">/* final */</span>  <span class="n">MainViewModel</span> <span class="n">_viewModel</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">CompositeSubscription</span> <span class="n">_subscriptions</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CompositeSubscription</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">ActivityMainBinding</span> <span class="n">binding</span> <span class="o">=</span> <span class="n">DataBindingUtil</span><span class="o">.</span><span class="na">setContentView</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">_viewModel</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MainViewModel</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">getApplicationContext</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">binding</span><span class="o">.</span><span class="na">setViewModel</span><span class="o">(</span><span class="n">_viewModel</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// ■ViewModel からの Message の受信（省略）</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * ListView と ViewModel のカスタムバインディング</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * TODO 本当は viewModel.formattedLaps とバインドしたい</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="nd">@BindingAdapter</span><span class="o">(</span><span class="s">&quot;formattedLaps&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setFormattedLaps</span><span class="o">(</span><span class="n">ListView</span> <span class="n">listView</span><span class="o">,</span> <span class="kd">final</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">LapAdapter</span> <span class="n">adapter</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LapAdapter</span><span class="o">(</span><span class="n">listView</span><span class="o">.</span><span class="na">getContext</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">listView</span><span class="o">.</span><span class="na">setAdapter</span><span class="o">(</span><span class="n">adapter</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// formattedLaps が変化した時に呼ばれるイベントで、Adapterを洗い替え。</span>
+</span><span class='line'>        <span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">addOnPropertyChangedCallback</span><span class="o">(</span><span class="k">new</span> <span class="n">android</span><span class="o">.</span><span class="na">databinding</span><span class="o">.</span><span class="na">Observable</span><span class="o">.</span><span class="na">OnPropertyChangedCallback</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onPropertyChanged</span><span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">databinding</span><span class="o">.</span><span class="na">Observable</span> <span class="n">sender</span><span class="o">,</span> <span class="kt">int</span> <span class="n">propertyId</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">adapter</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>                <span class="n">adapter</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// バインド時に値を更新</span>
+</span><span class='line'>        <span class="n">adapter</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">adapter</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_viewModel</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>オレオレBindingがごっそり消えてスッキリ。
+<code>setFormattedLaps</code> がカスタムSetterで、この中で <code>MainViewModel.formatterLaps</code> を監視し、値が変わったら Adapter を総入れ替えしてます。が、これが正しいやり方かわからない。
+<a href="https://android.googlesource.com/platform/frameworks/data-binding/+/android-6.0.0_r7/extensions/baseAdapters/src/main/java/android/databinding/adapters">extensions/baseAdapters/src/main/java/android/databinding/adapters</a> にはそれらしいのがないでござるよ。。。</p>
+
+<h2>ViewModel 側</h2>
+
+<p>この辺みてください。大したことはやってないです。（急に雑になったw）</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">StopWatchSample/MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/ObservableUtil.java">StopWatchSample/ObservableUtil.java</a></li>
+</ul>
+
+
+<p><code>ObservableUtil.toObservableField</code> とか、もうどっかの誰かがやってそうだし、事実上標準の何かが出てきそうな気がすごくします。</p>
+
+<h2>おまけ</h2>
+
+<h3>Messenger を RxJava ベースにした</h3>
+
+<ul>
+<li><a href="http://qiita.com/yyaammaa/items/57d8baa1e80346e67e47">OttoからRxJavaへの移行ガイド &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/kubode/items/a4ece37834446c9a39c8">Android &ndash; RxJavaでEventBusを作った &ndash; Qiita</a></li>
+</ul>
+
+
+<p>らしいので、自作してた <code>Messenger</code> を <a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/frameworks/messengers/Messenger.java">RxJava ベースにしてみました</a>。
+ViewModel→Viewの通知
+にしか使ってないので、あまり <code>rx.Observable&lt;T&gt;</code> にする旨味はなかったですね。あ、<code>ofType</code> って便利ですね。</p>
+
+<h2>まとめ</h2>
+
+<p>今回作ったアプリの全ソースは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/android_data_binding_v1_20160128/StopWatchAppXamarin/StopWatchApp.Android">StopWatchApp.Android</a></li>
+</ul>
+
+
+<p>です。</p>
+
+<p>.NETアプリケーション開発では、ViewModel を View にバインドすることが殆どなので、典型的な例としてやってみました。</p>
+
+<p>レイアウトに直接バインドを定義できるので、コードビハインド(Javaのソース)はスッキリしますが、個人的にはあまり好きではありません。
+コードビハインドに(<code>textTime.SetBinding(v =&gt; v.Text, viewModel.Time)</code> みたく)書いた方が、定義情報がまとまっていて管理しやすい、デバッグしやすいと思うからです。（同じ理由で、xmlに直接記述する <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#expression_language">Expression Language</a> も好きではありません。）
+が、今のところ、Android Data Binding では、レイアウトXMLでしかバインディングを定義できないようですね。</p>
+
+<p>ともあれ、<a href="https://github.com/gueei/AndroidBinding">AndroidBinding</a> とか Butter Knife はこれで駆逐されていく（前者はすでに息してなさそうですが）と思うので、新しいアプリ開発では積極的に使っていこうかなと思います。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Data Binding Guide | Android Developers</a></li>
+<li><a href="http://qiita.com/izumin5210/items/2784576d86ce6b9b51e6#after-listview">Android &ndash; Butter Knife、今までありがとう。 Data Binding、これからよろしく。 &ndash; Qiita</a></li>
+<li><a href="http://tech.recruit-mp.co.jp/mobile/android-data-binding/">[Android] – Data Bindingつかってみた – NET BIZ DIV. TECH BLOG</a></li>
+</ul>
+
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2016/01/21/ixjava-the-best-library-of-list-operations/" title="Previous Post: Android-Java でリスト操作するなら IxJava が決定版だと思う">&lt; Android-Java でリスト操作するなら IxJava が決定版だと思う</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2016/02/05/difference-immediatescheduler-and-trumpolinescheduler/" title="Next Post: RxJava の ImmediateScheduler と TrampolineScheduler の違い">RxJava の ImmediateScheduler と TrampolineScheduler の違い &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/';
+        var disqus_url = 'http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

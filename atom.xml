@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-04T02:23:50+09:00</updated>
+  <updated>2016-02-05T01:34:02+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,927 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava の ImmediateScheduler と TrampolineScheduler の違い]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/05/difference-immediatescheduler-and-trumpolinescheduler/"/>
+    <updated>2016-02-05T01:30:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/05/difference-immediatescheduler-and-trumpolinescheduler</id>
+    <content type="html"><![CDATA[<p>RxJava のスケジューラの中に <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/TrampolineScheduler.html"><code>TrampolineScheduler</code></a> というのがあり、<a href="https://twitter.com/amay077/status/693341525464346624">なんじゃこれ？</a>とつぶやいたところ、 <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/TrampolineScheduler.html">Rx.NET の <code>CurrentThreadScheduler</code> と同じっぽい</a> と教えてもらいました。</p>
+
+<!--more-->
+
+
+<p>その流れで、類似の Scheduler である <a href="http://reactivex.io/RxJava/javadoc/rx/schedulers/ImmediateScheduler.html">ImmediateScheduler</a> との違いについて語られているトピックを紹介してもらいました。</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr"><a href="https://twitter.com/amay077">@amay077</a> この辺読みとくと良いと思います（tranpolineというキーワードも登場します） <a href="https://t.co/A5TzOiobsC">https://t.co/A5TzOiobsC</a></p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/status/693396949643317248">2016, 1月 30</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<h1>CurrentThreadScheduler vs ImmediateScheduler</h1>
+
+<ul>
+<li><a href="https://social.msdn.microsoft.com/Forums/en-US/7f75482f-eff2-4938-9491-47fe870989e8/currentthreadscheduler-vs-immediatescheduler?forum=rx">CurrentThreadScheduler vs ImmediateScheduler</a></li>
+</ul>
+
+
+<p>紹介してもらったこのディスカッションを、頑張って翻訳してみました（めちゃくちゃなとこは訂正願います）。
+RxJava では <code>CurrentThreadScheduler</code> を <code>TrampolineScheduler</code> に読み替えてください。</p>
+
+<p>－－訳ここから－－</p>
+
+<h2>Ohad 氏の質問</h2>
+
+<blockquote><p>Hi
+ImmediateScheduler&rsquo;s Schedule method is pretty straightforward &ndash; it simply invokes the action.
+In contrast, CurrentThreadScheduler seems more involved &ndash; it creates something called a trampoline, which in turn iterates over an action queue, sleeping between invocations of items in the queue and so forth</p></blockquote>
+
+<p>やあ、
+<code>ImmediateScheduler.Schedule</code> メソッドは単純をアクションを呼び出します。
+対照的に、 <code>CurrentThreadScheduler</code> は複雑に見えます。トランポリンと呼ばれるものを作り、それはアクション・キューで、順次スリープの間に呼び出されます。</p>
+
+<blockquote><p>I&rsquo;ve been trying to follow the code with reflector but I&rsquo;m having a hard time understanding the difference. As far as I can tell, CurrentThreadSchedule&rsquo;s schedule method calls Trampoline &rsquo;s Run method, which will end up blocking the current thread until the queued action is performed (on the current thread as well) &ndash; apparently just like in the case of ImmediateScheduler</p></blockquote>
+
+<p>私はコードを追ってみましたが、理解するのに苦労しています。分かる範囲では、 <code>CurrentThreadSchedule.Schedule</code> メソッドは <code>Trampoline.Run</code> メソッドを呼び出しています。これは現在のスレッドを、キューのアクションが実行されるまで(カレントスレッドも同様に)ブロックしようとします。 &ndash; どうも <code>ImmediateScheduler</code> のようにみえます。</p>
+
+<blockquote><p>I realize I&rsquo;m missing something, so an explanation would be really appreciated
+Thanks !</p></blockquote>
+
+<p>何か理解が足りないと思うので、説明してもらえると嬉しいです。</p>
+
+<blockquote><p>EDIT &ndash; In the meantime I&rsquo;ve found a couple of resources that may shed light on the subject, if anyone&rsquo;s interested:</p></blockquote>
+
+<p>２つのリソースを見つけました。何かの手がかりになれば。</p>
+
+<p><a href="http://channel9.msdn.com/blogs/j.van.gogh/controlling-concurrency-in-rx">http://channel9.msdn.com/blogs/j.van.gogh/controlling-concurrency-in-rx</a></p>
+
+<p><a href="http://community.bartdesmet.net/blogs/bart/archive/2009/11/08/jumping-the-trampoline-in-c-stack-friendly-recursion.aspx">http://community.bartdesmet.net/blogs/bart/archive/2009/11/08/jumping-the-trampoline-in-c-stack-friendly-recursion.aspx</a></p>
+
+<h2>Dave 氏の回答</h2>
+
+<blockquote><p>Hi,</p>
+
+<p>The trampoline seems to serve three purposes:</p></blockquote>
+
+<p>やあ、
+トランポリンは３つの目的を持っているように見えます。</p>
+
+<blockquote><p>1- Prevents dead-locks from scheduler reentrancy.</p></blockquote>
+
+<p>1- スケジューラーの割り込みからデッドロックを防ぎます。</p>
+
+<blockquote><p>2- Prevents infinite loops in observables that require recursion through scheduler reentrancy.</p></blockquote>
+
+<p>2- スケジューラーの割り込みを使った再帰が必要な Observable の無限ループを防ぎます。</p>
+
+<blockquote><p>3- Cooperative single-threaded multitasking; I guess it&rsquo;s similar to the proposed async/await feature in C# 5.0.  Calling CurrentThreadScheduler.Schedule is sort of like using await when the currently executing code was also scheduled via CurrentThreadScheduler.</p></blockquote>
+
+<p>3- シングルスレッドでの「<a href="http://www.sophia-it.com/content/%E3%83%8E%E3%83%B3%E3%83%97%E3%83%AA%E3%82%A8%E3%83%B3%E3%83%97%E3%83%86%E3%82%A3%E3%83%96%E3%83%9E%E3%83%AB%E3%83%81%E3%82%BF%E3%82%B9%E3%82%AF">協調的マルチタスキング</a>」; 私は C# 5.0 に提案されている async/await に近いものだと思います。<code>CurrentThreadScheduler.Schedule</code> の呼び出しは、現在実行中のコードも <code>CurrentThreadScheduler</code> でスケジュールされていたときに await を使用するようなものです。（訳注: C# の async/await は協調的マルチタスキングではないと思います。これは async/await 登場以前に予想で書かれたものかと。</p>
+
+<blockquote><p>In the observable world, calling Subscribe should be an asynchronous operation.  There&rsquo;s a problem if the scheduling of an observable dead-locks or blocks the current thread indefinitely because it attempts to execute immediately and never completes.</p></blockquote>
+
+<p>Observable の世界では、<code>Subscribe</code> の呼び出しは、非同期処理で行わなければなりません。Observable のスケジューリングがデッドロックまたはカレントスレッドを無期限にブロックする場合、すぐに実行しようとしても完了しないので、問題になります。</p>
+
+<blockquote><p>Ignore the type of scheduler for a moment and consider a scheduled action that eventually, through some sequence of method calls, uses the same scheduler to schedule another action.</p></blockquote>
+
+<p>ちょっとこのスケジューラを無視して、いずれは、いくつかのシーケンスは別のアクションをスケジュールするために、同じスケジューラを使用することを考えてみてください。</p>
+
+<blockquote><p>With the ImmediateScheduler, the inner action is executed immediately.</p></blockquote>
+
+<p><code>ImmediateScheduler</code> では、”内側のアクション” はすぐに実行されます。</p>
+
+<blockquote><ul>
+<li>If the outer action acquires some resource on which the inner action depends, and the inner action cannot acquire this resource until it&rsquo;s released by the outer action, then these actions dead-lock.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが、内側のアクションが依存しているリソースを取得した場合、
+内側のアクションは外側のアクションがリソースを開放するまでそれを取得できず、これらのアクションはデッドロックします。</li>
+</ul>
+
+
+<blockquote><ul>
+<li>If the outer action depends upon the inner action, and the inner action depends upon the outer action, then this could result in an infinite loop that never yields control to other actions.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションは内部アクションに依存し、内部アクションは外側の行動に依存している場合、他のアクションに制御が移らない無限ループになります。</li>
+</ul>
+
+
+<blockquote><p>For example: Observable.Return(1).Repeat().Take(1)</p></blockquote>
+
+<p>例: <code>Observable.Return(1).Repeat().Take(1)</code></p>
+
+<blockquote><p>By default, Return uses the ImmediateScheduler to call OnNext(1) then OnCompleted().  Repeat does not introduce any concurrency, so it sees OnCompleted immediately and then immediately resubscribes to Return.  Because there&rsquo;s no trampoline in Return, this pattern repeats itself, blocking the current thread indefinitely.  Calling Subscribe on this observable never returns.  See <a href="https://social.msdn.microsoft.com/Forums/en-US/f9c1a7a6-d6a3-44fd-ba8c-e6845b1717b2/possible-bug-repeat-observables-using-immediate-scheduler?forum=rx">this discussion</a> for more information.</p></blockquote>
+
+<p>既定では、<code>Return</code> は <code>ImmediateScheduler</code> を使って <code>OnNext(1)</code> そして <code>OnCompleted()</code> を呼び出します。 <code>Repeat</code> はどんな並列性も使用しません、なのですぐに <code>OnCompleted</code> を検知して、すぐに <code>Return</code> を再購読します。なぜなら、 <code>Return</code> にはトランポリンがないので、このパターンは自分自身を繰り返し、無期限に現在のスレッドをブロックし続けます。この Observable を <code>Subscribe</code> すると処理が返ってきません。詳細については、<a href="https://social.msdn.microsoft.com/Forums/en-US/f9c1a7a6-d6a3-44fd-ba8c-e6845b1717b2/possible-bug-repeat-observables-using-immediate-scheduler?forum=rx">この説明</a>を参照してください。</p>
+
+<blockquote><p>With the CurrentThreadScheduler, the inner action is scheduled (queued) for execution when the outer action ends.  Conceptually, inner actions are bounced on the trampoline until the current thread is ready to execute them.</p></blockquote>
+
+<p><code>CurrentThreadScheduler</code> では、内側のアクションは、外側のアクションが終了された時に実行されるようにスケジュールされます。コンセプトとしては、内側のアクションは、現在のスレッドが実行可能になるまでトランポリンの上で跳ねます。</p>
+
+<blockquote><ul>
+<li>If the outer action acquires some resource on which the inner action depends, and the inner action cannot acquire this resource until it&rsquo;s released by the outer action, then these actions do not dead-lock because the inner action is not executed until the outer action completes.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが、内側のアクションが依存しているリソースを取得し、内側のアクションは外側のアクションによってそれらが解放されるまで取得できない場合、これらのアクションはデッドロックしません、なぜなら。内側のアクションは外側のアクションが終了するまで実行されないためです。</li>
+</ul>
+
+
+<blockquote><ul>
+<li>If the outer action recurses when the inner action completes, then there won&rsquo;t be an immediately infinite loop because the inner action does not complete until the outer action completes first.</li>
+</ul>
+</blockquote>
+
+<ul>
+<li>外側のアクションが内側のアクションが終了した時に再帰的な場合、無限ループになりません。なぜなら、内側のアクションは外側のアクションが完了するまで完了しないためです。</li>
+</ul>
+
+
+<blockquote><p>For example: Observable.Return(1, Scheduler.CurrentThread).Repeat().Take(1)</p></blockquote>
+
+<p>例: <code>Observable.Return(1, Scheduler.CurrentThread).Repeat().Take(1)</code></p>
+
+<blockquote><p>Here, Return is using the CurrentTheadScheduler to call OnNext(1) then OnCompleted().  Repeat does not introduce any concurrency, so it sees OnCompleted immediately and then immediately resubscribes to Return; however, this second subscription to Return schedules its (inner) actions on the trampoline because it&rsquo;s still executing on the OnCompleted callback from the first scheduled (outer) action, thus the repetition does not occur immediately.  This allows Repeat to return a disposable to Take, which eventually calls OnCompleted, cancels the repetition by disposing Repeat, and ultimately the call from Subscribe returns.</p></blockquote>
+
+<p>ここでは、 <code>Return</code> は <code>CurrentTheadScheduler</code> を使って <code>OnNext(1)</code> そして <code>OnCompleted()</code> を呼び出します。 <code>Repeat</code> はどんな並列性も使用しません、なのですぐに <code>OnCompleted</code> を検知して、すぐに <code>Return</code> を再購読します。しかし、この２回目の <code>Return</code> の購読（内側のアクション）はトランポリンの上にあります、なぜなら、最初にスケジュールされたアクション（外側のアクション）の <code>OnCompleted</code> コールバックの上でまだ実行中であるからです、なので繰り返しはすぐに発生しません。
+これは、<code>Repeat</code> は <code>Take</code> に disposable(subscription) を返すことができます、それはやがて <code>OnCompleted</code> を呼び出し、<code>Subscribe</code> の返値から <code>Repeat</code> の破棄により繰り返しをキャンセルします。</p>
+
+<blockquote><p>Keep in mind that the examples with Return and Repeat do not introduce any concurrency.  When you call Subscribe, it will not return until the observable completes regardless of which of these schedulers you choose.  With the ImmediateScheduler, Take calls OnCompleted but it cannot cancel the repetition, so Subscribe blocks indefinitely.  Alternatively, the CurrentThreadScheduler allows for cooperative single-threaded multitasking between the Return and Repeat operators, thus allowing Take to cancel the repetition without having to introduce any concurrency.</p></blockquote>
+
+<p>覚えておいて欲しいのは、 <code>Return</code> → <code>Repeat</code> はどんな並列性も使用しないことです。<code>Subscribe</code> を呼び出すと、あなたが選択した Scheduler に関係なく、Observable が終了するまで処理を返しません。 <code>ImmediateScheduler</code> では、<code>Take</code> は <code>OnCompleted</code> を呼び出しますが、繰り返しをキャンセルできません。なので <code>Subscribe</code> は無期限にブロックしてしまいます。代わりに <code>CurrentThreadScheduler</code> は <code>Return</code> と <code>Repeat</code> 操作の間、協調的マルチタスキングが可能になります、なので、並行性を使用することなく、繰り返しをキャンセルすることができます。</p>
+
+<p>－－訳ここまで－－</p>
+
+<h1>つまり？</h1>
+
+<p><code>ImmediateScheduler</code> が処理をただ単に(割り込んで)実行するだけであるのに対し、 <code>CurrentScheduler</code>(<code>TrampolineScheduler</code>) は、擬似的なマルチタスクを行う（懐かしの VB の <a href="http://detail.chiebukuro.yahoo.co.jp/qa/question_detail/q1112681621"><code>DoEvents</code></a> かぁ？）ことでデッドロックを防いでいる、と理解しました。</p>
+
+<p>Dave 氏の回答にあった例</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="n">Observable</span><span class="p">.</span><span class="n">Return</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">Repeat</span><span class="p">().</span><span class="n">Take</span><span class="p">(</span><span class="m">1</span><span class="p">).</span><span class="n">Subscribe</span><span class="p">(...);</span>
+</span><span class='line'><span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Hoge&quot;</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>を実行すると、確かに処理が帰ってこない、<code>Debug.WriteLine</code> へ進まないんです。</p>
+
+<p>これはヤバい、<code>ImmediateScheduler</code> マジやべえと。
+で、 RxJava でも同じだよねえと、</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">// just が ImmediateScheduler 使うのか不安だったから subscribeOn しているよ</span>
+</span><span class='line'><span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">subscribeOn</span><span class="o">(</span><span class="n">Schedulers</span><span class="o">.</span><span class="na">immediate</span><span class="o">()).</span><span class="na">repeat</span><span class="o">().</span><span class="na">take</span><span class="o">(</span><span class="mi">1</span><span class="o">).</span><span class="na">subscribe</span><span class="o">(...);</span>
+</span><span class='line'><span class="n">Log</span><span class="o">.</span><span class="na">debug</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;Hoge&quot;</span><span class="o">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>と書いて実行してみたら、処理が帰ってくる！ <code>Log.debug</code> も実行される！
+なんだこの違いは？改善されているのか、試し方が悪いのか。。。</p>
+
+<p>なんだかモヤモヤした終わりかたですが、今回は <code>ImmediateScheduler</code> はちょっと要注意だというところまでです。</p>
+
+<blockquote><p>In the observable world, calling Subscribe should be an asynchronous operation.</p></blockquote>
+
+<p>との言葉通り、Rx.NET/RxJava を使うときは非同期にしたい事が全てだと思いますが、オペレータによっては既定で <code>ImmediateScheduler</code> を使うものもあるので、必ず <code>subscribeOn/observeOn</code> をするクセをつけておいた方がいいのかな？と思いました。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android Data Binding + MVVMパターンのサンプルを書いてみた]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample/"/>
+    <updated>2016-01-28T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/28/creating-android-databinding-with-mvvm-pattern-sample</id>
+    <content type="html"><![CDATA[<p><code>notifyPropertyChanged</code> とか、<a href="https://ufcpp.wordpress.com/2009/12/28/inotifypropertychanged-%E3%81%AE%E5%AE%9F%E8%A3%85/">どこかで見たことのある</a>機能が満載の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Android Data Binding</a> ですが、登場以来あまり追えてなかったのでやっとサンプルをつくってみました。</p>
+
+<!--more-->
+
+
+<p>といっても</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/8464a22e3063642112ed">RxJava + MVVM パターンで作るストップウォッチアプリ &ndash; Qiita</a></li>
+</ul>
+
+
+<p>で作ったストップウォッチアプリを Data Binding 化しただけです。</p>
+
+<p><a href="http://qiita.com/amay077/items/8464a22e3063642112ed#model-viewmodel-viewmvvm-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">前回</a> との違いを図に示します。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_03.png" alt="" /></p>
+
+<ul>
+<li>View-ViewModel で全面的に使用していた <code>rx.Observable&lt;T&gt;</code> の代わりに、<code>ObservableField&lt;T&gt;</code> を使用。</li>
+<li>View側で「オレオレDataBinding」を実装していた箇所を、Android の Data Binding に置き換え。つまりバインディングの定義はレイアウトxmlへ記述。</li>
+<li>Model は相変わらず <code>rx.Observable&lt;T&gt;</code> のまま。なので ViewModel で <code>rx.Observable&lt;T&gt;</code> → <code>ObservableField&lt;T&gt;</code> へ変換。</li>
+<li>メソッドとのバインドに <code>Command</code> を使用していたが、Android Data Binding の <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#binding_events">Binding Events</a> に置き換え。</li>
+<li>ListView とデータ群のバインディングの方法が分からなかったので、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#custom_setters">カスタムBinding</a>で対応。(listItem のバインディングじゃなくて、リストの件数の増減を反映させるやつ。)</li>
+<li>ArrayAdapter 使ってたんだけどこいつは Binding に対応していない？ので Adapter を自作。</li>
+</ul>
+
+
+<h2>MainActivity のバインディングの定義</h2>
+
+<p><code>activity_main.xml</code> はこんな感じ。</p>
+
+<p><code>@{ }</code> で  <code>MainViewModel</code> に用意した <code>ObservableField&lt;T&gt;</code> または、イベントハンドラとバインドしてます。</p>
+
+<figure class='code'><figcaption><span>activity_main.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+</span><span class='line'><span class="nt">&lt;layout</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
+</span><span class='line'>    <span class="na">xmlns:tools=</span><span class="s">&quot;http://schemas.android.com/tools&quot;</span>
+</span><span class='line'>    <span class="na">xmlns:app=</span><span class="s">&quot;http://schemas.android.com/apk/res-auto&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nt">&lt;data&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;variable</span> <span class="na">name=</span><span class="s">&quot;viewModel&quot;</span>
+</span><span class='line'>            <span class="na">type=</span><span class="s">&quot;com.amay077.stopwatchapp.viewmodel.MainViewModel&quot;</span><span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/data&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;LinearLayout</span>
+</span><span class='line'>        <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>        <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span> <span class="na">android:paddingLeft=</span><span class="s">&quot;@dimen/activity_horizontal_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:orientation=</span><span class="s">&quot;vertical&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingRight=</span><span class="s">&quot;@dimen/activity_horizontal_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingTop=</span><span class="s">&quot;@dimen/activity_vertical_margin&quot;</span>
+</span><span class='line'>        <span class="na">android:paddingBottom=</span><span class="s">&quot;@dimen/activity_vertical_margin&quot;</span> <span class="na">tools:context=</span><span class="s">&quot;.MainActivity&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;TextView</span> <span class="na">android:id=</span><span class="s">&quot;@+id/textTime&quot;</span>
+</span><span class='line'>            <span class="na">tools:text=</span><span class="s">&quot;00:00.000&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;@{viewModel.formattedTime}&quot;</span>
+</span><span class='line'>            <span class="na">android:textSize=</span><span class="s">&quot;50sp&quot;</span>
+</span><span class='line'>            <span class="na">android:gravity=</span><span class="s">&quot;center_horizontal&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;Button</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/buttonStartStop&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;@{viewModel.runButtonTitle}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickStartOrStop}&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Button</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/buttonLap&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;Lap&quot;</span>
+</span><span class='line'>            <span class="na">android:enabled=</span><span class="s">&quot;@{viewModel.isRunning}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickLap}&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>        <span class="nt">&lt;Switch</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/switchVisibleMillis&quot;</span>
+</span><span class='line'>            <span class="na">android:checked=</span><span class="s">&quot;@{viewModel.isVisibleMillis}&quot;</span>
+</span><span class='line'>            <span class="na">android:onClick=</span><span class="s">&quot;@{viewModel.onClickToggleVisibleMillis}&quot;</span>
+</span><span class='line'>            <span class="na">android:text=</span><span class="s">&quot;小数点以下を表示&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;wrap_content&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;wrap_content&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="nt">&lt;ListView</span>
+</span><span class='line'>            <span class="na">android:id=</span><span class="s">&quot;@+id/listLaps&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_width=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">android:layout_height=</span><span class="s">&quot;match_parent&quot;</span>
+</span><span class='line'>            <span class="na">app:formattedLaps=</span><span class="s">&quot;@{viewModel}&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>    <span class="nt">&lt;/LinearLayout&gt;</span>
+</span><span class='line'><span class="nt">&lt;/layout&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>ListView で <code>app:formattedLaps="@{viewModel}"</code> としているところだけが特殊で、これは <code>MainActivity.java</code> に定義したカスタムSetter を呼び出します。</p>
+
+<p><code>MainActivity.java</code> はこんな感じ。</p>
+
+<figure class='code'><figcaption><span>MainActivity.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">AppCompatActivity</span> <span class="o">{</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="kd">private</span> <span class="cm">/* final */</span>  <span class="n">MainViewModel</span> <span class="n">_viewModel</span><span class="o">;</span>
+</span><span class='line'>    <span class="kd">private</span> <span class="n">CompositeSubscription</span> <span class="n">_subscriptions</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CompositeSubscription</span><span class="o">();</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">ActivityMainBinding</span> <span class="n">binding</span> <span class="o">=</span> <span class="n">DataBindingUtil</span><span class="o">.</span><span class="na">setContentView</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">_viewModel</span> <span class="o">=</span> <span class="k">new</span> <span class="n">MainViewModel</span><span class="o">(</span><span class="k">this</span><span class="o">.</span><span class="na">getApplicationContext</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">binding</span><span class="o">.</span><span class="na">setViewModel</span><span class="o">(</span><span class="n">_viewModel</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// ■ViewModel からの Message の受信（省略）</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="cm">/**</span>
+</span><span class='line'><span class="cm">     * ListView と ViewModel のカスタムバインディング</span>
+</span><span class='line'><span class="cm">     *</span>
+</span><span class='line'><span class="cm">     * TODO 本当は viewModel.formattedLaps とバインドしたい</span>
+</span><span class='line'><span class="cm">     */</span>
+</span><span class='line'>    <span class="nd">@BindingAdapter</span><span class="o">(</span><span class="s">&quot;formattedLaps&quot;</span><span class="o">)</span>
+</span><span class='line'>    <span class="kd">public</span> <span class="kd">static</span> <span class="kt">void</span> <span class="nf">setFormattedLaps</span><span class="o">(</span><span class="n">ListView</span> <span class="n">listView</span><span class="o">,</span> <span class="kd">final</span> <span class="n">MainViewModel</span> <span class="n">viewModel</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kd">final</span> <span class="n">LapAdapter</span> <span class="n">adapter</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LapAdapter</span><span class="o">(</span><span class="n">listView</span><span class="o">.</span><span class="na">getContext</span><span class="o">());</span>
+</span><span class='line'>        <span class="n">listView</span><span class="o">.</span><span class="na">setAdapter</span><span class="o">(</span><span class="n">adapter</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// formattedLaps が変化した時に呼ばれるイベントで、Adapterを洗い替え。</span>
+</span><span class='line'>        <span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">addOnPropertyChangedCallback</span><span class="o">(</span><span class="k">new</span> <span class="n">android</span><span class="o">.</span><span class="na">databinding</span><span class="o">.</span><span class="na">Observable</span><span class="o">.</span><span class="na">OnPropertyChangedCallback</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>            <span class="nd">@Override</span>
+</span><span class='line'>            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onPropertyChanged</span><span class="o">(</span><span class="n">android</span><span class="o">.</span><span class="na">databinding</span><span class="o">.</span><span class="na">Observable</span> <span class="n">sender</span><span class="o">,</span> <span class="kt">int</span> <span class="n">propertyId</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="n">adapter</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>                <span class="n">adapter</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>        <span class="o">});</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// バインド時に値を更新</span>
+</span><span class='line'>        <span class="n">adapter</span><span class="o">.</span><span class="na">clear</span><span class="o">();</span>
+</span><span class='line'>        <span class="n">adapter</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">viewModel</span><span class="o">.</span><span class="na">formattedLaps</span><span class="o">.</span><span class="na">get</span><span class="o">());</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="nd">@Override</span>
+</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>        <span class="n">_viewModel</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span>
+</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+</span><span class='line'>    <span class="o">}</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>オレオレBindingがごっそり消えてスッキリ。
+<code>setFormattedLaps</code> がカスタムSetterで、この中で <code>MainViewModel.formatterLaps</code> を監視し、値が変わったら Adapter を総入れ替えしてます。が、これが正しいやり方かわからない。
+<a href="https://android.googlesource.com/platform/frameworks/data-binding/+/android-6.0.0_r7/extensions/baseAdapters/src/main/java/android/databinding/adapters">extensions/baseAdapters/src/main/java/android/databinding/adapters</a> にはそれらしいのがないでござるよ。。。</p>
+
+<h2>ViewModel 側</h2>
+
+<p>この辺みてください。大したことはやってないです。（急に雑になったw）</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">StopWatchSample/MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/ObservableUtil.java">StopWatchSample/ObservableUtil.java</a></li>
+</ul>
+
+
+<p><code>ObservableUtil.toObservableField</code> とか、もうどっかの誰かがやってそうだし、事実上標準の何かが出てきそうな気がすごくします。</p>
+
+<h2>おまけ</h2>
+
+<h3>Messenger を RxJava ベースにした</h3>
+
+<ul>
+<li><a href="http://qiita.com/yyaammaa/items/57d8baa1e80346e67e47">OttoからRxJavaへの移行ガイド &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/kubode/items/a4ece37834446c9a39c8">Android &ndash; RxJavaでEventBusを作った &ndash; Qiita</a></li>
+</ul>
+
+
+<p>らしいので、自作してた <code>Messenger</code> を <a href="https://github.com/amay077/StopWatchSample/blob/android_data_binding_v1_20160128/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/frameworks/messengers/Messenger.java">RxJava ベースにしてみました</a>。
+ViewModel→Viewの通知
+にしか使ってないので、あまり <code>rx.Observable&lt;T&gt;</code> にする旨味はなかったですね。あ、<code>ofType</code> って便利ですね。</p>
+
+<h2>まとめ</h2>
+
+<p>今回作ったアプリの全ソースは</p>
+
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/android_data_binding_v1_20160128/StopWatchAppXamarin/StopWatchApp.Android">StopWatchApp.Android</a></li>
+</ul>
+
+
+<p>です。</p>
+
+<p>.NETアプリケーション開発では、ViewModel を View にバインドすることが殆どなので、典型的な例としてやってみました。</p>
+
+<p>レイアウトに直接バインドを定義できるので、コードビハインド(Javaのソース)はスッキリしますが、個人的にはあまり好きではありません。
+コードビハインドに(<code>textTime.SetBinding(v =&gt; v.Text, viewModel.Time)</code> みたく)書いた方が、定義情報がまとまっていて管理しやすい、デバッグしやすいと思うからです。（同じ理由で、xmlに直接記述する <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html#expression_language">Expression Language</a> も好きではありません。）
+が、今のところ、Android Data Binding では、レイアウトXMLでしかバインディングを定義できないようですね。</p>
+
+<p>ともあれ、<a href="https://github.com/gueei/AndroidBinding">AndroidBinding</a> とか Butter Knife はこれで駆逐されていく（前者はすでに息してなさそうですが）と思うので、新しいアプリ開発では積極的に使っていこうかなと思います。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">Data Binding Guide | Android Developers</a></li>
+<li><a href="http://qiita.com/izumin5210/items/2784576d86ce6b9b51e6#after-listview">Android &ndash; Butter Knife、今までありがとう。 Data Binding、これからよろしく。 &ndash; Qiita</a></li>
+<li><a href="http://tech.recruit-mp.co.jp/mobile/android-data-binding/">[Android] – Data Bindingつかってみた – NET BIZ DIV. TECH BLOG</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Android-Java でリスト操作するなら IxJava が決定版だと思う]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/21/ixjava-the-best-library-of-list-operations/"/>
+    <updated>2016-01-21T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/21/ixjava-the-best-library-of-list-operations</id>
+    <content type="html"><![CDATA[<p>Android では Java8 が使えないため、 &lsquo;Yet another Stream API&rsquo; なライブラリがいくつかあります。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://qiita.com/tsumuchan/items/8e438a2ea653fa786c23">Androidでリスト操作するなら、Lightweight-Stream-APIが便利 &ndash; Qiita</a></li>
+<li><a href="http://qiita.com/k--kato/items/ec7ab8b392fa8bb0a732">JavaにC#のLINQを移植してみた &ndash; jLinqer &ndash; Qiita</a></li>
+<li><a href="http://stackoverflow.com/questions/1217228/what-is-the-java-equivalent-for-linq">What is the Java equivalent for LINQ? &ndash; Stack Overflow</a></li>
+</ul>
+
+
+<p>普段 C# を使っているため LINQ to Objects の便利さをなんとか Androidアプリ開発でも享受したい。
+そこで個人的に「これだ！」と思っているライブラリが IxJava です。</p>
+
+<ul>
+<li><a href="https://github.com/akarnokd/ixjava">akarnokd/ixjava: Interactive Extensions for Java</a></li>
+</ul>
+
+
+<h2>IxJava とは？</h2>
+
+<p>一言でいえば <em>「LINQ to Objects の Java版」</em> です。</p>
+
+<p>README より、</p>
+
+<blockquote><p>Interactive Extensions for Java, the dual of RxJava. Originally implemented in the Reactive4Java framework, now converted to work with RxJava.</p>
+
+<p>The aim is to provide pull-based datastream support with the same naming as in RxJava mainly for the pre-Java-8 world.</p></blockquote>
+
+<p>開発者の akarnokd 氏は、 RxJava の登場以前から <a href="https://code.google.com/p/reactive4java/">Reactive4Java</a> という「Java版Rx」を開発しており、これには大きく２つの機能が含まれていました。</p>
+
+<ul>
+<li><code>Reactive&lt;T&gt;</code> : Reactive Extension の Java実装</li>
+<li><code>Interactive&lt;T&gt;</code> : LINQ to Objects の Java実装</li>
+</ul>
+
+
+<p>そう、 akarnokd 氏は、Rx と共に LINQ も Java に移植していたのです。
+その後、彼は RxJava への参加を表明し、 reactive4java は開発終了となりましたが、RxJava には LINQ 相当の機能は含まれません。
+そこで彼は、 <code>Interactive&lt;T&gt;</code> だけを <em>IxJava</em> として切り離し、純粋な <em>「LINQ to Object for Java」</em> として開発続行したのです。</p>
+
+<p>akarnokd 氏は RxJava の <a href="https://github.com/ReactiveX/RxJava/graphs/contributors">Contributors</a> を見ると中心的な開発者であると思われます。そんな彼が開発した ixjava も安心できる品質ではないかと思います。（ちょっと ixjava の知名度が低いのが残念ですが。ただ reactive4java の <code>Interactive&lt;T&gt;</code> を使ってきましたが問題はありません。）</p>
+
+<h2>使い方（Android の場合）</h2>
+
+<h3>導入方法</h3>
+
+<p>Module の <code>build.gradle</code> に以下を追加するだけです。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">dependencies</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">compile</span> <span class="s">&quot;com.github.akarnokd:ixjava:0.90.0&quot;</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>使用例</h3>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302">LINQ to Objects と Java8-Stream API の対応表 &ndash; Qiita</a></li>
+</ul>
+
+
+<p>のサンプルコードの一部を IxJava で書いてみました。</p>
+
+<h4>抽出(filter)、並べ替え(orderBy)、射影(map)</h4>
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Ix</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">4</span><span class="o">,</span> <span class="mi">5</span><span class="o">,</span> <span class="mi">6</span><span class="o">,</span> <span class="mi">7</span><span class="o">,</span> <span class="mi">8</span><span class="o">,</span> <span class="mi">9</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="o">)</span> <span class="c1">// 可視性向上の為のなんちゃってラムダ</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">orderBy</span><span class="o">(</span><span class="n">x</span><span class="o">-&gt;</span> <span class="o">-</span><span class="n">x</span><span class="o">)</span>  <span class="c1">// OrderByDescending がないので</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">*</span> <span class="mi">10</span><span class="o">)</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">toList</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//出力</span>
+</span><span class='line'><span class="mi">80</span> <span class="mi">60</span> <span class="mi">40</span> <span class="mi">20</span> <span class="mi">0</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>平坦化して射影(flatMap)</h4>
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Ix</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">4</span><span class="o">,</span> <span class="mi">5</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">x</span> <span class="err">−</span><span class="o">&gt;</span> <span class="n">Ix</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="n">x</span> <span class="o">*</span> <span class="mi">10</span><span class="o">,</span> <span class="n">x</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">toList</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//出力</span>
+</span><span class='line'><span class="mi">10</span>
+</span><span class='line'><span class="mi">20</span> <span class="mi">21</span>
+</span><span class='line'><span class="mi">30</span> <span class="mi">31</span> <span class="mi">32</span>
+</span><span class='line'><span class="mi">40</span> <span class="mi">41</span> <span class="mi">42</span> <span class="mi">43</span>
+</span><span class='line'><span class="mi">50</span> <span class="mi">51</span> <span class="mi">52</span> <span class="mi">53</span> <span class="mi">54</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>2つの値を揃えて流す(zip)</h4>
+
+<p>Stream API には無いが IxJava にはあるのだよ。</p>
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="n">Ix</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">2</span><span class="o">,</span> <span class="mi">3</span><span class="o">,</span> <span class="mi">4</span><span class="o">,</span> <span class="mi">5</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">zip</span><span class="o">(</span><span class="n">Ix</span><span class="o">.</span><span class="na">from</span><span class="o">(</span><span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">&quot;hoge&quot;</span><span class="o">,</span> <span class="s">&quot;fuga&quot;</span><span class="o">,</span> <span class="s">&quot;piyo&quot;</span><span class="o">)),</span>
+</span><span class='line'>    <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">))</span>
+</span><span class='line'>  <span class="o">.</span><span class="na">toList</span><span class="o">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>ixjava</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="c1">//出力</span>
+</span><span class='line'><span class="o">{</span> <span class="n">first</span> <span class="o">=</span> <span class="mi">1</span><span class="o">,</span> <span class="n">second</span> <span class="o">=</span> <span class="n">hoge</span> <span class="o">}</span>
+</span><span class='line'><span class="o">{</span> <span class="n">first</span> <span class="o">=</span> <span class="mi">2</span><span class="o">,</span> <span class="n">second</span> <span class="o">=</span> <span class="n">fuga</span> <span class="o">}</span>
+</span><span class='line'><span class="o">{</span> <span class="n">first</span> <span class="o">=</span> <span class="mi">3</span><span class="o">,</span> <span class="n">second</span> <span class="o">=</span> <span class="n">piyo</span> <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>Ix<T> のメソッド一覧</h4>
+
+<p>あとはテキトーに抜き出したメソッド一覧を置いておきますね。
+RxJava や LINQ とほとんど同じなのでだいたい想像付くと思います。
+（何気に <code>toObservable</code> で <code>Observable&lt;T&gt;</code> にも変換できますね。）
+あ、あとタイトルには Androidの〜 と書きましたが、普通の Java でもフツーに使えますので。</p>
+
+<ul>
+<li>aggregate</li>
+<li>all</li>
+<li>any</li>
+<li>argAndMax</li>
+<li>argAndMin</li>
+<li>averageBigDecimal</li>
+<li>averageBigInteger</li>
+<li>averageDouble</li>
+<li>averageFloat</li>
+<li>averageInt</li>
+<li>averageLong</li>
+<li>buffer</li>
+<li>call</li>
+<li>concat</li>
+<li>concatWith</li>
+<li>concatWithAll</li>
+<li>contains</li>
+<li>count</li>
+<li>countLong</li>
+<li>defer</li>
+<li>dematerialize</li>
+<li>distinct</li>
+<li>distinctNext</li>
+<li>doOnCompleted</li>
+<li>doOnNext</li>
+<li>doWhile</li>
+<li>empty</li>
+<li>endWith</li>
+<li>error</li>
+<li>filter</li>
+<li>filterIndexed</li>
+<li>first</li>
+<li>flatMap</li>
+<li>forEach</li>
+<li>from</li>
+<li>fromPart</li>
+<li>generate</li>
+<li>groupBy</li>
+<li>into</li>
+<li>isEmpty</li>
+<li>iterator</li>
+<li>join</li>
+<li>just</li>
+<li>last</li>
+<li>map</li>
+<li>mapIndexed</li>
+<li>materialize</li>
+<li>max</li>
+<li>maxBy</li>
+<li>mayBy</li>
+<li>memoize</li>
+<li>memoizeAll</li>
+<li>min</li>
+<li>minBy</li>
+<li>minxBy</li>
+<li>newBuilder</li>
+<li>ofType</li>
+<li>orderBy</li>
+<li>print</li>
+<li>println</li>
+<li>prune</li>
+<li>publish</li>
+<li>range</li>
+<li>removeAll</li>
+<li>repeat</li>
+<li>replay</li>
+<li>run</li>
+<li>scan</li>
+<li>share</li>
+<li>skipLast</li>
+<li>startWith</li>
+<li>subsequent</li>
+<li>sumBigDecimal</li>
+<li>sumBigInteger</li>
+<li>sumDouble</li>
+<li>sumFloat</li>
+<li>sumInt</li>
+<li>sumIntAsDouble</li>
+<li>sumLong</li>
+<li>sumLongAsDouble</li>
+<li>take</li>
+<li>takeLast</li>
+<li>toArray</li>
+<li>toBuilder</li>
+<li>toHashMap</li>
+<li>toHashMultimap</li>
+<li>toList</li>
+<li>toMap</li>
+<li>toMultimap</li>
+<li>toObservable</li>
+<li>zip</li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Task→Observable 変換でハマったこと]]></title>
+    <link href="http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion/"/>
+    <updated>2016-01-16T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion</id>
+    <content type="html"><![CDATA[<p>.NET の <code>Task&lt;T&gt;</code> は、Reactive Extensions が提供する拡張メソッド <code>ToObservable()</code> で <code>IObservable&lt;T&gt;</code> に変換できます。</p>
+
+<p>なにも考えずに <code>ToObservable()</code> を連発していたら、盛大にハマったのでメモ。</p>
+
+<!--more-->
+
+
+<h2>Task.Run().ToObservable() とか、意味ないっしょ</h2>
+
+<p>ダメなコード。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span> <span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
+</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="p">})</span>
+</span><span class='line'><span class="p">.</span><span class="n">ToObservable</span> <span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Ready...&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span>
+</span><span class='line'>      <span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnNext({x})&quot;</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnError({ex.ToString()})&quot;</span><span class="p">),</span>
+</span><span class='line'>      <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;OnCompleted&quot;</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code>IObservable&lt;int&gt;</code> です。
+　これを <code>.Repeat(3)</code> して <code>.Subscribe</code> してますから、
+　</p>
+
+<blockquote><p>Ready&hellip;
+increment! &ndash; 1
+OnNext(1)
+increment! &ndash; 2
+OnNext(2)
+increment! &ndash; 3
+OnNext(3)
+OnCompleted</p></blockquote>
+
+<p>という出力を期待してました。
+が、実際の出力はこう。</p>
+
+<blockquote><p>increment! &ndash; 1
+Ready&hellip;
+OnNext(1)
+OnNext(1)
+OnNext(1)
+OnCompleted</p></blockquote>
+
+<p>Subscribe する前に Task が実行されてるし、 repeat してるのに increment されない。。。</p>
+
+<p>「・・・ん？ Task.Run().ToObservable() って、タスクを実行した結果を IObservable 化してるだけじゃね？」</p>
+
+<p>コード見たまんまなんですが、これに気づくのに１時間かかりました。。。</p>
+
+<p>期待通り動くのはこう↓。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromAsync</span><span class="p">(()=&gt;</span><span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
+</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="p">}));</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Ready...&quot;</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
+</span><span class='line'>  <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span>
+</span><span class='line'>      <span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnNext({x})&quot;</span><span class="p">),</span>
+</span><span class='line'>      <span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnError({ex.ToString()})&quot;</span><span class="p">),</span>
+</span><span class='line'>      <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;OnCompleted&quot;</span><span class="p">));</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。
+これの結果は正しくこう↓なりました。</p>
+
+<blockquote><p>Ready&hellip;
+increment! &ndash; 1
+OnNext(1)
+increment! &ndash; 2
+OnNext(2)
+increment! &ndash; 3
+OnNext(3)
+OnCompleted</p></blockquote>
+
+<h2>Task は１回しか実行できない</h2>
+
+<p>ところで、 <code>Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+</span><span class='line'><span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementTask</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
+</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
+</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">incrementTask</span><span class="p">.</span><span class="n">RunSynchronously</span><span class="p">();</span>
+</span><span class='line'><span class="n">incrementTask</span><span class="p">.</span><span class="n">RunSynchronously</span><span class="p">();</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このコードは２回目の <code>RunSynchronously()</code> で例外がでます。</p>
+
+<p>となると、 <code>incrementTask.ToObservable()</code> したとしても、期待通り動いてくれなさそうです。
+（そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
+
+<p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
@@ -3125,177 +4046,6 @@ iPhone6 が発表されてiOS開発でも多解像度対応が必須になるの
 <p>にあるように、「ViewControllerのアイコンをExitアイコンへControl+ドラッグ＆ドロップする」で、”Manual” Unwind Segue が作成できるのですが、Xamarin Studio では、それっぽい操作をしても反応がありません。</p>
 
 <p>当然ながら、Xcode で作成した Segue は Xamarin Studio でも使えるので、Manual Unwind Segue の作成と Identifier の付与は Xcode で行って、Xamarin側で <code>PerformSegue</code> を呼び出せばいいと思います。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android が使用する debug.keystore の在処]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use/"/>
-    <updated>2014-08-28T17:42:04+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/28/place-of-debug-keystore-that-xamarin-to-use</id>
-    <content type="html"><![CDATA[<p>Google Maps などを使用する時、開発中ならば <code>debug.keystore</code> のフィンガープリント(SHA1)を取得する必要がありますが、 debug.keystore がどこにあるのか分からなくてハマった。</p>
-
-<!--more-->
-
-
-<h2>結論</h2>
-
-<p>から書いておくと</p>
-
-<ul>
-<li><a href="http://developer.xamarin.com/guides/android/platform_features/maps_and_location/maps/obtaining_a_google_maps_api_key/">Obtaining a Google Maps API Key | Xamarin</a></li>
-</ul>
-
-
-<p>に書いてある通りで、</p>
-
-<ul>
-<li>Windows &ndash; <code>C:¥Users¥[USERNAME]¥AppData¥Local¥Xamarin¥Mono for Android¥debug.keystore</code></li>
-<li>OSX &ndash; <code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code></li>
-</ul>
-
-
-<p>がそれぞれ使われる。</p>
-
-<h2>なぜハマったか？</h2>
-
-<h3>Eclipse と同じだと思ってた</h3>
-
-<p>Java での Android 開発時に設定したディレクトリを使ってくれると思い込んでた。けどよく考えればあれは Android SDK ではなく Eclipse 固有の設定だったのよね。</p>
-
-<h3>ドキュメントが古いと思ってた</h3>
-
-<p>上記で紹介した「Obtaining a Google Maps…」の記事が古いと思ってた。なぜならディレクトリ名に <code>Mono for Android</code> が含まれていて、これは Xamarin.Android の旧製品名だったから。</p>
-
-<h3>Spotlight検索でヒットしなかった</h3>
-
-<p>Mac を使っているのだけど、Spotlight検索（所謂PC内検索）で <code>debug.keystore</code> がヒットしたのがいつもJava-Android開発で使ってる１つだけだったので、.local の中にあるとは気付けず。。。隠しディレクトリだからヒットしないよね。</p>
-
-<p>こんなことでハマるのは自分くらいだろうけど、メモしときます。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Git でリモートリポジトリの更新が反映されないとき]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/19/git-refresh-remote-branches/"/>
-    <updated>2014-08-19T23:52:21+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/19/git-refresh-remote-branches</id>
-    <content type="html"><![CDATA[<p>GitHub のWebサイトでブランチを削除したあと、クライアント（SourceTreeとか）のリモートブランチの表示に、削除したはずのブランチが残っていて、気持ち悪いなあ、と思っていた。</p>
-
-<!--more-->
-
-
-<p>git のコマンド一発だった。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='sh'><span class='line'>git remote update -p
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>これでクライアント側のリモート情報がリフレッシュされる。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Google Cardboard を作ってきました]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/16/make-google-cardboard/"/>
-    <updated>2014-08-16T23:42:38+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/16/make-google-cardboard</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://connpass.com/event/7735/">日本Androidの会浜松支部 第40回ミーティング #jaghama &ndash; connpass</a></li>
-</ul>
-
-
-<p>で Google Cardboard のクローンを作りました。</p>
-
-<!--more-->
-
-
-<p>段ボールやレンズ、磁石などの材料は主催の方が用意してくださった( <a href="https://twitter.com/macha1972">@macha1972</a> さんありがとうございます )ので、カッターとガムテープと筆記具くらいを持参するだけですみました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-01.jpg" alt="" /></p>
-
-<p><a href="https://developers.google.com/cardboard/">公式サイト</a> からダウンロードできる型紙を印刷して、段ボールに貼り付け、段ボールを切っていきます。</p>
-
-<p>段ボールが意外と厚くて切るのに苦労しました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-02.jpg" alt="" /></p>
-
-<p>ここまでくるのに約3時間…（-_&ndash;;）
-早い人は2時間くらいで終わってたかな・・・。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-03.jpg" alt="" /></p>
-
-<p>切っちゃえば組み立ては簡単(先駆者さんに聞きながらできたからw)
-「バター風味」がいい感じに露出しているのは偶然だw</p>
-
-<p>使用した端末は公式に対応しているとされる Galaxy Nexus だったので稼働に特に問題はありません(磁石のスイッチが反応しづらいかなという程度)でしたが、端末の磁場センサーの位置によっては、スイッチの位置を反対側に移動させる必要があるみたいです。(Xperia の人はそうしてました)</p>
-
-<p>さっそく <a href="https://play.google.com/store/apps/details?id=com.google.samples.apps.cardboarddemo&amp;hl=ja">Cardboardアプリ</a> で体験…これはスゴイ！
-以前に Ocufes豊橋 で Oculas Lift は体験済みだったのですが、それに匹敵する没入感です。</p>
-
-<ul>
-<li><a href="https://play.google.com/store/apps/details?id=com.divegames.divecitycoaster&amp;hl=ja">Dive City Rollercoaster</a> というアプリが面白いですね。</li>
-</ul>
-
-
-<p>帰宅後、さっそく子供らも体験、しばらくの間ハマってました。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make-google-cardboard-04.jpg" alt="" /></p>
-
-<p>子供の夏休みの自由工作にでもできるかなーと思いますが、大人で3時間かかるのは結構つらいかも。</p>
-
-<p>カッターで段ボールを切るのに力入れすぎて指にマメできたし…。</p>
-
-<p>ワークショップ中のその他の写真は</p>
-
-<ul>
-<li><a href="https://www.facebook.com/media/set/?set=o.282944361773276&amp;type=3">日本Androidの会 浜松支部の写真・動画 &ndash; Facebookグループ</a></li>
-</ul>
-
-
-<p>からどうぞ。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[「Skitch PNG」とはなにか？]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/07/what-is-skitch-png/"/>
-    <updated>2014-08-07T23:42:38+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/07/what-is-skitch-png</id>
-    <content type="html"><![CDATA[<p>画像に文字や図形を描くとき多用している Skitch ですが、ファイルのエクスポートに「Skitch PNG」という謎のファイル形式があるのを発見。</p>
-
-<!--more-->
-
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/skitch_png_01.png" alt="" /></p>
-
-<p>調べてみると、</p>
-
-<ul>
-<li><a href="http://www.addictivetips.com/mac-os/skitch-updated-with-a-special-format-that-keeps-annotations-editable/">Skitch For Mac Updated With A Format That Keeps Annotations Editable</a></li>
-</ul>
-
-
-<blockquote><p>Skitch PNG is a new format for saving pictures that you’ve annotated in Skitch. These are almost like regular PNGs, except that you can open them in Skitch later on and edit the previous annotations.</p></blockquote>
-
-<p>な、なんだってー！PNG なのに <strong>「アノテーションが再編集可能」</strong> だってー！！</p>
-
-<h2>試しに</h2>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/skitch_png_02.png" alt="" /></p>
-
-<p><a href="http://www.gatag.net/10/16/2009/110000.html">photo by Nesster, CC-BY</a></p>
-
-<p>上の画像、「Skitch PNG」で保存したものですが、Skitch で開き直すと、下図のように文字や矢印が再編集できます。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/skitch_png_03.png" alt="" /></p>
-
-<p>これからはこれをデフォで使っていこうと思います。
-ちなみに「モザイク」は復元できないみたいです。うむ安全設計。</p>
-
-<iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?lt1=_blank&bc1=000000&IS2=1&bg1=FFFFFF&fc1=000000&lc1=0000FF&t=oku2008-22&o=9&p=8&l=as4&m=amazon&f=ifr&ref=ss_til&asins=4774156019" style="width:120px;height:240px;" scrolling="no" marginwidth="0" marginheight="0" frameborder="0"></iframe>
-
 ]]></content>
   </entry>
   
