@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rxjava | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/rxjava/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-05T01:34:02+09:00</updated>
+  <updated>2016-02-08T01:23:54+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,203 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava で Observable の並列処理を直列化する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/08/serialize-operation-in-rxjava/"/>
+    <updated>2016-02-08T01:16:02+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/08/serialize-operation-in-rxjava</id>
+    <content type="html"><![CDATA[<p><code>rx.Observable&lt;T&gt;</code> のオペレータは、通常は非同期で、並列に処理されます。</p>
+
+<!--more-->
+
+
+<p>例えば以下のような場合:</p>
+
+<p>```java
+public void start() {</p>
+
+<pre><code>Observable.range(1, 5)
+    .flatMap(x -&gt; fatTask(x))
+    .subscribe(x -&gt; Log.d(TAG, "onNext - " + x));
+</code></pre>
+
+<p>}</p>
+
+<p>private final Random rand = new Random();
+private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(5);</p>
+
+<p>// ランダムにスリープした後 x を onNext する
+private Observable<Integer> fatTask(final int x) {</p>
+
+<pre><code>return Observable.create(subscriber -&gt; {
+    long sleep = (long) (rand.nextDouble() * 10000L);
+    Log.d(TAG, "fatTask(" + x + ") - start.");
+
+    executor.schedule(() -&gt; {
+        subscriber.onNext(x);
+        subscriber.onCompleted();
+    }, sleep, TimeUnit.MILLISECONDS);
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力:<br/>
+fatTask(1) &ndash; start.<br/>
+fatTask(2) &ndash; start.<br/>
+fatTask(3) &ndash; start.<br/>
+fatTask(4) &ndash; start.<br/>
+fatTask(5) &ndash; start.<br/>
+onNext &ndash; 3<br/>
+onNext &ndash; 5<br/>
+onNext &ndash; 4<br/>
+onNext &ndash; 2<br/>
+onNext &ndash; 1<br/></p></blockquote>
+
+<p>fatTask は 1,2,3,4,5 の順で <em>完了を待たずに</em> 呼びだされます。
+が、それぞれ処理にかかる時間が異なるので、 <code>onNext</code> が呼ばれる順は 1〜 とは限りません。</p>
+
+<p>ソースとなる Stream の順番を崩したくない場合は、 <code>fatTask(1)</code> が完了してから <code>fatTask(2)</code> を開始する、というように直列化しなければなりません。</p>
+
+<h2>Observable.Concat(concatWith)</h2>
+
+<p>これを行うのが <code>Observable.Concat</code> です(RxJava では <code>Observable.concatWith</code> のようですね)。
+複数の <code>Observable</code> を順に（完了してから次へ）処理していきます。</p>
+
+<h3>使い方</h3>
+
+<p><code>toList</code> で一旦ただの <code>List</code> にしてから、<code>concatWith</code> で数珠つなぎにします。</p>
+
+<p>```java
+public void start() {</p>
+
+<pre><code>Observable.range(1, 5)
+    .toList()
+    .flatMap(list -&gt; {
+        // fatTask(1).contat(fatTask(2)).contat(fatTask(3))... 
+        // にする（fold 使えれば…)
+        Observable&lt;Integer&gt; task = null;
+        for (int x : list) {
+            if (task == null) {
+                task = fatTask(x);
+            } else {
+                task = task.concatWith(fatTask(x));
+            }
+        }
+        return task;
+    })
+    .subscribe(x -&gt; Log.d(TAG, "onNext - " + x));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力<br/>
+fatTask(1) &ndash; start.<br/>
+onNext &ndash; 1<br/>
+fatTask(2) &ndash; start.<br/>
+onNext &ndash; 2<br/>
+fatTask(3) &ndash; start.<br/>
+onNext &ndash; 3<br/>
+fatTask(4) &ndash; start.<br/>
+onNext &ndash; 4<br/>
+fatTask(5) &ndash; start.<br/>
+onNext &ndash; 5<br/></p></blockquote>
+
+<p><code>fatTask(1)</code> の完了を待ってから、次の <code>fatTask(2)</code> が実行されています。</p>
+
+<p>※
+Rx.NET では、</p>
+
+<p><code>csharp
+static IObservable&lt;T&gt; Concat&lt;T&gt;(IEnumerable&lt;IObservable&lt;T&gt;&gt; sources)
+</code></p>
+
+<p>で、複数の <code>IObservable</code> を一括で渡せるのですが、 RxJava にはないようで、、、。</p>
+
+<p><code>java
+static &lt;T&gt; Observable&lt;T&gt; concatEager(Iterable&lt;? extends Observable&lt;? extends T&gt;&gt; sources)
+</code></p>
+
+<p>というのがあったんですが、期待通りうごいてくれず、 Eager? なんでしょう？</p>
+
+<h2>ソースが無限リストだったら？</h2>
+
+<p><code>toList</code> で一旦ただの List にしているのが非常に気に入らないですね。
+<code>range(1, 5)</code> が <code>interval(1, TimeUnit.SECONDS)</code> のように無限の Stream だったら使えません。</p>
+
+<p>そこで、 <code>concat</code> には、こんな overload もあります。</p>
+
+<p><code>java
+static &lt;T&gt; Observable&lt;T&gt; concat(Observable&lt;? extends Observable&lt;? extends T&gt;&gt; observables)
+</code></p>
+
+<p>Observable<T> を通知する Observable？ ややこしいですがこう使います。</p>
+
+<p>```java
+public void start() {</p>
+
+<pre><code>// 2. を concat する
+Observable.concat( 
+    // 1. Observable&lt;Long&gt;
+    Observable.interval(1, TimeUnit.SECONDS) 
+        // 2. Long を Observable&lt;Integer&gt; に変換 
+        //    → Observable&lt;Observable&lt;Integer&gt;&gt; になる
+        .map(x -&gt; fatTask(x.intValue()))) 
+    .subscribe(x -&gt; Log.d(TAG, "onNext - " + x));
+</code></pre>
+
+<p>}
+```</p>
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力<br/>
+fatTask(0) &ndash; start.<br/>
+onNext &ndash; 0<br/>
+fatTask(1) &ndash; start.<br/>
+onNext &ndash; 1<br/>
+fatTask(2) &ndash; start.<br/>
+onNext &ndash; 2<br/>
+…つづく<br/></p></blockquote>
+
+<p>無限リストながら、並列処理せずに順序通り動いてくれます。</p>
+
+<p><code>interval</code> の値を単純に <code>map</code> で <code>Observable&lt;Integer&gt;</code> に変換してやります。するとこれは <code>Observable&lt;Observable&lt;Integer&gt;&gt;</code> になり、<code>concat</code> 可能になります。 <code>flatMap</code> だと平坦化されちゃうのでただの <code>map</code> です。</p>
+
+<h2>まとめ</h2>
+
+<p>Observable は普通は非同期で並列処理。
+非同期ながら直列化したい場合は <code>Observable.concat</code> でできます。</p>
+
+<ol>
+<li>GPS から緯度経度を取得</li>
+<li>なんか重い計算を行う</li>
+<li>結果をテキストファイルに書き出す</li>
+</ol>
+
+
+<p>みたいな処理をするとき 3. を 1. の順序と同じにしたいのでこれを使います。</p>
+
+<p>はじめ自分は <code>flatMap</code> で繋いでいくだけですべて直列化されているのかなーと勘違いしていたので、これを知った時は目からウロコでした。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.introtorx.com/content/v1.0.10621.0/12_CombiningSequences.html">Intro to Rx &ndash; Combining sequences</a></li>
+<li><a href="http://reactivex.io/documentation/operators/concat.html">ReactiveX &ndash; Concat operator</a></li>
+<li><a href="http://blog.okazuki.jp/entry/20120219/1329663635">Reactive Extensions再入門 その４１「どんどん合成するよ」 &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://twitter.com/neuecc/status/695604984763650050">https://twitter.com/neuecc/status/695604984763650050</a> &ndash; @neuecc さんありがとうございます！</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava の ImmediateScheduler と TrampolineScheduler の違い]]></title>
@@ -1129,131 +1326,6 @@ refCount により購読者の有無に連動したデータ放流の自動制�
 <li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RxAndroid でスクリーンセーバー的な機能を作る]]></title>
-    <link href="http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid/"/>
-    <updated>2014-12-09T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/12/09/making-like-screensaver-using-rxandroid</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/android">Android Advent Calendar 2014 8日目</a> の記事です。</p>
-
-<p>　例えば◯秒間操作がなかったらパスキーロック画面を表示する、とかそういうの。普通に作るとタイマーを使って面倒な感じになっちゃいますが、<a href="https://github.com/ReactiveX/RxJava">RxJava</a> と <a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a> を使うととても簡単にできます。</p>
-
-<!--more-->
-
-
-<h2>RxJava + RxAnroid の場合</h2>
-
-<p>　例えば、画面に <code>EditBox</code> と <code>Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
-
-<p>```java MyActivity.java
-public class MyActivity extends Activity {</p>
-
-<pre><code>private static final String TAG = "MyActivity";
-private Subscription _subscription;
-
-@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_my);
-
-    final EditText editName = (EditText)findViewById(R.id.editName);
-    final View buttonOk = findViewById(R.id.buttonOk);
-
-    // OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換
-    final Func1&lt;Object, Void&gt; signalizer = new Func1&lt;Object, Void&gt;() {
-        @Override
-        public Void call(Object onClickEvent) {
-            return null;
-        }
-    };
-
-    // 文字入力イベントのストリームと…
-    _subscription = ViewObservable.text(editName).map(signalizer)
-            // ボタン押されたのストリームを合体
-            .mergeWith(ViewObservable.clicks(buttonOk).map(signalizer))
-            // 3秒間なんもなかったらエラーにする
-            .timeout(3, TimeUnit.SECONDS)
-            .subscribe(new Action1&lt;Void&gt;() {
-                @Override
-                public void call(Void dummy) {
-                    // 何かアクションがあったらこっち
-                    Log.d(TAG, "文字が入力されたか、ボタンが押されたよ");
-                }
-            }, new Action1&lt;Throwable&gt;() {
-                @Override
-                public void call(Throwable throwable) {
-                    // 3秒間何もなかったらこっち
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MyActivity.this, 
-                                "３秒間何も操作がありませんでした", Toast.LENGTH_SHORT)
-                                .show();
-                        }
-                    });
-                }
-            });
-}
-
-@Override
-protected void onDestroy() {
-    // イベント系は無限ストリームだから開放してやらないとリークするはず
-    _subscription.unsubscribe();
-    super.onDestroy();
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>　<code>ViewObservable.text(editName)</code> がテキストが入力される度にシグナルを発するストリーム、<code>ViewObservable.clicks(buttonOk)</code>がボタンが押される度にシグナルを発するストリームです。これらを <a href="http://rxmarbles.com/#merge"><code>mergeWith</code></a> で合体させます。</p>
-
-<p>　あとは <a href="https://github.com/ReactiveX/RxJava/wiki/Filtering-Observables#timeout"><code>timeout</code></a> につなげるだけ。３秒以内にシグナルがあったら onNext→<code>new Action&lt;Void&gt;()</code>のとこ、3秒以上何も操作がなかったらタイムアウトして onError→<code>new Action&lt;Throwable&gt;()</code> のとこに飛びます。あとはご自由に、ここでは <code>Toast</code> を表示してるだけです。</p>
-
-<p>　注意点は、イベントから生成されたストリームは無限、つまり <code>onComplete</code> は来ない。こういう <code>Observable</code> は自力での購読解除（<code>unsubscribe</code>）が必須です。</p>
-
-<p>これを動かすとこんな感じになります</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/make_screensaver_using_rxjava_01.gif" alt="" /></p>
-
-<h2>Xamarin.Android + Rx本家の場合</h2>
-
-<p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;RxJavaSample&rdquo;, MainLauncher = true, Icon = &ldquo;@drawable/icon&rdquo;)]
-public class MainActivity : Activity
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle bundle)
-{
-    base.OnCreate(bundle);
-
-    // Set our view from the "main" layout resource
-    SetContentView(Resource.Layout.Main);
-
-    var editName = FindViewById&lt;EditText&gt;(Resource.Id.editName);
-    var buttonOk = FindViewById&lt;Button&gt;(Resource.Id.buttonOk);
-
-    Observable.FromEventPattern&lt;TextChangedEventArgs&gt;(editName, "TextChanged").Select(_=&gt;true)
-        .Merge(Observable.FromEventPattern(buttonOk, "Click").Select(_=&gt;true))
-        .Timeout(TimeSpan.FromSeconds(3))
-        .Subscribe(_ =&gt; {} , 
-        e =&gt; RunOnUiThread(() =&gt; Toast.MakeText(this, 
-            "３秒間何も操作がありませんでした", ToastLength.Short).Show()));
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<h2>まとめ</h2>
-
-<p>　Reactive Extensions を使うと、UIイベントをストリームに変換でき、合成・加工・フィルタなどして様々な応用ができます。しかしこれは Rx のパワーのまだ半分。もう半分は、WebAPI とか DB とか、Model 由来のレスポンスもストリーム化できること。どちらも Observable にしたら、あとはそれをつなぐだけでアプリ完成！
-　さあみんなで Rx にロックインされましょう！</p>
 ]]></content>
   </entry>
   

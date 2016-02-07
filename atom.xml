@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-05T01:34:02+09:00</updated>
+  <updated>2016-02-08T01:23:54+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,245 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava で Observable の並列処理を直列化する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/08/serialize-operation-in-rxjava/"/>
+    <updated>2016-02-08T01:16:02+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/08/serialize-operation-in-rxjava</id>
+    <content type="html"><![CDATA[<p><code>rx.Observable&lt;T&gt;</code> のオペレータは、通常は非同期で、並列に処理されます。</p>
+
+<!--more-->
+
+
+<p>例えば以下のような場合:</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">start</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">5</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">fatTask</span><span class="o">(</span><span class="n">x</span><span class="o">))</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="kd">private</span> <span class="kd">final</span> <span class="n">Random</span> <span class="n">rand</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+</span><span class='line'><span class="kd">private</span> <span class="kd">final</span> <span class="n">ScheduledExecutorService</span> <span class="n">executor</span> <span class="o">=</span> <span class="n">Executors</span><span class="o">.</span><span class="na">newScheduledThreadPool</span><span class="o">(</span><span class="mi">5</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// ランダムにスリープした後 x を onNext する</span>
+</span><span class='line'><span class="kd">private</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="nf">fatTask</span><span class="o">(</span><span class="kd">final</span> <span class="kt">int</span> <span class="n">x</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">create</span><span class="o">(</span><span class="n">subscriber</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>        <span class="kt">long</span> <span class="n">sleep</span> <span class="o">=</span> <span class="o">(</span><span class="kt">long</span><span class="o">)</span> <span class="o">(</span><span class="n">rand</span><span class="o">.</span><span class="na">nextDouble</span><span class="o">()</span> <span class="o">*</span> <span class="mi">10000L</span><span class="o">);</span>
+</span><span class='line'>        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;fatTask(&quot;</span> <span class="o">+</span> <span class="n">x</span> <span class="o">+</span> <span class="s">&quot;) - start.&quot;</span><span class="o">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">executor</span><span class="o">.</span><span class="na">schedule</span><span class="o">(()</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>            <span class="n">subscriber</span><span class="o">.</span><span class="na">onNext</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>
+</span><span class='line'>            <span class="n">subscriber</span><span class="o">.</span><span class="na">onCompleted</span><span class="o">();</span>
+</span><span class='line'>        <span class="o">},</span> <span class="n">sleep</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">);</span>
+</span><span class='line'>    <span class="o">});</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力:<br/>
+fatTask(1) &ndash; start.<br/>
+fatTask(2) &ndash; start.<br/>
+fatTask(3) &ndash; start.<br/>
+fatTask(4) &ndash; start.<br/>
+fatTask(5) &ndash; start.<br/>
+onNext &ndash; 3<br/>
+onNext &ndash; 5<br/>
+onNext &ndash; 4<br/>
+onNext &ndash; 2<br/>
+onNext &ndash; 1<br/></p></blockquote>
+
+<p>fatTask は 1,2,3,4,5 の順で <em>完了を待たずに</em> 呼びだされます。
+が、それぞれ処理にかかる時間が異なるので、 <code>onNext</code> が呼ばれる順は 1〜 とは限りません。</p>
+
+<p>ソースとなる Stream の順番を崩したくない場合は、 <code>fatTask(1)</code> が完了してから <code>fatTask(2)</code> を開始する、というように直列化しなければなりません。</p>
+
+<h2>Observable.Concat(concatWith)</h2>
+
+<p>これを行うのが <code>Observable.Concat</code> です(RxJava では <code>Observable.concatWith</code> のようですね)。
+複数の <code>Observable</code> を順に（完了してから次へ）処理していきます。</p>
+
+<h3>使い方</h3>
+
+<p><code>toList</code> で一旦ただの <code>List</code> にしてから、<code>concatWith</code> で数珠つなぎにします。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">start</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">5</span><span class="o">)</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">toList</span><span class="o">()</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">list</span> <span class="o">-&gt;</span> <span class="o">{</span>
+</span><span class='line'>            <span class="c1">// fatTask(1).contat(fatTask(2)).contat(fatTask(3))... </span>
+</span><span class='line'>            <span class="c1">// にする（fold 使えれば…)</span>
+</span><span class='line'>            <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">task</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+</span><span class='line'>            <span class="k">for</span> <span class="o">(</span><span class="kt">int</span> <span class="n">x</span> <span class="o">:</span> <span class="n">list</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                <span class="k">if</span> <span class="o">(</span><span class="n">task</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">task</span> <span class="o">=</span> <span class="n">fatTask</span><span class="o">(</span><span class="n">x</span><span class="o">);</span>
+</span><span class='line'>                <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+</span><span class='line'>                    <span class="n">task</span> <span class="o">=</span> <span class="n">task</span><span class="o">.</span><span class="na">concatWith</span><span class="o">(</span><span class="n">fatTask</span><span class="o">(</span><span class="n">x</span><span class="o">));</span>
+</span><span class='line'>                <span class="o">}</span>
+</span><span class='line'>            <span class="o">}</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">task</span><span class="o">;</span>
+</span><span class='line'>        <span class="o">})</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力<br/>
+fatTask(1) &ndash; start.<br/>
+onNext &ndash; 1<br/>
+fatTask(2) &ndash; start.<br/>
+onNext &ndash; 2<br/>
+fatTask(3) &ndash; start.<br/>
+onNext &ndash; 3<br/>
+fatTask(4) &ndash; start.<br/>
+onNext &ndash; 4<br/>
+fatTask(5) &ndash; start.<br/>
+onNext &ndash; 5<br/></p></blockquote>
+
+<p><code>fatTask(1)</code> の完了を待ってから、次の <code>fatTask(2)</code> が実行されています。</p>
+
+<p>※
+Rx.NET では、</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">Concat</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">IEnumerable</span><span class="p">&lt;</span><span class="n">IObservable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;&gt;</span> <span class="n">sources</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>で、複数の <code>IObservable</code> を一括で渡せるのですが、 RxJava にはないようで、、、。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">concatEager</span><span class="o">(</span><span class="n">Iterable</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Observable</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">sources</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p></p>
+
+<p>というのがあったんですが、期待通りうごいてくれず、 Eager? なんでしょう？</p>
+
+<h2>ソースが無限リストだったら？</h2>
+
+<p><code>toList</code> で一旦ただの List にしているのが非常に気に入らないですね。
+<code>range(1, 5)</code> が <code>interval(1, TimeUnit.SECONDS)</code> のように無限の Stream だったら使えません。</p>
+
+<p>そこで、 <code>concat</code> には、こんな overload もあります。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">static</span> <span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">concat</span><span class="o">(</span><span class="n">Observable</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Observable</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">T</span><span class="o">&gt;&gt;</span> <span class="n">observables</span><span class="o">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Observable<T> を通知する Observable？ ややこしいですがこう使います。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kt">void</span> <span class="nf">start</span><span class="o">()</span> <span class="o">{</span>
+</span><span class='line'>    <span class="c1">// 2. を concat する</span>
+</span><span class='line'>    <span class="n">Observable</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
+</span><span class='line'>        <span class="c1">// 1. Observable&lt;Long&gt;</span>
+</span><span class='line'>        <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+</span><span class='line'>            <span class="c1">// 2. Long を Observable&lt;Integer&gt; に変換 </span>
+</span><span class='line'>            <span class="c1">//    → Observable&lt;Observable&lt;Integer&gt;&gt; になる</span>
+</span><span class='line'>            <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">fatTask</span><span class="o">(</span><span class="n">x</span><span class="o">.</span><span class="na">intValue</span><span class="o">())))</span>
+</span><span class='line'>        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onNext - &quot;</span> <span class="o">+</span> <span class="n">x</span><span class="o">));</span>
+</span><span class='line'><span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>このプログラムの出力はこうなります。</p>
+
+<blockquote><p>出力<br/>
+fatTask(0) &ndash; start.<br/>
+onNext &ndash; 0<br/>
+fatTask(1) &ndash; start.<br/>
+onNext &ndash; 1<br/>
+fatTask(2) &ndash; start.<br/>
+onNext &ndash; 2<br/>
+…つづく<br/></p></blockquote>
+
+<p>無限リストながら、並列処理せずに順序通り動いてくれます。</p>
+
+<p><code>interval</code> の値を単純に <code>map</code> で <code>Observable&lt;Integer&gt;</code> に変換してやります。するとこれは <code>Observable&lt;Observable&lt;Integer&gt;&gt;</code> になり、<code>concat</code> 可能になります。 <code>flatMap</code> だと平坦化されちゃうのでただの <code>map</code> です。</p>
+
+<h2>まとめ</h2>
+
+<p>Observable は普通は非同期で並列処理。
+非同期ながら直列化したい場合は <code>Observable.concat</code> でできます。</p>
+
+<ol>
+<li>GPS から緯度経度を取得</li>
+<li>なんか重い計算を行う</li>
+<li>結果をテキストファイルに書き出す</li>
+</ol>
+
+
+<p>みたいな処理をするとき 3. を 1. の順序と同じにしたいのでこれを使います。</p>
+
+<p>はじめ自分は <code>flatMap</code> で繋いでいくだけですべて直列化されているのかなーと勘違いしていたので、これを知った時は目からウロコでした。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="http://www.introtorx.com/content/v1.0.10621.0/12_CombiningSequences.html">Intro to Rx &ndash; Combining sequences</a></li>
+<li><a href="http://reactivex.io/documentation/operators/concat.html">ReactiveX &ndash; Concat operator</a></li>
+<li><a href="http://blog.okazuki.jp/entry/20120219/1329663635">Reactive Extensions再入門 その４１「どんどん合成するよ」 &ndash; かずきのBlog@hatena</a></li>
+<li><a href="https://twitter.com/neuecc/status/695604984763650050">https://twitter.com/neuecc/status/695604984763650050</a> &ndash; @neuecc さんありがとうございます！</li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava の ImmediateScheduler と TrampolineScheduler の違い]]></title>
@@ -4014,38 +4253,6 @@ iPhone6 が発表されてiOS開発でも多解像度対応が必須になるの
 <li><a href="https://groups.google.com/forum/#!topic/android-group-japan/D1EKohMIji0">BOOT_COMPLETEDが受信出来ない &ndash; Google グループ</a> SDカードにインストールされるとこのブロードキャストを受信できないそうです</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです]]></title>
-    <link href="http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue/"/>
-    <updated>2014-08-31T00:48:46+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/08/31/xamarin-ios-designer-does-not-support-manual-unwind-segue</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://www.buildinsider.net/mobile/xamarintips/0016">Xamarin.iOSでの画面遷移で「戻る」を実現するには？（Storyboard、Unwind Segue使用） &ndash; Build Insider</a></li>
-</ul>
-
-
-<p>に Unwind Segue について書きましたが、載せきれなかったことを補足します。</p>
-
-<!--more-->
-
-
-<p>上記Tipsでは、Unwind Segueを作るのに、ボタンとExitを結んでますが、<code>PerformSegue</code>で Unwind Segue を使いたい場合もありましょう。</p>
-
-<p><code>PerformsSegue</code>に渡す Identifier はどこで付与するの？とあちこち探しましたが、どうも現在の Xamarin Studio（のiOSデザイナ）はまだ対応していないようです。というか、そもそもコントロールから引っ張るタイプのUnwind Segueしか作れないみたいです。</p>
-
-<p>Xcode の Interface Builder では</p>
-
-<ul>
-<li><a href="https://developer.apple.com/library/ios/technotes/tn2298/_index.html#//apple_ref/doc/uid/DTS40013591-CH1-TNTAG2-ADDING_AN_UNWIND_SEGUE_TO_A_STORYBOARD">Technical Note TN2298: Using Unwind Segues</a></li>
-</ul>
-
-
-<p>にあるように、「ViewControllerのアイコンをExitアイコンへControl+ドラッグ＆ドロップする」で、”Manual” Unwind Segue が作成できるのですが、Xamarin Studio では、それっぽい操作をしても反応がありません。</p>
-
-<p>当然ながら、Xcode で作成した Segue は Xamarin Studio でも使えるので、Manual Unwind Segue の作成と Identifier の付与は Xcode で行って、Xamarin側で <code>PerformSegue</code> を呼び出せばいいと思います。</p>
 ]]></content>
   </entry>
   
