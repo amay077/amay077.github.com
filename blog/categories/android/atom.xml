@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-08T01:23:54+09:00</updated>
+  <updated>2016-02-24T00:24:54+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,220 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[DroidKaigi2016アプリを Xamarin.Android に移植した話]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/24/porting-droidkaigi2016app-to-xamarin-android/"/>
+    <updated>2016-02-24T00:19:01+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/24/porting-droidkaigi2016app-to-xamarin-android</id>
+    <content type="html"><![CDATA[<p>　DroidKaigi2016 の開催前、<a href="https://github.com/konifar/droidkaigi2016">公式アプリが有志によって開発中</a> とのツイート(だったかな？)を見て、ふとこれを「Xamarin.Android に移植してみよう」と思い、夜な夜なぼちぼちと始めました。</p>
+
+<!--more-->
+
+
+<p>　後付けですが、移植するにあたり調査したかったのは主に、</p>
+
+<ul>
+<li>Android-Java の OSSライブラリがどのくらい Xamarin.Android でも利用可能か？</li>
+<li>(勉強をサボっていた)Xamarin.Android での Material Design の適用方法</li>
+</ul>
+
+
+<p>です。</p>
+
+<h2>Xamarin.Android について(知らない人向け)</h2>
+
+<p>　Xamarin.Android は、Android API(Javaクラスライブラリを含む)の薄いラッパーで、クラス・メソッド名などは殆どそのままに、言語が Java から C# になったようなものです。
+　なので、 <code>activity_main.xml</code> などのリソースファイルもほぼそのまま転用可能です。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/3232064cc8880c809aee">Xamarin.Android で作った HelloWorld のソースを眺めてみる</a></li>
+</ul>
+
+
+<p>　尚、 Xamarin.Forms というワンソースで複数プラットフォームで動作するアプリを開発できるフレームワークとは別のものです。</p>
+
+<h2>Android プロジェクトの Xamarin.Android への移植方法</h2>
+
+<p>すごく大雑把に、以下のような手順で移植します。</p>
+
+<ol>
+<li>Androidプロジェクト(以下 Java と表記)の <code>/res</code> 以下を Xamarin.Androidプロジェクト(以下 Xamarin)配下にコピー</li>
+<li>Java のソースコード群を、 package構成を崩さずに Xamarin.Android で再構成（結局のところコードの書き直し）</li>
+<li>Java側で使われているOSSライブラリと同等のものを、nuget・Xamarin Components で探してXamarin側に追加（なければ <code>.jar</code> ファイルを入手して Xamarin で使えるように Binding Library を作成）</li>
+<li>あとはひたすら try and error and error and error&hellip;</li>
+</ol>
+
+
+<h2>Android Data Binding を、Xamarin ではどうしたか？</h2>
+
+<p>　DroidKaigi2016 のアプリには <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">DataBinding</a> が使われています。ただ、 <code>BaseObservable</code> や <code>ObservalbeField</code> によるガッツリとした OneWay/TwoWay のデータバインディングではなく、POJOなデータクラスを使う <a href="https://msdn.microsoft.com/ja-jp/library/system.windows.data.bindingmode(v=vs.110">OneTime</a>.aspx) なものしかなかったので、Xamarin への移植に際しては <a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> や、 <a href="https://github.com/MvvmCross/MvvmCross">MVVMCross</a> などのデータバインディング機能に頼る必要はありませんでした。</p>
+
+<p>　一方、Android Data Binding のもう一つの(副次的な)機能である View binding(<code>findViewById</code> が要らなくなるアレ)の対応は大変でした。</p>
+
+<p>　まず、<code>activity_main.xml</code> などのデータバインド範囲を括る <code>&lt;layout&gt;&lt;/layout&gt;</code> ですが、このタグは Xamarin Studio は解釈してくれないのでエラーになります。このタグはもれなくコメントアウトが必要でした。また、カスタムデータバインディングが使われている箇所も同じくです。
+　なので当然、Android Studio(gradle)が生成する <code>DataBinding</code> クラスも使用できません。
+　仕方ない(というか始めからわかっていましたが) <code>ActivityMainBinding</code> などに相当するクラスを必要を満たす範囲で自作しました。レガシーな <code>FindViewByID()</code> を使って。</p>
+
+<p>　Windowsアプリ開発の世界では、「DSL で記述された画面レイアウトからUI要素変数を自動生成する」ことは、IDE である Visual Sutdio が普通に行ってくれます。Xamarinアプリ開発のIDEである Xamarin Studio も、iOS の <code>.storyboard</code> ファイルを読んで、自動的に <code>HogeViewController.designer.cs</code> にUI要素変数を生成してくれます。
+　Xamarin.Android でも <code>MainActivity.designer.cs</code> とか生成してくれてもいいのになー、とは頭の片隅で思い続けています。(自作Plug-inとかでなんとかできるのかな？)</p>
+
+<h2>DroidKaigi2016 で使われているJavaライブラリを、Xamarinではどうしたか？</h2>
+
+<p>　DroidKaigi2016アプリでは非常にたくさんのOSSライブラリが<a href="https://github.com/konifar/droidkaigi2016#libraries">使用されており</a>、それを眺めるだけでも非常に勉強になります。このソースを読んで初めて知ったものが何個もありました。
+　アプリを Xamarin.Android へ移植するにあたり、これらにどのように対応したかを記します。</p>
+
+<h3>Android Support Libraries</h3>
+
+<p> これらは、nuget パッケージが用意されています。要注意なのは、Xamarin Component にも<a href="https://components.xamarin.com/view/xamandroidsupportdesign">同じものが存在</a>していて、大抵はそちらの方が古くて動かない、ということです。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.CustomTabs/">Xamarin.Android.Support.CustomTabs</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.Design/">Xamarin.Android.Support.Design</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v4/">Xamarin.Android.Support.v4</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.AppCompat/">Xamarin.Android.Support.v7.AppCompat</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.CardView/">Xamarin.Android.Support.v7.CardView</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.RecyclerView/">Xamarin.Android.Support.v7.RecyclerView</a></li>
+</ul>
+
+
+<h3><a href="http://google.github.io/dagger/">Dagger2</a></h3>
+
+<p>　Dependency Injection を Annotation ベースで行うライブラリ。
+　これはないかなーと思いましたがありました。Dagger(短剣) に対して、その名も Stiletto(短剣)ｗ</p>
+
+<ul>
+<li><a href="http://stiletto.bendb.com/">Stiletto</a> &ndash; Stiletto is a .NET port of Dagger, the lightweight Android dependency injector from Square.</li>
+</ul>
+
+
+<p>　使い方も殆ど一緒。どうも Dagger1 相当の機能のようですが、アプリ側は少しの修正で対応できました。
+　もっとも Dagger すら使ったことがなかったので、その理解に少々時間を要しました。
+　Stiletto は、Xamarin.iOS でも使えるようですが、残念ながら PCL対応していなさそう。PCL対応のプルリクを送るのは今後やってみたいことの一つです。</p>
+
+<h3><a href="http://square.github.io/retrofit/">Retrofit2</a></h3>
+
+<p>　RESTful API のクライアントをサクッと作れるライブラリ。これも Xamarin 用に移植してくれてる方がいます。</p>
+
+<ul>
+<li><a href="http://paulcbetts.github.io/refit/">Refit by paulcbetts</a> &ndash; Refit is a library heavily inspired by Square&rsquo;s Retrofit library</li>
+</ul>
+
+
+<p>　こちらも、 Xamarin.iOS でも利用可能、PCL対応済み、カンペキです。</p>
+
+<h3><a href="http://square.github.io/picasso/">Picasso</a></h3>
+
+<p>　多機能且つ使いやすい Image Loader の Picasso。これは Xamarin の人が nuget パッケージを用意してくれています。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Square.Picasso">Square.Picasso</a></li>
+</ul>
+
+
+<p>Picasso が依存している <code>Square.OkHttp</code>, <code>Square.OkIO</code> も nuget パッケージが用意されていて、一緒に追加されます。</p>
+
+<h3><a href="https://github.com/gfx/Android-Orma">Android-Orma</a></h3>
+
+<p>　DroidKaigi当日には、作者 @gfx さんによる即席ランチセッションも聴けたORMライブラリ。若いライブラリなのでさすがに Xamarin版はありません。
+　Xamarin.Android での ORMライブラリといえば <a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/part_3_using_sqlite_orm/">SQLite.NET</a> が有名ですが、使い方が面倒そうだったのと、このアプリのデータ構造と量で、リレーショナルDB使うこともないだろうと、 Key-Value Store である Akavache を使いました。これは以前 Qiita に書いたのでそちらを。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/356ad0028b7e6fbf089f">クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する</a></li>
+</ul>
+
+
+<p>　とはいえ、移植の際には、かなり強引な実装をしてしまいました。パフォーマンス悪いのは私の実装が原因です。</p>
+
+<h3><a href="https://github.com/ReactiveX/RxJava">RxJava</a></h3>
+
+<p>　これはもう説明不要でしょう。本家 Rx.NET を使用します。</p>
+
+<ul>
+<li><a href="https://github.com/Reactive-Extensions/Rx.NET">Reactive-Extensions/Rx.NET: The Reactive Extensions for .NET</a></li>
+</ul>
+
+
+<h3><a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a></h3>
+
+<p>　これを使う最大の理由である <code>AndroidSchedulers.mainThread()</code> は、 Rx.NET では、 <code>observable.ObserveOn(SynchronizationContext.Current)</code> で代用できるので、不要でした。</p>
+
+<h3><a href="https://github.com/JakeWharton/ThreeTenABP">ThreeTenABP</a></h3>
+
+<p>　これも .NET の日付時刻系クラス(<code>DateTime</code>, <code>DateTimeOffset</code>, <code>TimeSpan</code>) で特に問題ありませんでした。しかし恥ずかしながらこのライブラリも知りませんで、Java では必須になりそうですね。</p>
+
+<h3><a href="http://facebook.github.io/stetho/">Stetho</a></h3>
+
+<p>　デバッグを強力に支援してくれるライブラリですね。これも知りませんでした。移植の時にはとりあえず関係なさそう、と思って代替品は探していません（汗</p>
+
+<h3><a href="https://github.com/LyndonChin/AndroidFlowLayout">AndroidFlowLayout</a></h3>
+
+<p>　View をいい感じに並べてくれるライブラリ。Xamarin.Android用の nuget パッケージがありました。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/AndroidFlowLayout/">AndroidFlowLayout &ndash; NuGet Gallery</a></li>
+</ul>
+
+
+<h3>Google Play services</h3>
+
+<p>　Map とか、Analytics とか。こちらも nuget に一通りパッケージが揃っています。Xamarin Components より優先的に使いましょう。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.GooglePlayServices.Maps/">Xamarin Google Play Services &ndash; Maps &ndash; NuGet Gallery</a>　</li>
+<li><a href="https://www.nuget.org/packages/Xamarin.GooglePlayServices.Analytics/">Xamarin Google Play Services &ndash; Analytics &ndash; Maps &ndash; NuGet Gallery</a>　</li>
+</ul>
+
+
+<h3><a href="https://github.com/jd-alexander/LikeButton">LikeButton</a></h3>
+
+<p>　Facebook の いいね!、Twitter の Fav! のようなボタンを提供してくれるライブラリ。押した時のアニメーションがイイ感じです。
+　これの Xamarin 版は探してもなかったので、 LikeButton の <code>.jar</code> ファイルを入手して、自前で Java Binding Library プロジェクトを作って使用しています。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/DroidKaigi2016Xamarin/tree/master/LikeButton">DroidKaigi2016Xamarin/LikeButton · amay077/DroidKaigi2016Xamarin</a></li>
+</ul>
+
+
+<p>　これを nuget に放流するのはやりたいことの2つ目。いくつかやったら <a href="https://resources.xamarin.com/open-source-contributor.html">Xamarin から subscription もらえる</a>だろうか。。。</p>
+
+<h3><a href="https://github.com/johncarl81/parceler">parceler</a></h3>
+
+<p>　Parcel のことが大嫌いじゃなくなるライブラリ。移植に際しては、ModelクラスはPOCO(POJOの.NET版と思ってください)にしたかったので直接の代替品は探しませんでした。
+　ModelクラスのParcel化はなんと <a href="http://www.newtonsoft.com/json">JSON.NET</a> でJSONを介しちゃいました。悪手ですがパフォーマンスが気になる程でないならいいでしょ。</p>
+
+<h3><a href="https://try.crashlytics.com/">Crashlytics</a></h3>
+
+<p>　クラッシュレポート解析サービスですね。Xamarin なら <a href="https://xamarin.com/insights">Xamarin Insights</a> がビルトインで使えるので、通常はそうするでしょう。Crashlytics 自体の Xamarin.Android 用ライブラリは、今のところ<a href="https://twittercommunity.com/t/xamarin-and-fabric/37289/13">存在しないみたい</a>です。</p>
+
+<h3><a href="https://github.com/opacapp/multiline-collapsingtoolbar">multiline-collapsingtoolbar</a></h3>
+
+<p>　 Android Design Support Library の <code>CollapsingToolbarLayout</code> って、タイトルが複数行あると、展開しても表示されない(!)んですね。なんじゃそら！ってのを解決してくれるライブラリです。
+　 Xamarin.Android向けのは探したけど見つかりませんでした。移植に際してクリティカルじゃなかったので、複数行にならない <code>CollapsingToolbarLayout</code> のままです。これも nuget パッケージ化したら需要あるかも。</p>
+
+<h3><a href="https://github.com/ozodrukh/CircularReveal">CircularReveal</a></h3>
+
+<p>　Lollipop で追加された CircularReveal アニメーションを、それ以前のOSでも行えるライブラリです。
+　これもクリティカルでないので、Xamarin版には移植していません。</p>
+
+<h2>まとめ</h2>
+
+<p>　DroidKaigi2016 の公式アプリは、ホストの @konifar さんはじめ、 <a href="https://github.com/konifar/droidkaigi2016/graphs/contributors">35名</a> の精鋭有志の皆さんによる爆速開発で、 2/13 に v1.00 がリリース、イベント当日もアップデートされ、私も便利に利用させていただきました。
+　
+　一方、私の Xamarin.Android への移植は今やっと &ldquo;とりあえず&rdquo; 終わったばかり。
+　しかも、移植の元にしたのが 2/10 付けのソースですが、その日から現在に至るまで本家にマージされた <strong>Pull Request の数は 200超！</strong> 。
+　「これが若さか…。」これらの Xamarin版への移植はおじさんにはとても行う気が起きません。DroidKaigi2016公式アプリの Contributors の皆さんを尊敬します。
+　
+　が、ひとまず動くようになったので、ソースを公開します。モダンな Androidアプリを Xamarin.Android で実現する例としては有用だと思います。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/DroidKaigi2016Xamarin">amay077/DroidKaigi2016Xamarin: DroidKaigi2016 アプリをこっそりXamarinに移植</a></li>
+</ul>
+
+
+<p>（できればこれを、 プラットフォーム非互換にできる箇所はPCLへ移動、各画面にViewModelを置いてMVVM化、Xamarin.iOS対応、Xamarin.Forms対応とか、いろいろと育てていきたいと思っているのですが、DroidKaigi参加直後で、あれもこれもやりたい病なので、実現は未定です。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Android Data Binding + MVVMパターンのサンプルを書いてみた]]></title>
@@ -1168,235 +1382,6 @@ refCount により購読者の有無に連動したデータ放流の自動制�
 <li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する]]></title>
-    <link href="http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache/"/>
-    <updated>2015-12-01T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2015/12/01/save-your-data-using-akavache</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/xamarin">Xamarin Advent Calendar 2015 1日目</a> の記事です。</p>
-
-<p>Xamarin Advent Calendar 2015、今日から開始です。
-3年目になってもネタに尽きない Xamarin 、まだまだ盛り上がっております。</p>
-
-<p>かくいう自分は、<a href="http://qiita.com/amay077/items/0a3fa3dfac7f29a2807d">前回の投稿</a> が約1年前と、完全に時代遅れになっております（仕事とスプラ&hellip;いえ何でもないです）。
-最近のトピックスは他の方にお任せして、1年前からのネタを書きます。</p>
-
-<!--more-->
-
-
-<p>Xamarin でギョームアプリを開発している時に、Android/iOS で使える ORM を探していたというか、JSON のデータをお手軽に保存・読み出し→インスタンス化できるライブラリないかなーと探していました。</p>
-
-<p>Xamarin の公式ドキュメント</p>
-
-<ul>
-<li><a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/">Cross-Platform Data Access &ndash; Xamarin</a></li>
-</ul>
-
-
-<p>には、 SQLite.NET や ADO.NET などが紹介されていますが、どれも面倒そう。そこで使ってみようと思ったのが <a href="http://qiita.com/amay077/items/f14e04d4e86c8a782c15">2年前の投稿</a> でチラッと触れていた Akavache です。</p>
-
-<h1>Akavache とは</h1>
-
-<ul>
-<li>akavache/Akavache &ndash; <a href="https://github.com/akavache/Akavache">https://github.com/akavache/Akavache</a></li>
-</ul>
-
-
-<p>以下、README から引用です。</p>
-
-<blockquote><p>Akavache is an asynchronous, persistent (i.e. writes to disk) key-value store created for writing desktop and mobile applications in C#, based on SQLite3. Akavache is great for both storing important data (i.e. user settings) as well as cached local data that expires.</p></blockquote>
-
-<p>(意訳)Akavacheは、C# による、SQLite3 をベースとした非同期で永続的なデスクトップとモバイルアプリケーション向けのキーバリューストアです。 ユーザー設定やキャッシュなどのローカルデータを保存するのに最適です。</p>
-
-<p>バックエンドは SQLite3 なので、まあ得体の知れないデータ形式ではない、と。ちなみに <a href="https://github.com/paulcbetts/AkavacheExplorer">AkavacheExplorer</a> というデータビューアもあります。</p>
-
-<h1>対応プラットフォーム</h1>
-
-<blockquote><p>Akavache is currently compatible with:</p>
-
-<ul>
-<li>Xamarin.iOS / Xamarin.Mac 32-bit</li>
-<li>Xamarin.Android</li>
-<li>.NET 4.5 Desktop (WPF)</li>
-<li>Windows Phone 8</li>
-<li>WinRT (Windows Store)</li>
-<li>Windows Phone 8.1 Universal Apps</li>
-</ul>
-</blockquote>
-
-<p>ほぼ全てやないかい！</p>
-
-<h1>使ってみよう</h1>
-
-<p>せっかくなので Xamarin.Form で Akavache を使ったアプリを作ってみます。</p>
-
-<h3>1. プロジェクト（ソリューション）の作成</h3>
-
-<p>Xamarin.Forms App で、新しいプロジェクトを作成します。プロジェクト名は AkavacheSample とでもします。</p>
-
-<p>Shared Code: は、'Use Portable Class Library' を選択します。</p>
-
-<p>プロジェクトが3つ（AkavacheSample, AkavacheSample.Droid, AkavacheSample.iOS）作成されます。</p>
-
-<h3>2. Akavache と、依存ライブラリの導入</h3>
-
-<p><strong>3つのプロジェクトそれぞれで</strong> 、NuGet(メニュー → プロジェクト → Add NuGet Packages&hellip;) から、以下のパッケージを追加します（執筆時点の Akavache の最新バージョンは 4.1.2 です。）。</p>
-
-<ul>
-<li>Akavache.Core</li>
-<li>SQLitePCL.raw</li>
-<li>Akavache.SQLite3</li>
-<li>Akavache</li>
-</ul>
-
-
-<p>検索ボックスに 「sqlite akavache」と入力すると全部表示されると思います(↓こんな感じに)。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_01.png" alt="" /></p>
-
-<p>追加に失敗する場合は、上のリストの順番で一つずつ追加するとうまくいくと思います。</p>
-
-<h3>3. サンプルアプリの画面を作る</h3>
-
-<p>サンプルアプリの画面レイアウトを作ります。XAML とか面倒なのでコードでバリッと。</p>
-
-<p>AkavacheSample プロジェクトの App.cs を以下のようにします。テキストボックス２つとボタン２つが縦に並んでいるだけの簡単な画面です。</p>
-
-<p>```csharp AkavacheSample.cs
-public class App : Application
-{</p>
-
-<pre><code>public App()
-{
-    var nameEntry  = new Entry { Placeholder = "名前を入力" };
-    var ageEntry   = new Entry { Placeholder = "年齢を入力(数値のみ)" };
-    var saveButton = new Button { Text = "保存" };
-    var loadButton = new Button { Text = "読み出し" };
-
-    // The root page of your application
-    MainPage = new ContentPage
-    {
-        Padding = new Thickness(20),
-        Content = new StackLayout
-        {
-            VerticalOptions = LayoutOptions.Center,
-            Children =
-            {
-                nameEntry,
-                ageEntry,
-                saveButton,
-                loadButton
-            }
-        }
-    };
-}
-
-// 以下省略
-</code></pre>
-
-<p>}
-```</p>
-
-<h3>4. Akavache を使って保存と読み出し</h3>
-
-<p>名前と年齢をひとまとめに保存したいので、Person というクラスを作ります。</p>
-
-<p>```csharp Person.cs
-public class Person
-{</p>
-
-<pre><code>public string PersonName { get; set; }
-public int PersonAge { get; set; }
-</code></pre>
-
-<p>}
-```</p>
-
-<p>あとはもう、一気に実装するだけです。
-保存ボタンを押した時に、入力値を Person に詰めて、Akavache を使って保存します。
-読み出しボタンを押した時に、Akavache から Person を読みだし、各テキストボックスにバラして設定します。</p>
-
-<p>Akavache はキー・バリュー・ストアなので、保存・読み出し時のキーを <code>"person"</code> としています。</p>
-
-<p>```csharp AkavacheSample.cs</p>
-
-<p>public class App : Application
-{</p>
-
-<pre><code>public App()
-{
-    var nameEntry  = new Entry { Placeholder = "名前を入力" };
-    var ageEntry   = new Entry { Placeholder = "年齢を入力(数値のみ)" };
-    var saveButton = new Button { Text = "保存" };
-    var loadButton = new Button { Text = "読み出し" };
-
-    saveButton.Clicked += async (sender, e) =&gt; 
-    {
-        // Person に詰めて…
-        var person = new Person { 
-            PersonName = nameEntry.Text, 
-            PersonAge  = Convert.ToInt16(ageEntry.Text) 
-        };
-
-        // 保存
-        await BlobCache.LocalMachine.InsertObject("person", person); 
-    };
-
-    loadButton.Clicked += async (sender, e) =&gt; 
-    {
-        // Akavache で Person を読み出し
-        var loaded = await BlobCache.LocalMachine.GetObject&lt;Person&gt;("person");
-        // 各テキストボックスに設定
-        nameEntry.Text = loaded.PersonName;
-        ageEntry.Text  = loaded.PersonAge.ToString();
-    };
-
-    // The root page of your application
-    MainPage = new ContentPage
-    {
-        Padding = new Thickness(20),
-        Content = new StackLayout
-        {
-            VerticalOptions = LayoutOptions.Center,
-            Children =
-            {
-                nameEntry,
-                ageEntry,
-                saveButton,
-                loadButton
-            }
-        }
-    };
-}
-
-// 以下省略
-</code></pre>
-
-<p>}
-```</p>
-
-<h3>5. 動かす！</h3>
-
-<p>Android Player と iOS Simulater で動かしてみた、の図です。(途中、iPhone でキーボード出すのに苦労してるところは無視してください、Take2 の時間が無かったのですｗ)</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_akavache_02.gif" alt="" /></p>
-
-<p>さすが Xamarin.Forms だ、(Android でも iPhone で動かしても)何とも無いぜ！</p>
-
-<h1>まとめ</h1>
-
-<p>Akavache を使って保存と読み出しを行う超簡単なサンプルを作ってみました。
-作ったサンプルは <a href="https://github.com/amay077/AkavacheSample">GitHub &ndash; amay077/AkavacheSample</a> においておきます。</p>
-
-<p>仕組みは理解できないけど、とても簡単に使えることが分かると思います。
-追加されたパッケージを見ると、 JSON.NET とか、Reactive Extensions とかが入っているので、まあだいたい察しが付くかと。。。</p>
-
-<p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
-
-<p>というわけで Advent Calendar 初日のネタは以上です。</p>
 ]]></content>
   </entry>
   

@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-08T01:23:54+09:00</updated>
+  <updated>2016-02-24T00:24:54+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,220 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[DroidKaigi2016アプリを Xamarin.Android に移植した話]]></title>
+    <link href="http://blog.amay077.net/blog/2016/02/24/porting-droidkaigi2016app-to-xamarin-android/"/>
+    <updated>2016-02-24T00:19:01+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/02/24/porting-droidkaigi2016app-to-xamarin-android</id>
+    <content type="html"><![CDATA[<p>　DroidKaigi2016 の開催前、<a href="https://github.com/konifar/droidkaigi2016">公式アプリが有志によって開発中</a> とのツイート(だったかな？)を見て、ふとこれを「Xamarin.Android に移植してみよう」と思い、夜な夜なぼちぼちと始めました。</p>
+
+<!--more-->
+
+
+<p>　後付けですが、移植するにあたり調査したかったのは主に、</p>
+
+<ul>
+<li>Android-Java の OSSライブラリがどのくらい Xamarin.Android でも利用可能か？</li>
+<li>(勉強をサボっていた)Xamarin.Android での Material Design の適用方法</li>
+</ul>
+
+
+<p>です。</p>
+
+<h2>Xamarin.Android について(知らない人向け)</h2>
+
+<p>　Xamarin.Android は、Android API(Javaクラスライブラリを含む)の薄いラッパーで、クラス・メソッド名などは殆どそのままに、言語が Java から C# になったようなものです。
+　なので、 <code>activity_main.xml</code> などのリソースファイルもほぼそのまま転用可能です。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/3232064cc8880c809aee">Xamarin.Android で作った HelloWorld のソースを眺めてみる</a></li>
+</ul>
+
+
+<p>　尚、 Xamarin.Forms というワンソースで複数プラットフォームで動作するアプリを開発できるフレームワークとは別のものです。</p>
+
+<h2>Android プロジェクトの Xamarin.Android への移植方法</h2>
+
+<p>すごく大雑把に、以下のような手順で移植します。</p>
+
+<ol>
+<li>Androidプロジェクト(以下 Java と表記)の <code>/res</code> 以下を Xamarin.Androidプロジェクト(以下 Xamarin)配下にコピー</li>
+<li>Java のソースコード群を、 package構成を崩さずに Xamarin.Android で再構成（結局のところコードの書き直し）</li>
+<li>Java側で使われているOSSライブラリと同等のものを、nuget・Xamarin Components で探してXamarin側に追加（なければ <code>.jar</code> ファイルを入手して Xamarin で使えるように Binding Library を作成）</li>
+<li>あとはひたすら try and error and error and error&hellip;</li>
+</ol>
+
+
+<h2>Android Data Binding を、Xamarin ではどうしたか？</h2>
+
+<p>　DroidKaigi2016 のアプリには <a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">DataBinding</a> が使われています。ただ、 <code>BaseObservable</code> や <code>ObservalbeField</code> によるガッツリとした OneWay/TwoWay のデータバインディングではなく、POJOなデータクラスを使う <a href="https://msdn.microsoft.com/ja-jp/library/system.windows.data.bindingmode(v=vs.110">OneTime</a>.aspx) なものしかなかったので、Xamarin への移植に際しては <a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> や、 <a href="https://github.com/MvvmCross/MvvmCross">MVVMCross</a> などのデータバインディング機能に頼る必要はありませんでした。</p>
+
+<p>　一方、Android Data Binding のもう一つの(副次的な)機能である View binding(<code>findViewById</code> が要らなくなるアレ)の対応は大変でした。</p>
+
+<p>　まず、<code>activity_main.xml</code> などのデータバインド範囲を括る <code>&lt;layout&gt;&lt;/layout&gt;</code> ですが、このタグは Xamarin Studio は解釈してくれないのでエラーになります。このタグはもれなくコメントアウトが必要でした。また、カスタムデータバインディングが使われている箇所も同じくです。
+　なので当然、Android Studio(gradle)が生成する <code>DataBinding</code> クラスも使用できません。
+　仕方ない(というか始めからわかっていましたが) <code>ActivityMainBinding</code> などに相当するクラスを必要を満たす範囲で自作しました。レガシーな <code>FindViewByID()</code> を使って。</p>
+
+<p>　Windowsアプリ開発の世界では、「DSL で記述された画面レイアウトからUI要素変数を自動生成する」ことは、IDE である Visual Sutdio が普通に行ってくれます。Xamarinアプリ開発のIDEである Xamarin Studio も、iOS の <code>.storyboard</code> ファイルを読んで、自動的に <code>HogeViewController.designer.cs</code> にUI要素変数を生成してくれます。
+　Xamarin.Android でも <code>MainActivity.designer.cs</code> とか生成してくれてもいいのになー、とは頭の片隅で思い続けています。(自作Plug-inとかでなんとかできるのかな？)</p>
+
+<h2>DroidKaigi2016 で使われているJavaライブラリを、Xamarinではどうしたか？</h2>
+
+<p>　DroidKaigi2016アプリでは非常にたくさんのOSSライブラリが<a href="https://github.com/konifar/droidkaigi2016#libraries">使用されており</a>、それを眺めるだけでも非常に勉強になります。このソースを読んで初めて知ったものが何個もありました。
+　アプリを Xamarin.Android へ移植するにあたり、これらにどのように対応したかを記します。</p>
+
+<h3>Android Support Libraries</h3>
+
+<p> これらは、nuget パッケージが用意されています。要注意なのは、Xamarin Component にも<a href="https://components.xamarin.com/view/xamandroidsupportdesign">同じものが存在</a>していて、大抵はそちらの方が古くて動かない、ということです。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.CustomTabs/">Xamarin.Android.Support.CustomTabs</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.Design/">Xamarin.Android.Support.Design</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v4/">Xamarin.Android.Support.v4</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.AppCompat/">Xamarin.Android.Support.v7.AppCompat</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.CardView/">Xamarin.Android.Support.v7.CardView</a></li>
+<li><a href="https://www.nuget.org/packages/Xamarin.Android.Support.v7.RecyclerView/">Xamarin.Android.Support.v7.RecyclerView</a></li>
+</ul>
+
+
+<h3><a href="http://google.github.io/dagger/">Dagger2</a></h3>
+
+<p>　Dependency Injection を Annotation ベースで行うライブラリ。
+　これはないかなーと思いましたがありました。Dagger(短剣) に対して、その名も Stiletto(短剣)ｗ</p>
+
+<ul>
+<li><a href="http://stiletto.bendb.com/">Stiletto</a> &ndash; Stiletto is a .NET port of Dagger, the lightweight Android dependency injector from Square.</li>
+</ul>
+
+
+<p>　使い方も殆ど一緒。どうも Dagger1 相当の機能のようですが、アプリ側は少しの修正で対応できました。
+　もっとも Dagger すら使ったことがなかったので、その理解に少々時間を要しました。
+　Stiletto は、Xamarin.iOS でも使えるようですが、残念ながら PCL対応していなさそう。PCL対応のプルリクを送るのは今後やってみたいことの一つです。</p>
+
+<h3><a href="http://square.github.io/retrofit/">Retrofit2</a></h3>
+
+<p>　RESTful API のクライアントをサクッと作れるライブラリ。これも Xamarin 用に移植してくれてる方がいます。</p>
+
+<ul>
+<li><a href="http://paulcbetts.github.io/refit/">Refit by paulcbetts</a> &ndash; Refit is a library heavily inspired by Square&rsquo;s Retrofit library</li>
+</ul>
+
+
+<p>　こちらも、 Xamarin.iOS でも利用可能、PCL対応済み、カンペキです。</p>
+
+<h3><a href="http://square.github.io/picasso/">Picasso</a></h3>
+
+<p>　多機能且つ使いやすい Image Loader の Picasso。これは Xamarin の人が nuget パッケージを用意してくれています。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Square.Picasso">Square.Picasso</a></li>
+</ul>
+
+
+<p>Picasso が依存している <code>Square.OkHttp</code>, <code>Square.OkIO</code> も nuget パッケージが用意されていて、一緒に追加されます。</p>
+
+<h3><a href="https://github.com/gfx/Android-Orma">Android-Orma</a></h3>
+
+<p>　DroidKaigi当日には、作者 @gfx さんによる即席ランチセッションも聴けたORMライブラリ。若いライブラリなのでさすがに Xamarin版はありません。
+　Xamarin.Android での ORMライブラリといえば <a href="https://developer.xamarin.com/guides/cross-platform/application_fundamentals/data/part_3_using_sqlite_orm/">SQLite.NET</a> が有名ですが、使い方が面倒そうだったのと、このアプリのデータ構造と量で、リレーショナルDB使うこともないだろうと、 Key-Value Store である Akavache を使いました。これは以前 Qiita に書いたのでそちらを。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/356ad0028b7e6fbf089f">クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する</a></li>
+</ul>
+
+
+<p>　とはいえ、移植の際には、かなり強引な実装をしてしまいました。パフォーマンス悪いのは私の実装が原因です。</p>
+
+<h3><a href="https://github.com/ReactiveX/RxJava">RxJava</a></h3>
+
+<p>　これはもう説明不要でしょう。本家 Rx.NET を使用します。</p>
+
+<ul>
+<li><a href="https://github.com/Reactive-Extensions/Rx.NET">Reactive-Extensions/Rx.NET: The Reactive Extensions for .NET</a></li>
+</ul>
+
+
+<h3><a href="https://github.com/ReactiveX/RxAndroid">RxAndroid</a></h3>
+
+<p>　これを使う最大の理由である <code>AndroidSchedulers.mainThread()</code> は、 Rx.NET では、 <code>observable.ObserveOn(SynchronizationContext.Current)</code> で代用できるので、不要でした。</p>
+
+<h3><a href="https://github.com/JakeWharton/ThreeTenABP">ThreeTenABP</a></h3>
+
+<p>　これも .NET の日付時刻系クラス(<code>DateTime</code>, <code>DateTimeOffset</code>, <code>TimeSpan</code>) で特に問題ありませんでした。しかし恥ずかしながらこのライブラリも知りませんで、Java では必須になりそうですね。</p>
+
+<h3><a href="http://facebook.github.io/stetho/">Stetho</a></h3>
+
+<p>　デバッグを強力に支援してくれるライブラリですね。これも知りませんでした。移植の時にはとりあえず関係なさそう、と思って代替品は探していません（汗</p>
+
+<h3><a href="https://github.com/LyndonChin/AndroidFlowLayout">AndroidFlowLayout</a></h3>
+
+<p>　View をいい感じに並べてくれるライブラリ。Xamarin.Android用の nuget パッケージがありました。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/AndroidFlowLayout/">AndroidFlowLayout &ndash; NuGet Gallery</a></li>
+</ul>
+
+
+<h3>Google Play services</h3>
+
+<p>　Map とか、Analytics とか。こちらも nuget に一通りパッケージが揃っています。Xamarin Components より優先的に使いましょう。</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.GooglePlayServices.Maps/">Xamarin Google Play Services &ndash; Maps &ndash; NuGet Gallery</a>　</li>
+<li><a href="https://www.nuget.org/packages/Xamarin.GooglePlayServices.Analytics/">Xamarin Google Play Services &ndash; Analytics &ndash; Maps &ndash; NuGet Gallery</a>　</li>
+</ul>
+
+
+<h3><a href="https://github.com/jd-alexander/LikeButton">LikeButton</a></h3>
+
+<p>　Facebook の いいね!、Twitter の Fav! のようなボタンを提供してくれるライブラリ。押した時のアニメーションがイイ感じです。
+　これの Xamarin 版は探してもなかったので、 LikeButton の <code>.jar</code> ファイルを入手して、自前で Java Binding Library プロジェクトを作って使用しています。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/DroidKaigi2016Xamarin/tree/master/LikeButton">DroidKaigi2016Xamarin/LikeButton · amay077/DroidKaigi2016Xamarin</a></li>
+</ul>
+
+
+<p>　これを nuget に放流するのはやりたいことの2つ目。いくつかやったら <a href="https://resources.xamarin.com/open-source-contributor.html">Xamarin から subscription もらえる</a>だろうか。。。</p>
+
+<h3><a href="https://github.com/johncarl81/parceler">parceler</a></h3>
+
+<p>　Parcel のことが大嫌いじゃなくなるライブラリ。移植に際しては、ModelクラスはPOCO(POJOの.NET版と思ってください)にしたかったので直接の代替品は探しませんでした。
+　ModelクラスのParcel化はなんと <a href="http://www.newtonsoft.com/json">JSON.NET</a> でJSONを介しちゃいました。悪手ですがパフォーマンスが気になる程でないならいいでしょ。</p>
+
+<h3><a href="https://try.crashlytics.com/">Crashlytics</a></h3>
+
+<p>　クラッシュレポート解析サービスですね。Xamarin なら <a href="https://xamarin.com/insights">Xamarin Insights</a> がビルトインで使えるので、通常はそうするでしょう。Crashlytics 自体の Xamarin.Android 用ライブラリは、今のところ<a href="https://twittercommunity.com/t/xamarin-and-fabric/37289/13">存在しないみたい</a>です。</p>
+
+<h3><a href="https://github.com/opacapp/multiline-collapsingtoolbar">multiline-collapsingtoolbar</a></h3>
+
+<p>　 Android Design Support Library の <code>CollapsingToolbarLayout</code> って、タイトルが複数行あると、展開しても表示されない(!)んですね。なんじゃそら！ってのを解決してくれるライブラリです。
+　 Xamarin.Android向けのは探したけど見つかりませんでした。移植に際してクリティカルじゃなかったので、複数行にならない <code>CollapsingToolbarLayout</code> のままです。これも nuget パッケージ化したら需要あるかも。</p>
+
+<h3><a href="https://github.com/ozodrukh/CircularReveal">CircularReveal</a></h3>
+
+<p>　Lollipop で追加された CircularReveal アニメーションを、それ以前のOSでも行えるライブラリです。
+　これもクリティカルでないので、Xamarin版には移植していません。</p>
+
+<h2>まとめ</h2>
+
+<p>　DroidKaigi2016 の公式アプリは、ホストの @konifar さんはじめ、 <a href="https://github.com/konifar/droidkaigi2016/graphs/contributors">35名</a> の精鋭有志の皆さんによる爆速開発で、 2/13 に v1.00 がリリース、イベント当日もアップデートされ、私も便利に利用させていただきました。
+　
+　一方、私の Xamarin.Android への移植は今やっと &ldquo;とりあえず&rdquo; 終わったばかり。
+　しかも、移植の元にしたのが 2/10 付けのソースですが、その日から現在に至るまで本家にマージされた <strong>Pull Request の数は 200超！</strong> 。
+　「これが若さか…。」これらの Xamarin版への移植はおじさんにはとても行う気が起きません。DroidKaigi2016公式アプリの Contributors の皆さんを尊敬します。
+　
+　が、ひとまず動くようになったので、ソースを公開します。モダンな Androidアプリを Xamarin.Android で実現する例としては有用だと思います。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/DroidKaigi2016Xamarin">amay077/DroidKaigi2016Xamarin: DroidKaigi2016 アプリをこっそりXamarinに移植</a></li>
+</ul>
+
+
+<p>（できればこれを、 プラットフォーム非互換にできる箇所はPCLへ移動、各画面にViewModelを置いてMVVM化、Xamarin.iOS対応、Xamarin.Forms対応とか、いろいろと育てていきたいと思っているのですが、DroidKaigi参加直後で、あれもこれもやりたい病なので、実現は未定です。）</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava で Observable の並列処理を直列化する]]></title>
@@ -4120,137 +4334,6 @@ iPhone6 が発表されてiOS開発でも多解像度対応が必須になるの
 <li><a href="http://www.buildinsider.net/mobile/insidexamarin/14">Xamarin.Formsの基本構想と仕組み &ndash; Build Insider</a></li>
 <li><a href="http://www.buildinsider.net/tagcloud?tag=Xamarin.Forms">Xamarin.Forms &ndash; Build Insider</a></li>
 <li><a href="http://furuya02.hatenablog.com/entry/2014/08/08/003036">Xamarin.Forms ListViewでTwitter風のレイアウトを作成してみました（機種依存コードなし） &ndash; SIN@SAPPOROWORKSの覚書</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[システムの起動時にアプリを起動する]]></title>
-    <link href="http://blog.amay077.net/blog/2014/09/01/run-application-on-system-startup/"/>
-    <updated>2014-09-01T21:41:43+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/09/01/run-application-on-system-startup</id>
-    <content type="html"><![CDATA[<p>ググれば出てくるんだけど、情報が古いので書きなおしてみた。</p>
-
-<!--more-->
-
-
-<h2>全体</h2>
-
-<p>Android OS の起動が終わると <code>android.intent.action.BOOT_COMPLETED</code> がブロードキャストされるので、それを捕まえて任意の処理をする。</p>
-
-<h2>起動時に呼び出されるコード</h2>
-
-<p>ブロードキャストを捕まえたときに呼ばれるコード。<code>MyActivity</code> を開始している。BroadcastReceiver から Activity を開始するには <code>Intent.FLAG_ACTIVITY_NEW_TASK</code> が必要なので注意。</p>
-
-<figure class='code'><figcaption><span>StartupReceiver.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">StartupReceiver</span> <span class="kd">extends</span> <span class="n">BroadcastReceiver</span> <span class="o">{</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;StartupReceiver&quot;</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;onReceive:&quot;</span> <span class="o">+</span> <span class="n">MyApplication</span><span class="o">.</span><span class="na">data</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">Intent</span> <span class="n">intentActivity</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">MyActivity</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">intentActivity</span><span class="o">.</span><span class="na">setFlags</span><span class="o">(</span><span class="n">Intent</span><span class="o">.</span><span class="na">FLAG_ACTIVITY_NEW_TASK</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">context</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intentActivity</span><span class="o">);</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>AndroidManifest.xml で受信登録</h2>
-
-<p><code>StartupReceiver</code> を登録する。
-忘れちゃいけないのが <code>android.permission.RECEIVE_BOOT_COMPLETED</code> による権限の設定。これがないと受信できない。</p>
-
-<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
-</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.amay077.reboottest&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;android.permission.RECEIVE_BOOT_COMPLETED&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;application</span>
-</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
-</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
-</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
-</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;activity</span>
-</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.MyActivity&quot;</span>
-</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;receiver</span> <span class="na">android:name=</span><span class="s">&quot;.StartupReceiver&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.BOOT_COMPLETED&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.DEFAULT&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;/receiver&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>端末を再起動して試す</h2>
-
-<ul>
-<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト | 9ensanのLifeHack</a></li>
-</ul>
-
-
-<p>で知った <code>adb shell am broadcast -a android.intent.action.BOOT_COMPLETED</code> は GenyMotion でも使えました。
-<code>RECEIVE_BOOT_COMPLETED</code> の位置によっては、テストが成功したりしなかったりだと書かれておられますが、上記の <code>AndroidManifest.xml</code> では、テストも実際の再起動も成功しました。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://techbooster.jpn.org/andriod/application/1100/">システムの起動時にサービスを実行する « Tech Booster</a>(2010年なのでだいぶ古い、要注意)</li>
-<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト | 9ensanのLifeHack</a>(2012年、まだまだ古い)</li>
-<li><a href="http://stackoverflow.com/questions/20441308/boot-completed-not-working-android/20441442#20441442">broadcastreceiver &ndash; BOOT_COMPLETED not working Android &ndash; Stack Overflow</a>(2013年、これなら何とか)</li>
-<li><a href="https://groups.google.com/forum/#!topic/android-group-japan/D1EKohMIji0">BOOT_COMPLETEDが受信出来ない &ndash; Google グループ</a> SDカードにインストールされるとこのブロードキャストを受信できないそうです</li>
 </ul>
 
 ]]></content>
