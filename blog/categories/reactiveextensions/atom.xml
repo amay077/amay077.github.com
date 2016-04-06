@@ -4,7 +4,7 @@
   <title><![CDATA[Category: reactiveextensions | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/reactiveextensions/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-27T02:02:57+09:00</updated>
+  <updated>2016-04-06T22:40:28+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,81 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[C# と Reactive Extensions でズンドコキヨシ]]></title>
+    <link href="http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions/"/>
+    <updated>2016-03-12T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions</id>
+    <content type="html"><![CDATA[<p>流行り？に乗っていくスタイル。</p>
+
+<!--more-->
+
+
+
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>```csharp Zondoko.cs
+var random = new Random();
+var K = &ldquo;キ・ヨ・シ！&rdquo;;
+var PATTERN = new string[] { &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;どこ&rdquo; };</p>
+
+<p>Observable.Interval(TimeSpan.FromMilliseconds(100))</p>
+
+<pre><code>.Select(_ =&gt; (random.Next() % 2 == 0) ? "ずん" : "どこ") // ランダムに ずんorどこ
+.Scan(new List&lt;string&gt;(), (queue, x) =&gt; // 最大５つのQueueに貯める
+    {
+        queue.Add(x);
+        while (queue.Count &gt; PATTERN.Count) { queue.RemoveAt(0);}
+        return queue;
+    })
+.SelectMany(queue =&gt; queue.SequenceEqual(PATTERN) ? // パターンと一致したら…
+    Observable.Concat(
+        Observable.Return(queue.Last()),   // Queueの最後
+        Observable.Return(K),              // + キ・ヨ・シ！
+        Observable.Return(string.Empty)) : // + 空文字(終了判定用)
+    Observable.Return(queue.Last()))
+.TakeWhile(x =&gt; !string.IsNullOrEmpty(x))  // 空文字になるまで繰り返す
+.Subscribe(
+    x =&gt; Console.WriteLine(x),
+    () =&gt; Console.WriteLine("complete!!"));
+</code></pre>
+
+<p>```</p>
+
+<blockquote><p>どこ<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+どこ<br/>
+どこ<br/>
+ずん<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+キ・ヨ・シ！<br/>
+complete!!</p></blockquote>
+
+<p><code>SelectMany</code> に頼ってるのが気に入らない。。。</p>
+
+<ul>
+<li>RxJava 版はこちら &ndash; <a href="http://qiita.com/amay077/items/2c8575753e37fcc94f87">RxJava でズンドコキヨシ(window 使用)</a></li>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava の ImmediateScheduler と TrampolineScheduler の違い]]></title>
@@ -601,77 +676,6 @@ IObservable<string> CreateManager(string managerTitle, string document, Predicat
 <p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
 
 <p>んーどうしようか。。。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.iOS で FromEventPattern を使うときの注意点]]></title>
-    <link href="http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios/"/>
-    <updated>2014-04-03T15:29:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/04/03/notice-for-fromeventpattern-in-xamarin-ios</id>
-    <content type="html"><![CDATA[<p>Reactive Extensions の <code>FromEventPattern</code> を使うと、イベントを <code>IObservable</code> に変換できて、複数のイベントに時系列な関係を与えたり、他のストリーム処理とシームレスに扱えたりします。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://www.atmarkit.co.jp/fdotnet/introrx/introrx_02/introrx_02_02.html">イベント・プログラミングとRx － ＠IT</a></li>
-</ul>
-
-
-<p>Xamarin .iOS でも .Android でもこの機能を使うことができて大変便利ですが、Xamarin.iOS の場合 AOT による制限に気をつける必要があります。</p>
-
-<p>以下は、なんの変哲もない、「ボタンを押したらタイトルを ”Clicked!” に変える」コードです。</p>
-
-<p><code>csharp
-MyButton.TouchUpInside += (s, e) =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal);
-</code></p>
-
-<p>これを FromEventPattern を使うとこう書けます。</p>
-
-<p><code>csharp DoesNotWorkOnDevice.cs
-Observable.FromEventPattern(MyButton, "TouchUpInside")
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
-
-<blockquote><p>System.InvalidOperationException: Could not find event &lsquo;TouchUpInside&rsquo; on object of type &lsquo;MonoTouch.UIKit.UIButton&rsquo;.</p></blockquote>
-
-<p><code>TouchUpInside</code> が無いと言われます。</p>
-
-<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
-
-<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 &ndash; Build Insider</a></li>
-</ul>
-
-
-<blockquote><p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p></blockquote>
-
-<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
-
-<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
-
-<p><code>csharp WorkOnDevice.cs
-Observable.FromEventPattern(
-  h =&gt; MyButton.TouchUpInside+=h,
-  h =&gt; MyButton.TouchUpInside-=h)
-.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
-</code></p>
-
-<p>Xamarin.iOS の制限事項は以下に。</p>
-
-<ul>
-<li><a href="http://docs.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations | Xamarin</a></li>
-</ul>
-
-
-<p>これまでこの制限に引っかかった事がなかったのですが、初めて引っかかりました。</p>
-
-<p>メソッドを文字列リテラルで書いた時点で私の負けです、本当にありがとうございました。</p>
 ]]></content>
   </entry>
   

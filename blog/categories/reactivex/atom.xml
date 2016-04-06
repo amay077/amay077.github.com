@@ -4,7 +4,7 @@
   <title><![CDATA[Category: reactivex | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/reactivex/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-02-27T02:02:57+09:00</updated>
+  <updated>2016-04-06T22:40:28+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,221 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava でズンドコキヨシ(window or buffer 使用)]]></title>
+    <link href="http://blog.amay077.net/blog/2016/03/13/zundoko-with-rxjava/"/>
+    <updated>2016-03-13T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/03/13/zundoko-with-rxjava</id>
+    <content type="html"><![CDATA[<p>調子に乗って RxJava でもやってみた。</p>
+
+<!--more-->
+
+
+
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/85dfc4bd194f57c52c57">C# と Reactive Extensions でズンドコキヨシ</a></li>
+</ul>
+
+
+<p>がんばって <a href="http://reactivex.io/documentation/operators/window.html"><code>Observable.window</code></a> を使ってみた。</p>
+
+<p>```java zondoko.java</p>
+
+<p>// なんちゃってラムダ使用。あと Android。
+public void doZondoko() {</p>
+
+<pre><code>final Random random = new Random();
+final List&lt;String&gt; PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
+final String K = "キ・ヨ・シ！";
+
+Observable.concat( // ※ の Observable&lt;List&lt;String&gt;&gt; を直列に連結
+    Observable.interval(500, TimeUnit.MILLISECONDS)
+        .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
+        .window(PATTERN.size(), 1) // 要素数5のWindowを1ずつズラしてく
+        .map(window -&gt; window.toList())) // Observable&lt;Observable&lt;String&gt;&gt; を Observable&lt;List&lt;String&gt;&gt; に変換 ※
+    .flatMap(window -&gt; {
+        if (sequenceEqual(window, PATTERN)) { // パターンと一致していたら…
+            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
+            says.addAll(window);
+            says.add(K);                      // キ・ヨ・シ！を追加
+            return Observable.concat(
+                    Observable.just(says),
+                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
+        } else {
+            return Observable.just(window);
+        }
+    })
+    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
+    .subscribe(says -&gt; Log.d(TAG, dump(says)));
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* リストとリストの要素一致 </em>/
+private boolean sequenceEqual(List<String> listA, List<String> listB) {</p>
+
+<pre><code>Iterator&lt;String&gt; iterA = listA.iterator();
+Iterator&lt;String&gt; iterB = listB.iterator();
+
+while (iterA.hasNext() &amp;&amp; iterB.hasNext()) {
+    if (iterA.next() != iterB.next()) {
+        return false;
+    }
+}
+return (!iterA.hasNext() &amp;&amp; !iterB.hasNext());
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* リスト内容をダンプ </em>/
+private String dump(List<String> list) {</p>
+
+<pre><code>final StringBuilder b = new StringBuilder();
+for (String s : list) {
+    if (!TextUtils.isEmpty(b.toString())) {
+        b.append(", ");
+    }
+    b.append(s);
+}
+
+return b.toString();
+</code></pre>
+
+<p>}
+```</p>
+
+<blockquote><p>どこ, ずん, どこ, どこ, ずん<br/>
+ずん, どこ, どこ, ずん, どこ<br/>
+どこ, どこ, ずん, どこ, ずん<br/>
+どこ, ずん, どこ, ずん, どこ<br/>
+ずん, どこ, ずん, どこ, どこ<br/>
+どこ, ずん, どこ, どこ, ずん<br/>
+ずん, どこ, どこ, ずん, ずん<br/>
+どこ, どこ, ずん, ずん, ずん<br/>
+どこ, ずん, ずん, ずん, ずん<br/>
+ずん, ずん, ずん, ずん, どこ, キ・ヨ・シ！</p></blockquote>
+
+<p>「window(5, 1) &ndash;> toList &ndash;> concat してるならそれは <code>buffer(5, 1)</code> やんけ」というのを <a href="http://qiita.com/do6gop/items/c4941f6fb2bdc1c0c0f1">こちら</a> で知って、 <code>buffer</code> 版も書いてみた。</p>
+
+<p>```java Zondoko_buffer.java
+public void doZondoko() {</p>
+
+<pre><code>final Random random = new Random();
+final List&lt;String&gt; PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
+final String K = "キ・ヨ・シ！";
+
+Observable.interval(500, TimeUnit.MILLISECONDS)
+    .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
+    .buffer(PATTERN.size(), 1) // 要素数5のBufferを1ずつズラしてく
+    .flatMap(buf -&gt; {
+        if (sequenceEqual(buf, PATTERN)) { // パターンと一致していたら…
+            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
+            says.addAll(buf);
+            says.add(K);                      // キ・ヨ・シ！を追加
+            return Observable.concat(
+                    Observable.just(says),
+                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
+        } else {
+            return Observable.just(buf);
+        }
+    })
+    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
+    .subscribe(says -&gt; Log.d(TAG, dump(says)));
+</code></pre>
+
+<p>}
+```</p>
+
+<ul>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[C# と Reactive Extensions でズンドコキヨシ]]></title>
+    <link href="http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions/"/>
+    <updated>2016-03-12T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions</id>
+    <content type="html"><![CDATA[<p>流行り？に乗っていくスタイル。</p>
+
+<!--more-->
+
+
+
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>```csharp Zondoko.cs
+var random = new Random();
+var K = &ldquo;キ・ヨ・シ！&rdquo;;
+var PATTERN = new string[] { &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;どこ&rdquo; };</p>
+
+<p>Observable.Interval(TimeSpan.FromMilliseconds(100))</p>
+
+<pre><code>.Select(_ =&gt; (random.Next() % 2 == 0) ? "ずん" : "どこ") // ランダムに ずんorどこ
+.Scan(new List&lt;string&gt;(), (queue, x) =&gt; // 最大５つのQueueに貯める
+    {
+        queue.Add(x);
+        while (queue.Count &gt; PATTERN.Count) { queue.RemoveAt(0);}
+        return queue;
+    })
+.SelectMany(queue =&gt; queue.SequenceEqual(PATTERN) ? // パターンと一致したら…
+    Observable.Concat(
+        Observable.Return(queue.Last()),   // Queueの最後
+        Observable.Return(K),              // + キ・ヨ・シ！
+        Observable.Return(string.Empty)) : // + 空文字(終了判定用)
+    Observable.Return(queue.Last()))
+.TakeWhile(x =&gt; !string.IsNullOrEmpty(x))  // 空文字になるまで繰り返す
+.Subscribe(
+    x =&gt; Console.WriteLine(x),
+    () =&gt; Console.WriteLine("complete!!"));
+</code></pre>
+
+<p>```</p>
+
+<blockquote><p>どこ<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+どこ<br/>
+どこ<br/>
+ずん<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+キ・ヨ・シ！<br/>
+complete!!</p></blockquote>
+
+<p><code>SelectMany</code> に頼ってるのが気に入らない。。。</p>
+
+<ul>
+<li>RxJava 版はこちら &ndash; <a href="http://qiita.com/amay077/items/2c8575753e37fcc94f87">RxJava でズンドコキヨシ(window 使用)</a></li>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava で Observable の並列処理を直列化する]]></title>
@@ -534,721 +749,6 @@ incrementTask.RunSynchronously();
 （そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
 
 <p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[RxJava + MVVM パターンで作るストップウォッチアプリ]]></title>
-    <link href="http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/"/>
-    <updated>2015-12-24T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 24日目</a> の記事です。</p>
-
-<p>先日、</p>
-
-<ul>
-<li><a href="http://ytabuchi.hatenablog.com/entry/2015/12/20/012007">JXUGC #9 Xamarin.Forms Mvvm 実装方法 Teachathon を開催しました &ndash; Xamarin 日本語情報</a></li>
-</ul>
-
-
-<p>というイベントがありまして、エクセルソフトの田淵さんが作成したストップウォッチのアプリケーション(注:田淵さんはプログラマではないｗ)を、MVVM識者の方々が「MVVMとしてはこうあるべきだ」と叩きまくる、という恐ろしい?ものでした。</p>
-
-<!--more-->
-
-
-<p>私はこの勉強会には参加できなかったのですが、ストリーミングとか見て、</p>
-
-<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">僕もストップウォッチ作ってみるかー</p>&mdash; ジェットあめいカスタム (@amay077) <a href="https://twitter.com/amay077/status/677561989359472640">2015, 12月 17</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>などとつぶやいたらご指名されてしまいました(^^)
-このイベントは Xamarin を使ったアプリ製作でしたが、せっかくなので <strong>RxJava + MVVM</strong> で作ってみました。
-(ご指名に応えないといけないのでその後 Xamarin版も製作)</p>
-
-<h1>ストップウォッチアプリの仕様</h1>
-
-<p>上記リンクからの引用です。</p>
-
-<ul>
-<li>Start/Stop ボタン、Lap ボタン</li>
-<li>StartするとラップボタンはEnable.ストップするとDisable
-
-<ul>
-<li>スタートしてからの経過時間をXX'XX.XXXみたいな感じで表示</li>
-</ul>
-</li>
-<li>履歴をListViewで残す</li>
-<li>ストップしたら結果をダイアログで出して分岐？</li>
-<li>今までのラップよりMin, Maxなどをダイアログに表示して次のページに遷移 ←ここ勝手に Toast に仕様変更しましたｗ</li>
-<li>スイッチの切り替えで、ミリ秒の桁を表示/非表示</li>
-</ul>
-
-
-<p>こんな機能を満たすサンプルを</p>
-
-<ol>
-<li>RxJava を使った Android アプリ(Java言語)</li>
-<li>Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</li>
-<li>Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</li>
-</ol>
-
-
-<p>でそれぞれ作ってみました。</p>
-
-<h1>とりあえず、作ったもの</h1>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_00.gif" alt="つくったもの" /></p>
-
-<p>左は Android-Java製、右は Xamarin.iOS製です。(Xamarin.Android製は省略)</p>
-
-<h1>1. RxJava を使った Android アプリ(Java言語)</h1>
-
-<h2>Model-ViewModel-View(MVVM) で考える</h2>
-
-<p>構成図っぽいものを描くとこんな感じになります。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_01.png" alt="クラス図的なの" /></p>
-
-<h3>Model</h3>
-
-<p>　この仕様だと、ストップウォッチの一通りの機能を満たすクラスが Model になります。これを <code>StopWatchModel</code> という名前にしました。</p>
-
-<p>  <strong>「ロジック」は、すべてこの層（このクラス）に書きます。</strong>
-　
-　例えば、ストップウォッチのタイマーを実行するには、 RxJava で <code>Observable.interval</code> としますが、これを ViewModel層に書いたら「負け」です。
-　
-また、ストップウォッチの実行は、画面の表示/破棄と連動しなくてよい(画面遷移しても計測し続けるべき)なので、StopWatchModel の生存期間は、アプリケーションの起動時から終了まで、という事になります。</p>
-
-<p>　RxJava を全面的に使いたいので、 StopWatchModel のプロパティは全て <code>Observable&lt;T&gt;</code> にしました。RxJava を使わなかったらプロパティではなくコールバックですね。
-　何かメソッドを実行したら、その結果は全て <code>Observable&lt;T&gt;</code> を通じて通知される仕組みです。なので原則として Model のメソッドの戻り値は <code>void</code> です。</p>
-
-<h3>ViewModel</h3>
-
-<p>　しつこいようですが <strong>ここにロジックを書いたら負け</strong> です。
-個人としては、条件分岐もしたくない、変数宣言もしたくない、くらいのつもりでいます。もし書いてしまったら「それはModelの方が適切ではないか？」を検討します。</p>
-
-<p>　ViewModel の役割は、Model のプロパティ(コールバック)を、View用に変換して流すこと、Viewのための機能をコマンドとして公開することです。</p>
-
-<p>　例えば、仕様の内、</p>
-
-<blockquote><p>スイッチの切り替えで、ミリ秒の桁を表示/非表示</p></blockquote>
-
-<p>　が、「View用に変換」の良い例になります。
-　私の実装では、ミリ秒の桁を表示するか否かの bool 値を、format関数の書式文字列に変換しています。(View側で format して表示しています。)
-　↓のような感じです。</p>
-
-<p>```java
-/<em>* 時間の表示フォーマット </em>/
-public final Observable<String> timeFormat; // field</p>
-
-<p>this.timeFormat = _stopWatch.isVisibleMillis.map(visible &ndash;></p>
-
-<pre><code>visible ? "mm:ss.SSS" : "mm:ss");
-</code></pre>
-
-<p>```</p>
-
-<p>RxJava で「変換」とくれば、 <code>map</code> など、 <code>Observable</code> の投影系のメソッドの出番となります。</p>
-
-<p>ViewModel が公開するプロパティも、基本的には <code>Observable&lt;T&gt;</code> になりました。(これはこのアプリの仕様上、OneWayバインディング＜=Modelによるデータの変化をViewに表示する＞だけで済んだためです。TwoWayバインディング＜=Viewからのデータの入力を受け付ける＞が必要な場合は、<code>Subject</code>など、データをセットできる機能が必要になります。)</p>
-
-<p>コマンドとは、Modelのメソッドを呼ぶためのものですが、それに加えて「そのコマンドが実行可能か？」を示すフラグも持ちます。さらにこのフラグも <code>Observable&lt;boolean&gt;</code> で表します。
-こうする事で、「機能が利用可能な時のみボタンを Enable にする」のようなバインディングが可能になります。今回の仕様で言えば</p>
-
-<blockquote><p>StartするとラップボタンはEnable.ストップするとDisable</p></blockquote>
-
-<p>に該当します。</p>
-
-<p>コマンドのインターフェースは↓のようになります。</p>
-
-<p>```java
-public interface Command {</p>
-
-<pre><code>/** このコマンドが実行可能かを示すフラグの更新を通知するObservable */
-Observable&lt;Boolean&gt; canExecuteObservable();
-
-/** このコマンドの処理を実装する */
-void execute();
-</code></pre>
-
-<p>}
-```</p>
-
-<p>今回は、このインターフェースを ViewModel で匿名クラスを作ることで実装しました。↓のような感じです。この <code>commandLap</code> をラップボタンとバインドさせます。</p>
-
-<p>```java
-/<em>* 経過時間の記録 </em>/
-public final Command commandLap = new Command() {</p>
-
-<pre><code>@Override
-public Observable&lt;Boolean&gt; canExecuteObservable() {
-    return _stopWatch.isRunning; // 実行中のみ記録可能
-}
-
-@Override
-public void execute() {
-    _stopWatch.lap();
-}
-</code></pre>
-
-<p>};
-```</p>
-
-<p>あ、ViewModel は View とは疎結合に作ります。Viewを参照してはいけないのはもちろん、<code>TextView</code> や <code>Activity</code> などが import されていたら「負け」です。</p>
-
-<p>他には、Viewの状態を保持する役割も担いますが、本アプリの仕様では、それに該当する処理はありませんでした。</p>
-
-<h3>View</h3>
-
-<p>　View層で行うことは、画面要素のレイアウトとViewModelとのバインディングです。それ以外の事は行いません。.NETの世界では、View層において値の変換を行う機能=ValueConverterが存在しますが、ValueConverterを使うべきかViewModelで行うべきかでよく議論になります。
-　
-　バインディングの実体は、ViewModelのプロパティである <code>Observable&lt;T&gt;</code> を <code>subscribe</code> して、Viewのプロパティにセットしているだけです。前述の通り今回は TwoWay は無いので楽です。TwoWay が出てくるとバインディングのフレームワークにお願いした方がよいです。
-　
-　例えば、 <code>Observalbe&lt;String&gt;</code> と TextViewのtextプロパティのバインディングは、下のようになります。</p>
-
-<p>```java
-public TextViewBinder toTextOneWay(Observable<String> prop) {</p>
-
-<pre><code>_subscriptions.add(
-    prop.observeOn(AndroidSchedulers.mainThread())
-    .subscribe(x -&gt; _textView.setText(x)));
-
-return this; // メソッドチェーンで連続して呼べるようにしてるだけ
-</code></pre>
-
-<p>}
-```</p>
-
-<p>.NETの世界では、このバインディングを画面定義ファイル(.xaml)に直接記述できます。
-Androidでも一部のライブラリや、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">今後公式にデータバインディングがサポートされる模様</a>ですが、xml でのバンディングの記述は、デバッグしづらくなるので個人的にはそれほどメリットを感じないです。デザイナーとの分業と言っても別な理由で不可能なケースが多いと思います。</p>
-
-<h2>画面遷移や Toast の表示は誰の責務？</h2>
-
-<p>大抵の MVVMフレームワーク に備わっている <code>Messenger</code> という機能を使います。Android界隈の人には「EventBus」と言った方がわかりやすいかも知れません。</p>
-
-<p>ViewModelが「画面遷移を要求するメッセージ」を投げ、それをViewが受信して画面遷移を行います。</p>
-
-<p>```java メッセージ送信側(MainViewModel.java)
-public final Command commandNextView = new Command() {</p>
-
-<pre><code>@Override
-public void execute() {
-    // LapActivity へ遷移させる
-    // ほんとは LapViewModel.class を指定すべき(LapActivity は使いたくない)
-    messenger.send(new StartActivityMessage(LapActivity.class));
-}
-</code></pre>
-
-<p>};
-```</p>
-
-<p>```java メッセージ受信側(MainActivity.java)
-// 画面遷移のメッセージ受信
-_viewModel.messenger.register(StartActivityMessage.class.getName(), new Action1<Message>() {</p>
-
-<pre><code>@Override
-public void call(final Message message) {
-    runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-            final StartActivityMessage m = (StartActivityMessage)message;
-            Intent intent = new Intent(MainActivity.this, m.activityClass);
-            MainActivity.this.startActivity(intent);
-        }
-    });
-}
-</code></pre>
-
-<p>});
-```</p>
-
-<p>今回は簡単な Messenger を実装しました。VM->Vの通知にしか使わないのでVM毎に一つ持つようにしています。</p>
-
-<h1>2.3. Reactive Extensions, ReactiveProperty を使った Android/iOS アプリ(Xamarin, C#言語)</h1>
-
-<p><a href="https://xamarin.com/">Xamarin</a> は、 C# で Android/iOS が作れるプロダクトです。
-RubyMotion のように、CocoaTouch や Android SDK の API をラップし、同じ名称のクラス,メソッドで C# から呼び出せるようにしています。</p>
-
-<ul>
-<li><a href="http://ytabuchi.hatenablog.com/">Xamarin 日本語情報</a></li>
-<li><a href="http://qiita.com/amay077/items/2e86b44e5f274a34b2e9">マカーの人が Xamarin について勘違いしていそうな５つのこと &ndash; Qiita</a></li>
-</ul>
-
-
-<p>.NETのオープンソース実装である mono 由来の製品であり、また Microsoft とのパートナーシップも結んでいることから、.NET の資産の多くが利用可能です。</p>
-
-<p>何が言いたいかと言うと、RxJava も MVVM パターンも、元は .NET のアプリケーション開発の分野で発案・成熟してきた考え方であり、豊富な.NET製ライブラリ(今回だと Reactive Extensions と ReactiveProperty)を使って Android/iOS アプリを開発できる、という事です。</p>
-
-<h2>Model-ViewModel-View(MVVM) で考える</h2>
-
-<p>Xamarin でも MVVM の役割はまったく同じですが、
-<strong>「Model-ViewModel を Android/iOS で使いまわせる」</strong>
-という大きなメリットがあります。</p>
-
-<p>Model と ViewModel からは、プラットフォームに依存するコードは排除できます(すべきです)。
-Xamarin(というか .NET) ではプラットフォーム非依存の処理をライブラリ化できます(これを PCL=Portable Class Library と言います)。</p>
-
-<p>Android と iOS でそれぞれに実装が必要なのは、View と、そのバインディングのみです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_02.png" alt="クラス図的なの" /></p>
-
-<h2>Reactive Extensions について</h2>
-
-<p>本家<a href="https://github.com/Reactive-Extensions/Rx.NET">Rx.NET</a>です。RxJava はこの Reactive Extensions を Java にポートしたものです。
-RxJava には、いくつか便利なメソッドが追加されています(<code>compose</code> とか)が、殆ど同じです。
-また、 C# はラムダ式を標準でサポートしていることから、 retrolambda などに頼らなくても見やすいコードが書けるのは言うまでもないでしょう。</p>
-
-<h2>ReactiveProperty について</h2>
-
-<p><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> は、Rxの機能を活かしてMVVMパターンの実装を手助けしてくれるライブラリです。</p>
-
-<ul>
-<li><a href="http://blog.okazuki.jp/entry/2015/02/22/212827">MVVMとリアクティブプログラミングを支援するライブラリ「ReactiveProperty v2.0」オーバービュー &ndash; かずきのBlog@hatena</a></li>
-</ul>
-
-
-<p>Java版ストップウォッチでは、<code>StopWatchModel</code> や ViewModel のプロパティを全て <code>Observable&lt;T&gt;</code> としましたが、 Xamarin版では <code>ReactiveProperty&lt;T&gt;</code> としています。 <code>ReactiveProperty&lt;T&gt;</code> は <code>Observable&lt;T&gt;</code> から継承しているので、それほど大差はありませんが、<code>Subject</code> のように値の設定をサポートしていたり、バリデーション、エラー通知の仕組みが備わっています。</p>
-
-<p>また、ReactiveProperty は、 Android の View要素とのバインディング機能も持ちます。これを使うとバインディングが以下のように書けます。</p>
-
-<p>```csharp
-// TextView(textTime) と viewModel.Time のバインド
-FindViewById<TextView>(Resource.Id.textTime)</p>
-
-<pre><code>.SetBinding(v =&gt; v.Text, 
-    _viewModel.Time.Select(x =&gt; x.ToString())
-    .ObserveOnUIDispatcher()
-    .ToReactiveProperty());
-</code></pre>
-
-<p>```</p>
-
-<p>iOS のバインディングはありませんが、 <del>ソースの一部を持ってくる事で、殆ど解決します</del> <a href="https://twitter.com/okazuki/status/679256704689684480">ツイートしたら取り込んでもらえました(^^)</a> 。</p>
-
-<h1>作ったアプリのソース</h1>
-
-<ul>
-<li><a href="https://github.com/amay077/StopWatchSample">amay077/StopWatchSample</a></li>
-</ul>
-
-
-<p>それぞれ、</p>
-
-<ol>
-<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppAndroid">RxJava を使った Android アプリ(Java言語)</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Android">Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.iOS">Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Core">Xamarin版アプリの Model, ViewModel</a></li>
-</ol>
-
-
-<p>にあります。</p>
-
-<p>Java版は、</p>
-
-<ul>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a></li>
-</ul>
-
-
-<p>を見るとだいたい分かると思います。</p>
-
-<p>また、Java版 と Xamarin版では、</p>
-
-<ul>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/Models/StopWatchModel.cs">StopWatchModel.cs</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/ViewModels/MainViewModel.cs">MainViewModel.cs</a></li>
-<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Android/Views/MainActivity.cs">MainActivity.cs</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.iOS/Views/MainViewController.cs">MainViewController.cs</a></li>
-</ul>
-
-
-<p>あたりを見比べるといいと思います。</p>
-
-<h1>まとめ</h1>
-
-<p>MVVM と RxJava はとても相性がよいと感じました。</p>
-
-<p>Model → ViewModel → View と通知を伝搬させるのに、そのまま <code>Observable&lt;T&gt;</code> を繋げればよいのですから。加工が必要なら <code>map</code> などのオペレータを挟むだけ。
-これがコールバックだったら…恐ろしくて想像したくありません。</p>
-
-<p>Model が使用するDB層やWebAPIなども RxJava をサポートしていたら、もっと便利になると思います。(Realm は RxJava サポートが追加されたようですね！)</p>
-
-<p>View &ndash; ViewModel のデータバインディングにも RxJava は有効ですが、こちらは、Android公式の Data Binding がどう実装されるかで未来が変わってきそうです。</p>
-
-<p>Android-Java には、まだメジャーな MVVMフレームワークが無いので、登場が待たれるところです。</p>
-
-<h1>おまけ：反省など</h1>
-
-<h2>View か ViewModel か Model か問題</h2>
-
-<p>下は View に書かれている「現在時刻と表示書式文字列のどちらかが更新されたら、時刻をフォーマットして流す」という Observable です。</p>
-
-<p>```java
-// フォーマットされた時間を表す Observable（time と timeFormat のどちらかが変更されたら更新）
-final Observable<String> formattedTime = Observable.combineLatest(</p>
-
-<pre><code>    _viewModel.time,
-    _viewModel.timeFormat, (Long time, String format) -&gt; {
-        final SimpleDateFormat sdf = new SimpleDateFormat(format, Locale.getDefault());
-        return sdf.format(new Date(time));
-    });
-</code></pre>
-
-<p>```</p>
-
-<p>これは、ViewModel に用意すべきだったかも知れません。いやいや、フォーマットされた時間を通知する機能が Model にあってもおかしくないとも言えます。
-実際、 <code>LapActivity</code> でも同じコードを書いているので D.R.Y原則にも反します。やっぱ Model に持たせるべきだったと反省。</p>
-
-<h2>Model に戻り値が void でないメソッドを作っちゃった問題</h2>
-
-<blockquote><p>原則として Model のメソッドの戻り値は void です</p></blockquote>
-
-<p>の原則に反して、戻り値で最速、最遅ラップ値を返してしまいました。
-Toast表示のためだけに取得できればいいやと思いこうしたのですが、これでは「最速、最遅ラップを常に画面に表示する」という仕様変更があっただけで破綻します。これは悪手でした、反省。</p>
-
-<p>だいたいラップの最大、最小の取得は、 <code>Observable&lt;List&lt;Long&gt;&gt; laps</code>  を <code>map</code> で変換すればよいだけの話ですね。LINQ あるいは Stream API が使えれば <code>List&lt;Long&gt;</code> から min/max を取得するのも簡単ですし。</p>
-
-<h2>Timer を 1ms 間隔にしちゃった問題</h2>
-
-<p><code>Observable.interval(1ms)</code> ってやっちゃいましたが、START の時間を覚えておいて、LAP, STOP された時に、現在時刻との差分を取ればよかったですね。基本的なムダで反省。</p>
-
-<p><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> より</p>
-
-<blockquote><p>Lap ボタンを押したタイミングで DateTime.Now を取得すればよいわけで、何も定期的に内部データを更新する必要はありません</p></blockquote>
-
-<p>その通りですね。。。</p>
-
-<h2>UIスレッドへの変換をだれがやるのか問題</h2>
-
-<p>今回は、以下のように、自作したバインディングの中で <code>observeOn(AndroidSchedulers.mainThread())</code> 行っています。</p>
-
-<p>```java
-public TextViewBinder toTextOneWay(Observable<String> prop) {</p>
-
-<pre><code>_subscriptions.add(
-    prop.observeOn(AndroidSchedulers.mainThread())
-        .subscribe(x -&gt; _textView.setText(x)));
-
-return this;
-</code></pre>
-
-<p>}
-```</p>
-
-<p>これを ViewModel で行うこと(ViewModel が公開する Observable は必ずUIスレッドで実行されるというルール)もできます。
-が、セオリーが分かっていません。とりあえず View側で observeOn しとけば安全かなと思って上記のようにしているだけです。使用するMVVMフレームワークの仕様にも依存しそうです。</p>
-
-<h2>StopWatchModel のプロパティは Hot？ それとも Cold？</h2>
-
-<p>StopWatchModel の各プロパティである <code>Observable&lt;T&gt;</code> は、 <strong><code>subscribe</code> をトリガーに値が流れ始めるものではないので Hot</strong> ですね。</p>
-
-<p>また、<code>BehaviorSubject</code> を使っているので、 <code>subscribe</code> 時には、その時点の最新の値が流れてきます。</p>
-
-<p>シングルトンの <code>StopWatchModel</code> に対して、 <code>MainActivity</code> に続いて <code>LapActivity</code> でも購読した時に、正しくラップタイム群が表示できるのは、<code>BehaviorSubject</code> であるためですね。</p>
-
-<p><code>refCount</code> してないけど、ちゃんと破棄されているのかは未確認。。。</p>
-
-<h2>Observalbe&lt;List&lt;T>></h2>
-
-<p>ラップタイム群を通知するプロパティは <code>Observalbe&lt;List&lt;T&gt;&gt;</code> にしています。
-この場合、List の中身を変更されても通知されないので  <code>Collections.unmodifiableList</code> で変更不可にしてから onNext で通知しています。LAPボタンが押される度に List を作りなおしている感じになります。</p>
-
-<p>ListView とのバインディングも同じで、onNext を受信する度に、ListView を洗い替えしています。
-このムダが嫌、大量データでパフォーマンスに問題が出る場合は、.NET にある <a href="https://msdn.microsoft.com/ja-jp/library/ms668604(v=vs.110"><code>ObservableCollection&lt;T&gt;</code></a>.aspx) のような仕組みを作る必要があります。(Rx.NET, RxJava では管轄外かな？)</p>
-
-<p><code>ObservableCollection&lt;T&gt;</code> は、リストへの追加、削除、変更をアイテム毎に通知／監視できます(「 <em>項目X</em> が <em>2番目</em> に <em>追加</em> された」のような)。適切な通知とバインディングを実装すれば、ListView の差分更新が可能です（面倒ですが）。</p>
-
-<h1>参考</h1>
-
-<ul>
-<li><a href="http://ugaya40.hateblo.jp/entry/model-mistake">MVVMのModelにまつわる誤解 &ndash; the sea of fertility</a></li>
-<li><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> &ndash; タイマを View/ViewModel/Model に持つそれぞれの理由が解説されています。</li>
-<li><a href="http://qiita.com/hide92795/items/f7205c8171826cc2153b">RxJava &ndash; Rxで知っておくと便利なSubjectたち &ndash; Qiita</a></li>
-<li><a href="http://qiita.com/amay077/items/4bb6b09a1911b074f50c">RxJava &ndash; Hot Observable と ConnectableObservable について &ndash; Qiita</a></li>
-</ul>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Hot Observable と ConnectableObservable について]]></title>
-    <link href="http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable/"/>
-    <updated>2015-12-17T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2015/12/17/about-hot-observable-and-connectableobservable</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 17日目</a> の記事です。</p>
-
-<p>空いてたので参加してみました。
-普段は Xamarin(C#) + Reactive Extensions + ReactiveProperty で、Reactive + MVVM な Android/iOS両対応アプリを開発しています。</p>
-
-<!--more-->
-
-
-<h2>Cold vs Hot</h2>
-
-<p>Cold Observable は「あなただけの」Stream、Hot は「みんなの」Stream 。
-（私的にはニコ動かニコ生か、みたいに理解してますが、その話はいいや）</p>
-
-<p>Cold は、あなたが subscribe した瞬間からデータが流れ始めます。
-Hot は、あなたが subscribe してもデータは流れ始めません(流れるかも知れません？)。</p>
-
-<p>では Hot Observable はいつからデータが流れ始める？Observable が生成された瞬間から？
-その答え(の一つ)が <strong>ConnectableObservable</strong> 。</p>
-
-<h2>ConnectableObservable のデータ放流の開始と停止</h2>
-
-<p>Cold Observable を Hot化する publish メソッドの返り値は ConnectableObservable。
-Hot は必ず ConnectableObservable。（←これ後で否定します）</p>
-
-<p>ConnectableObservable には connect メソッドがあります。
-Hot Observable のデータが流れ始めるのは、このメソッドを呼んだ瞬間から。
-なので、どれだけ subscriber が居ようとも connect を呼ばなければデータは流れません。逆に subscriber が居なくても connect を呼べばデータが流れ始めます。</p>
-
-<p>connect メソッドの返り値は Subscription です。
-Subscription の unsubscribe メソッドを呼ぶと、データの放流が停止します。これも subscriber が居ようが居まいが停止します。
-再度 connect すると、 <strong>最初から</strong> データが流れ出します。再開ではありません。</p>
-
-<h2>実例</h2>
-
-<h3>Cold Observable</h3>
-
-<p>Observable.interval は、一定時間置きにインクリメントされた値を流す <strong>Cold</strong> Observable。
-なので、複数の subscriber が居たら、各々に独立した値を流します。</p>
-
-<p>Android の画面にボタンが２つ（buttonSubscribe1 と buttonSubscribe2）並んでるだけのサンプルです。</p>
-
-<p>```java
-final Observable<Long> tickObservable = Observable.interval(1000, TimeUnit.MILLISECONDS);</p>
-
-<p>// 可視性向上の為のなんちゃってラムダ
-findViewById(R.id.buttonSubscribe1).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe1 click!");
-tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber1 - onNext - " + x));
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonSubscribe2).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe2 click!");
-tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber2 - onNext - " + x));
-</code></pre>
-
-<p>});
-```</p>
-
-<blockquote><p>結果:<br/>
-D/MainActivity: buttonSubscribe1 click!<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
-D/MainActivity: buttonSubscribe2 click!<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 0<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 1<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 8<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 2<br/></p></blockquote>
-
-<p>buttonSubscribe1 を押すとデータ(０から連番)が流れ始めます。
-しばらくして buttonSubscribe2 を押すと、1 とは関係なく、また 0 から流れ始めます。</p>
-
-<h3>Hot(Connectable) Observable</h3>
-
-<p>publish で Hot 化します。
-connect と unsubscribe を呼ぶためのボタン（buttonConnect, buttonDisConnect）を画面に追加してます。</p>
-
-<p>```java
-private Subscription _connection; // field です</p>
-
-<p>final ConnectableObservable<Long> tickObservable =</p>
-
-<pre><code>Observable.interval(1000, TimeUnit.MILLISECONDS).publish(); // publish で Hot化
-</code></pre>
-
-<p>findViewById(R.id.buttonSubscribe1).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe1 click!");
-tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber1 - onNext - " + x));
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonSubscribe2).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe2 click!");
-tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber2 - onNext - " + x));
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonConnect).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonConnect click!");
-_connection = tickObservable.connect(); // データ放流開始
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonDisConnect).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonDisConnect click!");
-if (_connection != null) {
-    _connection.unsubscribe(); // データ放流停止
-    _connection = null;
-}
-</code></pre>
-
-<p>});
-```</p>
-
-<blockquote><p>結果:<br/>
-D/MainActivity: buttonSubscribe1 click!<br/>
-D/MainActivity: buttonConnect click!      // ←数秒経過している<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
-D/MainActivity: buttonSubscribe2 click!<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
-D/MainActivity: buttonDisConnect click!<br/>
--これ以降 onNext は出力されない-<br/></p></blockquote>
-
-<p>buttonSubscribe1 を押しても、まだデータは流れてきません。
-数秒後、buttonConnect を押すとデータが流れ始めます。
-buttonSubscribe2 を押すと、subscriber2 が増えますが、Hot(みんなの)Observable なので、流れてくる値とタイミングは subscriber1 と全く同じです。</p>
-
-<p>buttonDisConnect を押すと、データの放流が停止されます。(ちなみにもう一度 CONNECT すると、また 0 から値が流れます)
-subscriber1, subscriber2 にはもう onNext は呼ばれません。</p>
-
-<p>※サンプルでは onNext しか受信していませんが、 buttonDisConnect を押しても、 subscriber1, subscriber2 の onComplete や onError も呼ばれません。つまり、 <strong>「データの放流が停止されても、 subscriber はそれに気付けない」</strong> ということになります。これはこれでいいんだろか、という感じです。</p>
-
-<h2>ConnectableObservable.refCount について</h2>
-
-<blockquote><p>Hot は必ず ConnectableObservable。（←これ後で否定します）</p></blockquote>
-
-<p>否定始めます。</p>
-
-<p>ConnectableObservable では、データ放流の開始と停止は、 connect と unsubscribe に委ねられていました。</p>
-
-<p>refCount() を使うとそれを自動化できます。(refCount？参照カウントを返すメソッド？そう思っていましたが全然違いました。)
-どういうことかと言うと、最初の subscriber が現れたらデータ放流を開始し、誰も subscriber が居なくなったら放流を停止する、というものです。
-refCount() の返値はただの Observable です、でも Hot です。はい否定しましたー。</p>
-
-<h3>実例</h3>
-
-<p>publish した Hot Observable を refCount してデータ放流を自動制御してもらいます。
-画面には、 buttonConnect, buttonDisConnect に代わり、buttonUnsubscribe1, buttonUnsubscribe2 を用意します。</p>
-
-<p>```java
-private Subscription <em>subscription1; // field です
-private Subscription </em>subscription2; // field です
-private Subscription _connection;    // field です</p>
-
-<p>final Observable<Long> tickObservable =</p>
-
-<pre><code>Observable.interval(1000, TimeUnit.MILLISECONDS).publish().refCount(); // 返値は Connectable ではない
-</code></pre>
-
-<p>findViewById(R.id.buttonSubscribe1).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe1 click!");
-_subscription1 = tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber1 - onNext - " + x));
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonSubscribe2).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonSubscribe2 click!");
-_subscription2 = tickObservable.subscribe(x -&gt; Log.d(TAG, "subscriber2 - onNext - " + x));
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonUnsubscribe1).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonUnsubscribe1 click!");
-if (_subscription1 != null) {
-    _subscription1.unsubscribe(); // 1購読終了
-    _subscription1 = null;
-}
-</code></pre>
-
-<p>});</p>
-
-<p>findViewById(R.id.buttonUnsubscribe2).setOnClickListener(v &ndash;> {</p>
-
-<pre><code>Log.d(TAG, "buttonUnsubscribe2 click!");
-if (_subscription2 != null) {
-    _subscription2.unsubscribe(); // 2購読終了
-    _subscription2 = null;
-}
-</code></pre>
-
-<p>});
-```</p>
-
-<blockquote><p>結果:<br/>
-D/MainActivity: buttonSubscribe1 click!<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 0<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 1<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 2<br/>
-D/MainActivity: buttonSubscribe2 click!<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 3<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 3<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 4<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 4<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 5<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 5<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 6<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 6<br/>
-D/MainActivity: subscriber1 &ndash; onNext &ndash; 7<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 7<br/>
-D/MainActivity: buttonUnsubscribe1 click!<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 8<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 9<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 10<br/>
-D/MainActivity: subscriber2 &ndash; onNext &ndash; 11<br/>
-D/MainActivity: buttonUnsubscribe2 click!<br/>
--これ以降 onNext は出力されない-<br/></p></blockquote>
-
-<p>buttonSubscribe1 を押すと、その時点でデータが流れ始めます(refCount による自動制御)。
-buttonSubscribe2 を押すと、subscriber1 と同じタイミングで、同じ値を受信できます(Hot だから)。
-buttonUnsubscribe1 を押すと、 subscriber1 は購読をやめますが、subscriber2 はまだ受信しています。
-buttonUnsubscribe2 を押すと、subscriber2 も購読をやめ、この時点でデータ放流が停止します(refCount による自動制御)。</p>
-
-<p>※ほんとにデータ放流終わってんの？を確認するには、 tickObservable に doOnNext を繋げて確認するとよいと思います。</p>
-
-<h2>まとめ</h2>
-
-<p>Hot Observable は、ほとんどの場合(publish により生成されるので) ConnectableObservable。
-ConnectableObservable は、購読者の有無に関係なく connect でデータ放流開始、Subscription.unsubscribe でデータ放流停止。
-refCount により購読者の有無に連動したデータ放流の自動制御が可能。この場合 Hot だけど普通の Observable型。</p>
-
-<p>実際に Hot Observable を使う場合は、refCount() しとくのが無難かなー、と思いました。(購読者の unsubscribe を厳密に管理しておけば、という前提で)</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html">Intro to Rx &ndash; Hot and Cold observables</a></li>
-<li><a href="https://github.com/ReactiveX/RxJava/wiki/Connectable-Observable-Operators">Connectable Observable Operators · ReactiveX/RxJava Wiki</a></li>
-<li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

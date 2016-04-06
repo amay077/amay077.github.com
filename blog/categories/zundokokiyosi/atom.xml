@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ズンドコキヨシ | Experiments Never Fail]]></title>
+  <link href="http://blog.amay077.net/blog/categories/zundokokiyosi/atom.xml" rel="self"/>
+  <link href="http://blog.amay077.net/"/>
+  <updated>2016-04-06T22:40:28+09:00</updated>
+  <id>http://blog.amay077.net/</id>
+  <author>
+    <name><![CDATA[amay077]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[RxJava でズンドコキヨシ(window or buffer 使用)]]></title>
+    <link href="http://blog.amay077.net/blog/2016/03/13/zundoko-with-rxjava/"/>
+    <updated>2016-03-13T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/03/13/zundoko-with-rxjava</id>
+    <content type="html"><![CDATA[<p>調子に乗って RxJava でもやってみた。</p>
+
+<!--more-->
+
+
+
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/85dfc4bd194f57c52c57">C# と Reactive Extensions でズンドコキヨシ</a></li>
+</ul>
+
+
+<p>がんばって <a href="http://reactivex.io/documentation/operators/window.html"><code>Observable.window</code></a> を使ってみた。</p>
+
+<p>```java zondoko.java</p>
+
+<p>// なんちゃってラムダ使用。あと Android。
+public void doZondoko() {</p>
+
+<pre><code>final Random random = new Random();
+final List&lt;String&gt; PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
+final String K = "キ・ヨ・シ！";
+
+Observable.concat( // ※ の Observable&lt;List&lt;String&gt;&gt; を直列に連結
+    Observable.interval(500, TimeUnit.MILLISECONDS)
+        .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
+        .window(PATTERN.size(), 1) // 要素数5のWindowを1ずつズラしてく
+        .map(window -&gt; window.toList())) // Observable&lt;Observable&lt;String&gt;&gt; を Observable&lt;List&lt;String&gt;&gt; に変換 ※
+    .flatMap(window -&gt; {
+        if (sequenceEqual(window, PATTERN)) { // パターンと一致していたら…
+            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
+            says.addAll(window);
+            says.add(K);                      // キ・ヨ・シ！を追加
+            return Observable.concat(
+                    Observable.just(says),
+                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
+        } else {
+            return Observable.just(window);
+        }
+    })
+    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
+    .subscribe(says -&gt; Log.d(TAG, dump(says)));
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* リストとリストの要素一致 </em>/
+private boolean sequenceEqual(List<String> listA, List<String> listB) {</p>
+
+<pre><code>Iterator&lt;String&gt; iterA = listA.iterator();
+Iterator&lt;String&gt; iterB = listB.iterator();
+
+while (iterA.hasNext() &amp;&amp; iterB.hasNext()) {
+    if (iterA.next() != iterB.next()) {
+        return false;
+    }
+}
+return (!iterA.hasNext() &amp;&amp; !iterB.hasNext());
+</code></pre>
+
+<p>}</p>
+
+<p>/<em>* リスト内容をダンプ </em>/
+private String dump(List<String> list) {</p>
+
+<pre><code>final StringBuilder b = new StringBuilder();
+for (String s : list) {
+    if (!TextUtils.isEmpty(b.toString())) {
+        b.append(", ");
+    }
+    b.append(s);
+}
+
+return b.toString();
+</code></pre>
+
+<p>}
+```</p>
+
+<blockquote><p>どこ, ずん, どこ, どこ, ずん<br/>
+ずん, どこ, どこ, ずん, どこ<br/>
+どこ, どこ, ずん, どこ, ずん<br/>
+どこ, ずん, どこ, ずん, どこ<br/>
+ずん, どこ, ずん, どこ, どこ<br/>
+どこ, ずん, どこ, どこ, ずん<br/>
+ずん, どこ, どこ, ずん, ずん<br/>
+どこ, どこ, ずん, ずん, ずん<br/>
+どこ, ずん, ずん, ずん, ずん<br/>
+ずん, ずん, ずん, ずん, どこ, キ・ヨ・シ！</p></blockquote>
+
+<p>「window(5, 1) &ndash;> toList &ndash;> concat してるならそれは <code>buffer(5, 1)</code> やんけ」というのを <a href="http://qiita.com/do6gop/items/c4941f6fb2bdc1c0c0f1">こちら</a> で知って、 <code>buffer</code> 版も書いてみた。</p>
+
+<p>```java Zondoko_buffer.java
+public void doZondoko() {</p>
+
+<pre><code>final Random random = new Random();
+final List&lt;String&gt; PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
+final String K = "キ・ヨ・シ！";
+
+Observable.interval(500, TimeUnit.MILLISECONDS)
+    .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
+    .buffer(PATTERN.size(), 1) // 要素数5のBufferを1ずつズラしてく
+    .flatMap(buf -&gt; {
+        if (sequenceEqual(buf, PATTERN)) { // パターンと一致していたら…
+            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
+            says.addAll(buf);
+            says.add(K);                      // キ・ヨ・シ！を追加
+            return Observable.concat(
+                    Observable.just(says),
+                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
+        } else {
+            return Observable.just(buf);
+        }
+    })
+    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
+    .subscribe(says -&gt; Log.d(TAG, dump(says)));
+</code></pre>
+
+<p>}
+```</p>
+
+<ul>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[C# と Reactive Extensions でズンドコキヨシ]]></title>
+    <link href="http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions/"/>
+    <updated>2016-03-12T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/03/12/zundoko-with-reactive-extensions</id>
+    <content type="html"><![CDATA[<p>流行り？に乗っていくスタイル。</p>
+
+<!--more-->
+
+
+
+
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+
+
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+<p>```csharp Zondoko.cs
+var random = new Random();
+var K = &ldquo;キ・ヨ・シ！&rdquo;;
+var PATTERN = new string[] { &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;ずん&rdquo;, &ldquo;どこ&rdquo; };</p>
+
+<p>Observable.Interval(TimeSpan.FromMilliseconds(100))</p>
+
+<pre><code>.Select(_ =&gt; (random.Next() % 2 == 0) ? "ずん" : "どこ") // ランダムに ずんorどこ
+.Scan(new List&lt;string&gt;(), (queue, x) =&gt; // 最大５つのQueueに貯める
+    {
+        queue.Add(x);
+        while (queue.Count &gt; PATTERN.Count) { queue.RemoveAt(0);}
+        return queue;
+    })
+.SelectMany(queue =&gt; queue.SequenceEqual(PATTERN) ? // パターンと一致したら…
+    Observable.Concat(
+        Observable.Return(queue.Last()),   // Queueの最後
+        Observable.Return(K),              // + キ・ヨ・シ！
+        Observable.Return(string.Empty)) : // + 空文字(終了判定用)
+    Observable.Return(queue.Last()))
+.TakeWhile(x =&gt; !string.IsNullOrEmpty(x))  // 空文字になるまで繰り返す
+.Subscribe(
+    x =&gt; Console.WriteLine(x),
+    () =&gt; Console.WriteLine("complete!!"));
+</code></pre>
+
+<p>```</p>
+
+<blockquote><p>どこ<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+どこ<br/>
+どこ<br/>
+ずん<br/>
+どこ<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+ずん<br/>
+どこ<br/>
+キ・ヨ・シ！<br/>
+complete!!</p></blockquote>
+
+<p><code>SelectMany</code> に頼ってるのが気に入らない。。。</p>
+
+<ul>
+<li>RxJava 版はこちら &ndash; <a href="http://qiita.com/amay077/items/2c8575753e37fcc94f87">RxJava でズンドコキヨシ(window 使用)</a></li>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+</feed>
