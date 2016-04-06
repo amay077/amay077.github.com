@@ -11,7 +11,9 @@ categories: [YouTube, Live配信]
 
 <!--more-->
 
-あまり構い過ぎるのはよくない、しかし観たい！というわけで、Webカメラを使ってケージの様子を観察することにしました。
+![image02](https://dl.dropboxusercontent.com/u/264530/qiita/started_keep_a_hamster_02.jpg)
+
+ハムスターはストレスに弱い生き物なのであまり構い過ぎるのはよくない、しかし観たい！というわけで、Webカメラを使ってケージの様子を観察することにしました。
 
 * [伊藤くんのハムスター中継-ニコニコミュニティ](http://com.nicovideo.jp/community/co2173122)
 
