@@ -4,7 +4,7 @@
   <title><![CDATA[Category: reactivex | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/reactivex/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-05-08T02:22:02+09:00</updated>
+  <updated>2016-06-11T14:48:55+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,115 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ReactiveProperty で2度押し防止(Using使ったやつ)]]></title>
+    <link href="http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty/"/>
+    <updated>2016-04-07T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://tamafuyou.hatenablog.com/entry/2016/04/06/213633">ReactivePropertyで2度押し防止 &ndash; 眠いしお腹すいたし(´・ω・`)</a></li>
+</ul>
+
+
+<p>を拝見しまして、前から気になってたので考えてみました。</p>
+
+<!--more-->
+
+
+<p>先に別件。</p>
+
+<p>ReactiveCommand は <code>IObservable&lt;T&gt;</code>、そしてロジックの方も <code>IObservable&lt;T&gt;</code> で作ることが多いのですが、その場合「ボタンをクリックした時に、ロジックを実行する」というコードは大抵以下のようになります。</p>
+
+<p>```csharp MainViewModel.cs
+public class MainViewModel
+{</p>
+
+<pre><code>public ReactiveCommand TestCommand { get; }
+public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
+
+public MainViewModel()
+{
+    TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
+    TestCommand.Subscribe(_ =&gt;
+    {
+        // log("ボタンが押されたよ");
+        IsBusy.Value = true;
+        SomeLogicAsObservable.Subscribe(__ =&gt;
+        {
+            // log("処理が実行されたよ");
+            IsBusy.Value = false; // ほんとは OnCompleted と OnError でやるべき
+        };
+    });
+}
+
+// なんか重い非同期な処理
+private IObservable&lt;Unit&gt; SomeLogicAsObservable()
+{
+    return Observable.Delay(Observable.Return(Unit.Default), 
+            TimeSpan.FromSeconds(3));
+}    
+</code></pre>
+
+<p>}
+```</p>
+
+<p>こういうコードを書いていていつも「なんかカッコ悪いなー」と思っていました。
+そう思う点は、<code>Subscribe</code> を2回書いていること。ボタンがクリックされた事の購読の中でさらにロジックが実行された事を購読している点です。
+どちらも Stream なのだから、うまくマージできないかなと思っていました。</p>
+
+<p>これの解決も一緒に考えてみました。</p>
+
+<p>はい、</p>
+
+<p>```csharp MainViewModel.cs
+public class MainViewModel
+{</p>
+
+<pre><code>public ReactiveCommand TestCommand { get; }
+public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
+
+public MainViewModel()
+{
+    TestCommand = TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
+
+    TestCommand
+        .SelectMany(_ =&gt; UsingIsBusy(SomeLogicAsObservable()))
+        .Subscribe(_ =&gt; { /* log("ボタンが押されてロジックが実行されたよ") ※ */ });
+        // ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意
+}
+
+private IObservable&lt;T&gt; UsingIsBusy&lt;T&gt;(IObservable&lt;T&gt; observable)
+{
+    return Observable.Using(
+        () =&gt;
+        {
+            IsBusy.Value = true;
+            return Disposable.Create(() =&gt; IsBusy.Value = false);
+        },
+        _ =&gt; observable);
+}
+
+// なんか重い非同期な処理
+private IObservable&lt;Unit&gt; SomeLogicAsObservable()
+{
+    return Observable.Delay(Observable.Return(Unit.Default),
+                            TimeSpan.FromSeconds(3));
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>IsBusy</code> の ON/OFF を <code>Observable.Using</code> に任せるようにしました。これは、第2引数に指定した <code>IObservable&lt;T&gt;</code> が完了または失敗した時にリソースを解放してくれる C# の <code>using 句</code> のようなもので、ここでは第2引数にロジックの <code>IObservable&lt;T&gt;</code> を渡すことで、ロジックが完了したら自動的に <code>IsBusy.Value = false</code> が実行されます。</p>
+
+<p>次に「<code>Subscribe</code>を2回してる問題」は、ボタンがクリックされた<code>IObserbale&lt;T&gt;</code> から <code>SelectMany</code> で繋いであげることで解決しています。</p>
+
+<p>このコードの要注意は、<code>IsBusy.Value = false</code> が実行されるのがUIスレッドとは限らないので、View側でバインドするまでに <code>ObserveOnUIDispatcher</code> などをしてあげないといけないことです（少なくとも Xamarin.Android + ReactiveProperty ではそうでした。WPFだと気にしないのでしょうか？）。</p>
+
+<p>もう少し汎用性を高めて、「<code>IsBusy プロパティを持った ReactiveCommand</code>」のようなものを作ったら便利なのかもしれないです。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[RxJava でズンドコキヨシ(window or buffer 使用)]]></title>
@@ -613,142 +722,6 @@ Log.debug(TAG, "Hoge");
 <blockquote><p>In the observable world, calling Subscribe should be an asynchronous operation.</p></blockquote>
 
 <p>との言葉通り、Rx.NET/RxJava を使うときは非同期にしたい事が全てだと思いますが、オペレータによっては既定で <code>ImmediateScheduler</code> を使うものもあるので、必ず <code>subscribeOn/observeOn</code> をするクセをつけておいた方がいいのかな？と思いました。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Task→Observable 変換でハマったこと]]></title>
-    <link href="http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion/"/>
-    <updated>2016-01-16T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion</id>
-    <content type="html"><![CDATA[<p>.NET の <code>Task&lt;T&gt;</code> は、Reactive Extensions が提供する拡張メソッド <code>ToObservable()</code> で <code>IObservable&lt;T&gt;</code> に変換できます。</p>
-
-<p>なにも考えずに <code>ToObservable()</code> を連発していたら、盛大にハマったのでメモ。</p>
-
-<!--more-->
-
-
-<h2>Task.Run().ToObservable() とか、意味ないっしょ</h2>
-
-<p>ダメなコード。</p>
-
-<p>```csharp
-var i = 0;
-IObservable<int> incrementObservable = Task.Run (() => {</p>
-
-<pre><code>i++;
-Debug.WriteLine($"increment! - {i}");
-return i;
-</code></pre>
-
-<p>})
-.ToObservable ();</p>
-
-<p>Debug.WriteLine(&ldquo;Ready&hellip;&rdquo;);</p>
-
-<p>incrementObservable // インクリメント</p>
-
-<pre><code>.Repeat(3) // ３回繰り返す
-.Subscribe(
-    x  =&gt; Debug.WriteLine($"OnNext({x})"),
-    ex =&gt; Debug.WriteLine($"OnError({ex.ToString()})"),
-    () =&gt; Debug.WriteLine("OnCompleted"));
-</code></pre>
-
-<p>```</p>
-
-<p><code>incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code>IObservable&lt;int&gt;</code> です。
-　これを <code>.Repeat(3)</code> して <code>.Subscribe</code> してますから、
-　</p>
-
-<blockquote><p>Ready&hellip;
-increment! &ndash; 1
-OnNext(1)
-increment! &ndash; 2
-OnNext(2)
-increment! &ndash; 3
-OnNext(3)
-OnCompleted</p></blockquote>
-
-<p>という出力を期待してました。
-が、実際の出力はこう。</p>
-
-<blockquote><p>increment! &ndash; 1
-Ready&hellip;
-OnNext(1)
-OnNext(1)
-OnNext(1)
-OnCompleted</p></blockquote>
-
-<p>Subscribe する前に Task が実行されてるし、 repeat してるのに increment されない。。。</p>
-
-<p>「・・・ん？ Task.Run().ToObservable() って、タスクを実行した結果を IObservable 化してるだけじゃね？」</p>
-
-<p>コード見たまんまなんですが、これに気づくのに１時間かかりました。。。</p>
-
-<p>期待通り動くのはこう↓。</p>
-
-<p>```csharp
-var i = 0;
-IObservable<int> incrementObservable = Observable.FromAsync(()=>Task.Run(() => {</p>
-
-<pre><code>i++;
-Debug.WriteLine($"increment! - {i}");
-return i;
-</code></pre>
-
-<p>}));</p>
-
-<p>Debug.WriteLine(&ldquo;Ready&hellip;&rdquo;);</p>
-
-<p>incrementObservable // インクリメント</p>
-
-<pre><code>.Repeat(3) // ３回繰り返す
-.Subscribe(
-    x  =&gt; Debug.WriteLine($"OnNext({x})"),
-    ex =&gt; Debug.WriteLine($"OnError({ex.ToString()})"),
-    () =&gt; Debug.WriteLine("OnCompleted"));
-</code></pre>
-
-<p>```</p>
-
-<p><code>Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。
-これの結果は正しくこう↓なりました。</p>
-
-<blockquote><p>Ready&hellip;
-increment! &ndash; 1
-OnNext(1)
-increment! &ndash; 2
-OnNext(2)
-increment! &ndash; 3
-OnNext(3)
-OnCompleted</p></blockquote>
-
-<h2>Task は１回しか実行できない</h2>
-
-<p>ところで、 <code>Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
-
-<p>```csharp
-var i = 0;
-Task<int> incrementTask = new Task<int>(() => {</p>
-
-<pre><code>i++;
-Debug.WriteLine($"increment! - {i}");
-return i;
-</code></pre>
-
-<p>});</p>
-
-<p>incrementTask.RunSynchronously();
-incrementTask.RunSynchronously();
-```</p>
-
-<p>このコードは２回目の <code>RunSynchronously()</code> で例外がでます。</p>
-
-<p>となると、 <code>incrementTask.ToObservable()</code> したとしても、期待通り動いてくれなさそうです。
-（そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
-
-<p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
 ]]></content>
   </entry>
   

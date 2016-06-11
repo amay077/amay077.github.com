@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-05-08T02:22:02+09:00</updated>
+  <updated>2016-06-11T14:48:55+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,216 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms の画面(Page)のライフサイクルイベントについて]]></title>
+    <link href="http://blog.amay077.net/blog/2016/06/08/xamarin-forms-page-lifecycles/"/>
+    <updated>2016-06-08T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/06/08/xamarin-forms-page-lifecycles</id>
+    <content type="html"><![CDATA[<p>ちょっと誤解してた＆情報がなかったのでまとめてみました。</p>
+
+<!--more-->
+
+
+<h2>モバイルアプリでの「画面」の基本的なライフサイクルイベント</h2>
+
+<p>まあ Android と iOS についてですが。</p>
+
+<p>画面が表示される時のイベント（コールバック）は、簡潔には以下のようになります。</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>順番</th>
+<th>イベント</th>
+<th>iOS(UIViewController)</th>
+<th>Android(Activity)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td>画面がロードされる(た)時</td>
+<td>viewDidLoad</td>
+<td>onCreate|</td>
+</tr>
+<tr>
+<td></td>
+<td>2</td>
+<td>画面が表示される(た)時</td>
+<td>viewDidAppear</td>
+<td>onResume|</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>画面が非表示になる(った)時</td>
+<td>viewDidDisappear</td>
+<td>onPause|</td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>画面がアンロードされる(た)時</td>
+<td>viewDidUnload</td>
+<td>onDestroy|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>厳密にはもっと細かく、〜される前と後が iOS と Android で微妙に異なるのでだいたいこんな感じという程度と思って下さい。</p>
+
+<p>もう少し細かいイベントは以前調べた以下を参考にしてみてください。</p>
+
+<ul>
+<li><a href="http://qiita.com/amay077/items/52a0b0da97fe455abc08">iOS と Android で画面表示時のコールバックを比較する &ndash; Qiita</a></li>
+</ul>
+
+
+<h2>Xamarin.Forms での画面のライフサイクルイベント</h2>
+
+<p>Xamarin.Forms では、上表のライフサイクルイベントは、アプリケーション
+(Application) と、画面(Page) のイベントに分かれています。</p>
+
+<p>表に、Xamarin.Forms を追加してみました。</p>
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th>順番</th>
+<th>イベント</th>
+<th>iOS(UIViewController)</th>
+<th>Android(Activity)</th>
+<th>Xamarin.Forms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>1</td>
+<td>画面がロードされる(た)時</td>
+<td>viewDidLoad</td>
+<td>onCreate</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Page.OnAppearing(">Page.OnAppearing</a>/)|</td>
+</tr>
+<tr>
+<td></td>
+<td>2</td>
+<td>画面が表示される(た)時</td>
+<td>viewDidAppear</td>
+<td>onResume</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Application.OnResume(">Application.OnResume</a>/) <strong>※要注意</strong> |</td>
+</tr>
+<tr>
+<td></td>
+<td>3</td>
+<td>画面が非表示になる(った)時</td>
+<td>viewDidDisappear</td>
+<td>onPause</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Application.OnSleep(">Application.OnSleep</a>/)</td>
+</tr>
+<tr>
+<td></td>
+<td>4</td>
+<td>画面がアンロードされる(た)時</td>
+<td>viewDidUnload</td>
+<td>onDestroy</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Page.OnDisappearing(">Page.OnDisappearing</a>/)|</td>
+</tr>
+</tbody>
+</table>
+
+
+<p>画面のロード時（<code>viewDidLoad/onCreate</code>）に相当するのは、Xamarin.Forms では <code>OnAppearing</code>、逆にアンロード時は <code>OnDisAppearing</code> です（名称が <code>viewDidAppear</code> に似てるので、画面の表示時かと勘違いしてました）。</p>
+
+<p>画面の表示／非表示時のイベントは、画面でなく Application クラスの <code>OnResume</code>, <code>OnSleep</code> で提供されます。</p>
+
+<p>要注意なのは <code>OnResume</code> です。これ、画面が表示される <strong>初回はイベントが発生しません</strong>。
+一度、アプリを背面に退避し、再度前面に持ってきたときに初めて <code>OnResume</code> が呼び出されます。iOS や Android の <code>viewDidAppear / OnResume</code> と同じだと思ってつかうとハマります。</p>
+
+<p>基本的には、 <code>OnAppearing</code> でリソースの確保を、 <code>OnDisAppearing</code> で解放をすればよさそうです。</p>
+
+<p>GPS など、電池消費の激しいリソースを使う場合は、アプリが背面へ隠れたら直ちにそのリソースを解放した方がよいです。その場合は <code>OnResume-OnSleep</code> を使いますが、前述の通り、画面初回表示時は <code>OnResume</code> が走らないので、少し工夫が必要です。</p>
+
+<h2>画面が回転された時</h2>
+
+<p>端末を横向きに回転すると、Android では Activity が破棄されて再度生成される事が知られています。</p>
+
+<p>Xamarin.Forms では Android でもそのような事はなく、 <code>Page.OnSizeAllocated</code> が呼び出されるだけです(iOS も当然同じ)。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/working-with/app-lifecycle/">Working with the App Lifecycle &ndash; Xamarin</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin Workbooks とかいうやつ]]></title>
+    <link href="http://blog.amay077.net/blog/2016/04/29/what-is-xamarin-workbooks/"/>
+    <updated>2016-04-29T00:00:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/04/29/what-is-xamarin-workbooks</id>
+    <content type="html"><![CDATA[<p><a href="https://evolve.xamarin.com/">Xamarin Evolve 2016</a> が開催中されました。</p>
+
+<!--more-->
+
+
+<p>build での予告どおり、Xamarin.Android/iOS などがついにオープンソースになった、などのエキサイティングな発表のまとめは</p>
+
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/entry/evolve2016">【速報】Evolve 2016 で発表されたエキサイティング情報まとめ &ndash; Xamarin 日本語情報</a></li>
+</ul>
+
+
+<p>その Keynote でデモされていた Xamarin Workbooks というツールがなかなかすごいので紹介。</p>
+
+<h2>なにこれ？</h2>
+
+<p>ひとことでいうと、</p>
+
+<p><strong>Xcode の Playground みたいなやつ + Markdown</strong></p>
+
+<p>まだ意味わかんないですね？</p>
+
+<p>こういうことです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_workbooks_01.png" alt="" />
+<img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_workbooks_02.gif" alt="" /></p>
+
+<ul>
+<li>Markdown でドキュメントが書ける(このツール自体はリッチなエディタである)</li>
+<li>```csharp〜``` で囲まれたコードブロックは、そのまま iOSシミュレータなどでインタラクティブに、Instant に実行できる。</li>
+</ul>
+
+
+<p>上記の Workbook の実ファイルは、これ↓です。</p>
+
+<ul>
+<li><a href="https://gist.github.com/amay077/793b5df4aad0098ffe6d9c12a491ee9a">Xamarin Workbooks を使ってみるテスト。 HowToUseMapKit.workbook で保存して Xamarin Inspector で File->Open してね。</a></li>
+</ul>
+
+
+<p>みてわかる通りまんま Markdown ですね。</p>
+
+<h2>Let&rsquo;s try!</h2>
+
+<p>しかも iOS だけじゃなく、Android, Mac, Windows(WPF) に全対応！
+Mac でも Windows でも試せるみたいです。</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/cross-platform/workbooks/">Xamarin Workbooks &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>スタンドアロンなアプリとして実行可能なようなので、サクッと使ってみよう！</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin が Microsoft に買収された結果]]></title>
@@ -520,218 +730,6 @@ public int PersonAge { get; set; }
 <p>ギョームアプリでがっつり使ってますが、今のところパフォーマンスとかデータ破損とか、そういう問題はないです。POCO なオブジェクトをローカル保存するのに、とても役立っています。</p>
 
 <p>というわけで Advent Calendar 初日のネタは以上です。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[UIAlertController を async/await 対応させて便利に使う]]></title>
-    <link href="http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await/"/>
-    <updated>2014-12-24T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/12/24/using-uialertcontroller-with-async-await</id>
-    <content type="html"><![CDATA[<p>　これは <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014 23日目</a> の記事です。</p>
-
-<p>　なんか空いてたのでエントリーしましたが、急だったので軽い話です。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://qiita.com/amay077/items/56abeeaa188f33cd56de">iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた &ndash; Qiita</a></li>
-</ul>
-
-
-<p>の焼き直しみたいなものです。</p>
-
-<p>　iOS8 では、<code>UIAlertDialog</code> が非推奨になり、代わりに <code>UIAlertController</code> を使えとのこと。</p>
-
-<p>　普通に使うとこうなります。</p>
-
-<p>```csharp
-button1.TouchUpInside += (sender, e) =>
-{</p>
-
-<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
-alert.AddAction(UIAlertAction.Create("はい", 
-    UIAlertActionStyle.Default, x=&gt; label1.Text = "こんぼう をすてました")); 
-alert.AddAction(UIAlertAction.Create("いいえ",  
-    UIAlertActionStyle.Default, x=&gt; {})); 
-
-this.PresentViewController(alert, true, null);
-</code></pre>
-
-<p>};
-```</p>
-
-<p>　このくらいなら問題ありません。</p>
-
-<p>　次に、こんぼう をすてる前にもう一度問いかけるようにします。
-２つ目の <code>UIAlertController</code> が入れ子になってしまって見づらい、 <strong>残念な感じ</strong> です。</p>
-
-<p>```csharp
-button1.TouchUpInside += (sender, e) =>
-{</p>
-
-<pre><code>var alert = UIAlertController.Create("", "こんぼう をすてますか？", UIAlertControllerStyle.Alert);
-alert.AddAction(UIAlertAction.Create("はい", 
-    UIAlertActionStyle.Default, x=&gt; 
-    {
-        // 念押しの確認ダイアログ（入れ子でつらい
-        var alert2 = UIAlertController.Create("", "ほんとうにすてますか？", UIAlertControllerStyle.Alert);
-        alert2.AddAction(UIAlertAction.Create("もちろん", UIAlertActionStyle.Default, _=&gt; 
-        {
-            label1.Text = "こんぼう をすてました"
-        }));
-    alert2.AddAction(UIAlertAction.Create("やめる",  UIAlertActionStyle.Default, _=&gt; {})); 
-
-    // アラート２の表示
-    this.PresentViewController(alert2, true, null);
-})); 
-
-// アラート１の表示
-alert.AddAction(UIAlertAction.Create("いいえ",  UIAlertActionStyle.Default, x=&gt; {})); 
-
-this.PresentViewController(alert, true, null);
-</code></pre>
-
-<p>};
-```</p>
-
-<p>　Objective-C や Swift なら、ここで打つ手は今のところ無いでしょう。
-しかし <strong>Xamarin には、C# には async/await がありまぁす！</strong>
-アラートの表示を async/await（というか Task）対応してみましょう。</p>
-
-<p>```csharp
-private Task<int> ShowDialog(string message, string button1Title, string button2Title)
-{</p>
-
-<pre><code>var comp = new TaskCompletionSource&lt;int&gt;();
-
-var alert = UIAlertController.Create("", message, UIAlertControllerStyle.Alert);
-alert.AddAction(UIAlertAction.Create(button1Title, UIAlertActionStyle.Default, x=&gt; 
-{
-    comp.SetResult(1); // OKボタン
-})); 
-alert.AddAction(UIAlertAction.Create(button2Title,  UIAlertActionStyle.Default, x=&gt; 
-{
-    comp.SetResult(0); // Cancel
-})); 
-
-this.PresentViewController(alert, true, null);
-
-return comp.Task;
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>Task&lt;int&gt;</code> を返すメソッド <code>ShowDialog</code> です。<code>UIAlertController</code> のボタンが押されたら <code>SetResult</code> して Task の値を決定します。</p>
-
-<p>　このメソッドを使う方は、こうなります。</p>
-
-<p>```csharp
-button1.TouchUpInside += async (sender, e) =>
-{</p>
-
-<pre><code>if (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 0) 
-    return;
-
-if (await ShowDialog("ほんとうにすてますか？", "もちろん", "やめる") == 0) 
-    return;
-
-label1.Text = "こんぼう をすてました";
-</code></pre>
-
-<p>};
-```</p>
-
-<p>なんて見やすいコードになったことでしょう。すばらしい！</p>
-
-<p>入れ子でなく、フラットに書けるので、こんな事もできます。</p>
-
-<p>```csharp
-button1.TouchUpInside += async (sender, e) =>
-{</p>
-
-<pre><code>while (await ShowDialog("こんぼう をすてますか？", "はい", "いいえ") == 1) 
-{
-    label1.Text = "それをすてるなんてとんでもない！";
-}
-
-label1.Text = "すてるのをやめました";
-</code></pre>
-
-<p>};
-```</p>
-
-<p>こんぼうを捨てるのをあきらめるまで、なんどでも聞いてきます。
-コールバックスタイルのメソッドでループとか、ベタに書くと頭痛いです。</p>
-
-<p>動かすとこんな感じです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/uialertcontroller_with_async_await_01.gif" alt="" /></p>
-
-<p><code>ShowDialog</code> は拡張メソッドとして作成しておくと、呼び出しに便利かもしれません。
-コールバックスタイルの機能を、Task化するパターンはよく使いそうな気がします。<code>TaskCompletionSource</code>、覚えておきましょう。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[マカーの人が Xamarin について勘違いしていそうな５つのこと]]></title>
-    <link href="http://blog.amay077.net/blog/2014/12/02/mac-user-have-misunderstood-about-xamarin/"/>
-    <updated>2014-12-02T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2014/12/02/mac-user-have-misunderstood-about-xamarin</id>
-    <content type="html"><![CDATA[<p>　今年も始まりました <a href="http://qiita.com/advent-calendar/2014/xamarin">Xamarin Advent Calendar 2014</a> 。
-　思えば<a href="http://qiita.com/advent-calendar/2013/xamarin">昨年の Advent Calendar</a> は、5名の方に参加していただいたものの「ほとんど俺」みたいな感じでしたが、今年はたくさん方に登録してもらえてとても嬉しいです。この1年の Xamarin の躍進ぶりを象徴していると思います。</p>
-
-<!--more-->
-
-
-<p>　そんな Xamarin ですが、Microsoft とのパートナーシップが強力なおかげで、Windows系の開発者には広く知られて（そういう戦略なのは分かります）いますが、普段 Mac で iOS/Android アプリを開発してますみたいな人にはあまりリーチできていないかなあと思います。</p>
-
-<p>　そこで初日の今日は、マカーの人が、勘違い・思い込んでいそうなことをいくつか払拭してみたいと思います。</p>
-
-<h2>Q1. Xamarin を使うには、Visual Studio が必要なんでしょ？</h2>
-
-<p>A1: <strong>必要ありません。</strong> 「Xamarin Studio」という専用の統合開発環境で開発できます。私は Mac + Xamarin Studio で開発していますが、まったく問題を感じていません。
-　また、iOSアプリのView部分は、Xcodeと同じ <code>.storyboard</code> ファイルを使用しますが、Xcode を使う必要もありません。Interface Builder と同じ（か部分的にはそれ以上）の機能を持つ <a href="http://developer.xamarin.com/guides/ios/user_interface/designer/">UIデザイナー</a>が、Xamarin Studio には搭載されています。</p>
-
-<h2>Q2. Xamarin を使うには、Windows が必要なんでしょ？</h2>
-
-<p>A2: <strong>必要ありません。</strong> Mac のみで完結します。むしろ Windows だけでは iOSアプリのビルドができないので、<a href="http://developer.xamarin.com/guides/ios/getting_started/installation/windows/introduction_to_xamarin_ios_for_visual_studio/">Mac にリモート接続</a>する必要があり、これがしばしばトラブルになります。（主にデモでｗ
-　Microsoft がアピールするとどうしても Windows+Visual Studioの説明になってしまいますが、それはまやかしです（言い切った！</p>
-
-<h2>Q3. Xamarin社って、Microsoft の子分みたいなもんでしょ？</h2>
-
-<p>A3: Xamarin社は独立した企業であり、Microsoftとは対等な立場です（と私は思っています）。「Microsoft に買収されればいいのに」という声をよく聞きますが、私は独立した企業である現在のポジションが Xamarin社にとってベストだと思っています。Microsoftにとってはモバイル開発者にリーチする重要なピースであり、Xamarin社としても他にないマーケットです。
- また、今年の Xamarin の大イベント <a href="https://evolve.xamarin.com/">Evolve2014</a> には、Microsoft の他に IBM, Amazon, Google, Salesforce, Dropbox と言った、他ではちょっと見られないような豪華なスポンサー群になりました。これも Xamarin の中立な立ち位置がなせる技だと思います。
-あ、最近の <a href="http://www.publickey1.jp/blog/14/jitnet_core_rutimenet_framework.html">.NETのオープン化</a> の流れは、Xamarin の CTO であり Monoプロジェクトの生みの親であるスーパーハッカー、<a href="https://twitter.com/migueldeicaza">ミゲル・デ・イカザ</a>氏が少なからず関係していると思っています。</p>
-
-<h2>Q4. C# 覚えるのしんどい</h2>
-
-<p>A4. <strong>あなたはあの Objective-C を覚えたのでしょう？</strong></p>
-
-<h2>Q5. Swift の方が C# よりイケてるじゃん？</h2>
-
-<p>A5. 後発である Swift がイケてるのは誰もが認めるところでしょう（かつて Java に対する C# がそうであったように）「Swift は関数型言語だ」という意見には、Xamarin は F# を提案します。<a href="http://blog.xamarin.com/introduction-to-f-with-xamarin/">Xamarinには F# の MVP（勝手に”数学ガール”だと思っている）</a>も居ます(←訂正:Xamarinの人じゃなかったです)し、日本でも <a href="http://www.slideshare.net/kusokuzeshiki/xamarinmvvm-crossf">F#+Xamarin でアプリ開発されている型</a>も居らっしゃいます。</p>
-
-<h1>まとめ</h1>
-
-<p>　ちょっと宗教論争っぽくなりかけたので、ここまでにしておきます。強く主張したいのは、モバイルアプリ開発者なら iOS だけ、Android だけ知っていても良いアプリは作れないでしょう。両方のプラットフォーム、開発言語、哲学を理解する必要があります。 <strong>Xamarin だから Swift を覚えなくていいという事はありません。</strong>
-　
-　でも、同じ（少なくとも同じような機能をもった）アプリの同じロジックを、異なる言語でそれぞれ書いて、その後数年保守し続ける現状は、本当に最適なのでしょうか？同じコード、あるいは同じバイナリが iOS/Android で動作すれば、保守費用は半分です（SIer みたいな言い方だｗ）。</p>
-
-<p>　「共通にできる選択肢、あるいはプラットフォームの文化にあわせて別々にできる選択肢」を自然な形で提供するのが Xamarin、 Java も Swift も C# も覚えて C# で D.R.Y するのが Xamarin です。</p>
-
-<p>　最後に宣伝ですが、 <strong>Build INSIDER</strong> というWebサイトで「Xamarin逆引きTips」という連載をしています。</p>
-
-<ul>
-<li><a href="http://www.buildinsider.net/mobile/xamarintips">Xamarin逆引きTips &ndash; Build Insider</a></li>
-</ul>
-
-
-<p>　これは、.NET Framework は今まであまり使った事がない iOS/Android アプリ開発者をターゲットにしていて、説明もほぼ全てが Mac+Xamarin Studio を使って書いています。興味持ったら読んでもらえると嬉しいです。</p>
-
-<p>　本日まったく登場しなかった Visual Studio や Windows Phone などの話は、明日以降登場すると思いますので、お楽しみに！それでは初日はこの辺で。</p>
 ]]></content>
   </entry>
   

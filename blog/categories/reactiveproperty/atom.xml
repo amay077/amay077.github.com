@@ -4,7 +4,7 @@
   <title><![CDATA[Category: reactiveproperty | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/reactiveproperty/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-05-08T02:22:02+09:00</updated>
+  <updated>2016-06-11T14:48:55+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,115 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ReactiveProperty で2度押し防止(Using使ったやつ)]]></title>
+    <link href="http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty/"/>
+    <updated>2016-04-07T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty</id>
+    <content type="html"><![CDATA[<ul>
+<li><a href="http://tamafuyou.hatenablog.com/entry/2016/04/06/213633">ReactivePropertyで2度押し防止 &ndash; 眠いしお腹すいたし(´・ω・`)</a></li>
+</ul>
+
+
+<p>を拝見しまして、前から気になってたので考えてみました。</p>
+
+<!--more-->
+
+
+<p>先に別件。</p>
+
+<p>ReactiveCommand は <code>IObservable&lt;T&gt;</code>、そしてロジックの方も <code>IObservable&lt;T&gt;</code> で作ることが多いのですが、その場合「ボタンをクリックした時に、ロジックを実行する」というコードは大抵以下のようになります。</p>
+
+<p>```csharp MainViewModel.cs
+public class MainViewModel
+{</p>
+
+<pre><code>public ReactiveCommand TestCommand { get; }
+public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
+
+public MainViewModel()
+{
+    TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
+    TestCommand.Subscribe(_ =&gt;
+    {
+        // log("ボタンが押されたよ");
+        IsBusy.Value = true;
+        SomeLogicAsObservable.Subscribe(__ =&gt;
+        {
+            // log("処理が実行されたよ");
+            IsBusy.Value = false; // ほんとは OnCompleted と OnError でやるべき
+        };
+    });
+}
+
+// なんか重い非同期な処理
+private IObservable&lt;Unit&gt; SomeLogicAsObservable()
+{
+    return Observable.Delay(Observable.Return(Unit.Default), 
+            TimeSpan.FromSeconds(3));
+}    
+</code></pre>
+
+<p>}
+```</p>
+
+<p>こういうコードを書いていていつも「なんかカッコ悪いなー」と思っていました。
+そう思う点は、<code>Subscribe</code> を2回書いていること。ボタンがクリックされた事の購読の中でさらにロジックが実行された事を購読している点です。
+どちらも Stream なのだから、うまくマージできないかなと思っていました。</p>
+
+<p>これの解決も一緒に考えてみました。</p>
+
+<p>はい、</p>
+
+<p>```csharp MainViewModel.cs
+public class MainViewModel
+{</p>
+
+<pre><code>public ReactiveCommand TestCommand { get; }
+public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
+
+public MainViewModel()
+{
+    TestCommand = TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
+
+    TestCommand
+        .SelectMany(_ =&gt; UsingIsBusy(SomeLogicAsObservable()))
+        .Subscribe(_ =&gt; { /* log("ボタンが押されてロジックが実行されたよ") ※ */ });
+        // ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意
+}
+
+private IObservable&lt;T&gt; UsingIsBusy&lt;T&gt;(IObservable&lt;T&gt; observable)
+{
+    return Observable.Using(
+        () =&gt;
+        {
+            IsBusy.Value = true;
+            return Disposable.Create(() =&gt; IsBusy.Value = false);
+        },
+        _ =&gt; observable);
+}
+
+// なんか重い非同期な処理
+private IObservable&lt;Unit&gt; SomeLogicAsObservable()
+{
+    return Observable.Delay(Observable.Return(Unit.Default),
+                            TimeSpan.FromSeconds(3));
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p><code>IsBusy</code> の ON/OFF を <code>Observable.Using</code> に任せるようにしました。これは、第2引数に指定した <code>IObservable&lt;T&gt;</code> が完了または失敗した時にリソースを解放してくれる C# の <code>using 句</code> のようなもので、ここでは第2引数にロジックの <code>IObservable&lt;T&gt;</code> を渡すことで、ロジックが完了したら自動的に <code>IsBusy.Value = false</code> が実行されます。</p>
+
+<p>次に「<code>Subscribe</code>を2回してる問題」は、ボタンがクリックされた<code>IObserbale&lt;T&gt;</code> から <code>SelectMany</code> で繋いであげることで解決しています。</p>
+
+<p>このコードの要注意は、<code>IsBusy.Value = false</code> が実行されるのがUIスレッドとは限らないので、View側でバインドするまでに <code>ObserveOnUIDispatcher</code> などをしてあげないといけないことです（少なくとも Xamarin.Android + ReactiveProperty ではそうでした。WPFだと気にしないのでしょうか？）。</p>
+
+<p>もう少し汎用性を高めて、「<code>IsBusy プロパティを持った ReactiveCommand</code>」のようなものを作ったら便利なのかもしれないです。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms と ReactiveProperty で快適MVVM生活]]></title>
