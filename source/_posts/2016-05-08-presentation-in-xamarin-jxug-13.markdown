@@ -17,7 +17,7 @@ categories: [Xamarin, Android, C#]
 
 動画はこちら
 
-* [JXUGC #13 東京その３ - YouTube](https://www.youtube.com/watch?v=HBcXNZXuBp0)
+* [JXUGC #13 東京その３ - YouTube](https://www.youtube.com/watch?v=9oPwHJ4Zc9I)
 
 ## 補足など
 
