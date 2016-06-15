@@ -7,7 +7,6 @@ categories: [Xamarin, C#, Android, iOS]
 ---
 [Xamarin が Microsoft に買収されたので、今後を勝手に予想](http://qiita.com/amay077/items/4aa25db9509216cf5bf0) の答え合わせなんですが…
 <!--more-->
-
 * [Xamarin for Everyone | Xamarin Blog](https://blog.xamarin.com/xamarin-for-all/)
 * [【速報】Xamarin のこれからについて！ - Xamarin 日本語情報](http://ytabuchi.hatenablog.com/entry/ms-xamarin)
 
@@ -126,4 +125,8 @@ Mac しか使ってない企業が自社のアプリを Xamarin を使って開�
 > Xamarin Studio will follow the Visual Studio pricing rules. There is Xamarin Studio Community Edition available for download on the Mac. You’ll need to be a Visual Studio Enterprise subscriber to unlock Visual Studio Enterprise features in Xamarin Studio.
 
 Xamarin Studio は、Visual Studio の価格体系に従う、とのことなので、ライセンス条項も同じだと解釈すれば、 Visual Studio Profesional 以上のライセンスがあれば、 Mac + Xamarin Studio で企業のアプリを開発・配布して問題ないと言えます。
-Macオンリー企業には、ツールとしてでなくライセンスとしての Visual Studio Pro 以上が必要ということなるのでしょうか。
+~~Macオンリー企業には、ツールとしてでなくライセンスとしての Visual Studio Pro 以上が必要ということなるのでしょうか。~~
+
+* [【お知らせ】Xamarin ライセンスの移管について - Xamarin 日本語情報](http://ytabuchi.hatenablog.com/entry/2016/04/21/123000)
+
+によると、 企業向け開発する場合、 Windows ＋ Visual Studio は Visual Studio Pro単品購入で可能、Mac + Xamarin Studio には Visual Studio Pro **MSDN Subscription** が必要とのことです。
