@@ -4,7 +4,7 @@
   <title><![CDATA[Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-07-08T02:34:42+09:00</updated>
+  <updated>2016-07-08T02:47:27+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,31 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[転職してました]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/08/changed-jobs/"/>
+    <updated>2016-07-08T02:42:39+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/08/changed-jobs</id>
+    <content type="html"><![CDATA[<p>気がついたら</p>
+
+<!--more-->
+
+
+<p>転職していました、 7/1 から？</p>
+
+<p>転職しましたが、何も変わっていません、仕事内容も環境も待遇も。</p>
+
+<p>全社員フルリモートの会社になったので、相変わらず家でゴロゴロしています。</p>
+
+<p>今後ともどうぞよろしくお願いします。</p>
+
+<ul>
+<li><a href="https://nepula.net/pc/">Nepula ネプラ｜基幹システムをクラウド化、収益化</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms のバージョンを 1.2 から 2.3 に上げた時のエラー対処法]]></title>
@@ -3003,167 +3028,6 @@ RxJava や LINQ とほとんど同じなのでだいたい想像付くと思い�
 <li>zip</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Task→Observable 変換でハマったこと]]></title>
-    <link href="http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion/"/>
-    <updated>2016-01-16T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion</id>
-    <content type="html"><![CDATA[<p>.NET の <code>Task&lt;T&gt;</code> は、Reactive Extensions が提供する拡張メソッド <code>ToObservable()</code> で <code>IObservable&lt;T&gt;</code> に変換できます。</p>
-
-<p>なにも考えずに <code>ToObservable()</code> を連発していたら、盛大にハマったのでメモ。</p>
-
-<!--more-->
-
-
-<h2>Task.Run().ToObservable() とか、意味ないっしょ</h2>
-
-<p>ダメなコード。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Task</span><span class="p">.</span><span class="n">Run</span> <span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
-</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
-</span><span class='line'><span class="p">})</span>
-</span><span class='line'><span class="p">.</span><span class="n">ToObservable</span> <span class="p">();</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Ready...&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span>
-</span><span class='line'>      <span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnNext({x})&quot;</span><span class="p">),</span>
-</span><span class='line'>      <span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnError({ex.ToString()})&quot;</span><span class="p">),</span>
-</span><span class='line'>      <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;OnCompleted&quot;</span><span class="p">));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code>IObservable&lt;int&gt;</code> です。
-　これを <code>.Repeat(3)</code> して <code>.Subscribe</code> してますから、
-　</p>
-
-<blockquote><p>Ready&hellip;
-increment! &ndash; 1
-OnNext(1)
-increment! &ndash; 2
-OnNext(2)
-increment! &ndash; 3
-OnNext(3)
-OnCompleted</p></blockquote>
-
-<p>という出力を期待してました。
-が、実際の出力はこう。</p>
-
-<blockquote><p>increment! &ndash; 1
-Ready&hellip;
-OnNext(1)
-OnNext(1)
-OnNext(1)
-OnCompleted</p></blockquote>
-
-<p>Subscribe する前に Task が実行されてるし、 repeat してるのに increment されない。。。</p>
-
-<p>「・・・ん？ Task.Run().ToObservable() って、タスクを実行した結果を IObservable 化してるだけじゃね？」</p>
-
-<p>コード見たまんまなんですが、これに気づくのに１時間かかりました。。。</p>
-
-<p>期待通り動くのはこう↓。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-</span><span class='line'><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromAsync</span><span class="p">(()=&gt;</span><span class="n">Task</span><span class="p">.</span><span class="n">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
-</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
-</span><span class='line'><span class="p">}));</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;Ready...&quot;</span><span class="p">);</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
-</span><span class='line'>  <span class="p">.</span><span class="n">Subscribe</span><span class="p">(</span>
-</span><span class='line'>      <span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnNext({x})&quot;</span><span class="p">),</span>
-</span><span class='line'>      <span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;OnError({ex.ToString()})&quot;</span><span class="p">),</span>
-</span><span class='line'>      <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="s">&quot;OnCompleted&quot;</span><span class="p">));</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。
-これの結果は正しくこう↓なりました。</p>
-
-<blockquote><p>Ready&hellip;
-increment! &ndash; 1
-OnNext(1)
-increment! &ndash; 2
-OnNext(2)
-increment! &ndash; 3
-OnNext(3)
-OnCompleted</p></blockquote>
-
-<h2>Task は１回しか実行できない</h2>
-
-<p>ところで、 <code>Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
-</span><span class='line'><span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementTask</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
-</span><span class='line'>  <span class="n">i</span><span class="p">++;</span>
-</span><span class='line'>  <span class="n">Debug</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">&quot;increment! - {i}&quot;</span><span class="p">);</span>
-</span><span class='line'>  <span class="k">return</span> <span class="n">i</span><span class="p">;</span>
-</span><span class='line'><span class="p">});</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">incrementTask</span><span class="p">.</span><span class="n">RunSynchronously</span><span class="p">();</span>
-</span><span class='line'><span class="n">incrementTask</span><span class="p">.</span><span class="n">RunSynchronously</span><span class="p">();</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>このコードは２回目の <code>RunSynchronously()</code> で例外がでます。</p>
-
-<p>となると、 <code>incrementTask.ToObservable()</code> したとしても、期待通り動いてくれなさそうです。
-（そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
-
-<p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
 ]]></content>
   </entry>
   
