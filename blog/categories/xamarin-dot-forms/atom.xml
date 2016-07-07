@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin.forms | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin-dot-forms/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-06-15T19:53:12+09:00</updated>
+  <updated>2016-07-08T00:46:15+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,134 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms のバージョンを 1.2 から 2.3 に上げた時のエラー対処法]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/"/>
+    <updated>2016-07-06T23:59:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3</id>
+    <content type="html"><![CDATA[<p>プロジェクトで使ってる Xamarin.Forms のバージョンを「1.2.3.6257」から「2.3.0.107」に上げたら、ビルドでエラーが発生するようになった。</p>
+
+<!--more-->
+
+
+<p>ググッてみると、「Xamarin Studio を再起動」とか「ソリューションを開き直せ」とか書いてある。
+ホンマかいな？と思いながら実施すると、確かになんか変化が。</p>
+
+<p>エラーメッセージが変わっただけだけど。</p>
+
+<blockquote><p>Error initializing task XamlG: Not registered task XamlG.</p></blockquote>
+
+<p>とか、</p>
+
+<blockquote><p>Error initializing task FixedCreateCSharpManifestResourceName: Not registered task FixedCreateCSharpManifestResourceName.</p></blockquote>
+
+<p>調べたときに見た情報の中には .csproj ファイルがどーのこーの書いてあったので、開いてみると、何やら以前のバージョンが残ってた。</p>
+
+<p>ので、その行を削除してソリューションを開き直し、ビルドしたらエラーはなくなった。</p>
+
+<p><code>xml xxx.csproj
+   &lt;Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" /&gt;
+これ削除→  &lt;Import Project="..\packages\Xamarin.Forms.1.2.3.6257\build\portable-win+net45+wp80+MonoAndroid10+MonoTouch10\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.1.2.3.6257\build\portable-win+net45+wp80+MonoAndroid10+MonoTouch10\Xamarin.Forms.targets')" /&gt;
+   &lt;Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" /&gt;
+   &lt;Import Project="..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets" Condition="Exists('..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets')" /&gt;
+</code></p>
+
+<p>エラーは、ね。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="https://rksoftware.wordpress.com/2016/04/24/001-16/">Xamarin Studio がビルドエラーでビルドできなくなった話 | rksoftware</a></li>
+<li><a href="http://stackoverflow.com/questions/27873185/error-error-initializing-task-xamlg-not-registered-task-xamlg">xamarin &ndash; error : Error initializing task XamlG: Not registered task XamlG &ndash; Stack Overflow</a></li>
+<li><a href="http://stackoverflow.com/questions/34501301/error-compiling-xamarin-forms-new-project">Error compiling Xamarin Forms new project &ndash; Stack Overflow</a></li>
+</ul>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Forms 向けの地図ライブラリ「Xamarin.Forms.GoogleMaps」をリリースしました]]></title>
+    <link href="http://blog.amay077.net/blog/2016/06/27/release-xamarin-forms-googlemaps/"/>
+    <updated>2016-06-27T23:59:00+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/06/27/release-xamarin-forms-googlemaps</id>
+    <content type="html"><![CDATA[<p>Xamarin.Forms で使える地図ライブラリは、公式が出している</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.Forms.Maps/">Xamarin.Forms.Maps</a> &ndash; Maps models and renderers for Xamarin.Forms</li>
+</ul>
+
+
+<p>があるのですが、非常に機能が少ないです（ピンがおけるだけで、図形の描画すらできません）。</p>
+
+<!--more-->
+
+
+<p>なので、別な選択肢としての「Xamarin.Forms向け地図ライブラリ」を開発し始めました。</p>
+
+<p>それがこちら</p>
+
+<ul>
+<li><a href="https://www.nuget.org/packages/Xamarin.Forms.GoogleMaps/">Xamarin.Forms.GoogleMaps</a> &ndash; Yet another Maps library for Xamarin.Forms that optimized for Google maps.</li>
+</ul>
+
+
+<p>です。</p>
+
+<p>iOS では MapKit に代わり <a href="https://developers.google.com/maps/documentation/ios-sdk/?hl=ja">Google Maps SDK for iOS</a> を使用し、 Android/iOS 共に Google Maps に特化することで、API の共通化を容易にし、恐らくAPI共通化の足枷になっているであろう UWP(Bing maps) のサポートは最小限に留めています。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_googlemaps_intro_01.png" alt="screenshot1" /></p>
+
+<h2>現在の機能</h2>
+
+<p>現在のバージョンは 1.1.0 。
+公式の Xamarin.Forms.Maps に比べて、ライン・ポリゴン・円を追加できるようになりました。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_forms_googlemaps_intro_02.png" alt="screenshot2" /></p>
+
+<p>詳しい比較は</p>
+
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/wiki/Xamarin.Forms.Maps-%E3%81%A8%E3%81%AE%E6%AF%94%E8%BC%83">Xamarin.Forms.Maps との比較 &ndash; Xamarin.Forms.GoogleMaps Wiki</a></li>
+</ul>
+
+
+<p>にあります。</p>
+
+<h2>サンプルプログラム</h2>
+
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/tree/master/XFGoogleMapSample">Xamarin.Forms.GoogleMaps/XFGoogleMapSample &ndash; github</a></li>
+</ul>
+
+
+<p>にあります。</p>
+
+<p>Google Maps の APIキーを Android / iOS それぞれで取得する必要があります。</p>
+
+<ul>
+<li>Android &ndash;  <a href="http://www.buildinsider.net/mobile/xamarintips/0020">Xamarin.Androidで地図を表示するには？（Google Maps使用） &ndash; Build Insider</a></li>
+<li>iOS &ndash; <a href="https://developers.google.com/maps/documentation/ios-sdk/?hl=ja">Google Maps SDK for iOS  |  Google Developers</a> の「クイック スタート ステップ」
+をそれぞれ参照してください。</li>
+</ul>
+
+
+<h2>オープンソース</h2>
+
+<p><a href="http://open.xamarin.com/">Xamarin Open Source SDK</a> により、 Xamarin.Forms のソースコードもオープンソースになったので、 <a href="https://github.com/xamarin/Xamarin.Forms/tree/master/Xamarin.Forms.Maps">Xamarin.Forms/Xamarin.Forms.Maps &ndash; github</a> などを Fork して作りました。</p>
+
+<p>このライブラリ自体もオープンソースであり、</p>
+
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Xamarin.Forms.GoogleMaps: Map library for Xamarin.Forms using Google maps API</a></li>
+</ul>
+
+
+<p>で開発しています。（スターを付けてもらえると作者がよろこびます）</p>
+
+<p><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/issues">要望、コメントなど</a>もらえると嬉しいです。よろしくおねがいします。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms の画面(Page)のライフサイクルイベントについて]]></title>

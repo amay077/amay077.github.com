@@ -5,13 +5,13 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Homebrew で Nodes.js をやってみた - Experiments Never Fail</title>
+  <title>Xamarin.Forms のバージョンを 1.2 から 2.3 に上げた時のエラー対処法 - Experiments Never Fail</title>
   <meta name="author" content="amay077">
 
    
   <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
   
-  <meta name="keywords" content="homebrew,node.js,">
+  <meta name="keywords" content="c#,xamarin,xamarin.forms,">
 
   <!-- http://t.co/dKP3o1e -->
   <meta name="HandheldFriendly" content="True">
@@ -19,7 +19,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew">
+  <link rel="canonical" href="http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3">
   <link href="/favicon.png" rel="icon">
   <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
   <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
@@ -102,7 +102,7 @@ $(document).ready( function () {
 
   <header>
   <div class="jumbotron">
-    Homebrew で Nodes.js をやってみた
+    Xamarin.Forms のバージョンを 1.2 から 2.3 に上げた時のエラー対処法
 	<h5>
 
 
@@ -115,11 +115,11 @@ $(document).ready( function () {
   
 
 
-<i class="icon-calendar-empty"></i> <time datetime="2012-10-03T20:10:00+09:00" pubdate data-updated="true">Oct 3<sup>rd</sup>, 2012</time> 
+<i class="icon-calendar-empty"></i> <time datetime="2016-07-06T23:59:00+09:00" pubdate data-updated="true">Jul 6<sup>th</sup>, 2016</time> 
 
 <span class="categories">
   
-    <a class='category' href='/blog/categories/homebrew/'>homebrew</a>, <a class='category' href='/blog/categories/node-dot-js/'>node.js</a>
+    <a class='category' href='/blog/categories/c-number/'>c#</a>, <a class='category' href='/blog/categories/xamarin/'>xamarin</a>, <a class='category' href='/blog/categories/xamarin-dot-forms/'>xamarin.forms</a>
   
 </span>
 
@@ -128,104 +128,47 @@ $(document).ready( function () {
 </header>
   <div class="row-fluid">
     <div class="span12">
-      <h2>環境</h2>
+      <p>プロジェクトで使ってる Xamarin.Forms のバージョンを「1.2.3.6257」から「2.3.0.107」に上げたら、ビルドでエラーが発生するようになった。</p>
 
-<ul>
-<li>Mac OS X 10.7</li>
-<li>Homebrew はインストール済み</li>
-</ul>
+<!--more-->
 
+
+<p>ググッてみると、「Xamarin Studio を再起動」とか「ソリューションを開き直せ」とか書いてある。
+ホンマかいな？と思いながら実施すると、確かになんか変化が。</p>
+
+<p>エラーメッセージが変わっただけだけど。</p>
+
+<blockquote><p>Error initializing task XamlG: Not registered task XamlG.</p></blockquote>
+
+<p>とか、</p>
+
+<blockquote><p>Error initializing task FixedCreateCSharpManifestResourceName: Not registered task FixedCreateCSharpManifestResourceName.</p></blockquote>
+
+<p>調べたときに見た情報の中には .csproj ファイルがどーのこーの書いてあったので、開いてみると、何やら以前のバージョンが残ってた。</p>
+
+<p>ので、その行を削除してソリューションを開き直し、ビルドしたらエラーはなくなった。</p>
+
+<figure class='code'><figcaption><span>xxx.csproj</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='xml'><span class='line'>   <span class="nt">&lt;Import</span> <span class="na">Project=</span><span class="s">&quot;$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>これ削除→  <span class="nt">&lt;Import</span> <span class="na">Project=</span><span class="s">&quot;..\packages\Xamarin.Forms.1.2.3.6257\build\portable-win+net45+wp80+MonoAndroid10+MonoTouch10\Xamarin.Forms.targets&quot;</span> <span class="na">Condition=</span><span class="s">&quot;Exists(&#39;..\packages\Xamarin.Forms.1.2.3.6257\build\portable-win+net45+wp80+MonoAndroid10+MonoTouch10\Xamarin.Forms.targets&#39;)&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>   <span class="nt">&lt;Import</span> <span class="na">Project=</span><span class="s">&quot;..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets&quot;</span> <span class="na">Condition=</span><span class="s">&quot;Exists(&#39;..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets&#39;)&quot;</span> <span class="nt">/&gt;</span>
+</span><span class='line'>   <span class="nt">&lt;Import</span> <span class="na">Project=</span><span class="s">&quot;..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets&quot;</span> <span class="na">Condition=</span><span class="s">&quot;Exists(&#39;..\packages\Xamarin.Forms.2.3.0.107\build\portable-win+net45+wp80+win81+wpa81+MonoAndroid10+MonoTouch10+Xamarin.iOS10\Xamarin.Forms.targets&#39;)&quot;</span> <span class="nt">/&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>エラーは、ね。</p>
 
 <h2>参考</h2>
 
 <ul>
-<li><a href="http://d.hatena.ne.jp/nomnel/20111204/1323003399">Node.jsでHello worldするまで &ndash; 飲む、寝る。</a></li>
+<li><a href="https://rksoftware.wordpress.com/2016/04/24/001-16/">Xamarin Studio がビルドエラーでビルドできなくなった話 | rksoftware</a></li>
+<li><a href="http://stackoverflow.com/questions/27873185/error-error-initializing-task-xamlg-not-registered-task-xamlg">xamarin &ndash; error : Error initializing task XamlG: Not registered task XamlG &ndash; Stack Overflow</a></li>
+<li><a href="http://stackoverflow.com/questions/34501301/error-compiling-xamarin-forms-new-project">Error compiling Xamarin Forms new project &ndash; Stack Overflow</a></li>
 </ul>
 
-
-<!-- more -->
-
-
-<p>手順はほぼこのとおり。</p>
-
-<h2>手順</h2>
-
-<pre><code>$ brew install node.js
-</code></pre>
-
-<blockquote><p>Warning: It appears you have MacPorts or Fink installed.
-Software installed with other package managers causes known problems for
-Homebrew. If a formula fails to build, uninstall MacPorts/Fink and try again.
-==> Downloading <a href="http://nodejs.org/dist/v0.8.4/node-v0.8.4.tar.gz">http://nodejs.org/dist/v0.8.4/node-v0.8.4.tar.gz</a></p>
-
-<h6>################################################################## 100.0%</h6>
-
-<p>==> ./configure &mdash;prefix=/usr/local/Cellar/node/0.8.4 &mdash;without-npm
-==> make install
-==> Caveats
-Homebrew has NOT installed npm. We recommend the following method of
-installation:
-  curl <a href="http://npmjs.org/install.sh">http://npmjs.org/install.sh</a> | sh</p>
-
-<p>After installing, add the following path to your NODE_PATH environment
-variable to have npm libraries picked up:
-  /usr/local/lib/node_modules
-==> Summary
-/usr/local/Cellar/node/0.8.4: 79 files, 11M, built in 6.2 minutes</p></blockquote>
-
-<p>なんか、 MacPorts/Fink と仲が悪そうだけど、とりあえず無視して次へ。</p>
-
-<pre><code>$ curl http://npmjs.org/install.sh | sh
-</code></pre>
-
-<blockquote><p> % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</p>
-
-<pre><code>                             Dload  Upload   Total   Spent    Left  Speed
-</code></pre>
-
-<p>100    85    0    85    0     0    109      0 &mdash;:&mdash;:&mdash; &mdash;:&mdash;:&mdash; &mdash;:&mdash;:&mdash;   384
-sh: line 1: syntax error near unexpected token `newline&#8217;
-sh: line 1: `&lt;html>Moved: &lt;a href=&ldquo;<a href="https://npmjs.org/install.sh">https://npmjs.org/install.sh</a>&rdquo;><a href="https://npmjs.org/install.sh">https://npmjs.org/install.sh</a> &lt;/a>&#8217;</p></blockquote>
-
-<p>うお、エラーだ！どうやら URL が変わった(http → http<strong><em>s</em></strong> になっただけ)らしい。
-URL を修正してリトライ。</p>
-
-<pre><code>$ curl https://npmjs.org/install.sh | sh
-</code></pre>
-
-<blockquote><p> % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current</p>
-
-<pre><code>                             Dload  Upload   Total   Spent    Left  Speed
-</code></pre>
-
-<p>100  7882  100  7882    0     0   5672      0  0:00:01  0:00:01 &mdash;:&mdash;:&mdash;  7977
-tar=/usr/bin/tar
-version:
-bsdtar 2.8.3 &ndash; libarchive 2.8.3
-install <a href="&#109;&#97;&#x69;&#108;&#x74;&#x6f;&#x3a;&#x6e;&#x70;&#x6d;&#x40;&#49;&#x2e;&#49;">&#x6e;&#x70;&#x6d;&#64;&#x31;&#x2e;&#x31;</a>
-fetching: <a href="http://registry.npmjs.org/npm/-/npm-1.1.62.tgz">http://registry.npmjs.org/npm/-/npm-1.1.62.tgz</a>
-0.8.4
-1.1.62
-cleanup prefix=/usr/local</p>
-
-<p>All clean!</p>
-
-<p><a href="&#109;&#x61;&#x69;&#108;&#116;&#x6f;&#58;&#110;&#112;&#109;&#64;&#x31;&#x2e;&#49;&#46;&#54;&#x32;">&#x6e;&#112;&#109;&#64;&#49;&#46;&#x31;&#x2e;&#x36;&#50;</a> prepublish .
-npm prune ; rm -rf test/<em>/</em>/node_modules ; make -j4 doc</p>
-
-<p>sh: npm: command not found
-make: Nothing to be done for `doc&#8217;.
-/usr/local/bin/npm &ndash;> /usr/local/lib/node_modules/npm/bin/npm-cli.js
-<a href="&#x6d;&#97;&#x69;&#108;&#116;&#111;&#58;&#x6e;&#112;&#x6d;&#x40;&#49;&#x2e;&#x31;&#46;&#54;&#50;">&#x6e;&#112;&#x6d;&#64;&#x31;&#x2e;&#x31;&#46;&#x36;&#x32;</a> /usr/local/lib/node_modules/npm
-It worked
-&#8220;`</p></blockquote>
-
-<p><strong>npm: command not found</strong> が気になるけど成功したぽい。</p>
-
-<h2>Hello World!!</h2>
-
-<p>前述のサイトそのまんまなので略。
-ふむ、うまくいった。</p>
 
 
       <div class="hidden-phone">
@@ -246,9 +189,9 @@ It worked
       
       <div class="span6 social-sharing">
         <div class="sharing">
-  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
   
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew/" >Tweet</a>
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/" >Tweet</a>
   
   <a class="addthis_counter addthis_pill_style"></a>
   </div>
@@ -263,11 +206,8 @@ It worked
       <div class="span12">
         <p class="meta">
           
-            <a class="basic-alignment left" href="/blog/2012/10/03/rx-cold-to-hot/" title="Previous Post: Cold を Hot にできる。そう、Publish ならね。">&lt; Cold を Hot にできる。そう、Publish ならね。</a>
+            <a class="basic-alignment left" href="/blog/2016/06/27/release-xamarin-forms-googlemaps/" title="Previous Post: Xamarin.Forms 向けの地図ライブラリ「Xamarin.Forms.GoogleMaps」をリリースしました">&lt; Xamarin.Forms 向けの地図ライブラリ「Xamarin.Forms.GoogleMaps」をリリースしました</a>
           
-          
-            &nbsp;|&nbsp;
-            <a class="basic-alignment right" href="/blog/2012/10/03/osm-vs-ios-map/" title="Next Post: OpenStreetMap と iOS6 の地図を比べてみました">OpenStreetMap と iOS6 の地図を比べてみました &gt;</a>
           
         </p>
       </div>
@@ -306,8 +246,8 @@ It worked
       
         
         // var disqus_developer = 1;
-        var disqus_identifier = 'http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew/';
-        var disqus_url = 'http://blog.amay077.net/blog/2012/10/03/nodejs-by-homebrew/';
+        var disqus_identifier = 'http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/';
+        var disqus_url = 'http://blog.amay077.net/blog/2016/07/06/version-up-xamarin-forms-project-from-1-2-to-2-3/';
         var disqus_script = 'embed.js';
       
     (function () {
