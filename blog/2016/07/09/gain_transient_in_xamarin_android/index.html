@@ -1,0 +1,388 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Xamarin.Android で音楽の音量を下げてから効果音を再生する - Experiments Never Fail</title>
+  <meta name="author" content="amay077">
+
+   
+  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  
+  <meta name="keywords" content="android,c#,xamarin,">
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android">
+  <link href="/favicon.png" rel="icon">
+  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
+  <script src="/js/jquery.js"></script>
+  <script src="/js/bootstrap-collapse.js"></script>
+  <script src="/js/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/js/octopress.js" type="text/javascript"></script>
+  <!--Pinterest webmaster tool-->
+<meta name="p:domain_verify" content="104bc278a8f8fdfcf4e1e49ed3deb0c8"/>
+
+<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<script language="JavaScript">
+$(document).ready( function () {
+   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
+})
+</script>
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-224332-7']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <div class="navbar navbar-inverse navbar-static-top">
+  	<div class="navbar-inner">
+  	  <div class="container">
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
+          <span class="fui-menu-24"></span>
+        </a>
+  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
+  	      <ul class="nav">
+    
+        <li ><a href="/index.html">Top</a></li>
+    
+        <li ><a href="/blog/archives/index.html">Archives</a></li>
+    
+        <li ><a href="/category-list/index.html">Tags</a></li>
+    
+        <li ><a href="/about-me.html">About Me</a></li>
+    
+</ul>
+
+<ul class="nav pull-right">
+    
+    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+    
+    
+    
+    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+    
+    
+    
+    
+</ul>
+
+  	    </div>
+  	  </div>
+  	</div>
+  </div>
+  <div class="container" id="main">
+    <div class="span12">
+      <div class="row-fluid">
+        <div id="content">
+          <div>
+<article class="hentry" role="article">
+  
+
+  <header>
+  <div class="jumbotron">
+    Xamarin.Android で音楽の音量を下げてから効果音を再生する
+	<h5>
+
+
+
+
+
+
+
+
+  
+
+
+<i class="icon-calendar-empty"></i> <time datetime="2016-07-09T23:59:59+09:00" pubdate data-updated="true">Jul 9<sup>th</sup>, 2016</time> 
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/android/'>android</a>, <a class='category' href='/blog/categories/c-number/'>c#</a>, <a class='category' href='/blog/categories/xamarin/'>xamarin</a>
+  
+</span>
+
+</h5>
+  </div>
+</header>
+  <div class="row-fluid">
+    <div class="span12">
+      <p>カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://ja.stackoverflow.com/questions/27452/%e3%82%b9%e3%83%9e%e3%83%9b%e3%82%a2%e3%83%97%e3%83%aa%e8%b5%b7%e5%8b%95%e6%99%82ios-android%e3%81%ab%e5%86%8d%e7%94%9f%e4%b8%ad%e3%81%ae%e9%9f%b3%e6%a5%bd%e3%82%92%e5%81%9c%e6%ad%a2%e3%81%95%e3%81%9b%e3%82%8b%e6%96%b9%e6%b3%95/27459#27459">スマホアプリ起動時(iOS/Android)に再生中の音楽を停止させる方法 &ndash; スタック・オーバーフロー</a></li>
+</ul>
+
+
+<p>に回答したので、その関連でやってみた。</p>
+
+<figure class='code'><figcaption><span>MainActivity.cs</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+</pre></td><td class='code'><pre><code class='csharp'><span class='line'><span class="na">[Activity(Label = &quot;AudioFocusSample&quot;, MainLauncher = true, Icon = &quot;@mipmap/icon&quot;)]</span>
+</span><span class='line'><span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span><span class="p">,</span> <span class="n">AudioManager</span><span class="p">.</span><span class="n">IOnAudioFocusChangeListener</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">base</span><span class="p">.</span><span class="n">OnCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">);</span>
+</span><span class='line'>        <span class="n">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">audioManager</span> <span class="p">=</span> <span class="p">(</span><span class="n">AudioManager</span><span class="p">)</span><span class="n">GetSystemService</span><span class="p">(</span><span class="n">Context</span><span class="p">.</span><span class="n">AudioService</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="c1">// 先に効果音を読み込んでおく</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">soundPool</span> <span class="p">=</span> <span class="k">new</span> <span class="n">SoundPool</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">soundId</span> <span class="p">=</span> <span class="n">soundPool</span><span class="p">.</span><span class="n">Load</span><span class="p">(</span><span class="n">ApplicationContext</span><span class="p">,</span> <span class="n">Resource</span><span class="p">.</span><span class="n">Raw</span><span class="p">.</span><span class="n">cat</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+</span><span class='line'>        <span class="c1">// SoundPool は再生完了のコールバックがないので、事前に長さを得ておく</span>
+</span><span class='line'>        <span class="kt">var</span> <span class="n">duration</span> <span class="p">=</span> <span class="n">GetSoundDuration</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Raw</span><span class="p">.</span><span class="n">cat</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>        <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">buttonRequestFocus</span><span class="p">).</span><span class="n">Click</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="c1">// ダッキングを許可する AudioFocus を要求</span>
+</span><span class='line'>            <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">audioManager</span><span class="p">.</span><span class="n">RequestAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="n">AudioFocus</span><span class="p">.</span><span class="n">GainTransientMayDuck</span><span class="p">);</span>
+</span><span class='line'>            <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="p">==</span> <span class="n">AudioFocusRequest</span><span class="p">.</span><span class="n">Granted</span><span class="p">)</span>
+</span><span class='line'>            <span class="p">{</span>
+</span><span class='line'>                <span class="c1">// 効果音を再生する</span>
+</span><span class='line'>                <span class="n">soundPool</span><span class="p">.</span><span class="n">Play</span><span class="p">(</span><span class="n">soundId</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">);</span>
+</span><span class='line'>                <span class="c1">// 再生完了まで待つ</span>
+</span><span class='line'>                <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="n">Delay</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">duration</span><span class="p">);</span>
+</span><span class='line'>                <span class="c1">// AudioFocus を開放</span>
+</span><span class='line'>                <span class="n">audioManager</span><span class="p">.</span><span class="n">AbandonAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+</span><span class='line'>            <span class="p">}</span>
+</span><span class='line'>        <span class="p">};</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// 音声の再生長さを得る</span>
+</span><span class='line'>    <span class="k">private</span> <span class="kt">long</span> <span class="nf">GetSoundDuration</span><span class="p">(</span><span class="kt">int</span> <span class="n">rawId</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>        <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">player</span> <span class="p">=</span> <span class="n">MediaPlayer</span><span class="p">.</span><span class="n">Create</span><span class="p">(</span><span class="n">ApplicationContext</span><span class="p">,</span> <span class="n">rawId</span><span class="p">))</span>
+</span><span class='line'>        <span class="p">{</span>
+</span><span class='line'>            <span class="k">return</span> <span class="n">player</span><span class="p">.</span><span class="n">Duration</span><span class="p">;</span>
+</span><span class='line'>        <span class="p">}</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1">// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）</span>
+</span><span class='line'>    <span class="k">public</span> <span class="k">void</span> <span class="nf">OnAudioFocusChange</span><span class="p">([</span><span class="n">GeneratedEnum</span><span class="p">]</span> <span class="n">AudioFocus</span> <span class="n">focusChange</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">{</span>
+</span><span class='line'>       <span class="c1">// 今回は使用しない</span>
+</span><span class='line'>    <span class="p">}</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>効果音 <code>Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
+
+<p>音量を小さくする＝絞る＝ダッキング、というのがなかなか連想しづらいので辿りつけない。
+Android の音声再生は、他に <code>MediaPlayer</code> とか <code>AudioTrack</code> もあるし、リモコンなど外部からの操作のため？に BroadcastReceiver を使わないといけないし。</p>
+
+<p>サンプルアプリはこちら。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/AudioFocusSample">amay077/AudioFocusSample</a></li>
+</ul>
+
+
+<p>次は Xamarin.iOS でやってみる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="https://developer.android.com/training/managing-audio/audio-focus.html">Managing Audio Focus | Android Developers</a></li>
+<li><a href="http://dev.classmethod.jp/smartphone/android/android-tips-48-soundpool-mediaplayer/">Android Tips #48 BGM や効果音を再生する ｜ Developers.IO</a></li>
+<li><a href="http://ameblo.jp/negiiiimo/entry-11488832997.html">Managing Audio Playback part2｜Android開発記録雑記</a></li>
+<li><a href="http://qiita.com/KeithYokoma/items/3896f5934478fa560a50">音を制御する &ndash; AudioManager &ndash; Qiita</a></li>
+<li><a href="https://developer.amazon.com/public/ja/solutions/devices/fire-tv/docs/managing-audio-focus">Fire TV でのオーディオフォーカスの管理 &ndash; アマゾン アプリ 開発者ポータル</a></li>
+</ul>
+
+
+
+      <div class="hidden-phone">
+        <h4>Ads</h4>
+        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>
+
+    </div>
+  </div>
+
+
+
+  <footer>
+    <hr>
+    
+    <div class="row-fluid">
+      
+      
+      <div class="span6 social-sharing">
+        <div class="sharing">
+  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
+  
+  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/" >Tweet</a>
+  
+  <a class="addthis_counter addthis_pill_style"></a>
+  </div>
+  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
+</div>
+      </div>
+      
+      
+    </div>
+    
+    <div class="row-fluid">
+      <div class="span12">
+        <p class="meta">
+          
+            <a class="basic-alignment left" href="/blog/2016/07/08/changed-jobs/" title="Previous Post: 転職してました">&lt; 転職してました</a>
+          
+          
+            &nbsp;|&nbsp;
+            <a class="basic-alignment right" href="/blog/2016/07/10/joined_xamarin_hads_on_ad_hamamatsu/" title="Next Post: Xamarin ハンズオン浜松に参加しました #JXUG #jaghama">Xamarin ハンズオン浜松に参加しました #JXUG #jaghama &gt;</a>
+          
+        </p>
+      </div>
+    </div>
+  </footer>
+</article>
+
+  <section>
+    <h1>Comments</h1>
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+
+</div>
+
+
+
+        </div>
+      </div>
+      <div class="row-fluid">
+        <footer class="footer-page" role="contentinfo">
+          <p>
+  Copyright &copy; 2016 - amay077 -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+</p>
+
+
+        </footer>
+      </div>
+    </div>
+  </div>
+  
+
+<script type="text/javascript">
+      var disqus_shortname = 'experimentsneverfail';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/';
+        var disqus_url = 'http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+<div id="fb-root"></div>
+<script>(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) {return;}
+  js = d.createElement(s); js.id = id; js.async = true;
+  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));</script>
+
+
+
+
+
+  <script type="text/javascript">
+    (function(){
+      var twitterWidgets = document.createElement('script');
+      twitterWidgets.type = 'text/javascript';
+      twitterWidgets.async = true;
+      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
+      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
+    })();
+  </script>
+
+
+
+
+
+</body>
+</html>

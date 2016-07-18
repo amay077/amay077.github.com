@@ -4,7 +4,7 @@
   <title><![CDATA[Category: c# | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/c-number/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-07-18T15:21:43+09:00</updated>
+  <updated>2016-07-18T17:26:07+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,185 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[ボタンをタップした時に○○する、を Java と Swift と Xamarin で比較する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/15/comparison_on_click_with_java_swift_xamarin/"/>
+    <updated>2016-07-15T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/15/comparison_on_click_with_java_swift_xamarin</id>
+    <content type="html"><![CDATA[<p>たぶん一番書くやつを</p>
+
+<!--more-->
+
+
+<ul>
+<li>Android-Java</li>
+<li>Android-Xamarin</li>
+<li>iOS-Swift</li>
+<li>iOS-Xamarin</li>
+</ul>
+
+
+<p>で比較。</p>
+
+<hr />
+
+<h2>Android-Java</h2>
+
+<p>```java MainActivity.java
+button1.setOnClickListener(new View.OnClickListener() {</p>
+
+<pre><code>@Override
+public void onClick(View view) {
+    label1.setText("pushed!!");        
+}
+</code></pre>
+
+<p>});</p>
+
+<h2>```</h2>
+
+<h2>Xamarin.Android(C#)</h2>
+
+<p>```csharp MainActivity.cs
+buttonOk.Click += (_, e)</p>
+
+<pre><code>=&gt; label1.Text = "pushed!!";
+</code></pre>
+
+<h2>```</h2>
+
+<h2>iOS-Swift</h2>
+
+<p>```java ViewController.swift
+buttonOK.addTarget(self, action:</p>
+
+<pre><code>#selector(ViewController.onTouch(_:)), 
+forControlEvents: .TouchUpInside)
+</code></pre>
+
+<p>・・・
+func onTouch(sender: AnyObject) {</p>
+
+<pre><code>label1.text = "pushed!!"
+</code></pre>
+
+<p>}</p>
+
+<h2>```</h2>
+
+<h2>Xamarin.iOS(C#)</h2>
+
+<p>```csharp ViewColtroller.cs
+buttonOk.TouchUpInside += (_, e)</p>
+
+<pre><code>=&gt; label1.Text = "pushed!!";
+</code></pre>
+
+<h2>```</h2>
+
+<h2>まとめ</h2>
+
+<p><strong>Xamarin はいいぞ！</strong></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.Android で音楽の音量を下げてから効果音を再生する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/"/>
+    <updated>2016-07-09T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android</id>
+    <content type="html"><![CDATA[<p>カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="http://ja.stackoverflow.com/questions/27452/%e3%82%b9%e3%83%9e%e3%83%9b%e3%82%a2%e3%83%97%e3%83%aa%e8%b5%b7%e5%8b%95%e6%99%82ios-android%e3%81%ab%e5%86%8d%e7%94%9f%e4%b8%ad%e3%81%ae%e9%9f%b3%e6%a5%bd%e3%82%92%e5%81%9c%e6%ad%a2%e3%81%95%e3%81%9b%e3%82%8b%e6%96%b9%e6%b3%95/27459#27459">スマホアプリ起動時(iOS/Android)に再生中の音楽を停止させる方法 &ndash; スタック・オーバーフロー</a></li>
+</ul>
+
+
+<p>に回答したので、その関連でやってみた。</p>
+
+<p>```csharp MainActivity.cs
+[Activity(Label = &ldquo;AudioFocusSample&rdquo;, MainLauncher = true, Icon = &ldquo;@mipmap/icon&rdquo;)]
+public class MainActivity : Activity, AudioManager.IOnAudioFocusChangeListener
+{</p>
+
+<pre><code>protected override void OnCreate(Bundle savedInstanceState)
+{
+    base.OnCreate(savedInstanceState);
+    SetContentView(Resource.Layout.Main);
+
+    var audioManager = (AudioManager)GetSystemService(Context.AudioService);
+
+    // 先に効果音を読み込んでおく
+    var soundPool = new SoundPool(1, Stream.Music, 0);
+    var soundId = soundPool.Load(ApplicationContext, Resource.Raw.cat, 0);
+    // SoundPool は再生完了のコールバックがないので、事前に長さを得ておく
+    var duration = GetSoundDuration(Resource.Raw.cat);
+
+    FindViewById&lt;Button&gt;(Resource.Id.buttonRequestFocus).Click += async (sender, e) =&gt; 
+    {
+        // ダッキングを許可する AudioFocus を要求
+        var result = audioManager.RequestAudioFocus(this, Stream.Music, AudioFocus.GainTransientMayDuck);
+        if (result == AudioFocusRequest.Granted)
+        {
+            // 効果音を再生する
+            soundPool.Play(soundId, 1.0f, 1.0f, 0, 0, 1.0f);
+            // 再生完了まで待つ
+            await Task.Delay((int)duration);
+            // AudioFocus を開放
+            audioManager.AbandonAudioFocus(this);
+        }
+    };
+}
+
+// 音声の再生長さを得る
+private long GetSoundDuration(int rawId)
+{
+    using (var player = MediaPlayer.Create(ApplicationContext, rawId))
+    {
+        return player.Duration;
+    }
+}
+
+// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）
+public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
+{
+   // 今回は使用しない
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>効果音 <code>Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
+
+<p>音量を小さくする＝絞る＝ダッキング、というのがなかなか連想しづらいので辿りつけない。
+Android の音声再生は、他に <code>MediaPlayer</code> とか <code>AudioTrack</code> もあるし、リモコンなど外部からの操作のため？に BroadcastReceiver を使わないといけないし。</p>
+
+<p>サンプルアプリはこちら。</p>
+
+<ul>
+<li><a href="https://github.com/amay077/AudioFocusSample">amay077/AudioFocusSample</a></li>
+</ul>
+
+
+<p>次は Xamarin.iOS でやってみる。</p>
+
+<h2>参考</h2>
+
+<ul>
+<li><a href="https://developer.android.com/training/managing-audio/audio-focus.html">Managing Audio Focus | Android Developers</a></li>
+<li><a href="http://dev.classmethod.jp/smartphone/android/android-tips-48-soundpool-mediaplayer/">Android Tips #48 BGM や効果音を再生する ｜ Developers.IO</a></li>
+<li><a href="http://ameblo.jp/negiiiimo/entry-11488832997.html">Managing Audio Playback part2｜Android開発記録雑記</a></li>
+<li><a href="http://qiita.com/KeithYokoma/items/3896f5934478fa560a50">音を制御する &ndash; AudioManager &ndash; Qiita</a></li>
+<li><a href="https://developer.amazon.com/public/ja/solutions/devices/fire-tv/docs/managing-audio-focus">Fire TV でのオーディオフォーカスの管理 &ndash; アマゾン アプリ 開発者ポータル</a></li>
+</ul>
+
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Xamarin.Forms のバージョンを 1.2 から 2.3 に上げた時のエラー対処法]]></title>
@@ -368,176 +547,6 @@ Android にしても iOS にしても、所詮は他人の土俵なんで、そ�
 <li>次なんかやるときは <a href="https://transiru.net/">Transiru</a> 使います</li>
 </ul>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin Workbooks とかいうやつ]]></title>
-    <link href="http://blog.amay077.net/blog/2016/04/29/what-is-xamarin-workbooks/"/>
-    <updated>2016-04-29T00:00:00+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/04/29/what-is-xamarin-workbooks</id>
-    <content type="html"><![CDATA[<p><a href="https://evolve.xamarin.com/">Xamarin Evolve 2016</a> が開催中されました。</p>
-
-<!--more-->
-
-
-<p>build での予告どおり、Xamarin.Android/iOS などがついにオープンソースになった、などのエキサイティングな発表のまとめは</p>
-
-<ul>
-<li><a href="http://ytabuchi.hatenablog.com/entry/evolve2016">【速報】Evolve 2016 で発表されたエキサイティング情報まとめ &ndash; Xamarin 日本語情報</a></li>
-</ul>
-
-
-<p>その Keynote でデモされていた Xamarin Workbooks というツールがなかなかすごいので紹介。</p>
-
-<h2>なにこれ？</h2>
-
-<p>ひとことでいうと、</p>
-
-<p><strong>Xcode の Playground みたいなやつ + Markdown</strong></p>
-
-<p>まだ意味わかんないですね？</p>
-
-<p>こういうことです。</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_workbooks_01.png" alt="" />
-<img src="https://dl.dropboxusercontent.com/u/264530/qiita/xamarin_workbooks_02.gif" alt="" /></p>
-
-<ul>
-<li>Markdown でドキュメントが書ける(このツール自体はリッチなエディタである)</li>
-<li>```csharp〜``` で囲まれたコードブロックは、そのまま iOSシミュレータなどでインタラクティブに、Instant に実行できる。</li>
-</ul>
-
-
-<p>上記の Workbook の実ファイルは、これ↓です。</p>
-
-<ul>
-<li><a href="https://gist.github.com/amay077/793b5df4aad0098ffe6d9c12a491ee9a">Xamarin Workbooks を使ってみるテスト。 HowToUseMapKit.workbook で保存して Xamarin Inspector で File->Open してね。</a></li>
-</ul>
-
-
-<p>みてわかる通りまんま Markdown ですね。</p>
-
-<h2>Let&rsquo;s try!</h2>
-
-<p>しかも iOS だけじゃなく、Android, Mac, Windows(WPF) に全対応！
-Mac でも Windows でも試せるみたいです。</p>
-
-<ul>
-<li><a href="https://developer.xamarin.com/guides/cross-platform/workbooks/">Xamarin Workbooks &ndash; Xamarin</a></li>
-</ul>
-
-
-<p>スタンドアロンなアプリとして実行可能なようなので、サクッと使ってみよう！</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ReactiveProperty で2度押し防止(Using使ったやつ)]]></title>
-    <link href="http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty/"/>
-    <updated>2016-04-07T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://tamafuyou.hatenablog.com/entry/2016/04/06/213633">ReactivePropertyで2度押し防止 &ndash; 眠いしお腹すいたし(´・ω・`)</a></li>
-</ul>
-
-
-<p>を拝見しまして、前から気になってたので考えてみました。</p>
-
-<!--more-->
-
-
-<p>先に別件。</p>
-
-<p>ReactiveCommand は <code>IObservable&lt;T&gt;</code>、そしてロジックの方も <code>IObservable&lt;T&gt;</code> で作ることが多いのですが、その場合「ボタンをクリックした時に、ロジックを実行する」というコードは大抵以下のようになります。</p>
-
-<p>```csharp MainViewModel.cs
-public class MainViewModel
-{</p>
-
-<pre><code>public ReactiveCommand TestCommand { get; }
-public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
-
-public MainViewModel()
-{
-    TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
-    TestCommand.Subscribe(_ =&gt;
-    {
-        // log("ボタンが押されたよ");
-        IsBusy.Value = true;
-        SomeLogicAsObservable.Subscribe(__ =&gt;
-        {
-            // log("処理が実行されたよ");
-            IsBusy.Value = false; // ほんとは OnCompleted と OnError でやるべき
-        };
-    });
-}
-
-// なんか重い非同期な処理
-private IObservable&lt;Unit&gt; SomeLogicAsObservable()
-{
-    return Observable.Delay(Observable.Return(Unit.Default), 
-            TimeSpan.FromSeconds(3));
-}    
-</code></pre>
-
-<p>}
-```</p>
-
-<p>こういうコードを書いていていつも「なんかカッコ悪いなー」と思っていました。
-そう思う点は、<code>Subscribe</code> を2回書いていること。ボタンがクリックされた事の購読の中でさらにロジックが実行された事を購読している点です。
-どちらも Stream なのだから、うまくマージできないかなと思っていました。</p>
-
-<p>これの解決も一緒に考えてみました。</p>
-
-<p>はい、</p>
-
-<p>```csharp MainViewModel.cs
-public class MainViewModel
-{</p>
-
-<pre><code>public ReactiveCommand TestCommand { get; }
-public ReactiveProperty&lt;bool&gt; IsBusy { get; } = new ReactiveProperty&lt;bool&gt;(false);
-
-public MainViewModel()
-{
-    TestCommand = TestCommand = IsBusy.Select(x =&gt; !x).ToReactiveCommand();
-
-    TestCommand
-        .SelectMany(_ =&gt; UsingIsBusy(SomeLogicAsObservable()))
-        .Subscribe(_ =&gt; { /* log("ボタンが押されてロジックが実行されたよ") ※ */ });
-        // ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意
-}
-
-private IObservable&lt;T&gt; UsingIsBusy&lt;T&gt;(IObservable&lt;T&gt; observable)
-{
-    return Observable.Using(
-        () =&gt;
-        {
-            IsBusy.Value = true;
-            return Disposable.Create(() =&gt; IsBusy.Value = false);
-        },
-        _ =&gt; observable);
-}
-
-// なんか重い非同期な処理
-private IObservable&lt;Unit&gt; SomeLogicAsObservable()
-{
-    return Observable.Delay(Observable.Return(Unit.Default),
-                            TimeSpan.FromSeconds(3));
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p><code>IsBusy</code> の ON/OFF を <code>Observable.Using</code> に任せるようにしました。これは、第2引数に指定した <code>IObservable&lt;T&gt;</code> が完了または失敗した時にリソースを解放してくれる C# の <code>using 句</code> のようなもので、ここでは第2引数にロジックの <code>IObservable&lt;T&gt;</code> を渡すことで、ロジックが完了したら自動的に <code>IsBusy.Value = false</code> が実行されます。</p>
-
-<p>次に「<code>Subscribe</code>を2回してる問題」は、ボタンがクリックされた<code>IObserbale&lt;T&gt;</code> から <code>SelectMany</code> で繋いであげることで解決しています。</p>
-
-<p>このコードの要注意は、<code>IsBusy.Value = false</code> が実行されるのがUIスレッドとは限らないので、View側でバインドするまでに <code>ObserveOnUIDispatcher</code> などをしてあげないといけないことです（少なくとも Xamarin.Android + ReactiveProperty ではそうでした。WPFだと気にしないのでしょうか？）。</p>
-
-<p>もう少し汎用性を高めて、「<code>IsBusy プロパティを持った ReactiveCommand</code>」のようなものを作ったら便利なのかもしれないです。</p>
 ]]></content>
   </entry>
   
