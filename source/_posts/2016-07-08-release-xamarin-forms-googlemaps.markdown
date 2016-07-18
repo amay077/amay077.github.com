@@ -3,7 +3,7 @@ layout: post
 title: "Xamarin.Forms 向けの地図ライブラリ「Xamarin.Forms.GoogleMaps」をリリースしました"
 date: 2016-06-27 23:59:00 +0900
 comments: true
-categories: [Xamarin, Xamarin.Forms, Android, iOS, GoogleMapsAPI]
+categories: [Xamarin, Xamarin.Forms, Android, iOS, GoogleMapsAPI, ReleaseNotes, Xamarin.Forms.GoogleMaps]
 ---
 Xamarin.Forms で使える地図ライブラリは、公式が出している
 
