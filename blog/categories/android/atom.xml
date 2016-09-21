@@ -4,7 +4,7 @@
   <title><![CDATA[Category: android | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/android/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-09-10T21:16:54+09:00</updated>
+  <updated>2016-09-21T21:12:00+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -103,6 +103,110 @@
 
 <p>地方の観光スポットor特産品を釣り餌にしていただけると、ワタシも喰いつきやすいです。
 よろしくおねがいします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[非同期処理の書き方を Java と Swift と Xamarin で比較する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin/"/>
+    <updated>2016-07-19T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin</id>
+    <content type="html"><![CDATA[<p>「重たい処理を非同期で実行して、結果をメインスレッドで画面に表示」を、</p>
+
+<!--more-->
+
+
+<ul>
+<li>Android-Java</li>
+<li>iOS-Swift</li>
+<li>Xamarin(Android も iOS も同じ)</li>
+</ul>
+
+
+<p>で比較。</p>
+
+<hr />
+
+<h2>Android</h2>
+
+<p>```java
+@Override
+public void onClick(View view) {</p>
+
+<pre><code>new AsyncTask&lt;Void, Void, Long&gt;() {
+    @Override
+    protected Long doInBackground(Void[] p) {
+        // ワーカースレッド
+        long ret = 0;
+        for (long i = 0; i &lt; 1000000000; i++)
+            ret += i;
+        return ret;
+    }
+
+    @Override
+    protected void onPostExecute(Long result) {
+        // UIスレッド
+        text1.setText(String.valueOf(result));
+    }
+}.execute((Void)null);
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Swift</h2>
+
+<p>```java
+@IBAction func onTouchUpInside(sender: AnyObject) {</p>
+
+<pre><code>weak var weakSelf = self
+dispatch_async(dispatch_get_global_queue(
+    DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+    // ワーカースレッド
+    var ret:Int = 0
+    for i in 0...1000000000 {
+        ret += i
+    }
+
+    dispatch_async(dispatch_get_main_queue(), {
+        // UIスレッド
+        weakSelf?.label1.text = String(ret)
+    });
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Xamarin(Android も iOS も)</h2>
+
+<p>```csharp
+Task<long> FatProc() => Task.Run<long>(() => {</p>
+
+<pre><code>long ret = 0;
+for (long i = 0; i &lt; 1000000000; i++)
+    ret += i;
+return ret;
+</code></pre>
+
+<p>});</p>
+
+<p>button1.TouchUpInside += async (_, e) => {</p>
+
+<pre><code>var ret = await FatProc(); // ワーカースレッド
+label1.Text = ret.ToString(); // UIスレッド
+</code></pre>
+
+<p>};
+```</p>
+
+<hr />
+
+<h2>Xamarin はいいぞ！</h2>
 ]]></content>
   </entry>
   
@@ -409,103 +513,6 @@ buttonOk.TouchUpInside += (_, e)</p>
 
 
 <script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android で音楽の音量を下げてから効果音を再生する]]></title>
-    <link href="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/"/>
-    <updated>2016-07-09T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android</id>
-    <content type="html"><![CDATA[<p>カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://ja.stackoverflow.com/questions/27452/%e3%82%b9%e3%83%9e%e3%83%9b%e3%82%a2%e3%83%97%e3%83%aa%e8%b5%b7%e5%8b%95%e6%99%82ios-android%e3%81%ab%e5%86%8d%e7%94%9f%e4%b8%ad%e3%81%ae%e9%9f%b3%e6%a5%bd%e3%82%92%e5%81%9c%e6%ad%a2%e3%81%95%e3%81%9b%e3%82%8b%e6%96%b9%e6%b3%95/27459#27459">スマホアプリ起動時(iOS/Android)に再生中の音楽を停止させる方法 &ndash; スタック・オーバーフロー</a></li>
-</ul>
-
-
-<p>に回答したので、その関連でやってみた。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;AudioFocusSample&rdquo;, MainLauncher = true, Icon = &ldquo;@mipmap/icon&rdquo;)]
-public class MainActivity : Activity, AudioManager.IOnAudioFocusChangeListener
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle savedInstanceState)
-{
-    base.OnCreate(savedInstanceState);
-    SetContentView(Resource.Layout.Main);
-
-    var audioManager = (AudioManager)GetSystemService(Context.AudioService);
-
-    // 先に効果音を読み込んでおく
-    var soundPool = new SoundPool(1, Stream.Music, 0);
-    var soundId = soundPool.Load(ApplicationContext, Resource.Raw.cat, 0);
-    // SoundPool は再生完了のコールバックがないので、事前に長さを得ておく
-    var duration = GetSoundDuration(Resource.Raw.cat);
-
-    FindViewById&lt;Button&gt;(Resource.Id.buttonRequestFocus).Click += async (sender, e) =&gt; 
-    {
-        // ダッキングを許可する AudioFocus を要求
-        var result = audioManager.RequestAudioFocus(this, Stream.Music, AudioFocus.GainTransientMayDuck);
-        if (result == AudioFocusRequest.Granted)
-        {
-            // 効果音を再生する
-            soundPool.Play(soundId, 1.0f, 1.0f, 0, 0, 1.0f);
-            // 再生完了まで待つ
-            await Task.Delay((int)duration);
-            // AudioFocus を開放
-            audioManager.AbandonAudioFocus(this);
-        }
-    };
-}
-
-// 音声の再生長さを得る
-private long GetSoundDuration(int rawId)
-{
-    using (var player = MediaPlayer.Create(ApplicationContext, rawId))
-    {
-        return player.Duration;
-    }
-}
-
-// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）
-public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
-{
-   // 今回は使用しない
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>効果音 <code>Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
-
-<p>音量を小さくする＝絞る＝ダッキング、というのがなかなか連想しづらいので辿りつけない。
-Android の音声再生は、他に <code>MediaPlayer</code> とか <code>AudioTrack</code> もあるし、リモコンなど外部からの操作のため？に BroadcastReceiver を使わないといけないし。</p>
-
-<p>サンプルアプリはこちら。</p>
-
-<ul>
-<li><a href="https://github.com/amay077/AudioFocusSample">amay077/AudioFocusSample</a></li>
-</ul>
-
-
-<p>次は Xamarin.iOS でやってみる。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="https://developer.android.com/training/managing-audio/audio-focus.html">Managing Audio Focus | Android Developers</a></li>
-<li><a href="http://dev.classmethod.jp/smartphone/android/android-tips-48-soundpool-mediaplayer/">Android Tips #48 BGM や効果音を再生する ｜ Developers.IO</a></li>
-<li><a href="http://ameblo.jp/negiiiimo/entry-11488832997.html">Managing Audio Playback part2｜Android開発記録雑記</a></li>
-<li><a href="http://qiita.com/KeithYokoma/items/3896f5934478fa560a50">音を制御する &ndash; AudioManager &ndash; Qiita</a></li>
-<li><a href="https://developer.amazon.com/public/ja/solutions/devices/fire-tv/docs/managing-audio-focus">Fire TV でのオーディオフォーカスの管理 &ndash; アマゾン アプリ 開発者ポータル</a></li>
-</ul>
 
 ]]></content>
   </entry>

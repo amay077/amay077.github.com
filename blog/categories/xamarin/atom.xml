@@ -4,7 +4,7 @@
   <title><![CDATA[Category: xamarin | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/xamarin/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-09-10T21:16:54+09:00</updated>
+  <updated>2016-09-21T21:12:00+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -103,6 +103,395 @@
 
 <p>地方の観光スポットor特産品を釣り餌にしていただけると、ワタシも喰いつきやすいです。
 よろしくおねがいします。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Xamarin.iOS でインターネット通信が可能かを取得する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/08/26/ger_is_network_available_on_xamarin_ios/"/>
+    <updated>2016-08-26T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/08/26/ger_is_network_available_on_xamarin_ios</id>
+    <content type="html"><![CDATA[<p>Xamarin.iOS で、「端末からインターネット通信が可能か？」を調べたい。</p>
+
+<!--more-->
+
+
+<p>Objective-C だと <a href="https://github.com/tonymillion/Reachability">Reachability</a>、swift だと <a href="https://github.com/ashleymills/Reachability.swift">Reachability.swift</a> を使うようだけど、 Xamarin.iOS ではどうするか？</p>
+
+<ul>
+<li><a href="http://d.hatena.ne.jp/scientre/20150527/get_network_status_in_swift">Swift でネットワーク状況を調べる &ndash; メモ用紙</a></li>
+</ul>
+
+
+<p>Bindingライブラリがあるのかな？と思ったら、サンプルで C# のソースコードが提供されていた。</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/recipes/ios/network/reachability/detect_if_network_is_available/">Detect if Network is Available &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>の <a href="https://github.com/xamarin/monotouch-samples/blob/master/ReachabilitySample/reachability.cs"><code>reachability.cs</code></a> がそれ。
+（名前から察して Reachability.swift を C# で書きなおしたもの？詳しくは見てないけど。）</p>
+
+<p>で、このサンプルの <code>Reachability</code> を使うと、以下のような感じで、「インターネット通信が可能か？」を調べられる。</p>
+
+<p>```csharp
+public bool IsNetworkAvailable
+{</p>
+
+<pre><code>get
+{
+    return Reachability.InternetConnectionStatus() != NetworkStatus.NotReachable;
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>WiFi とかセルラーとか細かいステータスもあるので、あとはコードを見てください。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[NavigationPage + MasterDetailPage の時に iOS の NavigationBar の左ボタンをカスタマイズする]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/22/customizing_left_button_on_%20NavigationBar_in_using_navigationpage_with_masterdetailpage/"/>
+    <updated>2016-07-22T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/22/customizing_left_button_on_ NavigationBar_in_using_navigationpage_with_masterdetailpage</id>
+    <content type="html"><![CDATA[<p>Xamarin.Forms では、左からスライドして出てくるメニューを持つ画面を <code>MasterDetailPage</code> で作成します。</p>
+
+<!--more-->
+
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/user-interface/navigation/master-detail-page/">Master-Detail Page &ndash; Xamarin</a></li>
+</ul>
+
+
+<p>一方、普通に画面遷移していく場合は ContentPage などを <code>NavigationPage</code> でラップしてあげます。</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/user-interface/navigation/hierarchical/">Hierarchical Navigation &ndash; Xamarin</a></li>
+</ul>
+
+
+<h2>やりたいこと</h2>
+
+<p>何がしたいかというと、両者を組み合わせたいんです。こういうことってよくありませんかね？</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/customizing_left_navvigationbar_button_in_masterdetail_with_navigation_pages_01.png" alt="" /></p>
+
+<p>起動画面で「新規ユーザー登録」があって、「ユーザー登録画面」を経て、メインの画面に遷移する、メイン画面にはスライドメニューがある、というパターン。これを Xamarin.Forms でやりたいのです。</p>
+
+<h2>問題</h2>
+
+<p>ところが、 <code>NavigationPage</code> で遷移していく画面の中に <code>MasterDetailPage</code> があると、 <code>NavigationPage</code> の方が勝ってしまい、ナビゲーションバーには「BACK」ボタンが表示されてしまいます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/customizing_left_navvigationbar_button_in_masterdetail_with_navigation_pages_02.png" alt="" /></p>
+
+<p>これを消そうと、<code>MasterDetailPage</code> のコンストラクタで <code>NavigationPage.SetHasBackButton(this, false)</code> してみます。</p>
+
+<p>その結果がこれ。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/customizing_left_navvigationbar_button_in_masterdetail_with_navigation_pages_03.png" alt="" /></p>
+
+<p>Android の方は望む結果になったけど、iOSの方はうーん…、BACKボタンは消えたけど、メニューを表示させるボタンが出ません。</p>
+
+<p>しょうがないので、iOS の場合だけ、ナビゲーションバーの左ボタンをどうにかして追加してみます。</p>
+
+<h2>私が求めていたソリューション（CustomRenderer編）</h2>
+
+<p>Xamarin.Forms のお供、CustomRenderer です。</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/custom-renderer/">Customizing Controls on Each Platform &ndash; Xamarin</a></li>
+<li><a href="http://ticktack.hatenablog.jp/entry/2016/06/11/124751">【Xamarin.Forms】ViewRendererと仲良くなるための簡易チュートリアル &ndash; ぴーさんログ</a></li>
+</ul>
+
+
+<p><code>MasterDetailPage</code> の iOS向けCustomRenderer を作って、ネイティブ側でナビゲーションバーをカスタマイズしてみます。</p>
+
+<p>```csharp CustomMasterDetailRenderer.cs
+using System;
+using MasterDetail.iOS;
+using MonoTouch.UIKit;
+using Xamarin.Forms;
+using Xamarin.Forms.Platform.iOS;</p>
+
+<p>[assembly: ExportRenderer(typeof(MasterDetailPage), typeof(CustomMasterDetailRenderer))]
+namespace MasterDetail.iOS
+{</p>
+
+<pre><code>public class CustomMasterDetailRenderer : PhoneMasterDetailRenderer
+{
+    public override void ViewWillAppear(bool animated)
+    {
+        base.ViewWillAppear(animated);
+
+        var page = Element as MasterDetailPage;
+
+        var navigationItem = this.NavigationController.TopViewController.NavigationItem;
+        navigationItem.LeftBarButtonItems = new UIBarButtonItem[]
+        {
+            new UIBarButtonItem("MENU", UIBarButtonItemStyle.Plain, (_, __) =&gt; 
+            { 
+                page.IsPresented = !page.IsPresented; 
+            })
+        };
+    }
+}
+</code></pre>
+
+<p>}
+```
+「MENU」ってボタンを、ナビゲーションバーの左側に追加しています。
+こんな CustomRenderer を iOS 側のプロジェクトに追加して実行してみます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/customizing_left_navvigationbar_button_in_masterdetail_with_navigation_pages_04.png" alt="" /></p>
+
+<p>オーケーオーケー、これが私が求めていたソリューションです。</p>
+
+<h2>私が求めていたソリューション（Effects編）</h2>
+
+<p>が、CustomRenderer にはいくつか考えなければならないことがあります。</p>
+
+<ul>
+<li>上で作った <code>CustomMasterDetailRenderer.cs</code> は <code>PhoneMasterDetailRenderer</code> というクラスを継承しています。が、実はこれは iPhone 用で、実はタブレット（iPad）用に <code>TabletMasterDetailRenderer</code> というクラスもあります。これの CustomRenderer も用意しなければなりませんか？</li>
+<li>CustomRenderer はベースとなる ViewRenderer を「継承」して作ります。そして C# は多重継承を許していません、この意味が分かるな？別の機能を拡張したいと思ったら<code>CustomMasterDetailRenderer</code>から派生させるしかなくなります。</li>
+</ul>
+
+
+<p>で、 Xamarin.Forms には、v2.1 から既存機能の拡張に Effects という選択肢が加わりました。</p>
+
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/effects/">Customizing Controls with Effects &ndash; Xamarin</a></li>
+<li><a href="http://ticktack.hatenablog.jp/entry/2016/01/26/020248">【Xamarin.Forms 2.1.0(プレビュー)】Effects &ndash; ぴーさんログ</a></li>
+</ul>
+
+
+<p>では、<code>CustomMasterDetailRenderer.cs</code> を Effects に変えてみましょう。</p>
+
+<p>```csharp CustomMasterDetailEffect.cs
+using System;
+using MasterDetail.iOS;
+using MonoTouch.UIKit;
+using Xamarin.Forms;
+using Xamarin.Forms.Platform.iOS;</p>
+
+<p>[assembly: ResolutionGroupName(&ldquo;mycompany&rdquo;)]
+[assembly: ExportEffect(typeof(CustomMasterDetailEffect), &ldquo;CustomMasterDetailEffect&rdquo;)]
+namespace MasterDetail.iOS
+{</p>
+
+<pre><code>public class CustomMasterDetailEffect : PlatformEffect
+{
+    protected override void OnAttached()
+    {
+        var page = Element as MasterDetailPage;
+        page.Appearing += Page_Appearing;
+    }
+
+    protected override void OnDetached()
+    {
+        var page = Element as MasterDetailPage;
+        page.Appearing -= Page_Appearing;
+    }
+
+    void Page_Appearing(object sender, EventArgs e)
+    {
+        var vc = GetParentViewController();
+        var page = Element as MasterDetailPage;
+
+        var navigationItem = vc.NavigationController.TopViewController.NavigationItem;
+        navigationItem.LeftBarButtonItems = new UIBarButtonItem[]
+        {
+            new UIBarButtonItem("MENU", UIBarButtonItemStyle.Plain, (_, __) =&gt; 
+            { 
+                page.IsPresented = !page.IsPresented; 
+            })
+        };
+    }
+
+    UIViewController GetParentViewController()
+    {
+        UIResponder responder = this.Container;
+        while ((responder = responder.NextResponder) != null)
+        {
+            if (responder is UIViewController)
+            {
+                return (UIViewController)responder;
+            }
+        }
+        return null;
+    }
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>Effect は、 <code>ResolutionGroupName</code> と <code>ExportEffect</code> で定義した名称を使って、PCL側プロジェクトで Page に追加します。</p>
+
+<p>```csharp RootPage.cs
+public class RootPage : MasterDetailPage
+{</p>
+
+<pre><code>public RootPage ()
+{
+    NavigationPage.SetHasBackButton(this, false);
+    // Effect を追加する
+    Effects.Add(Effect.Resolve("mycompany.CustomMasterDetailEffect"));
+
+    // 以下省略
+</code></pre>
+
+<p>```</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/customizing_left_navvigationbar_button_in_masterdetail_with_navigation_pages_05.png" alt="" /></p>
+
+<p>こちらも、CustomRenderer と同じことができました。</p>
+
+<p>が、ちょっと黒魔術っぽいの使ってます。</p>
+
+<ul>
+<li><code>Effects.Container</code> から取得できるのは <code>UIView</code> です。親の <code>UIViewController</code> を得るには、 <code>GetParentViewController()</code> でやってるような事をしなければなりません</li>
+<li>CustomRenderer はそれ自体は <code>ViewController</code> だったので <code>ViewWillAppear()</code> など画面のライフサイクルコールバックを override することができました。が、Effects から ViewController のライフサイクルイベントをハンドリングできません。代わりに Xamarin.Forms 側の <code>Page</code> のライフサイクルから <code>Appearing</code> イベントで処理するようにしています。そのため、「MENU」ボタンが表示されるタイミングが若干遅れます。</li>
+</ul>
+
+
+<h2>CustomRenderer と Effects 、どちらを使えばいいの？</h2>
+
+<ul>
+<li>CustomRenderer はできる事は多いが、複数の CustomRenderer を適用することはできない</li>
+<li>Effects はできる事は少ないが、複数の機能拡張を同時に適用できる</li>
+</ul>
+
+
+<p>以上を考えると、</p>
+
+<ol>
+<li>まずあなたの行いたいことが Effects で実現できないか、試してみる</li>
+<li>Effects でできないレベルなら CustomRenderer を選択する</li>
+</ol>
+
+
+<p>となるでしょう。</p>
+
+<p>本件のネタは、 Effects ではかなりムリをして実現しているので、CustomRenderer の方が相応しいと思われます。
+が、CustomRenderer はここぞという時にとっておきたい気もします。
+このさじ加減は、作るアプリの規模・深度、汎用性、再利用性などによって変わってくるでしょう。Effects の方が汎用性・再利用性は高いですが、ネイティブのUIパーツをごっそり入れ替えるような深い事は、CustomRenderer でなければできません。</p>
+
+<p>今回のプログラムは Github に上げてあります。（<code>CustomMasterDetailRenderer.cs</code> はコメントアウトしてあって、Effects の方を活かしてます。）</p>
+
+<ul>
+<li><a href="https://github.com/amay077/XFNavigationWithMasterDetailSample/blob/master/README.md">XFNavigationWithMasterDetailSample/README.md at master · amay077/XFNavigationWithMasterDetailSample</a></li>
+</ul>
+
+
+<p>私は「Effects で頑張りたい派」かな。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[非同期処理の書き方を Java と Swift と Xamarin で比較する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin/"/>
+    <updated>2016-07-19T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin</id>
+    <content type="html"><![CDATA[<p>「重たい処理を非同期で実行して、結果をメインスレッドで画面に表示」を、</p>
+
+<!--more-->
+
+
+<ul>
+<li>Android-Java</li>
+<li>iOS-Swift</li>
+<li>Xamarin(Android も iOS も同じ)</li>
+</ul>
+
+
+<p>で比較。</p>
+
+<hr />
+
+<h2>Android</h2>
+
+<p>```java
+@Override
+public void onClick(View view) {</p>
+
+<pre><code>new AsyncTask&lt;Void, Void, Long&gt;() {
+    @Override
+    protected Long doInBackground(Void[] p) {
+        // ワーカースレッド
+        long ret = 0;
+        for (long i = 0; i &lt; 1000000000; i++)
+            ret += i;
+        return ret;
+    }
+
+    @Override
+    protected void onPostExecute(Long result) {
+        // UIスレッド
+        text1.setText(String.valueOf(result));
+    }
+}.execute((Void)null);
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Swift</h2>
+
+<p>```java
+@IBAction func onTouchUpInside(sender: AnyObject) {</p>
+
+<pre><code>weak var weakSelf = self
+dispatch_async(dispatch_get_global_queue(
+    DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+    // ワーカースレッド
+    var ret:Int = 0
+    for i in 0...1000000000 {
+        ret += i
+    }
+
+    dispatch_async(dispatch_get_main_queue(), {
+        // UIスレッド
+        weakSelf?.label1.text = String(ret)
+    });
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Xamarin(Android も iOS も)</h2>
+
+<p>```csharp
+Task<long> FatProc() => Task.Run<long>(() => {</p>
+
+<pre><code>long ret = 0;
+for (long i = 0; i &lt; 1000000000; i++)
+    ret += i;
+return ret;
+</code></pre>
+
+<p>});</p>
+
+<p>button1.TouchUpInside += async (_, e) => {</p>
+
+<pre><code>var ret = await FatProc(); // ワーカースレッド
+label1.Text = ret.ToString(); // UIスレッド
+</code></pre>
+
+<p>};
+```</p>
+
+<hr />
+
+<h2>Xamarin はいいぞ！</h2>
 ]]></content>
   </entry>
   
@@ -206,307 +595,6 @@ pin.Icon = BitmapDescriptorFactory.FromStream(stream);
 <p><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/tree/master/XFGoogleMapSample">XFGoogleMapSample</a> の <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/XFGoogleMapSample/CustomPinsPage.xaml.cs"><code>CustomPinsPage.xaml.cs</code></a> でこれらの機能を使用しています。</p>
 
 <p>是非使ってみてください。よければ <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Github リポジトリ</a> に Star ください。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[ボタンをタップした時に○○する、を Java と Swift と Xamarin で比較する]]></title>
-    <link href="http://blog.amay077.net/blog/2016/07/15/comparison_on_click_with_java_swift_xamarin/"/>
-    <updated>2016-07-15T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/07/15/comparison_on_click_with_java_swift_xamarin</id>
-    <content type="html"><![CDATA[<p>たぶん一番書くやつを</p>
-
-<!--more-->
-
-
-<ul>
-<li>Android-Java</li>
-<li>Android-Xamarin</li>
-<li>iOS-Swift</li>
-<li>iOS-Xamarin</li>
-</ul>
-
-
-<p>で比較。</p>
-
-<hr />
-
-<h2>Android-Java</h2>
-
-<p>```java MainActivity.java
-button1.setOnClickListener(new View.OnClickListener() {</p>
-
-<pre><code>@Override
-public void onClick(View view) {
-    label1.setText("pushed!!");        
-}
-</code></pre>
-
-<p>});</p>
-
-<h2>```</h2>
-
-<h2>Xamarin.Android(C#)</h2>
-
-<p>```csharp MainActivity.cs
-buttonOk.Click += (_, e)</p>
-
-<pre><code>=&gt; label1.Text = "pushed!!";
-</code></pre>
-
-<h2>```</h2>
-
-<h2>iOS-Swift</h2>
-
-<p>```java ViewController.swift
-buttonOK.addTarget(self, action:</p>
-
-<pre><code>#selector(ViewController.onTouch(_:)), 
-forControlEvents: .TouchUpInside)
-</code></pre>
-
-<p>・・・
-func onTouch(sender: AnyObject) {</p>
-
-<pre><code>label1.text = "pushed!!"
-</code></pre>
-
-<p>}</p>
-
-<h2>```</h2>
-
-<h2>Xamarin.iOS(C#)</h2>
-
-<p>```csharp ViewColtroller.cs
-buttonOk.TouchUpInside += (_, e)</p>
-
-<pre><code>=&gt; label1.Text = "pushed!!";
-</code></pre>
-
-<h2>```</h2>
-
-<h2>まとめ</h2>
-
-<p><strong>Xamarin はいいぞ！</strong></p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin ハンズオン浜松に参加しました #JXUG #jaghama]]></title>
-    <link href="http://blog.amay077.net/blog/2016/07/10/joined_xamarin_hads_on_ad_hamamatsu/"/>
-    <updated>2016-07-10T18:32:39+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/07/10/joined_xamarin_hads_on_ad_hamamatsu</id>
-    <content type="html"><![CDATA[<ul>
-<li><a href="http://jaghama.connpass.com/event/33735/">Xamarinハンズオン浜松 #JXUG #jaghama &ndash; connpass</a></li>
-</ul>
-
-
-<!--more-->
-
-
-<p>　日本Androidの会 浜松支部の市川(<a href="https://twitter.com/macha1972">@macha1972</a>)さんからのご相談を受けて、JXUG の田淵さんに講師を依頼、 <a href="https://groups.google.com/forum/#!forum/android-hamamatsu">日本Android浜松支部(#jaghama)</a>と <a href="http://jxug.org/">Japan Xamarin Users Group (#jxug)</a> の共催という形で、 Xamarin 勉強会（ハンズオン）を浜松市で開催しました。</p>
-
-<h2>プレイベント「さわやかを食べる会」</h2>
-
-<p>　兼ねてより「さわやかに行きたい！」という声が聞かれていた（僕も食べたかった！）ので、プレイベントとして「さわやかを食べる会」も行いました。</p>
-
-<p>　言い出しっぺだったので、浜松駅からさわやかまでの送迎の為の車を出しました。</p>
-
-<p>久しぶりのさわやかだったので、定番のげんこつを外せず今回は断念した さわやかバーガー のメニュー</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/joined_xamarin_hands_on_ad_hamamatsu_01.jpg" alt="" /></p>
-
-<p>げんこつハンバーグ第一形態</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/joined_xamarin_hands_on_ad_hamamatsu_02.jpg" alt="" /></p>
-
-<p>げんこつハンバーグ第二形態</p>
-
-<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/joined_xamarin_hands_on_ad_hamamatsu_03.jpg" alt="" /></p>
-
-<p>久しぶりだった、やっぱり旨かった、肉を喰ってるッ！って感じがした。</p>
-
-<h2>Xamarin ハンズオン</h2>
-
-<p><a href="http://jxug.connpass.com/event/30152/">JXUGC #14 Xamarin ハンズオン 名古屋大会</a> でもサポートスタッフをさせていただいてたので、だいたいの要領は同じ。</p>
-
-<p>当時にくらべて、Xamarin も Visual Studio もバージョンアップしていて、導入時のエラーはだいぶ減ってきたかなあという印象。</p>
-
-<p>それでも、「Android SDK で Android N を入れているとビルドエラーになる」とか、新しいハマりポイントも出てきたので、やっぱり要注意。</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">これ、5/30名の確率でハマってる。Frequently Asked Questions にしてよいでしょう？レベル <a href="https://t.co/DXklIE2FBq">https://t.co/DXklIE2FBq</a> <a href="https://twitter.com/hashtag/JXUG?src=hash">#JXUG</a> <a href="https://twitter.com/hashtag/xamarin?src=hash">#xamarin</a> <a href="https://twitter.com/hashtag/jaghama?src=hash">#jaghama</a></p>&mdash; 4度目S+のあめいスピナーリミックス (@amay077) <a href="https://twitter.com/amay077/status/751653596861566976">2016年7月9日</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>このへんは、</p>
-
-<ul>
-<li><a href="https://github.com/ytabuchi/XamarinHOL/issues">Issues · ytabuchi/XamarinHOL</a></li>
-</ul>
-
-
-<p>に上げておいて、継続的に改良していけるとよいな。</p>
-
-<p><a href="https://github.com/ytabuchi/XamarinHOL">ハンズオン資料</a>が素晴らしいので、躓くのはほとんど最初だけだよねー、ということで、時間の最後らへんは、</p>
-
-<p>田淵さんからT(enpura)ポイントをもらったり、</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr"><a href="https://twitter.com/amay077">@amay077</a> さんに public Command(Action execute, Func&lt;bool&gt; canExecute); を教えていただいた！！！！！Tポイント!!! <a href="https://twitter.com/hashtag/JXUG?src=hash">#JXUG</a></p>&mdash; 田淵 義人＠エクセルソフト (@ytabuchi) <a href="https://twitter.com/ytabuchi/status/751682059186216960">2016年7月9日</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>「そこで Rx ですよ！」とか言っていた。</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">田淵さんが「2つのデータのいずれかが変わった時に、画面のとある項目を更新する必要がある」と言われたので、<br>「そこで Rx ですよ」とだけ言っておいた。 <a href="https://twitter.com/hashtag/jxug?src=hash">#jxug</a></p>&mdash; 4度目S+のあめいスピナーリミックス (@amay077) <a href="https://twitter.com/amay077/status/751691630172712960">2016年7月9日</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>スパルタだったけど、時間的にも少し余裕があったかな。皆さん完走できていたと思います。</p>
-
-<h2>LT</h2>
-
-<p>先日より開発中の Xamarin.Forms.GoogleMaps を Qiita のスライドモードを使って LT しました。</p>
-
-<ul>
-<li><a href="http://qiita.com/amay077/items/feb5353bf8fb8b8c866d">Xamarin.Forms 用の地図ライブラリつくった &ndash; Qiita</a></li>
-</ul>
-
-
-<h2>懇親会、アフターイベント</h2>
-
-<p>終わったら懇親会、やっぱ地方はいいな！なんとなく落ち着くのです（車出したのでお酒は飲んでいません）。</p>
-
-<p>会の途中、流れでアプリ紹介タイムになり、 <a href="https://twitter.com/fxxk_authority">しんす</a> さんの Multi Function Display というアプリがおもしろそうだった（他の方紹介できずごめんなさい）。</p>
-
-<ul>
-<li><a href="https://www.microsoft.com/ja-jp/store/apps/multi-function-display/9nblggh6268l">Multi Function Display – Microsoft ストアの Windows アプリ</a></li>
-</ul>
-
-
-<p>夜、車のダッシュボードにおいて、速度とかをフロンドガラスに写り込ませて見られるのだそうで、カッコいい！MADOSMA の使いみちに困っていたので使ってみます！</p>
-
-<p>　懇親会の後、数名の方でラーメンを食べに行くとのこと。お腹もいい感じだったので帰ろうかなと思っていたのですが、 <strong>「三太」</strong> に行くと聞いて手のひら返し、ご一緒させていただきました。浜松来たらほぼ必ず行くんですよ、三太。</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">俺の中の浜松のソウルフード「三太のラーメン」の誘惑に負けた <a href="https://twitter.com/hashtag/jxug?src=hash">#jxug</a> <a href="https://twitter.com/hashtag/jaghama?src=hash">#jaghama</a> (@ 三太 モール街店 in 浜松市, 静岡県) <a href="https://t.co/rhxGxhqfyZ">https://t.co/rhxGxhqfyZ</a></p>&mdash; 4度目S+のあめいスピナーリミックス (@amay077) <a href="https://twitter.com/amay077/status/751746459469541376">2016年7月9日</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-
-<p>約30名も集まっていただいて感謝！</p>
-
-<p>学生さん多かった印象、休憩時間に「もしかしてみなさんは昭和生まれなんですか？」とぶっ込まれた時は、場が軽く凍りましたねｗ</p>
-
-<p>東京のどでかい勉強会もいいけど、地方の十数名くらいの勉強会の方がどっちかというと落ち着きます（^ ^）</p>
-
-<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">さわやかうまかった。次は 生しらす か 桜エビ を食べたいです。</p>&mdash; 4度目S+のあめいスピナーリミックス (@amay077) <a href="https://twitter.com/amay077/status/751617505202843648">2016年7月9日</a></blockquote>
-
-
-<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
-
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xamarin.Android で音楽の音量を下げてから効果音を再生する]]></title>
-    <link href="http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/"/>
-    <updated>2016-07-09T23:59:59+09:00</updated>
-    <id>http://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android</id>
-    <content type="html"><![CDATA[<p>カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。</p>
-
-<!--more-->
-
-
-<ul>
-<li><a href="http://ja.stackoverflow.com/questions/27452/%e3%82%b9%e3%83%9e%e3%83%9b%e3%82%a2%e3%83%97%e3%83%aa%e8%b5%b7%e5%8b%95%e6%99%82ios-android%e3%81%ab%e5%86%8d%e7%94%9f%e4%b8%ad%e3%81%ae%e9%9f%b3%e6%a5%bd%e3%82%92%e5%81%9c%e6%ad%a2%e3%81%95%e3%81%9b%e3%82%8b%e6%96%b9%e6%b3%95/27459#27459">スマホアプリ起動時(iOS/Android)に再生中の音楽を停止させる方法 &ndash; スタック・オーバーフロー</a></li>
-</ul>
-
-
-<p>に回答したので、その関連でやってみた。</p>
-
-<p>```csharp MainActivity.cs
-[Activity(Label = &ldquo;AudioFocusSample&rdquo;, MainLauncher = true, Icon = &ldquo;@mipmap/icon&rdquo;)]
-public class MainActivity : Activity, AudioManager.IOnAudioFocusChangeListener
-{</p>
-
-<pre><code>protected override void OnCreate(Bundle savedInstanceState)
-{
-    base.OnCreate(savedInstanceState);
-    SetContentView(Resource.Layout.Main);
-
-    var audioManager = (AudioManager)GetSystemService(Context.AudioService);
-
-    // 先に効果音を読み込んでおく
-    var soundPool = new SoundPool(1, Stream.Music, 0);
-    var soundId = soundPool.Load(ApplicationContext, Resource.Raw.cat, 0);
-    // SoundPool は再生完了のコールバックがないので、事前に長さを得ておく
-    var duration = GetSoundDuration(Resource.Raw.cat);
-
-    FindViewById&lt;Button&gt;(Resource.Id.buttonRequestFocus).Click += async (sender, e) =&gt; 
-    {
-        // ダッキングを許可する AudioFocus を要求
-        var result = audioManager.RequestAudioFocus(this, Stream.Music, AudioFocus.GainTransientMayDuck);
-        if (result == AudioFocusRequest.Granted)
-        {
-            // 効果音を再生する
-            soundPool.Play(soundId, 1.0f, 1.0f, 0, 0, 1.0f);
-            // 再生完了まで待つ
-            await Task.Delay((int)duration);
-            // AudioFocus を開放
-            audioManager.AbandonAudioFocus(this);
-        }
-    };
-}
-
-// 音声の再生長さを得る
-private long GetSoundDuration(int rawId)
-{
-    using (var player = MediaPlayer.Create(ApplicationContext, rawId))
-    {
-        return player.Duration;
-    }
-}
-
-// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）
-public void OnAudioFocusChange([GeneratedEnum] AudioFocus focusChange)
-{
-   // 今回は使用しない
-}
-</code></pre>
-
-<p>}
-```</p>
-
-<p>効果音 <code>Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
-
-<p>音量を小さくする＝絞る＝ダッキング、というのがなかなか連想しづらいので辿りつけない。
-Android の音声再生は、他に <code>MediaPlayer</code> とか <code>AudioTrack</code> もあるし、リモコンなど外部からの操作のため？に BroadcastReceiver を使わないといけないし。</p>
-
-<p>サンプルアプリはこちら。</p>
-
-<ul>
-<li><a href="https://github.com/amay077/AudioFocusSample">amay077/AudioFocusSample</a></li>
-</ul>
-
-
-<p>次は Xamarin.iOS でやってみる。</p>
-
-<h2>参考</h2>
-
-<ul>
-<li><a href="https://developer.android.com/training/managing-audio/audio-focus.html">Managing Audio Focus | Android Developers</a></li>
-<li><a href="http://dev.classmethod.jp/smartphone/android/android-tips-48-soundpool-mediaplayer/">Android Tips #48 BGM や効果音を再生する ｜ Developers.IO</a></li>
-<li><a href="http://ameblo.jp/negiiiimo/entry-11488832997.html">Managing Audio Playback part2｜Android開発記録雑記</a></li>
-<li><a href="http://qiita.com/KeithYokoma/items/3896f5934478fa560a50">音を制御する &ndash; AudioManager &ndash; Qiita</a></li>
-<li><a href="https://developer.amazon.com/public/ja/solutions/devices/fire-tv/docs/managing-audio-focus">Fire TV でのオーディオフォーカスの管理 &ndash; アマゾン アプリ 開発者ポータル</a></li>
-</ul>
-
 ]]></content>
   </entry>
   

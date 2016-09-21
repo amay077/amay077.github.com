@@ -4,7 +4,7 @@
   <title><![CDATA[Category: swift | Experiments Never Fail]]></title>
   <link href="http://blog.amay077.net/blog/categories/swift/atom.xml" rel="self"/>
   <link href="http://blog.amay077.net/"/>
-  <updated>2016-09-10T21:16:54+09:00</updated>
+  <updated>2016-09-21T21:12:00+09:00</updated>
   <id>http://blog.amay077.net/</id>
   <author>
     <name><![CDATA[amay077]]></name>
@@ -12,6 +12,110 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[非同期処理の書き方を Java と Swift と Xamarin で比較する]]></title>
+    <link href="http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin/"/>
+    <updated>2016-07-19T23:59:59+09:00</updated>
+    <id>http://blog.amay077.net/blog/2016/07/19/comparison_async_logic_with_java_swift_xamarin</id>
+    <content type="html"><![CDATA[<p>「重たい処理を非同期で実行して、結果をメインスレッドで画面に表示」を、</p>
+
+<!--more-->
+
+
+<ul>
+<li>Android-Java</li>
+<li>iOS-Swift</li>
+<li>Xamarin(Android も iOS も同じ)</li>
+</ul>
+
+
+<p>で比較。</p>
+
+<hr />
+
+<h2>Android</h2>
+
+<p>```java
+@Override
+public void onClick(View view) {</p>
+
+<pre><code>new AsyncTask&lt;Void, Void, Long&gt;() {
+    @Override
+    protected Long doInBackground(Void[] p) {
+        // ワーカースレッド
+        long ret = 0;
+        for (long i = 0; i &lt; 1000000000; i++)
+            ret += i;
+        return ret;
+    }
+
+    @Override
+    protected void onPostExecute(Long result) {
+        // UIスレッド
+        text1.setText(String.valueOf(result));
+    }
+}.execute((Void)null);
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Swift</h2>
+
+<p>```java
+@IBAction func onTouchUpInside(sender: AnyObject) {</p>
+
+<pre><code>weak var weakSelf = self
+dispatch_async(dispatch_get_global_queue(
+    DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), {
+    // ワーカースレッド
+    var ret:Int = 0
+    for i in 0...1000000000 {
+        ret += i
+    }
+
+    dispatch_async(dispatch_get_main_queue(), {
+        // UIスレッド
+        weakSelf?.label1.text = String(ret)
+    });
+});
+</code></pre>
+
+<p>}
+```</p>
+
+<hr />
+
+<h2>Xamarin(Android も iOS も)</h2>
+
+<p>```csharp
+Task<long> FatProc() => Task.Run<long>(() => {</p>
+
+<pre><code>long ret = 0;
+for (long i = 0; i &lt; 1000000000; i++)
+    ret += i;
+return ret;
+</code></pre>
+
+<p>});</p>
+
+<p>button1.TouchUpInside += async (_, e) => {</p>
+
+<pre><code>var ret = await FatProc(); // ワーカースレッド
+label1.Text = ret.ToString(); // UIスレッド
+</code></pre>
+
+<p>};
+```</p>
+
+<hr />
+
+<h2>Xamarin はいいぞ！</h2>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[ボタンをタップした時に○○する、を Java と Swift と Xamarin で比較する]]></title>
