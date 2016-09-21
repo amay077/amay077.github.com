@@ -46,7 +46,7 @@ public void onClick(View view) {
 
 ## Swift
 
-```swift
+```java
 @IBAction func onTouchUpInside(sender: AnyObject) {
     weak var weakSelf = self
     dispatch_async(dispatch_get_global_queue(
