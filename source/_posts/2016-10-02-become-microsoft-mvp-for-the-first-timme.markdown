@@ -12,15 +12,13 @@ categories: [Xamarin, Microsoft, MVP]
 
 何を言ってるのかわからねーと思うが、そういうことですｗ
 
-元々 VB や VC で Windows のアプリケーション開発をしていましたが、転職を機に主戦場を Android/iOS アプリ開発にクラスチェンジしたのは2011年頃の話です。
+元々 VB や VC で Windows のアプリケーション開発をしていましたが、転職を機に Android/iOS アプリ開発にクラスチェンジしたのは2011年頃の話です。
 
 が、やっぱり C# が好きで、 [2013年から「Xamarin はいいぞ！」と言い続けていた](http://qiita.com/search?q=+user%3Aamay077+tag%3Axamarin&sort=stock) ら、Xamarin が Microsoft に買収され、Xamarin も Microsoft MVP の対象に！
 
 Xamarin 関係で、[@iseebi](https://twitter.com/iseebi) さんや [@ytabuchi](https://twitter.com/ytabuchi) さんが受賞されるなか、「こりゃワタシもワンチャンある？」と思い申請しましたらありがたく MVP になることができました。
 
-カテゴリは Visual Studio and Development Technologies です。
-
-これからも「Xamarin はいいぞ！」と言い続けていきます。
+カテゴリは Visual Studio and Development Technologies ですが、Xamarin のことしか詳しくないので、これからも **「Xamarin はいいぞ！」** と言い続けていきます。
 
 まだ Microsoft 系の開発者には浸透していないであろう Android/iOS アプリの開発ノウハウについて、あるいは両者の技術コミュニティが繋がるような活動ができれば、と思っています。
 
