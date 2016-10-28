@@ -8,6 +8,8 @@ footer: false
 
 名前:amay077(あめいと読むらしいぞ)
 
+[![MVP](images/mvp_logo_h.png)](https://mvp.microsoft.com/ja-jp/PublicProfile/5002207)
+
 Microsoft MVP for Visual Studio and Development Technologies(っていうか Xamarin) 2016/10-
 
 位置情報モバイルアプリエンジニア。C++ → VB → C# → Android とか HTML5 とか Rx とか MVVM とか OpenData とか。
