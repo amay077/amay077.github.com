@@ -630,61 +630,62 @@ img {
 
 <p>　例えば、画面に <code class="highlighter-rouge">EditBox</code> と <code class="highlighter-rouge">Button</code> があって、「文字列の入力」と「ボタンが押されたか」を監視、◯秒間操作がなかったら××する、という処理をしたい時、RxJava+RxAndroid では以下のように書けます。</p>
 
-<p>```java MyActivity.java<br />
-public class MyActivity extends Activity {<br />
-    private static final String TAG = “MyActivity”;<br />
-    private Subscription _subscription;</p>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//MyActivity.java</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">MyActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">"MyActivity"</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">Subscription</span> <span class="n">_subscription</span><span class="o">;</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>@Override
-protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_my);
+    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_my</span><span class="o">);</span>
 
-    final EditText editName = (EditText)findViewById(R.id.editName);
-    final View buttonOk = findViewById(R.id.buttonOk);
+        <span class="kd">final</span> <span class="n">EditText</span> <span class="n">editName</span> <span class="o">=</span> <span class="o">(</span><span class="n">EditText</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">editName</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">View</span> <span class="n">buttonOk</span> <span class="o">=</span> <span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">buttonOk</span><span class="o">);</span>
 
-    // OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換
-    final Func1&lt;Object, Void&gt; signalizer = new Func1&lt;Object, Void&gt;() {
-        @Override
-        public Void call(Object onClickEvent) {
-            return null;
-        }
-    };
+        <span class="c1">// OnTextChangeEvent や OnClickEvent をただの Void シグナルに変換</span>
+        <span class="kd">final</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;</span> <span class="n">signalizer</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Object</span><span class="o">,</span> <span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="n">Void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Object</span> <span class="n">onClickEvent</span><span class="o">)</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">};</span>
 
-    // 文字入力イベントのストリームと…
-    _subscription = ViewObservable.text(editName).map(signalizer)
-            // ボタン押されたのストリームを合体
-            .mergeWith(ViewObservable.clicks(buttonOk).map(signalizer))
-            // 3秒間なんもなかったらエラーにする
-            .timeout(3, TimeUnit.SECONDS)
-            .subscribe(new Action1&lt;Void&gt;() {
-                @Override
-                public void call(Void dummy) {
-                    // 何かアクションがあったらこっち
-                    Log.d(TAG, "文字が入力されたか、ボタンが押されたよ");
-                }
-            }, new Action1&lt;Throwable&gt;() {
-                @Override
-                public void call(Throwable throwable) {
-                    // 3秒間何もなかったらこっち
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Toast.makeText(MyActivity.this, 
-                                "３秒間何も操作がありませんでした", Toast.LENGTH_SHORT)
-                                .show();
-                        }
-                    });
-                }
-            });
-}
+        <span class="c1">// 文字入力イベントのストリームと…</span>
+        <span class="n">_subscription</span> <span class="o">=</span> <span class="n">ViewObservable</span><span class="o">.</span><span class="na">text</span><span class="o">(</span><span class="n">editName</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">)</span>
+                <span class="c1">// ボタン押されたのストリームを合体</span>
+                <span class="o">.</span><span class="na">mergeWith</span><span class="o">(</span><span class="n">ViewObservable</span><span class="o">.</span><span class="na">clicks</span><span class="o">(</span><span class="n">buttonOk</span><span class="o">).</span><span class="na">map</span><span class="o">(</span><span class="n">signalizer</span><span class="o">))</span>
+                <span class="c1">// 3秒間なんもなかったらエラーにする</span>
+                <span class="o">.</span><span class="na">timeout</span><span class="o">(</span><span class="mi">3</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">)</span>
+                <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Void</span><span class="o">&gt;()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Void</span> <span class="n">dummy</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// 何かアクションがあったらこっち</span>
+                        <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"文字が入力されたか、ボタンが押されたよ"</span><span class="o">);</span>
+                    <span class="o">}</span>
+                <span class="o">},</span> <span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Throwable</span><span class="o">&gt;()</span> <span class="o">{</span>
+                    <span class="nd">@Override</span>
+                    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="n">Throwable</span> <span class="n">throwable</span><span class="o">)</span> <span class="o">{</span>
+                        <span class="c1">// 3秒間何もなかったらこっち</span>
+                        <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+                            <span class="nd">@Override</span>
+                            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                                <span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="n">MyActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> 
+                                    <span class="s">"３秒間何も操作がありませんでした"</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">)</span>
+                                    <span class="o">.</span><span class="na">show</span><span class="o">();</span>
+                            <span class="o">}</span>
+                        <span class="o">});</span>
+                    <span class="o">}</span>
+                <span class="o">});</span>
+    <span class="o">}</span>
 
-@Override
-protected void onDestroy() {
-    // イベント系は無限ストリームだから開放してやらないとリークするはず
-    _subscription.unsubscribe();
-    super.onDestroy();
-} } ```
+    <span class="nd">@Override</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// イベント系は無限ストリームだから開放してやらないとリークするはず</span>
+        <span class="n">_subscription</span><span class="o">.</span><span class="na">unsubscribe</span><span class="o">();</span>
+        <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 
@@ -701,27 +702,28 @@ protected void onDestroy() {
 
 <p>　さて Xamarin です。Xamarin では本家の <a href="https://rx.codeplex.com/">Reactive Extensions</a> が使用できます。RxAndroid と同じことをやると下のように書けます、スマート。</p>
 
-<p>```csharp MainActivity.cs<br />
-[Activity(Label = “RxJavaSample”, MainLauncher = true, Icon = “@drawable/icon”)]<br />
-public class MainActivity : Activity<br />
-{<br />
-    protected override void OnCreate(Bundle bundle)<br />
-    {<br />
-        base.OnCreate(bundle);</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="na">[Activity(Label = "RxJavaSample", MainLauncher = true, Icon = "@drawable/icon")]</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">base</span><span class="p">.</span><span class="nf">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    // Set our view from the "main" layout resource
-    SetContentView(Resource.Layout.Main);
+        <span class="c1">// Set our view from the "main" layout resource
+</span>        <span class="nf">SetContentView</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Layout</span><span class="p">.</span><span class="n">Main</span><span class="p">);</span>
 
-    var editName = FindViewById&lt;EditText&gt;(Resource.Id.editName);
-    var buttonOk = FindViewById&lt;Button&gt;(Resource.Id.buttonOk);
+        <span class="kt">var</span> <span class="n">editName</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">EditText</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">editName</span><span class="p">);</span>
+        <span class="kt">var</span> <span class="n">buttonOk</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">buttonOk</span><span class="p">);</span>
 
-    Observable.FromEventPattern&lt;TextChangedEventArgs&gt;(editName, "TextChanged").Select(_=&gt;true)
-        .Merge(Observable.FromEventPattern(buttonOk, "Click").Select(_=&gt;true))
-        .Timeout(TimeSpan.FromSeconds(3))
-        .Subscribe(_ =&gt; {} , 
-        e =&gt; RunOnUiThread(() =&gt; Toast.MakeText(this, 
-            "３秒間何も操作がありませんでした", ToastLength.Short).Show()));
-} } ```
+        <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">TextChangedEventArgs</span><span class="p">&gt;(</span><span class="n">editName</span><span class="p">,</span> <span class="s">"TextChanged"</span><span class="p">).</span><span class="nf">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">Merge</span><span class="p">(</span><span class="n">Observable</span><span class="p">.</span><span class="nf">FromEventPattern</span><span class="p">(</span><span class="n">buttonOk</span><span class="p">,</span> <span class="s">"Click"</span><span class="p">).</span><span class="nf">Select</span><span class="p">(</span><span class="n">_</span><span class="p">=&gt;</span><span class="k">true</span><span class="p">))</span>
+            <span class="p">.</span><span class="nf">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromSeconds</span><span class="p">(</span><span class="m">3</span><span class="p">))</span>
+            <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="p">{}</span> <span class="p">,</span> 
+            <span class="n">e</span> <span class="p">=&gt;</span> <span class="nf">RunOnUiThread</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">Toast</span><span class="p">.</span><span class="nf">MakeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> 
+                <span class="s">"３秒間何も操作がありませんでした"</span><span class="p">,</span> <span class="n">ToastLength</span><span class="p">.</span><span class="n">Short</span><span class="p">).</span><span class="nf">Show</span><span class="p">()));</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 

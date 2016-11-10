@@ -625,7 +625,7 @@ img {
 <!--more--></p>
 
 <blockquote class="twitter-tweet" data-lang="ja">
-  <p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br />「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>
+  <p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったからズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>
   <p>— てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a>&lt;/blockquote&gt;
 <script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
 
@@ -635,102 +635,101 @@ img {
 
   <p>がんばって <a href="http://reactivex.io/documentation/operators/window.html"><code class="highlighter-rouge">Observable.window</code></a> を使ってみた。</p>
 
-  <p>```java zondoko.java</p>
+  <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//zondoko.java</span>
+<span class="c1">// なんちゃってラムダ使用。あと Android。</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">doZondoko</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+    <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">PATTERN</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"どこ"</span><span class="o">);</span>
+    <span class="kd">final</span> <span class="n">String</span> <span class="n">K</span> <span class="o">=</span> <span class="s">"キ・ヨ・シ！"</span><span class="o">;</span>
 
-  <p>// なんちゃってラムダ使用。あと Android。
-public void doZondoko() {
-    final Random random = new Random();
-    final List<String> PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
-    final String K = "キ・ヨ・シ！";</String></p>
+    <span class="n">Observable</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span> <span class="c1">// ※ の Observable&lt;List&lt;String&gt;&gt; を直列に連結</span>
+        <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">500</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">)</span>
+            <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">_</span> <span class="o">-&gt;</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="s">"ずん"</span> <span class="o">:</span> <span class="s">"どこ"</span><span class="o">)</span> <span class="c1">// ランダムに ずん or どこ</span>
+            <span class="o">.</span><span class="na">window</span><span class="o">(</span><span class="n">PATTERN</span><span class="o">.</span><span class="na">size</span><span class="o">(),</span> <span class="mi">1</span><span class="o">)</span> <span class="c1">// 要素数5のWindowを1ずつズラしてく</span>
+            <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">window</span> <span class="o">-&gt;</span> <span class="n">window</span><span class="o">.</span><span class="na">toList</span><span class="o">()))</span> <span class="c1">// Observable&lt;Observable&lt;String&gt;&gt; を Observable&lt;List&lt;String&gt;&gt; に変換 ※</span>
+        <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">window</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">sequenceEqual</span><span class="o">(</span><span class="n">window</span><span class="o">,</span> <span class="n">PATTERN</span><span class="o">))</span> <span class="o">{</span> <span class="c1">// パターンと一致していたら…</span>
+                <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">says</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+                <span class="n">says</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">window</span><span class="o">);</span>
+                <span class="n">says</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">K</span><span class="o">);</span>                      <span class="c1">// キ・ヨ・シ！を追加</span>
+                <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
+                        <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">says</span><span class="o">),</span>
+                        <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">Collections</span><span class="o">.&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="n">emptyList</span><span class="o">()));</span> <span class="c1">// 終了判定用の空リスト</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">window</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">})</span>
+        <span class="o">.</span><span class="na">takeWhile</span><span class="o">(</span><span class="n">says</span> <span class="o">-&gt;</span> <span class="o">!</span><span class="n">says</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span>  <span class="c1">// 空リストになるまで繰り返す</span>
+        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">says</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="n">dump</span><span class="o">(</span><span class="n">says</span><span class="o">)));</span>
+<span class="o">}</span>
 
-  <div class="highlighter-rouge"><pre class="highlight"><code>Observable.concat( // ※ の Observable&lt;List&lt;String&gt;&gt; を直列に連結
-    Observable.interval(500, TimeUnit.MILLISECONDS)
-        .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
-        .window(PATTERN.size(), 1) // 要素数5のWindowを1ずつズラしてく
-        .map(window -&gt; window.toList())) // Observable&lt;Observable&lt;String&gt;&gt; を Observable&lt;List&lt;String&gt;&gt; に変換 ※
-    .flatMap(window -&gt; {
-        if (sequenceEqual(window, PATTERN)) { // パターンと一致していたら…
-            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
-            says.addAll(window);
-            says.add(K);                      // キ・ヨ・シ！を追加
-            return Observable.concat(
-                    Observable.just(says),
-                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
-        } else {
-            return Observable.just(window);
-        }
-    })
-    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
-    .subscribe(says -&gt; Log.d(TAG, dump(says))); }
-</code></pre>
-  </div>
+<span class="cm">/** リストとリストの要素一致 */</span>
+<span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">sequenceEqual</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listA</span><span class="o">,</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">listB</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">iterA</span> <span class="o">=</span> <span class="n">listA</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
+    <span class="n">Iterator</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">iterB</span> <span class="o">=</span> <span class="n">listB</span><span class="o">.</span><span class="na">iterator</span><span class="o">();</span>
 
-  <p>/** リストとリストの要素一致 */
-private boolean sequenceEqual(List<String> listA, List<String> listB) {
-    Iterator<String> iterA = listA.iterator();
-    Iterator<String> iterB = listB.iterator();</String></String></String></String></p>
+    <span class="k">while</span> <span class="o">(</span><span class="n">iterA</span><span class="o">.</span><span class="na">hasNext</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="n">iterB</span><span class="o">.</span><span class="na">hasNext</span><span class="o">())</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">iterA</span><span class="o">.</span><span class="na">next</span><span class="o">()</span> <span class="o">!=</span> <span class="n">iterB</span><span class="o">.</span><span class="na">next</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+    <span class="k">return</span> <span class="o">(!</span><span class="n">iterA</span><span class="o">.</span><span class="na">hasNext</span><span class="o">()</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">iterB</span><span class="o">.</span><span class="na">hasNext</span><span class="o">());</span>
+<span class="o">}</span>
 
-  <div class="highlighter-rouge"><pre class="highlight"><code>while (iterA.hasNext() &amp;&amp; iterB.hasNext()) {
-    if (iterA.next() != iterB.next()) {
-        return false;
-    }
-}
-return (!iterA.hasNext() &amp;&amp; !iterB.hasNext()); }
-</code></pre>
-  </div>
+<span class="cm">/** リスト内容をダンプ */</span>
+<span class="kd">private</span> <span class="n">String</span> <span class="nf">dump</span><span class="o">(</span><span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">list</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">StringBuilder</span> <span class="n">b</span> <span class="o">=</span> <span class="k">new</span> <span class="n">StringBuilder</span><span class="o">();</span>
+    <span class="k">for</span> <span class="o">(</span><span class="n">String</span> <span class="n">s</span> <span class="o">:</span> <span class="n">list</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">TextUtils</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">(</span><span class="n">b</span><span class="o">.</span><span class="na">toString</span><span class="o">()))</span> <span class="o">{</span>
+            <span class="n">b</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="s">", "</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">b</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">s</span><span class="o">);</span>
+    <span class="o">}</span>
 
-  <p>/** リスト内容をダンプ */
-private String dump(List<String> list) {
-    final StringBuilder b = new StringBuilder();
-    for (String s : list) {
-        if (!TextUtils.isEmpty(b.toString())) {
-            b.append(", ");
-        }
-        b.append(s);
-    }</String></p>
-
-  <div class="highlighter-rouge"><pre class="highlight"><code>return b.toString(); } ```
+    <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="na">toString</span><span class="o">();</span>
+<span class="o">}</span>
 </code></pre>
   </div>
 
   <blockquote>
-    <p>どこ, ずん, どこ, どこ, ずん<br />
-ずん, どこ, どこ, ずん, どこ<br />
-どこ, どこ, ずん, どこ, ずん<br />
-どこ, ずん, どこ, ずん, どこ<br />
-ずん, どこ, ずん, どこ, どこ<br />
-どこ, ずん, どこ, どこ, ずん<br />
-ずん, どこ, どこ, ずん, ずん<br />
-どこ, どこ, ずん, ずん, ずん<br />
-どこ, ずん, ずん, ずん, ずん<br />
+    <p>どこ, ずん, どこ, どこ, ずん
+ずん, どこ, どこ, ずん, どこ
+どこ, どこ, ずん, どこ, ずん
+どこ, ずん, どこ, ずん, どこ
+ずん, どこ, ずん, どこ, どこ
+どこ, ずん, どこ, どこ, ずん
+ずん, どこ, どこ, ずん, ずん
+どこ, どこ, ずん, ずん, ずん
+どこ, ずん, ずん, ずん, ずん
 ずん, ずん, ずん, ずん, どこ, キ・ヨ・シ！</p>
   </blockquote>
 
   <p>「window(5, 1) -&gt; toList -&gt; concat してるならそれは <code class="highlighter-rouge">buffer(5, 1)</code> やんけ」というのを <a href="http://qiita.com/do6gop/items/c4941f6fb2bdc1c0c0f1">こちら</a> で知って、 <code class="highlighter-rouge">buffer</code> 版も書いてみた。</p>
 
-  <p>```java Zondoko_buffer.java
-public void doZondoko() {
-    final Random random = new Random();
-    final List<String> PATTERN = Arrays.asList("ずん", "ずん", "ずん", "ずん", "どこ");
-    final String K = "キ・ヨ・シ！";</String></p>
+  <div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//Zondoko_buffer.java</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">doZondoko</span><span class="o">()</span> <span class="o">{</span>
+    <span class="kd">final</span> <span class="n">Random</span> <span class="n">random</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Random</span><span class="o">();</span>
+    <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">PATTERN</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"ずん"</span><span class="o">,</span> <span class="s">"どこ"</span><span class="o">);</span>
+    <span class="kd">final</span> <span class="n">String</span> <span class="n">K</span> <span class="o">=</span> <span class="s">"キ・ヨ・シ！"</span><span class="o">;</span>
 
-  <div class="highlighter-rouge"><pre class="highlight"><code>Observable.interval(500, TimeUnit.MILLISECONDS)
-    .map(_ -&gt; random.nextInt(2) == 0 ? "ずん" : "どこ") // ランダムに ずん or どこ
-    .buffer(PATTERN.size(), 1) // 要素数5のBufferを1ずつズラしてく
-    .flatMap(buf -&gt; {
-        if (sequenceEqual(buf, PATTERN)) { // パターンと一致していたら…
-            final List&lt;String&gt; says = new ArrayList&lt;&gt;();
-            says.addAll(buf);
-            says.add(K);                      // キ・ヨ・シ！を追加
-            return Observable.concat(
-                    Observable.just(says),
-                    Observable.just(Collections.&lt;String&gt;emptyList())); // 終了判定用の空リスト
-        } else {
-            return Observable.just(buf);
-        }
-    })
-    .takeWhile(says -&gt; !says.isEmpty())  // 空リストになるまで繰り返す
-    .subscribe(says -&gt; Log.d(TAG, dump(says))); } ```
+    <span class="n">Observable</span><span class="o">.</span><span class="na">interval</span><span class="o">(</span><span class="mi">500</span><span class="o">,</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">MILLISECONDS</span><span class="o">)</span>
+        <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">_</span> <span class="o">-&gt;</span> <span class="n">random</span><span class="o">.</span><span class="na">nextInt</span><span class="o">(</span><span class="mi">2</span><span class="o">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="o">?</span> <span class="s">"ずん"</span> <span class="o">:</span> <span class="s">"どこ"</span><span class="o">)</span> <span class="c1">// ランダムに ずん or どこ</span>
+        <span class="o">.</span><span class="na">buffer</span><span class="o">(</span><span class="n">PATTERN</span><span class="o">.</span><span class="na">size</span><span class="o">(),</span> <span class="mi">1</span><span class="o">)</span> <span class="c1">// 要素数5のBufferを1ずつズラしてく</span>
+        <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">buf</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">sequenceEqual</span><span class="o">(</span><span class="n">buf</span><span class="o">,</span> <span class="n">PATTERN</span><span class="o">))</span> <span class="o">{</span> <span class="c1">// パターンと一致していたら…</span>
+                <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">says</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;&gt;();</span>
+                <span class="n">says</span><span class="o">.</span><span class="na">addAll</span><span class="o">(</span><span class="n">buf</span><span class="o">);</span>
+                <span class="n">says</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="n">K</span><span class="o">);</span>                      <span class="c1">// キ・ヨ・シ！を追加</span>
+                <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
+                        <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">says</span><span class="o">),</span>
+                        <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">Collections</span><span class="o">.&lt;</span><span class="n">String</span><span class="o">&gt;</span><span class="n">emptyList</span><span class="o">()));</span> <span class="c1">// 終了判定用の空リスト</span>
+            <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+                <span class="k">return</span> <span class="n">Observable</span><span class="o">.</span><span class="na">just</span><span class="o">(</span><span class="n">buf</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">})</span>
+        <span class="o">.</span><span class="na">takeWhile</span><span class="o">(</span><span class="n">says</span> <span class="o">-&gt;</span> <span class="o">!</span><span class="n">says</span><span class="o">.</span><span class="na">isEmpty</span><span class="o">())</span>  <span class="c1">// 空リストになるまで繰り返す</span>
+        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">says</span> <span class="o">-&gt;</span> <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="n">dump</span><span class="o">(</span><span class="n">says</span><span class="o">)));</span>
+<span class="o">}</span>
 </code></pre>
   </div>
 
