@@ -1,47 +1,536 @@
-
 <!DOCTYPE html>
-<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
-<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
-<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
-<head>
+<html ⚡ lang="en">
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+  <link href="/assets/css/syntax.css" rel="stylesheet" type="text/css" media="all" />
+  <script async custom-element="amp-youtube" src="https://cdn.ampproject.org/v0/amp-youtube-0.1.js"></script>
+
   <meta charset="utf-8">
-  <title>Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる - Experiments Never Fail</title>
-  <meta name="author" content="amay077">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
 
-   
-  <meta name="description" content="qiita - http://qiita.com/amay077 の出張所じゃなく、こっちが本家だ！技術ネタ中心ですがたまにどうでもいいことも書きます。">
+  <title>Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる</title>
+  <meta name="description" content="Google I/O で発表された Android の行動認識(動作認識)機能ですが、これは Google Play Services で提供されているので、新しい API Ver でなくても(Froyo でも！)使えます、すばらしい！">
+
+  <link rel="canonical" href="http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/">
+  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
+
+  <script type="application/ld+json">
   
-  <meta name="keywords" content="android,">
+{
+  "@context": "http://schema.org",
+  "@type": "NewsArticle",
+  "mainEntityOfPage": "http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/",
+  "headline": "Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる",
+  "datePublished": "2013-05-18T11:37:00+09:00",
+  "dateModified": "2013-05-18T11:37:00+09:00",
+  "description": "Google I/O で発表された Android の行動認識(動作認識)機能ですが、これは Google Play Services で提供されているので、新しい API Ver でなくても(Froyo でも！)使えます、すばらしい！",
+  "author": {
+    "@type": "Person",
+    "name": "amay077"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Experiments Never Fail",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://blog.amay077.net/assets/images/logo.png",
+      "width": "60",
+      "height": "60"
+    }
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "http://blog.amay077.net/assets/images/logo.png",
+    "height": "60",
+    "width": "60"
+  }
+}
 
-  <!-- http://t.co/dKP3o1e -->
-  <meta name="HandheldFriendly" content="True">
-  <meta name="MobileOptimized" content="320">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-
+  </script>
   
-  <link rel="canonical" href="http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition">
-  <link href="/favicon.png" rel="icon">
-  <link href='http://fonts.googleapis.com/css?family=Quicksand:300,400' rel='stylesheet' type='text/css'>
-  <link href='http://fonts.googleapis.com/css?family=Open+Sans:400,300' rel='stylesheet' type='text/css'>
-  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
-  <link href="/atom.xml" rel="alternate" title="Experiments Never Fail" type="application/atom+xml">
-  <script src="/js/jquery.js"></script>
-  <script src="/js/bootstrap-collapse.js"></script>
-  <script src="/js/modernizr-2.0.js"></script>
-  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
-  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
-  <script src="/js/octopress.js" type="text/javascript"></script>
-  <!--Pinterest webmaster tool-->
-<meta name="p:domain_verify" content="104bc278a8f8fdfcf4e1e49ed3deb0c8"/>
+  <style amp-custom>
+  
+  .icon > svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle; }
+  .icon > svg path {
+    fill: #828282; }
 
-<!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
-<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
-<script language="JavaScript">
-$(document).ready( function () {
-   $("a[href^='http']:not([href*='" + location.hostname + "'])").attr('target', '_blank');
-})
-</script>
+amp-img {
+  background-color: grey; }
+
+.cf:after {
+  content: "";
+  display: table;
+  clear: both; }
+
+main {
+  display: block; }
+
+body {
+  background-color: #fff;
+  font-family: Arial, YuGothic;
+  margin: 0;
+  padding: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-font-feature-settings: "liga=1, dlig=1";
+  -ms-font-feature-settings: "liga", "dlig";
+  -webkit-font-feature-settings: "liga", "dlig";
+  -o-font-feature-settings: "liga", "dlig";
+  font-feature-settings: "liga", "dlig"; }
+
+.site-header {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 16px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .site-header {
+      padding: 0 16px; } }
+  .site-header .page-links {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-weight: 200;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 30px; }
+    .site-header .page-links a {
+      text-decoration: none;
+      color: #999999; }
+      .site-header .page-links a:hover {
+        color: #333333; }
+
+.blog-header {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  .blog-header .blog-title {
+    margin-bottom: 8px;
+    font-size: 50px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    outline: 0;
+    line-height: 50px;
+    word-break: break-word;
+    color: #333333; }
+  .blog-header .blog-description {
+    font-size: 28px;
+    margin: 0 0 20px;
+    padding: 0;
+    line-height: 1.2;
+    color: #666666;
+    font-weight: 300; }
+
+.content {
+  width: 100%;
+  max-width: 700px;
+  margin: 25px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .content {
+      padding: 0 16px; } }
+  .content article {
+    padding: 20px 0;
+    border-bottom: 1px solid #f2f2f0; }
+    .content article:last-child {
+      border-bottom: 0px; }
+    .content article .post-title {
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-style: normal;
+      display: block;
+      font-size: 36px;
+      line-height: 1.15;
+      margin: 0 0; }
+      .content article .post-title a {
+        text-decoration: none;
+        color: #333332; }
+        .content article .post-title a:hover {
+          text-decoration: none; }
+    .content article .post-excerpt {
+      letter-spacing: -0.02em;
+      font-weight: 300;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1.59;
+      color: #666665; }
+    .content article .post-meta {
+      font-size: 14px;
+      color: #b3b3b1;
+      line-height: 30px; }
+      .content article .post-meta a {
+        color: #b3b3b1;
+        text-decoration: none; }
+        .content article .post-meta a:hover {
+          text-decoration: underline; }
+
+.post-template .content {
+  max-width: 700px; }
+
+.index-headline {
+  border-top: 1px solid #dededc;
+  margin: 0;
+  padding: 16px 0; }
+  .index-headline span {
+    color: #b3b3b1;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px; }
+
+.pagination {
+  text-align: center;
+  padding: 16px 0 0;
+  font-size: 12px; }
+  .pagination a {
+    color: #999999;
+    text-decoration: none; }
+    .pagination a:hover {
+      color: #333333; }
+
+.site-footer {
+  margin: 0 auto;
+  padding: 48px 0;
+  width: 100%;
+  max-width: 700px;
+  font-size: 12px;
+  text-align: center;
+  color: #999999;
+  line-height: 17.6px; }
+  .site-footer a {
+    color: #666666;
+    text-decoration: none; }
+    .site-footer a:hover {
+      color: #333333; }
+
+.post .post-meta {
+  font-family: Arial, YuGothic; }
+.post .post-title {
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.04em;
+  font-size: 50px;
+  line-height: 1.1;
+  color: #333332;
+  margin-bottom: 50px; }
+.post .author-image {
+  background-image: url(/assets/images/author.png);
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  margin-right: 8px;
+  margin-bottom: -10px;
+  float: left;
+  background-size: cover;
+  border-radius: 100%;
+  text-indent: -9999px; }
+.post .post-meta-text {
+  color: #b3b3b1;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  overflow: hidden;
+  font-family: Arial, YuGothic;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+.post .post-content {
+  width: 100%;
+  font-family: Verdana, YuGothic;
+  color: #333333; }
+  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
+    font-family: Arial, YuGothic; }
+  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1.3;
+    margin-top: 50px;
+    margin-bottom: 0px;
+    font-family: Arial, YuGothic; }
+  .post .post-content h3 {
+    font-size: 36px; }
+  .post .post-content h2, .post .post-content h1 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 42px;
+    line-height: 1.2;
+    margin-top: 50px;
+    margin-bottom: 0px; }
+  .post .post-content table {
+    border-collapse: collapse; }
+  .post .post-content .highlight {
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+    background-color: #f8f8f8; }
+    .post .post-content .highlight table {
+      line-height: 20px;
+      border: 1px solid transparent; }
+  .post .post-content table::not(".highlight"), .post .post-content th, .post .post-content td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left; }
+  .post .post-content p {
+    font-weight: 400;
+    font-style: normal;
+    font-size: 22px;
+    line-height: 1.59;
+    letter-spacing: -.002em;
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: #333333;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto; }
+  .post .post-content a {
+    color: #469af6;
+    text-decoration: none; }
+  .post .post-content amp-img, .post .post-content amp-youtube {
+    margin-top: 30px; }
+  .post .post-content figure {
+    margin: 0;
+    padding: 0 0 30px; }
+  .post .post-content figcaption {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #666665;
+    outline: 0;
+    z-index: 300;
+    text-align: center; }
+  .post .post-content hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 90%;
+    margin: 30px auto;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .post-content blockquote {
+    margin: 0 0 30px;
+    margin-left: -26px;
+    border-left: 3px solid #57ad68;
+    padding-left: 20px; }
+    .post .post-content blockquote p {
+      letter-spacing: 0.01rem;
+      font-weight: 400;
+      mborder-left: 3px solid #57ad68;
+      mpadding-left: 20px;
+      mmargin-left: -26px;
+      padding-bottom: 3px; }
+  .post .post-content ul, .post .post-content ol {
+    padding: 30px 0 30px;
+    margin: 0; }
+  .post .post-content li {
+    padding: 0;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 23px;
+    line-height: 30px;
+    margin-left: 30px;
+    margin-bottom: 12px;
+    padding-top: 2px; }
+    .post .post-content li p {
+      padding: 0 0 1.618rem; }
+  .post .post-content ol li {
+    list-style-type: decimal; }
+.post .bottom-teaser {
+  padding: 50px 0 0 0;
+  font-family: Arial, YuGothic; }
+  .post .bottom-teaser hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 15%;
+    margin: 16px 0 16px 100px;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .bottom-teaser .isLeft {
+    float: left;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isLeft {
+        width: 100%;
+        padding-bottom: 32px; } }
+    .post .bottom-teaser .isLeft .bio {
+      margin-top: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .username {
+      margin-left: 4px;
+      margin-right: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isLeft a {
+      color: black;
+      text-decoration: none; }
+      .post .bottom-teaser .isLeft a:hover {
+        color: #333333;
+        text-decoration: underline; }
+    .post .bottom-teaser .isLeft .author-image {
+      display: block;
+      width: 80px;
+      height: 80px;
+      float: left;
+      background-size: cover;
+      border-radius: 100%;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft .mvp-image {
+      background-image: url(/assets/images/mvp_logo_v.png);
+      display: block;
+      width: 80px;
+      height: 127px;
+      float: left;
+      background-size: cover;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft h4 {
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+    .post .bottom-teaser .isLeft p {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+      .post .bottom-teaser .isLeft p.published {
+        color: #999999; }
+  .post .bottom-teaser .isRight {
+    float: right;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isRight {
+        width: 100%; } }
+    .post .bottom-teaser .isRight .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isRight .site-footer {
+      margin: 0;
+      padding: 0;
+      color: #333333;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #999999; }
+      .post .bottom-teaser .isRight .site-footer a {
+        color: #333333;
+        text-decoration: none; }
+        .post .bottom-teaser .isRight .site-footer a:hover {
+          text-decoration: underline; }
+      .post .bottom-teaser .isRight .site-footer .poweredby {
+        display: block;
+        padding-bottom: 18px;
+        font-weight: 700;
+        color: #333333; }
+
+.share {
+  text-align: right;
+  padding: 0; }
+  .share a {
+    text-decoration: none;
+    color: #bbbbbb;
+    padding-left: 12px; }
+    .share a .hidden {
+      display: none; }
+    .share a:hover {
+      color: #333333; }
+
+pre,
+code {
+  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
+  font-size: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 5px;
+  background-color: #f8f8f8; }
+
+code {
+  padding: 1px 5px; }
+
+pre {
+  padding: 8px 12px;
+  overflow-x: scroll; }
+  pre > code {
+    border: 0;
+    padding-right: 0;
+    padding-left: 0; }
+
+.pagination .disabled {
+  opacity: 0; }
+
+.categories {
+  overflow: hidden;
+  padding: 20px 0 0 0; }
+
+.category {
+  float: left;
+  border: 1px;
+  border-radius: 3px;
+  background-color: #eeeeee;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #dddddd;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+#disqus_thread a {
+  color: #333333;
+  text-decoration: none; }
+
+.published {
+  float: left;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+  border: 0;
+  -ms-interpolation-mode: bicubic; }
+
+.amazon-ads {
+  padding: 0 0 20px 0; }
+
+  </style>
+
+
+
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+
   
   <script type="text/javascript">
     var _gaq = _gaq || [];
@@ -58,105 +547,103 @@ $(document).ready( function () {
 
 </head>
 
-<body   >
-  <div class="navbar navbar-inverse navbar-static-top">
-  	<div class="navbar-inner">
-  	  <div class="container">
-        <a class="btn btn-navbar" data-toggle="collapse" data-target=".navbar-responsive-collapse">
-          <span class="fui-menu-24"></span>
-        </a>
-  	  	<div class="nav-collapse collapse navbar-responsive-collapse" style="height:0;">
-  	      <ul class="nav">
+  <body>
+    <header class="site-header">
+  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.png" width="48" height="48" /></span></a>
+
+  <div class="page-links">
+    <a class="page-link" href="/">Home</a>
+     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay077.net" target="_blank">Search</a>
     
-        <li ><a href="/index.html">Top</a></li>
+      
+      • <a class="page-link" href="/about/">About</a>
+      
     
-        <li ><a href="/blog/archives/index.html">Archives</a></li>
+      
     
-        <li ><a href="/category-list/index.html">Tags</a></li>
+      
     
-        <li ><a href="/about-me.html">About Me</a></li>
+      
     
-</ul>
-
-<ul class="nav pull-right">
+      
     
-    <li><a href="http://github.com/amay077" title="Github Profile"><i class="icon-github-sign social-navbar"></i></a></li>
+      
     
+      
     
+      
     
-    <li><a href="http://twitter.com/amay077" title="Twitter Profile"><i class="icon-twitter-sign social-navbar"></i></a></li>
+      
     
+      
     
+      
     
+      
     
-</ul>
-
-  	    </div>
-  	  </div>
-  	</div>
-  </div>
-  <div class="container" id="main">
-    <div class="span12">
-      <div class="row-fluid">
-        <div id="content">
-          <div>
-<article class="hentry" role="article">
-  
-
-  <header>
-  <div class="jumbotron">
-    Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる
-	<h5>
-
-
-
-
-
-
-
-
-  
-
-
-<i class="icon-calendar-empty"></i> <time datetime="2013-05-18T11:37:00+09:00" pubdate data-updated="true">May 18<sup>th</sup>, 2013</time> 
-
-<span class="categories">
-  
-    <a class='category' href='/blog/categories/android/'>android</a>
-  
-</span>
-
-</h5>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
   </div>
 </header>
-  <div class="row-fluid">
-    <div class="span12">
+
+
+    <main class="content" role="main">
+  <article class="post">
+    <div class="post-meta">
+      <h1 class="post-title">Google I/O 2013 で発表された行動認識(Activity Recognition)を使ってみる</h1>
+    </div>
+
+    <section class="post-content">
+      <a name="topofpage"></a>
       <p><a href="http://www.gizmodo.jp/2013/05/android_52.html">Google I/O で発表</a>された Android の行動認識(動作認識)機能ですが、これは <a href="http://developer.android.com/google/play-services/index.html">Google Play Services</a> で提供されているので、新しい API Ver でなくても(Froyo でも！)使えます、すばらしい！</p>
 
-<p>というわけで、早速使ってみました。</p>
-
-<!--more-->
-
-
-<h2>1. SDK の Google Play Services を更新する</h2>
+<p>というわけで、早速使ってみました。<br />
+<!--more--></p>
+<h2 id="sdk--google-play-services-">1. SDK の Google Play Services を更新する</h2>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
 
-<p>SDK Manager で、Google Play service を最新に更新します。
+<p>SDK Manager で、Google Play service を最新に更新します。<br />
 私は勢いで Android SDK Tools なども最新にしてしまいましたが、これが必要だったかは定かでないです。また SDK Tools を更新したら Eclipse のプラグインも更新する必要がありました。</p>
 
-<h2>2. Eclipse でプロジェクトを作る</h2>
+<h2 id="eclipse-">2. Eclipse でプロジェクトを作る</h2>
 
-<p>Android Studio は使ってません(まだよくわからないので)
-Eclipse で、いつもどおりに Android のプロジェクトを作ります。
-Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。
-名前はここでは <code>ActivityRecognizingSample</code> とします。</p>
+<p>Android Studio は使ってません(まだよくわからないので)<br />
+Eclipse で、いつもどおりに Android のプロジェクトを作ります。<br />
+Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。<br />
+名前はここでは <code class="highlighter-rouge">ActivityRecognizingSample</code> とします。</p>
 
-<h2>3. プロジェクトに google-play-services_lib を追加する</h2>
+<h2 id="google-play-serviceslib-">3. プロジェクトに google-play-services_lib を追加する</h2>
 
 <p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
 
-<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
+<p>Ecplise の Import で <code class="highlighter-rouge"><span class="p">{</span><span class="err">your</span><span class="w"> </span><span class="err">sdk</span><span class="w"> </span><span class="err">location</span><span class="p">}</span><span class="err">/extras/google/google_play_services/libproject/google-play-services_lib</span></code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
 
 <p>コピーしたら、ActivityRecognizingSample で、 google-play-services_lib をライブラリ参照します。</p>
 
@@ -164,597 +651,311 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 <p>次から ActivityRecognizingSample の実装です。</p>
 
-<h2>4. IntentService クラスの用意</h2>
+<h2 id="intentservice-">4. IntentService クラスの用意</h2>
 
-<p>行動認識結果は IntentService で受け取ります。そのためのクラス <code>ReceiveRecognitionIntentService</code> を作成します。</p>
+<p>行動認識結果は IntentService で受け取ります。そのためのクラス <code class="highlighter-rouge">ReceiveRecognitionIntentService</code> を作成します。</p>
 
-<figure class='code'><figcaption><span>ReceiveRecognitionIntentService.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">(</span><span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">);</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="c1">// まだ未実装</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>```java ReceiveRecognitionIntentService.java<br />
+package com.example.activityrecognizingsample;</p>
 
+<p>import android.app.IntentService;</p>
 
-<h2>5. AndroidManifest.xml の編集</h2>
+<p>public class ReceiveRecognitionIntentService extends IntentService {</p>
 
-<p>行動認識を使うための権限 <code>com.google.android.gms.permission.ACTIVITY_RECOGNITION</code> をマニフェストに追加します。
-あと、ReceiveRecognitionIntentService も忘れずに追加しておきます。
+<div class="highlighter-rouge"><pre class="highlight"><code>public ReceiveRecognitionIntentService()  {
+	super("ReceiveRecognitionIntentService");
+}
+
+@Override
+protected void onHandleIntent(Intent intent) {
+    // まだ未実装
+} } ```
+</code></pre>
+</div>
+
+<h2 id="androidmanifestxml-">5. AndroidManifest.xml の編集</h2>
+
+<p>行動認識を使うための権限 <code class="highlighter-rouge">com.google.android.gms.permission.ACTIVITY_RECOGNITION</code> をマニフェストに追加します。<br />
+あと、ReceiveRecognitionIntentService も忘れずに追加しておきます。<br />
 細かいところでは、MainActivity の画面の向きを縦（Portrait）に固定しておきます。試している時に画面の向きが変わると面倒なので。</p>
 
-<figure class='code'><figcaption><span>AndroidManifest.xml</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-</pre></td><td class='code'><pre><code class='xml'><span class='line'><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
-</span><span class='line'><span class="nt">&lt;manifest</span> <span class="na">xmlns:android=</span><span class="s">&quot;http://schemas.android.com/apk/res/android&quot;</span>
-</span><span class='line'>    <span class="na">package=</span><span class="s">&quot;com.example.activityrecognizingsample&quot;</span>
-</span><span class='line'>    <span class="na">android:versionCode=</span><span class="s">&quot;1&quot;</span>
-</span><span class='line'>    <span class="na">android:versionName=</span><span class="s">&quot;1.0&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;uses-sdk</span>
-</span><span class='line'>        <span class="na">android:minSdkVersion=</span><span class="s">&quot;8&quot;</span>
-</span><span class='line'>        <span class="na">android:targetSdkVersion=</span><span class="s">&quot;17&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;uses-permission</span> <span class="na">android:name=</span><span class="s">&quot;com.google.android.gms.permission.ACTIVITY_RECOGNITION&quot;</span><span class="nt">/&gt;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nt">&lt;application</span>
-</span><span class='line'>        <span class="na">android:allowBackup=</span><span class="s">&quot;true&quot;</span>
-</span><span class='line'>        <span class="na">android:icon=</span><span class="s">&quot;@drawable/ic_launcher&quot;</span>
-</span><span class='line'>        <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
-</span><span class='line'>        <span class="na">android:theme=</span><span class="s">&quot;@style/AppTheme&quot;</span> <span class="nt">&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;activity</span>
-</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.MainActivity&quot;</span>
-</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
-</span><span class='line'>            <span class="na">android:screenOrientation=</span><span class="s">&quot;portrait&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;intent-filter&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;action</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.action.MAIN&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>                <span class="nt">&lt;category</span> <span class="na">android:name=</span><span class="s">&quot;android.intent.category.LAUNCHER&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>            <span class="nt">&lt;/intent-filter&gt;</span>
-</span><span class='line'>        <span class="nt">&lt;/activity&gt;</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="nt">&lt;service</span>
-</span><span class='line'>            <span class="na">android:name=</span><span class="s">&quot;.ReceiveRecognitionIntentService&quot;</span>
-</span><span class='line'>            <span class="na">android:label=</span><span class="s">&quot;@string/app_name&quot;</span>
-</span><span class='line'>          <span class="na">android:exported=</span><span class="s">&quot;false&quot;</span> <span class="nt">/&gt;</span>
-</span><span class='line'>    <span class="nt">&lt;/application&gt;</span>
-</span><span class='line'>
-</span><span class='line'><span class="nt">&lt;/manifest&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
+<p>```xml AndroidManifest.xml<br />
+<?xml version="1.0" encoding="utf-8"?></p>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.activityrecognizingsample" android:versionCode="1" android:versionName="1.0">
 
+    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />
+    <uses-permission android:name="com.google.android.gms.permission.ACTIVITY_RECOGNITION" />
 
-<h2>6. 行動認識クラス(ActivityRecognitionClient)を使う</h2>
+    <application android:allowBackup="true" android:icon="@drawable/ic_launcher" android:label="@string/app_name" android:theme="@style/AppTheme">
+        <activity android:name=".MainActivity" android:label="@string/app_name" android:screenOrientation="portrait">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        
+        <service android:name=".ReceiveRecognitionIntentService" android:label="@string/app_name" android:exported="false" />
+    </application>
 
-<p>ここから、一気に行きます。</p>
+</manifest>
+<div class="highlighter-rouge"><pre class="highlight"><code>
+## 6. 行動認識クラス(ActivityRecognitionClient)を使う
 
-<p>行動認識には <a href="http://developer.android.com/reference/com/google/android/gms/location/ActivityRecognitionClient.html"><code>ActivityRecognitionClient</code></a> を使います。</p>
+ここから、一気に行きます。
 
-<p>大雑把な使い方は、</p>
+行動認識には [``ActivityRecognitionClient``](http://developer.android.com/reference/com/google/android/gms/location/ActivityRecognitionClient.html) を使います。
 
-<ol>
-<li>インスタンスを生成する</li>
-<li><code>connect</code> を呼ぶ &ndash;> <code>ConnectionCallbacks.onConnected</code> がコールバックされる</li>
-<li><code>requestActivityUpdates</code> に <code>ReceiveRecognitionIntentService</code> を仕掛けて、呼ぶ。 &ndash;> <code>ReceiveRecognitionIntentService.onHandleIntent</code> が呼ばれる</li>
-<li><code>onHandleIntent</code> で <code>ActivityRecognitionResult</code> にて結果を取得する</li>
-</ol>
+大雑把な使い方は、
 
+1. インスタンスを生成する
+2. ``connect`` を呼ぶ -&gt; ``ConnectionCallbacks.onConnected`` がコールバックされる
+3. ``requestActivityUpdates`` に ``ReceiveRecognitionIntentService`` を仕掛けて、呼ぶ。 -&gt; ``ReceiveRecognitionIntentService.onHandleIntent`` が呼ばれる
+4. ``onHandleIntent`` で ``ActivityRecognitionResult`` にて結果を取得する
 
-<p>です。</p>
+です。
 
-<p>その後、認識結果を画面に表示するために、</p>
+その後、認識結果を画面に表示するために、
 
-<ol>
-<li>予め、<code>MainActivity</code> に <code>BroadcastReceiver</code> を仕掛けておく</li>
-<li><code>ReceiveRecognitionIntentService.onHandleIntent</code> で取得した認識結果を、Broadcast する。</li>
-</ol>
+5. 予め、``MainActivity`` に ``BroadcastReceiver`` を仕掛けておく
+6. ``ReceiveRecognitionIntentService.onHandleIntent`` で取得した認識結果を、Broadcast する。
 
+とします。
 
-<p>とします。</p>
+では全コードをどうぞ。
 
-<p>では全コードをどうぞ。</p>
+```java MainActivity.jara
+package com.example.activityrecognizingsample;
 
-<figure class='code'><figcaption><span>MainActivity.jara</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-<span class='line-number'>56</span>
-<span class='line-number'>57</span>
-<span class='line-number'>58</span>
-<span class='line-number'>59</span>
-<span class='line-number'>60</span>
-<span class='line-number'>61</span>
-<span class='line-number'>62</span>
-<span class='line-number'>63</span>
-<span class='line-number'>64</span>
-<span class='line-number'>65</span>
-<span class='line-number'>66</span>
-<span class='line-number'>67</span>
-<span class='line-number'>68</span>
-<span class='line-number'>69</span>
-<span class='line-number'>70</span>
-<span class='line-number'>71</span>
-<span class='line-number'>72</span>
-<span class='line-number'>73</span>
-<span class='line-number'>74</span>
-<span class='line-number'>75</span>
-<span class='line-number'>76</span>
-<span class='line-number'>77</span>
-<span class='line-number'>78</span>
-<span class='line-number'>79</span>
-<span class='line-number'>80</span>
-<span class='line-number'>81</span>
-<span class='line-number'>82</span>
-<span class='line-number'>83</span>
-<span class='line-number'>84</span>
-<span class='line-number'>85</span>
-<span class='line-number'>86</span>
-<span class='line-number'>87</span>
-<span class='line-number'>88</span>
-<span class='line-number'>89</span>
-<span class='line-number'>90</span>
-<span class='line-number'>91</span>
-<span class='line-number'>92</span>
-<span class='line-number'>93</span>
-<span class='line-number'>94</span>
-<span class='line-number'>95</span>
-<span class='line-number'>96</span>
-<span class='line-number'>97</span>
-<span class='line-number'>98</span>
-<span class='line-number'>99</span>
-<span class='line-number'>100</span>
-<span class='line-number'>101</span>
-<span class='line-number'>102</span>
-<span class='line-number'>103</span>
-<span class='line-number'>104</span>
-<span class='line-number'>105</span>
-<span class='line-number'>106</span>
-<span class='line-number'>107</span>
-<span class='line-number'>108</span>
-<span class='line-number'>109</span>
-<span class='line-number'>110</span>
-<span class='line-number'>111</span>
-<span class='line-number'>112</span>
-<span class='line-number'>113</span>
-<span class='line-number'>114</span>
-<span class='line-number'>115</span>
-<span class='line-number'>116</span>
-<span class='line-number'>117</span>
-<span class='line-number'>118</span>
-<span class='line-number'>119</span>
-<span class='line-number'>120</span>
-<span class='line-number'>121</span>
-<span class='line-number'>122</span>
-<span class='line-number'>123</span>
-<span class='line-number'>124</span>
-<span class='line-number'>125</span>
-<span class='line-number'>126</span>
-<span class='line-number'>127</span>
-<span class='line-number'>128</span>
-<span class='line-number'>129</span>
-<span class='line-number'>130</span>
-<span class='line-number'>131</span>
-<span class='line-number'>132</span>
-<span class='line-number'>133</span>
-<span class='line-number'>134</span>
-<span class='line-number'>135</span>
-<span class='line-number'>136</span>
-<span class='line-number'>137</span>
-<span class='line-number'>138</span>
-<span class='line-number'>139</span>
-<span class='line-number'>140</span>
-<span class='line-number'>141</span>
-<span class='line-number'>142</span>
-<span class='line-number'>143</span>
-<span class='line-number'>144</span>
-<span class='line-number'>145</span>
-<span class='line-number'>146</span>
-<span class='line-number'>147</span>
-<span class='line-number'>148</span>
-<span class='line-number'>149</span>
-<span class='line-number'>150</span>
-<span class='line-number'>151</span>
-<span class='line-number'>152</span>
-<span class='line-number'>153</span>
-<span class='line-number'>154</span>
-<span class='line-number'>155</span>
-<span class='line-number'>156</span>
-<span class='line-number'>157</span>
-<span class='line-number'>158</span>
-<span class='line-number'>159</span>
-<span class='line-number'>160</span>
-<span class='line-number'>161</span>
-<span class='line-number'>162</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.ConnectionResult</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.ActivityRecognitionClient</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.DetectedActivity</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.os.Bundle</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.Activity</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.PendingIntent</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.BroadcastReceiver</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Context</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Intent</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.IntentFilter</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.Menu</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.view.View.OnClickListener</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.Button</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.widget.TextView</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">ActivityRecognitionClient</span> <span class="n">_recClient</span><span class="o">;</span> <span class="c1">// 行動認識のメインクラス</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="o">;</span> <span class="c1">// 認識結果を表示するところ</span>
-</span><span class='line'>  
-</span><span class='line'>  <span class="c1">// 認識結果は PendingIntent で通知してくれる</span>
-</span><span class='line'>  <span class="c1">//  PendingIntent に、Service を起動する Intent を仕込んでおいて、</span>
-</span><span class='line'>  <span class="c1">//  認識結果の取得はそっちで行う。 &gt; ReceiveRecognitionIntentService.java</span>
-</span><span class='line'>    <span class="kd">private</span> <span class="n">PendingIntent</span> <span class="n">_receiveRecognitionIntent</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="c1">// ReceiveRecognitionIntentService で取得した認識結果は、Broadcast で通知されるので、</span>
-</span><span class='line'>    <span class="c1">// それを受け取る Receiver 。ここで画面に認識結果を表示する。</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">final</span> <span class="n">BroadcastReceiver</span> <span class="n">_receiveFromIntentService</span> <span class="o">=</span> <span class="k">new</span> <span class="n">BroadcastReceiver</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="nd">@Override</span>
-</span><span class='line'>      <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="kd">final</span> <span class="kt">int</span> <span class="n">activityType</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getIntExtra</span><span class="o">(</span><span class="s">&quot;activity_type&quot;</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
-</span><span class='line'>          <span class="kd">final</span> <span class="kt">int</span> <span class="n">confidence</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getIntExtra</span><span class="o">(</span><span class="s">&quot;confidence&quot;</span><span class="o">,</span> <span class="o">-</span><span class="mi">1</span><span class="o">);</span>
-</span><span class='line'>          <span class="kd">final</span> <span class="kt">long</span> <span class="n">time</span> <span class="o">=</span> <span class="n">intent</span><span class="o">.</span><span class="na">getLongExtra</span><span class="o">(</span><span class="s">&quot;time&quot;</span><span class="o">,</span> <span class="mi">0</span><span class="o">);</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>              <span class="nd">@Override</span>
-</span><span class='line'>              <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">String</span> <span class="n">text</span> <span class="o">=</span> <span class="n">_textResult</span><span class="o">.</span><span class="na">getText</span><span class="o">().</span><span class="na">toString</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">text</span> <span class="o">=</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">time</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot; - &quot;</span>
-</span><span class='line'>                          <span class="o">+</span> <span class="n">getNameFromType</span><span class="o">(</span><span class="n">activityType</span><span class="o">)</span> <span class="o">+</span> <span class="s">&quot;(&quot;</span> <span class="o">+</span>
-</span><span class='line'>                          <span class="o">+</span> <span class="n">confidence</span> <span class="o">+</span> <span class="s">&quot;)&quot;</span> <span class="o">+</span> <span class="s">&quot;\n&quot;</span> <span class="o">+</span> <span class="n">text</span><span class="o">;</span>
-</span><span class='line'>                  
-</span><span class='line'>                  <span class="n">_textResult</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">text</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>          <span class="o">});</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">// http://developer.android.com/training/location/activity-recognition.html</span>
-</span><span class='line'>      <span class="c1">// からパクってきた関数</span>
-</span><span class='line'>       <span class="cm">/**</span>
-</span><span class='line'><span class="cm">      * Map detected activity types to strings</span>
-</span><span class='line'><span class="cm">      *@param activityType The detected activity type</span>
-</span><span class='line'><span class="cm">      *@return A user-readable name for the type</span>
-</span><span class='line'><span class="cm">      */</span>
-</span><span class='line'>      <span class="kd">private</span> <span class="n">String</span> <span class="nf">getNameFromType</span><span class="o">(</span><span class="kt">int</span> <span class="n">activityType</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">switch</span><span class="o">(</span><span class="n">activityType</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">IN_VEHICLE</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;in_vehicle&quot;</span><span class="o">;</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">ON_BICYCLE</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;on_bicycle&quot;</span><span class="o">;</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">ON_FOOT</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;on_foot&quot;</span><span class="o">;</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">STILL</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;still&quot;</span><span class="o">;</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">UNKNOWN</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;unknown&quot;</span><span class="o">;</span>
-</span><span class='line'>              <span class="k">case</span> <span class="n">DetectedActivity</span><span class="o">.</span><span class="na">TILTING</span><span class="o">:</span>
-</span><span class='line'>                  <span class="k">return</span> <span class="s">&quot;tilting&quot;</span><span class="o">;</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>          <span class="k">return</span> <span class="s">&quot;unknown - &quot;</span> <span class="o">+</span> <span class="n">activityType</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>  <span class="o">};</span>
-</span><span class='line'>  
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="n">_textResult</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text_results</span><span class="o">);</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="c1">// IntentService から Broadcast される認識結果を受け取るための Receiver を登録しておく</span>
-</span><span class='line'>        <span class="n">registerReceiver</span><span class="o">(</span><span class="n">_receiveFromIntentService</span><span class="o">,</span> <span class="k">new</span> <span class="n">IntentFilter</span><span class="o">(</span><span class="s">&quot;receive_recognition&quot;</span><span class="o">));</span>
-</span><span class='line'>
-</span><span class='line'>        <span class="kd">final</span> <span class="n">Button</span> <span class="n">buttonStart</span> <span class="o">=</span> <span class="o">(</span><span class="n">Button</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">button_start</span><span class="o">);</span>
-</span><span class='line'>        <span class="n">buttonStart</span><span class="o">.</span><span class="na">setOnClickListener</span><span class="o">(</span><span class="k">new</span> <span class="n">OnClickListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>          <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">_isStarted</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">v</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              
-</span><span class='line'>              <span class="k">if</span> <span class="o">(!</span><span class="n">_isStarted</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">startReckoning</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">buttonStart</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Stop&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
-</span><span class='line'>                  <span class="n">stopReckoning</span><span class="o">();</span>
-</span><span class='line'>                  <span class="n">buttonStart</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="s">&quot;Start&quot;</span><span class="o">);</span>
-</span><span class='line'>              <span class="o">}</span>
-</span><span class='line'>              
-</span><span class='line'>              <span class="n">_isStarted</span> <span class="o">=</span> <span class="o">!</span><span class="n">_isStarted</span><span class="o">;</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">});</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="nd">@Override</span>
-</span><span class='line'>    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onDestroy</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">stopReckoning</span><span class="o">();</span>
-</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
-</span><span class='line'>      <span class="n">unregisterReceiver</span><span class="o">(</span><span class="n">_receiveFromIntentService</span><span class="o">);</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">.</span><span class="na">onDestroy</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">startReckoning</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="n">_recClient</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ActivityRecognitionClient</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="k">new</span> <span class="n">ConnectionCallbacks</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>          
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnected</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              <span class="n">Intent</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span>
-</span><span class='line'>                      <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">ReceiveRecognitionIntentService</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
-</span><span class='line'>              <span class="n">_receiveRecognitionIntent</span> <span class="o">=</span> <span class="n">PendingIntent</span><span class="o">.</span><span class="na">getService</span><span class="o">(</span>
-</span><span class='line'>                      <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">intent</span><span class="o">,</span>
-</span><span class='line'>                      <span class="n">PendingIntent</span><span class="o">.</span><span class="na">FLAG_UPDATE_CURRENT</span><span class="o">);</span>
-</span><span class='line'>              
-</span><span class='line'>              <span class="c1">// 2. 行動認識開始！</span>
-</span><span class='line'>              <span class="c1">//  1秒間隔で認識間隔を通知。</span>
-</span><span class='line'>              <span class="c1">//  認識したら ReceiveRecognitionIntentService が呼び出されるようにしている。</span>
-</span><span class='line'>              <span class="n">_recClient</span><span class="o">.</span><span class="na">requestActivityUpdates</span><span class="o">(</span><span class="mi">1000</span><span class="o">,</span> <span class="n">_receiveRecognitionIntent</span><span class="o">);</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onDisconnected</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>              <span class="n">_recClient</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span> <span class="c1">// NOTE disconnect してもここにこないよ？</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="o">},</span> <span class="k">new</span> <span class="n">OnConnectionFailedListener</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>          <span class="nd">@Override</span>
-</span><span class='line'>          <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onConnectionFailed</span><span class="o">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>              <span class="c1">// 接続でエラーが発生したらここにくるらしい</span>
-</span><span class='line'>          <span class="o">}</span>
-</span><span class='line'>      <span class="o">});</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">// 1. 行動認識サービスに接続！</span>
-</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">connect</span><span class="o">();</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">stopReckoning</span><span class="o">()</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="o">(</span><span class="n">_recClient</span> <span class="o">==</span> <span class="kc">null</span> <span class="o">||</span> <span class="o">!</span><span class="n">_recClient</span><span class="o">.</span><span class="na">isConnected</span><span class="o">())</span> <span class="o">{</span>
-</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">removeActivityUpdates</span><span class="o">(</span><span class="n">_receiveRecognitionIntent</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">_recClient</span><span class="o">.</span><span class="na">disconnect</span><span class="o">();</span>
-</span><span class='line'>      <span class="c1">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span>
-</span><span class='line'>    <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
+import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
+import com.google.android.gms.location.ActivityRecognitionClient;
+import com.google.android.gms.location.DetectedActivity;
 
+import android.os.Bundle;
+import android.app.Activity;
+import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.text.format.DateFormat;
+import android.view.Menu;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
+import android.widget.TextView;
 
+public class MainActivity extends Activity {
+    private ActivityRecognitionClient _recClient; // 行動認識のメインクラス
+	private TextView _textResult; // 認識結果を表示するところ
+	
+	// 認識結果は PendingIntent で通知してくれる
+	//  PendingIntent に、Service を起動する Intent を仕込んでおいて、
+	//  認識結果の取得はそっちで行う。 &gt; ReceiveRecognitionIntentService.java
+    private PendingIntent _receiveRecognitionIntent; 
+    
+    // ReceiveRecognitionIntentService で取得した認識結果は、Broadcast で通知されるので、
+    // それを受け取る Receiver 。ここで画面に認識結果を表示する。
+	private final BroadcastReceiver _receiveFromIntentService = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			final int activityType = intent.getIntExtra("activity_type", 0);
+			final int confidence = intent.getIntExtra("confidence", -1);
+			final long time = intent.getLongExtra("time", 0);
+			
+			MainActivity.this.runOnUiThread(new Runnable() {
+				@Override
+				public void run() {
+					String text = _textResult.getText().toString();
+					text = DateFormat.format("hh:mm:ss.sss", time) + " - " 
+							+ getNameFromType(activityType) + "(" +
+							+ confidence + ")" + "\n" + text;
+					
+					_textResult.setText(text);
+				}
+			});
+		}
+		
+		// http://developer.android.com/training/location/activity-recognition.html
+		// からパクってきた関数
+		 /**
+	     * Map detected activity types to strings
+	     *@param activityType The detected activity type
+	     *@return A user-readable name for the type
+	     */
+	    private String getNameFromType(int activityType) {
+	        switch(activityType) {
+	            case DetectedActivity.IN_VEHICLE:
+	                return "in_vehicle";
+	            case DetectedActivity.ON_BICYCLE:
+	                return "on_bicycle";
+	            case DetectedActivity.ON_FOOT:
+	                return "on_foot";
+	            case DetectedActivity.STILL:
+	                return "still";
+	            case DetectedActivity.UNKNOWN:
+	                return "unknown";
+	            case DetectedActivity.TILTING:
+	                return "tilting";
+	        }
+	        return "unknown - " + activityType;
+	    }
+	};
+	
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+        
+        _textResult = (TextView)findViewById(R.id.text_results);
+        
+        // IntentService から Broadcast される認識結果を受け取るための Receiver を登録しておく
+        registerReceiver(_receiveFromIntentService, new IntentFilter("receive_recognition"));
+        
+        final Button buttonStart = (Button)findViewById(R.id.button_start);
+        buttonStart.setOnClickListener(new OnClickListener() {
+        	private boolean _isStarted = false;
+        	
+			@Override
+			public void onClick(View v) {
+				
+				if (!_isStarted) {
+					startReckoning();
+					buttonStart.setText("Stop");
+				} else {
+					stopReckoning();
+					buttonStart.setText("Start");
+				}
+				
+				_isStarted = !_isStarted;
+			}
+		});
+    }
+    
+    @Override
+    protected void onDestroy() {
+    	stopReckoning();
+		// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする
+    	unregisterReceiver(_receiveFromIntentService);
+    	super.onDestroy();
+    }
+    
+    private void startReckoning() {
+    	_recClient = new ActivityRecognitionClient(this, new ConnectionCallbacks() {
+			
+			@Override
+			public void onConnected(Bundle bundle) {
+				Intent intent = new Intent(
+		                MainActivity.this, ReceiveRecognitionIntentService.class);
+				_receiveRecognitionIntent = PendingIntent.getService(
+						MainActivity.this, 0, intent,
+		                PendingIntent.FLAG_UPDATE_CURRENT);
+				
+				// 2. 行動認識開始！
+				//  1秒間隔で認識間隔を通知。
+				//  認識したら ReceiveRecognitionIntentService が呼び出されるようにしている。
+				_recClient.requestActivityUpdates(1000, _receiveRecognitionIntent);
+			}
 
+			@Override
+			public void onDisconnected() {
+				_recClient = null; // NOTE disconnect してもここにこないよ？
+			}
 
-<figure class='code'><figcaption><span>ReceiveRecognitionIntentService.java</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-<span class='line-number'>31</span>
-<span class='line-number'>32</span>
-<span class='line-number'>33</span>
-<span class='line-number'>34</span>
-<span class='line-number'>35</span>
-<span class='line-number'>36</span>
-<span class='line-number'>37</span>
-<span class='line-number'>38</span>
-<span class='line-number'>39</span>
-<span class='line-number'>40</span>
-<span class='line-number'>41</span>
-<span class='line-number'>42</span>
-<span class='line-number'>43</span>
-<span class='line-number'>44</span>
-<span class='line-number'>45</span>
-<span class='line-number'>46</span>
-<span class='line-number'>47</span>
-<span class='line-number'>48</span>
-<span class='line-number'>49</span>
-<span class='line-number'>50</span>
-<span class='line-number'>51</span>
-<span class='line-number'>52</span>
-<span class='line-number'>53</span>
-<span class='line-number'>54</span>
-<span class='line-number'>55</span>
-</pre></td><td class='code'><pre><code class='java'><span class='line'><span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.ActivityRecognitionResult</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">com.google.android.gms.location.DetectedActivity</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.content.Intent</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
-</span><span class='line'><span class="kn">import</span> <span class="nn">android.util.Log</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'><span class="cm">/**</span>
-</span><span class='line'><span class="cm"> * 行動認識結果を取得するための IntentService </span>
-</span><span class='line'><span class="cm"> * </span>
-</span><span class='line'><span class="cm"> * ActivityRecognitionClient.requestActivityUpdates に仕込んでおくと</span>
-</span><span class='line'><span class="cm"> * 認識結果を受信する度にこれが呼ばれる。</span>
-</span><span class='line'><span class="cm"> * </span>
-</span><span class='line'><span class="cm"> */</span>
-</span><span class='line'><span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
-</span><span class='line'>  <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">;</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
-</span><span class='line'>      <span class="kd">super</span><span class="o">(</span><span class="s">&quot;ReceiveRecognitionIntentService&quot;</span><span class="o">);</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="nd">@Override</span>
-</span><span class='line'>  <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-</span><span class='line'>      <span class="k">if</span> <span class="o">(!</span><span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">hasResult</span><span class="o">(</span><span class="n">intent</span><span class="o">))</span> <span class="o">{</span>
-</span><span class='line'>          <span class="c1">// 行動認識結果持ってないよ</span>
-</span><span class='line'>          <span class="k">return</span><span class="o">;</span>
-</span><span class='line'>      <span class="o">}</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="c1">// 認識結果を取得する</span>
-</span><span class='line'>      <span class="n">ActivityRecognitionResult</span> <span class="n">result</span> <span class="o">=</span>
-</span><span class='line'>              <span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">extractResult</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">DetectedActivity</span> <span class="n">mostProbableActivity</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMostProbableActivity</span><span class="o">();</span>
-</span><span class='line'>      <span class="kt">int</span> <span class="n">activityType</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getType</span><span class="o">();</span>
-</span><span class='line'>      <span class="kt">int</span> <span class="n">confidence</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getConfidence</span><span class="o">();</span>
-</span><span class='line'>      
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot;Receive recognition.&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; activityType - &quot;</span> <span class="o">+</span> <span class="n">activityType</span><span class="o">);</span> <span class="c1">// 行動タイプ</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; confidence - &quot;</span> <span class="o">+</span> <span class="n">confidence</span><span class="o">);</span> <span class="c1">// 確実性（精度みたいな）</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; time - &quot;</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">()));</span> <span class="c1">// 時間</span>
-</span><span class='line'>      <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">&quot; elapsedTime - &quot;</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">&quot;hh:mm:ss.sss&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getElapsedRealtimeMillis</span><span class="o">()));</span> <span class="c1">// よく分からん</span>
-</span><span class='line'>
-</span><span class='line'>      <span class="c1">// 画面に結果を表示するために、Broadcast で通知。</span>
-</span><span class='line'>      <span class="c1">//  MainActivity にしかけた BroadcastReceiver で受信する。</span>
-</span><span class='line'>      <span class="n">Intent</span> <span class="n">notifyIntent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="s">&quot;receive_recognition&quot;</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">setPackage</span><span class="o">(</span><span class="n">getPackageName</span><span class="o">());</span>
-</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;activity_type&quot;</span><span class="o">,</span> <span class="n">activityType</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;confidence&quot;</span><span class="o">,</span> <span class="n">confidence</span><span class="o">);</span>
-</span><span class='line'>      <span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">&quot;time&quot;</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">());</span>
-</span><span class='line'>      <span class="n">sendBroadcast</span><span class="o">(</span><span class="n">notifyIntent</span><span class="o">);</span>
-</span><span class='line'>  <span class="o">}</span>
-</span><span class='line'><span class="o">}</span>
-</span></code></pre></td></tr></table></div></figure>
+    	}, new OnConnectionFailedListener() {
+			@Override
+			public void onConnectionFailed(ConnectionResult result) {
+				// 接続でエラーが発生したらここにくるらしい
+			}
+		});
+    	
+    	// 1. 行動認識サービスに接続！
+    	_recClient.connect();
+    }
+    
+    private void stopReckoning() {
+    	if (_recClient == null || !_recClient.isConnected()) {
+    		return;
+    	}
+    	
+    	_recClient.removeActivityUpdates(_receiveRecognitionIntent);
+		_recClient.disconnect(); 
+		// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする
+    }
+    
+    
+}
+</code></pre>
+</div>
 
+<p>```java ReceiveRecognitionIntentService.java<br />
+package com.example.activityrecognizingsample;</p>
 
-<h2>7. 動くのか！？</h2>
+<p>import com.google.android.gms.location.ActivityRecognitionResult;<br />
+import com.google.android.gms.location.DetectedActivity;</p>
+
+<p>import android.app.IntentService;<br />
+import android.content.Intent;<br />
+import android.text.format.DateFormat;<br />
+import android.util.Log;</p>
+
+<p>/**</p>
+<ul>
+  <li>行動認識結果を取得するための IntentService</li>
+  <li></li>
+  <li>ActivityRecognitionClient.requestActivityUpdates に仕込んでおくと</li>
+  <li>認識結果を受信する度にこれが呼ばれる。</li>
+  <li>
+    <p>*/<br />
+public class ReceiveRecognitionIntentService extends IntentService {<br />
+private static final String TAG = “ReceiveRecognitionIntentService”;</p>
+
+    <p>public ReceiveRecognitionIntentService()  {<br />
+    super(“ReceiveRecognitionIntentService”);<br />
+}</p>
+
+    <p>@Override<br />
+protected void onHandleIntent(Intent intent) {<br />
+    if (!ActivityRecognitionResult.hasResult(intent)) {<br />
+        // 行動認識結果持ってないよ<br />
+        return;<br />
+    }</p>
+
+    <div class="highlighter-rouge"><pre class="highlight"><code>// 認識結果を取得する
+ActivityRecognitionResult result = 
+        ActivityRecognitionResult.extractResult(intent);
+	
+DetectedActivity mostProbableActivity = result.getMostProbableActivity();
+int activityType = mostProbableActivity.getType();
+int confidence = mostProbableActivity.getConfidence();
+	
+Log.d(TAG, "Receive recognition.");
+Log.d(TAG, " activityType - " + activityType); // 行動タイプ
+Log.d(TAG, " confidence - " + confidence); // 確実性（精度みたいな）
+Log.d(TAG, " time - " + DateFormat.format("hh:mm:ss.sss", result.getTime())); // 時間
+Log.d(TAG, " elapsedTime - " + DateFormat.format("hh:mm:ss.sss", result.getElapsedRealtimeMillis())); // よく分からん
+
+// 画面に結果を表示するために、Broadcast で通知。
+//  MainActivity にしかけた BroadcastReceiver で受信する。
+Intent notifyIntent = new Intent("receive_recognition");
+notifyIntent.setPackage(getPackageName());
+notifyIntent.putExtra("activity_type", activityType);
+notifyIntent.putExtra("confidence", confidence);
+notifyIntent.putExtra("time", result.getTime());
+sendBroadcast(notifyIntent); } } ```
+</code></pre>
+    </div>
+  </li>
+</ul>
+
+<h2 id="section">7. 動くのか！？</h2>
 
 <p>HTC J(not蝶) で動かしてみました。</p>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition3.jpg" alt="image3" /></p>
 
-<p>on_foot ってのが「歩いてる」ってやつですね。
+<p>on_foot ってのが「歩いてる」ってやつですね。<br />
 感覚としてはズボンの尻ポケに入れて、5mくらいは歩かないと認識されない感じ。結構 unknown が多いですね。</p>
 
 <p>クルマは、ダッシュボードに放置して運転してみたもの。開始から１分経たずに認識できています。</p>
@@ -763,171 +964,156 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 <p>ここでは教科書通りの使い方をしましたが、なかなか感動します。</p>
 
-<h3>2013.5.21追記 電車だとどうなる？</h3>
+<h3 id="section-1">2013.5.21追記 電車だとどうなる？</h3>
 
 <p>東京に出張する機会があったので、新幹線と在来線でも試してみました。</p>
 
 <p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition4.png" alt="image4" /></p>
 
-<p>新幹線は窓側の席だったので、窓の机に端末を放置していました。
+<p>新幹線は窓側の席だったので、窓の机に端末を放置していました。<br />
 在来線は座ることができなかったので、立った状態で端末は尻ポケ、カベに持たれてなるべく動かないようにしていました。</p>
 
-<p>結果は、在来線ではなんとか vehicle と認識されましたが、新幹線では認識できませんでした。
+<p>結果は、在来線ではなんとか vehicle と認識されましたが、新幹線では認識できませんでした。<br />
 恐らく、新幹線は揺れが少なすぎるのだと思います。優秀ですね、日本の新幹線。</p>
 
-<h3>2013.5.27 追記 位置情報を許可すると精度が上がる？</h3>
+<h3 id="section-2">2013.5.27 追記 位置情報を許可すると精度が上がる？</h3>
 
 <p><a href="https://twitter.com/sos_jp">@sos_jp</a> さんの記事、</p>
 
 <ul>
-<li><a href="http://sos.hatenablog.jp/entry/2013/05/19/162122">Google Play servicesの新機能 &ndash; Activity Recognition &ndash; sos の 作業メモ</a></li>
+  <li><a href="http://sos.hatenablog.jp/entry/2013/05/19/162122">Google Play servicesの新機能 - Activity Recognition - sos の 作業メモ</a></li>
 </ul>
-
 
 <p>によりますと、</p>
 
-<blockquote><p>位置情報があるとより正確な判定になるようです</p></blockquote>
+<blockquote>
+  <p>位置情報があるとより正確な判定になるようです</p>
+</blockquote>
 
 <p>とのことなので、もしかしたら FINE(+COURSE)_LOCATION とか付けとくと新幹線でも vechicle と認識デキるかもしれません。いずれ試してみます。</p>
 
-<h2>まとめ</h2>
+<h2 id="section-3">まとめ</h2>
 
 <p>公式のコンプリートな Getting Started は</p>
 
 <ul>
-<li><a href="http://developer.android.com/training/location/activity-recognition.html">Recognizing the User&rsquo;s Current Activity | Android Developers</a></li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td>[Recognizing the User’s Current Activity</td>
+          <td>Android Developers](http://developer.android.com/training/location/activity-recognition.html)</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
 </ul>
-
 
 <p>にありますので、こちらを読まれた方が確実です。</p>
 
 <p>ここで作ったサンプルは、</p>
 
 <ul>
-<li><a href="https://github.com/amay077/androidactivityrecognizingsample">amay077/androidactivityrecognizingsample · GitHub</a></li>
+  <li><a href="https://github.com/amay077/androidactivityrecognizingsample">amay077/androidactivityrecognizingsample · GitHub</a></li>
 </ul>
-
 
 <p>に置いておきます。</p>
 
+    </section>
+    <footer class="post-footer">
 
-      <div class="hidden-phone">
+      <section class="categories">
+        
+        <div class="category">Android</div>
+        
+        <p class="published">published <time datetime="2013-05-18 11:37">18 May 2013</time></p>
+      </section>
+      
+      <section class="share">
+        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition&text=Google+I%2FO+2013+%E3%81%A7%E7%99%BA%E8%A1%A8%E3%81%95%E3%82%8C%E3%81%9F%E8%A1%8C%E5%8B%95%E8%AA%8D%E8%AD%98%28Activity+Recognition%29%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B&via=amay077" target="_blank">
+          Share on
+          
+<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+
+
+        </a>
+      </section>
+
+      <div class="amazon-ads">
         <h4>Ads</h4>
-        <iframe src="http://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=bn1&mode=dvd-jp&browse=562020&nou=1&fc1=5A5E5F&lt1=_blank&lc1=3383E9&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
-      </div>
-
-    </div>
-  </div>
-
-
-
-  <footer>
-    <hr>
-    
-    <div class="row-fluid">
-      
-      
-      <div class="span6 social-sharing">
-        <div class="sharing">
-  <a href="http://b.hatena.ne.jp/entry/http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/" class="hatena-bookmark-button" data-hatena-bookmark-layout="standard" title="このエントリーをはてなブックマークに追加"><img src="http://b.st-hatena.com/images/entry-button/button-only.gif" alt="このエントリーをはてなブックマークに追加" width="20" height="20" style="border: none;" /></a><script type="text/javascript" src="http://b.st-hatena.com/js/bookmark_button.js" charset="utf-8" async="async"></script>
-  
-  <a href="http://twitter.com/share" class="twitter-share-button" data-url="http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/" data-via="amay077" data-counturl="http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/" >Tweet</a>
-  
-  <a class="addthis_counter addthis_pill_style"></a>
-  </div>
-  <script type="text/javascript" src="http://s7.addthis.com/js/250/addthis_widget.js#pubid="></script>
-</div>
+        <iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Android&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
       </div>
       
-      
-    </div>
-    
-    <div class="row-fluid">
-      <div class="span12">
-        <p class="meta">
-          
-            <a class="basic-alignment left" href="/blog/2013/05/16/xamarin-android-fail-build-on-latest-android-sdk/" title="Previous Post: Android SDK を最新の r22 にしたら、Xamarin.Android でビルドできなくなった件">&lt; Android SDK を最新の r22 にしたら、Xamarin.Android でビルドできなくなった件</a>
-          
-          
-            &nbsp;|&nbsp;
-            <a class="basic-alignment right" href="/blog/2013/05/20/digest-of-android-location-session-in-google-io2013/" title="Next Post: Google I/O 2013 の Android Location セッションまとめ">Google I/O 2013 の Android Location セッションまとめ &gt;</a>
-          
-        </p>
-      </div>
-    </div>
-  </footer>
-</article>
+      <section class="disqus">
+        <div id="disqus_thread"></div>
+        <script>
 
-  <section>
-    <h1>Comments</h1>
-    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-</div>
-  </section>
+        /**
+        *  RECOMMENDED CONFIGURATION VARIABLES: EDIT AND UNCOMMENT THE SECTION BELOW TO INSERT DYNAMIC VALUES FROM YOUR PLATFORM OR CMS.
+        *  LEARN WHY DEFINING THESE VARIABLES IS IMPORTANT: https://disqus.com/admin/universalcode/#configuration-variables*/
+        /*
+        var disqus_config = function () {
+        this.page.url = PAGE_URL;  // Replace PAGE_URL with your page's canonical URL variable
+        this.page.identifier = PAGE_IDENTIFIER; // Replace PAGE_IDENTIFIER with your page's unique identifier variable
+        };
+        */
+        (function() { // DON'T EDIT BELOW THIS LINE
+        var d = document, s = d.createElement('script');
+        s.src = '//experimentsneverfail.disqus.com/embed.js';
+        s.setAttribute('data-timestamp', +new Date());
+        (d.head || d.body).appendChild(s);
+        })();
+        </script>
+        <noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+      </section>
 
-</div>
-
-
-
-        </div>
-      </div>
-      <div class="row-fluid">
-        <footer class="footer-page" role="contentinfo">
-          <p>
-  Copyright &copy; 2016 - amay077 -
-  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span> - Theme by <a href="https://github.com/amay077/octoflat">amay077</a> forked from <a href="http://alexgaribay.com">Alex Garibay</a> - Web Font by <a href="http://mplus-fonts.sourceforge.jp/">M+ FONTS</a>
+    </footer>
+    <div class="bottom-teaser cf">
+      <div class="isLeft">
+        <h5 class="index-headline featured"><span>Written by</span></h5>
+        <section class="author">
+          <a href="/about/" class="mvp-image"></a>
+          <a href="/about/"><h4>amay077</h4></a>
+          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
 </p>
 
+          <p>
+            <span>
+              
+                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">amay077</span></a>
 
+              
+            </span>
+
+            <span>
+              
+                
+<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span><span class="username">amay077</span></a>
+
+
+              
+            </span>
+          </p>
+        </section>
+      </div>
+      
+
+      <div class="isRight">
+        <h5 class="index-headline featured"><span>Supported by</span></h5>
+        <footer class="site-footer">
+          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
+          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
+          <div class="inner">
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2016<br>All rights reserved.</section>
+          </div>
         </footer>
       </div>
     </div>
-  </div>
-  
+  </article>
+</main>
 
-<script type="text/javascript">
-      var disqus_shortname = 'experimentsneverfail';
-      
-        
-        // var disqus_developer = 1;
-        var disqus_identifier = 'http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/';
-        var disqus_url = 'http://blog.amay077.net/blog/2013/05/18/getting-started-activity-recognition/';
-        var disqus_script = 'embed.js';
-      
-    (function () {
-      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-      dsq.src = 'http://' + disqus_shortname + '.disqus.com/' + disqus_script;
-      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-    }());
-</script>
-
-
-
-<div id="fb-root"></div>
-<script>(function(d, s, id) {
-  var js, fjs = d.getElementsByTagName(s)[0];
-  if (d.getElementById(id)) {return;}
-  js = d.createElement(s); js.id = id; js.async = true;
-  js.src = "//connect.facebook.net/en_US/all.js#appId=212934732101925&xfbml=1";
-  fjs.parentNode.insertBefore(js, fjs);
-}(document, 'script', 'facebook-jssdk'));</script>
-
-
-
-
-
-  <script type="text/javascript">
-    (function(){
-      var twitterWidgets = document.createElement('script');
-      twitterWidgets.type = 'text/javascript';
-      twitterWidgets.async = true;
-      twitterWidgets.src = 'http://platform.twitter.com/widgets.js';
-      document.getElementsByTagName('head')[0].appendChild(twitterWidgets);
-    })();
-  </script>
-
-
-
-
-
-</body>
+  </body>
 </html>
