@@ -647,19 +647,17 @@ Forms アプリを Android で動かして回転させると、なんと <strong
 
 <h2 id="section-3">回避方法</h2>
 
-<blockquote class="twitter-tweet" lang="ja">
-  <p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>
-  <p>— Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a>&lt;/blockquote&gt;
-<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script></p>
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-  <p>こんな感じっすね。</p>
+<p>こんな感じっすね。</p>
 
-  <p>```csharp MainActivity.cs
-[Activity(MainLauncher = true, 
-    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]
-public class MainActivity : AndroidActivity
+<p>```csharp MainActivity.cs<br />
+[Activity(MainLauncher = true, <br />
+    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]<br />
+public class MainActivity : AndroidActivity<br />
 {</p>
-  <div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><pre class="highlight"><code>
 ## BACKキーの扱い
 
 iOS なら ``NavigationPage.SetHasNavigationBar(page, false)`` としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。
@@ -683,29 +681,28 @@ public class MainActivity : AndroidActivity
     {
         /* 以下省略 */
 </code></pre>
-  </div>
+</div>
 
-  <h2 id="section-4">起動時</h2>
+<h2 id="section-4">起動時</h2>
 
-  <p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？
+<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？<br />
 ActionBar だけでも消したくて Theme を <code class="highlighter-rouge">Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
 
-  <p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
+<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
 
-  <h2 id="section-5">文字の自動縮小</h2>
+<h2 id="section-5">文字の自動縮小</h2>
 
-  <p>iOS の <code class="highlighter-rouge">UITextField</code> は <code class="highlighter-rouge">adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code class="highlighter-rouge">Label</code> にはそんなものはありません。<code class="highlighter-rouge">PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
+<p>iOS の <code class="highlighter-rouge">UITextField</code> は <code class="highlighter-rouge">adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code class="highlighter-rouge">Label</code> にはそんなものはありません。<code class="highlighter-rouge">PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
 
-  <h3 id="section-6">自己解決</h3>
+<h3 id="section-6">自己解決</h3>
 
-  <p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
+<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
 
-  <h2 id="iphone--ipad">iPhone と iPad</h2>
+<h2 id="iphone--ipad">iPhone と iPad</h2>
 
-  <p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
+<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
 
-  <p>他にも見つけたら書きます。</p>
-</blockquote>
+<p>他にも見つけたら書きます。</p>
 
     </section>
     <footer class="post-footer">
