@@ -1,0 +1,1347 @@
+<!doctype html>
+<html ⚡ lang="ja">
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+
+  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
+  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+  
+	</head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+
+  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
+
+  <title>RxJava + MVVM パターンで作るストップウォッチアプリ</title>
+  <meta name="description" content="　これは RxJava Advent Calendar 2015 24日目 の記事です。">
+
+  <link rel="canonical" href="http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/">
+  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
+
+  <script type="application/ld+json">
+  
+{
+  "@context": "http://schema.org",
+  "@type": "NewsArticle",
+  "mainEntityOfPage": "http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn/",
+  "headline": "RxJava + MVVM パターンで作るストップウォッチアプリ",
+  "datePublished": "2015-12-24T23:59:59+09:00",
+  "dateModified": "2015-12-24T23:59:59+09:00",
+  "description": "　これは RxJava Advent Calendar 2015 24日目 の記事です。",
+  "author": {
+    "@type": "Person",
+    "name": "amay077"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Experiments Never Fail",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://blog.amay077.net/assets/images/logo.png",
+      "width": "60",
+      "height": "60"
+    }
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "http://blog.amay077.net/assets/images/logo.png",
+    "height": "60",
+    "width": "60"
+  }
+}
+
+  </script>
+  
+  <style amp-custom>
+  
+  .icon > svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle; }
+  .icon > svg path {
+    fill: #828282; }
+
+amp-img {
+  background-color: grey; }
+
+.cf:after {
+  content: "";
+  display: table;
+  clear: both; }
+
+main {
+  display: block; }
+
+body {
+  background-color: #fff;
+  font-family: Arial, YuGothic;
+  margin: 0;
+  padding: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased; }
+
+.site-header {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 16px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .site-header {
+      padding: 0 16px; } }
+  .site-header .page-links {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-weight: 200;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 30px; }
+    .site-header .page-links a {
+      text-decoration: none;
+      color: #999999; }
+      .site-header .page-links a:hover {
+        color: #333333; }
+
+.blog-header {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  .blog-header .blog-title {
+    margin-bottom: 8px;
+    font-size: 50px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    outline: 0;
+    line-height: 50px;
+    word-break: break-word;
+    color: #333333; }
+  .blog-header .blog-description {
+    font-size: 28px;
+    margin: 0 0 20px;
+    padding: 0;
+    line-height: 1.2;
+    color: #666666;
+    font-weight: 300; }
+
+.content {
+  width: 100%;
+  max-width: 700px;
+  margin: 25px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .content {
+      padding: 0 16px; } }
+  .content article {
+    padding: 20px 0;
+    border-bottom: 1px solid #f2f2f0; }
+    .content article:last-child {
+      border-bottom: 0px; }
+    .content article .post-title {
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-style: normal;
+      display: block;
+      font-size: 36px;
+      line-height: 1.15;
+      margin: 0 0; }
+      .content article .post-title a {
+        text-decoration: none;
+        color: #333332; }
+        .content article .post-title a:hover {
+          text-decoration: none; }
+    .content article .post-excerpt {
+      letter-spacing: -0.02em;
+      font-weight: 300;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1.59;
+      color: #666665; }
+    .content article .post-meta {
+      font-size: 14px;
+      color: #b3b3b1;
+      line-height: 30px; }
+      .content article .post-meta a {
+        color: #b3b3b1;
+        text-decoration: none; }
+        .content article .post-meta a:hover {
+          text-decoration: underline; }
+
+.post-template .content {
+  max-width: 700px; }
+
+.index-headline {
+  border-top: 1px solid #dededc;
+  margin: 0;
+  padding: 16px 0; }
+  .index-headline span {
+    color: #b3b3b1;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px; }
+
+.pagination {
+  text-align: center;
+  padding: 16px 0 0;
+  font-size: 12px; }
+  .pagination a {
+    color: #999999;
+    text-decoration: none; }
+    .pagination a:hover {
+      color: #333333; }
+
+.site-footer {
+  margin: 0 auto;
+  padding: 48px 0;
+  width: 100%;
+  max-width: 700px;
+  font-size: 12px;
+  text-align: center;
+  color: #999999;
+  line-height: 17.6px; }
+  .site-footer a {
+    color: #666666;
+    text-decoration: none; }
+    .site-footer a:hover {
+      color: #333333; }
+
+.post .post-meta {
+  font-family: Arial, YuGothic; }
+.post .post-title {
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.04em;
+  font-size: 50px;
+  line-height: 1.1;
+  color: #333332;
+  margin-bottom: 50px; }
+.post .author-image {
+  background-image: url(/assets/images/author.png);
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  margin-right: 8px;
+  margin-bottom: -10px;
+  float: left;
+  background-size: cover;
+  border-radius: 100%;
+  text-indent: -9999px; }
+.post .post-meta-text {
+  color: #b3b3b1;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  overflow: hidden;
+  font-family: Arial, YuGothic;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+.post .post-content {
+  width: 100%;
+  font-family: Verdana, YuGothic;
+  color: #333333; }
+  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
+    font-family: Arial, YuGothic; }
+  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1.3;
+    margin-top: 50px;
+    margin-bottom: 0px;
+    font-family: Arial, YuGothic; }
+  .post .post-content h3 {
+    font-size: 36px; }
+  .post .post-content h2, .post .post-content h1 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 42px;
+    line-height: 1.2;
+    margin-top: 50px;
+    margin-bottom: 0px; }
+  .post .post-content table {
+    border-collapse: collapse; }
+  .post .post-content .highlight {
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+    background-color: #f8f8f8; }
+    .post .post-content .highlight table {
+      line-height: 20px;
+      border: 1px solid transparent; }
+  .post .post-content table::not(".highlight"), .post .post-content th, .post .post-content td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left; }
+  .post .post-content p {
+    font-weight: 400;
+    font-style: normal;
+    font-size: 22px;
+    line-height: 1.59;
+    letter-spacing: -.002em;
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: #333333;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto; }
+  .post .post-content a {
+    color: #469af6;
+    text-decoration: none; }
+  .post .post-content amp-img, .post .post-content amp-youtube {
+    margin-top: 30px; }
+  .post .post-content figure {
+    margin: 0;
+    padding: 0 0 30px; }
+  .post .post-content figcaption {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #666665;
+    outline: 0;
+    z-index: 300;
+    text-align: center; }
+  .post .post-content hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 90%;
+    margin: 30px auto;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .post-content blockquote {
+    margin: 0 0 30px;
+    margin-left: -26px;
+    border-left: 3px solid #57ad68;
+    padding-left: 20px; }
+    .post .post-content blockquote p {
+      letter-spacing: 0.01rem;
+      font-weight: 400;
+      mborder-left: 3px solid #57ad68;
+      mpadding-left: 20px;
+      mmargin-left: -26px;
+      padding-bottom: 3px; }
+  .post .post-content ul, .post .post-content ol {
+    padding: 30px 0 30px;
+    margin: 0; }
+  .post .post-content li {
+    padding: 0;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 23px;
+    line-height: 30px;
+    margin-left: 30px;
+    margin-bottom: 12px;
+    padding-top: 2px; }
+    .post .post-content li p {
+      padding: 0 0 1.618rem; }
+  .post .post-content ol li {
+    list-style-type: decimal; }
+.post .bottom-teaser {
+  padding: 50px 0 0 0;
+  font-family: Arial, YuGothic; }
+  .post .bottom-teaser hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 15%;
+    margin: 16px 0 16px 100px;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .bottom-teaser .isLeft {
+    float: left;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isLeft {
+        width: 100%;
+        padding-bottom: 32px; } }
+    .post .bottom-teaser .isLeft .bio {
+      margin-top: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .username {
+      margin-left: 4px;
+      margin-right: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isLeft a {
+      color: black;
+      text-decoration: none; }
+      .post .bottom-teaser .isLeft a:hover {
+        color: #333333;
+        text-decoration: underline; }
+    .post .bottom-teaser .isLeft .author-image {
+      display: block;
+      width: 80px;
+      height: 80px;
+      float: left;
+      background-size: cover;
+      border-radius: 100%;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft .mvp-image {
+      background-image: url(/assets/images/mvp_logo_v.png);
+      display: block;
+      width: 80px;
+      height: 127px;
+      float: left;
+      background-size: cover;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft h4 {
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+    .post .bottom-teaser .isLeft p {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+      .post .bottom-teaser .isLeft p.published {
+        color: #999999; }
+  .post .bottom-teaser .isRight {
+    float: right;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isRight {
+        width: 100%; } }
+    .post .bottom-teaser .isRight .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isRight .site-footer {
+      margin: 0;
+      padding: 0;
+      color: #333333;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #999999; }
+      .post .bottom-teaser .isRight .site-footer a {
+        color: #333333;
+        text-decoration: none; }
+        .post .bottom-teaser .isRight .site-footer a:hover {
+          text-decoration: underline; }
+      .post .bottom-teaser .isRight .site-footer .poweredby {
+        display: block;
+        padding-bottom: 18px;
+        font-weight: 700;
+        color: #333333; }
+
+.share {
+  text-align: right;
+  padding: 0; }
+  .share a {
+    text-decoration: none;
+    color: #bbbbbb;
+    padding-left: 12px; }
+    .share a .hidden {
+      display: none; }
+    .share a:hover {
+      color: #333333; }
+
+pre,
+code {
+  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
+  font-size: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 5px;
+  background-color: #f8f8f8; }
+
+code {
+  padding: 1px 5px; }
+
+pre {
+  padding: 8px 12px;
+  overflow-x: scroll; }
+  pre > code {
+    border: 0;
+    padding-right: 0;
+    padding-left: 0; }
+
+.pagination .disabled {
+  opacity: 0; }
+
+.categories {
+  overflow: hidden;
+  padding: 20px 0 0 0; }
+
+.category {
+  float: left;
+  border: 1px;
+  border-radius: 3px;
+  background-color: #eeeeee;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #dddddd;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+#disqus_thread a {
+  color: #333333;
+  text-decoration: none; }
+
+.published {
+  float: left;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+  border: 0;
+  -ms-interpolation-mode: bicubic; }
+
+.amazon-ads {
+  padding: 0 0 20px 0; }
+
+amp-img img {
+  width: auto;
+  height: auto; }
+
+
+  .highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight .cm {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cp {
+  color: #999999;
+  font-weight: bold;
+}
+.highlight .c1 {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cs {
+  color: #999999;
+  font-weight: bold;
+  font-style: italic;
+}
+.highlight .c, .highlight .cd {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .err {
+  color: #a61717;
+  background-color: #e3d2d2;
+}
+.highlight .gd {
+  color: #000000;
+  background-color: #ffdddd;
+}
+.highlight .ge {
+  color: #000000;
+  font-style: italic;
+}
+.highlight .gr {
+  color: #aa0000;
+}
+.highlight .gh {
+  color: #999999;
+}
+.highlight .gi {
+  color: #000000;
+  background-color: #ddffdd;
+}
+.highlight .go {
+  color: #888888;
+}
+.highlight .gp {
+  color: #555555;
+}
+.highlight .gs {
+  font-weight: bold;
+}
+.highlight .gu {
+  color: #aaaaaa;
+}
+.highlight .gt {
+  color: #aa0000;
+}
+.highlight .kc {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kd {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kn {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kp {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kr {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kt {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .k, .highlight .kv {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .mf {
+  color: #009999;
+}
+.highlight .mh {
+  color: #009999;
+}
+.highlight .il {
+  color: #009999;
+}
+.highlight .mi {
+  color: #009999;
+}
+.highlight .mo {
+  color: #009999;
+}
+.highlight .m, .highlight .mb, .highlight .mx {
+  color: #009999;
+}
+.highlight .sb {
+  color: #d14;
+}
+.highlight .sc {
+  color: #d14;
+}
+.highlight .sd {
+  color: #d14;
+}
+.highlight .s2 {
+  color: #d14;
+}
+.highlight .se {
+  color: #d14;
+}
+.highlight .sh {
+  color: #d14;
+}
+.highlight .si {
+  color: #d14;
+}
+.highlight .sx {
+  color: #d14;
+}
+.highlight .sr {
+  color: #009926;
+}
+.highlight .s1 {
+  color: #d14;
+}
+.highlight .ss {
+  color: #990073;
+}
+.highlight .s {
+  color: #d14;
+}
+.highlight .na {
+  color: #008080;
+}
+.highlight .bp {
+  color: #999999;
+}
+.highlight .nb {
+  color: #0086B3;
+}
+.highlight .nc {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .no {
+  color: #008080;
+}
+.highlight .nd {
+  color: #3c5d5d;
+  font-weight: bold;
+}
+.highlight .ni {
+  color: #800080;
+}
+.highlight .ne {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nf {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nl {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nn {
+  color: #555555;
+}
+.highlight .nt {
+  color: #000080;
+}
+.highlight .vc {
+  color: #008080;
+}
+.highlight .vg {
+  color: #008080;
+}
+.highlight .vi {
+  color: #008080;
+}
+.highlight .nv {
+  color: #008080;
+}
+.highlight .ow {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .o {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .w {
+  color: #bbbbbb;
+}
+.highlight {
+  background-color: #f8f8f8;
+}
+  
+  </style>
+
+
+
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+</head>
+
+  <body>
+    
+  <amp-analytics type="googleanalytics" id="analytics1">
+  <script type="application/json">
+  {
+    "vars": {
+      "account": "UA-224332-7"
+    },
+    "triggers": {
+      "trackPageview": {
+        "on": "visible",
+        "request": "pageview"
+      }
+    }
+  }
+  </script>
+  </amp-analytics>
+
+
+    <header class="site-header">
+  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.png" width="48" height="48" /></span></a>
+
+  <div class="page-links">
+    <a class="page-link" href="/">Home</a>
+     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay077.net" target="_blank">Search</a>
+    
+      
+      • <a class="page-link" href="/about/">About</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</header>
+
+
+    <main class="content" role="main">
+  <article class="post">
+    <div class="post-meta">
+      <h1 class="post-title">RxJava + MVVM パターンで作るストップウォッチアプリ</h1>
+    </div>
+
+    <section class="post-content">
+      <a name="topofpage"></a>
+      <p>　これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 24日目</a> の記事です。</p>
+
+<p>先日、</p>
+
+<ul>
+  <li><a href="http://ytabuchi.hatenablog.com/entry/2015/12/20/012007">JXUGC #9 Xamarin.Forms Mvvm 実装方法 Teachathon を開催しました - Xamarin 日本語情報</a></li>
+</ul>
+
+<p>というイベントがありまして、エクセルソフトの田淵さんが作成したストップウォッチのアプリケーション(注:田淵さんはプログラマではないｗ)を、MVVM識者の方々が「MVVMとしてはこうあるべきだ」と叩きまくる、という恐ろしい?ものでした。<br />
+<!--more--></p>
+
+<p>私はこの勉強会には参加できなかったのですが、ストリーミングとか見て、</p>
+
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">僕もストップウォッチ作ってみるかー</p>&mdash; ジェットあめいカスタム (@amay077) <a href="https://twitter.com/amay077/status/677561989359472640">2015, 12月 17</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+<p>などとつぶやいたらご指名されてしまいました(^^)<br />
+このイベントは Xamarin を使ったアプリ製作でしたが、せっかくなので <strong>RxJava + MVVM</strong> で作ってみました。<br />
+(ご指名に応えないといけないのでその後 Xamarin版も製作)</p>
+
+<h1 id="ストップウォッチアプリの仕様">ストップウォッチアプリの仕様</h1>
+
+<p>上記リンクからの引用です。</p>
+
+<ul>
+  <li>Start/Stop ボタン、Lap ボタン</li>
+  <li>StartするとラップボタンはEnable.ストップするとDisable
+    <ul>
+      <li>スタートしてからの経過時間をXX’XX.XXXみたいな感じで表示</li>
+    </ul>
+  </li>
+  <li>履歴をListViewで残す</li>
+  <li>ストップしたら結果をダイアログで出して分岐？</li>
+  <li>今までのラップよりMin, Maxなどをダイアログに表示して次のページに遷移 ←ここ勝手に Toast に仕様変更しましたｗ</li>
+  <li>スイッチの切り替えで、ミリ秒の桁を表示/非表示</li>
+</ul>
+
+<p>こんな機能を満たすサンプルを</p>
+
+<ol>
+  <li>RxJava を使った Android アプリ(Java言語)</li>
+  <li>Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</li>
+  <li>Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</li>
+</ol>
+
+<p>でそれぞれ作ってみました。</p>
+
+<h1 id="とりあえず作ったもの">とりあえず、作ったもの</h1>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_00.gif" alt="つくったもの" /></p>
+
+<p>左は Android-Java製、右は Xamarin.iOS製です。(Xamarin.Android製は省略)</p>
+
+<h1 id="1-rxjava-を使った-android-アプリjava言語">1. RxJava を使った Android アプリ(Java言語)</h1>
+
+<h2 id="model-viewmodel-viewmvvm-で考える">Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>構成図っぽいものを描くとこんな感じになります。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_01.png" alt="クラス図的なの" /></p>
+
+<h3 id="model">Model</h3>
+
+<p>　この仕様だと、ストップウォッチの一通りの機能を満たすクラスが Model になります。これを <code class="highlighter-rouge">StopWatchModel</code> という名前にしました。</p>
+
+<p><strong>「ロジック」は、すべてこの層（このクラス）に書きます。</strong><br />
+　<br />
+　例えば、ストップウォッチのタイマーを実行するには、 RxJava で <code class="highlighter-rouge">Observable.interval</code> としますが、これを ViewModel層に書いたら「負け」です。<br />
+　<br />
+また、ストップウォッチの実行は、画面の表示/破棄と連動しなくてよい(画面遷移しても計測し続けるべき)なので、StopWatchModel の生存期間は、アプリケーションの起動時から終了まで、という事になります。</p>
+
+<p>　RxJava を全面的に使いたいので、 StopWatchModel のプロパティは全て <code class="highlighter-rouge">Observable&lt;T&gt;</code> にしました。RxJava を使わなかったらプロパティではなくコールバックですね。<br />
+　何かメソッドを実行したら、その結果は全て <code class="highlighter-rouge">Observable&lt;T&gt;</code> を通じて通知される仕組みです。なので原則として Model のメソッドの戻り値は <code class="highlighter-rouge">void</code> です。</p>
+
+<h3 id="viewmodel">ViewModel</h3>
+
+<p>　しつこいようですが <strong>ここにロジックを書いたら負け</strong> です。<br />
+個人としては、条件分岐もしたくない、変数宣言もしたくない、くらいのつもりでいます。もし書いてしまったら「それはModelの方が適切ではないか？」を検討します。</p>
+
+<p>　ViewModel の役割は、Model のプロパティ(コールバック)を、View用に変換して流すこと、Viewのための機能をコマンドとして公開することです。</p>
+
+<p>　例えば、仕様の内、</p>
+
+<blockquote>
+  <p>スイッチの切り替えで、ミリ秒の桁を表示/非表示</p>
+</blockquote>
+
+<p>　が、「View用に変換」の良い例になります。<br />
+　私の実装では、ミリ秒の桁を表示するか否かの bool 値を、format関数の書式文字列に変換しています。(View側で format して表示しています。)<br />
+　↓のような感じです。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="cm">/** 時間の表示フォーマット */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">timeFormat</span><span class="o">;</span> <span class="c1">// field</span>
+
+
+<span class="k">this</span><span class="o">.</span><span class="na">timeFormat</span> <span class="o">=</span> <span class="n">_stopWatch</span><span class="o">.</span><span class="na">isVisibleMillis</span><span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">visible</span> <span class="o">-&gt;</span> 
+    <span class="n">visible</span> <span class="o">?</span> <span class="s">"mm:ss.SSS"</span> <span class="o">:</span> <span class="s">"mm:ss"</span><span class="o">);</span>
+</code></pre>
+</div>
+
+<p>RxJava で「変換」とくれば、 <code class="highlighter-rouge">map</code> など、 <code class="highlighter-rouge">Observable</code> の投影系のメソッドの出番となります。</p>
+
+<p>ViewModel が公開するプロパティも、基本的には <code class="highlighter-rouge">Observable&lt;T&gt;</code> になりました。(これはこのアプリの仕様上、OneWayバインディング＜=Modelによるデータの変化をViewに表示する＞だけで済んだためです。TwoWayバインディング＜=Viewからのデータの入力を受け付ける＞が必要な場合は、<code class="highlighter-rouge">Subject</code>など、データをセットできる機能が必要になります。)</p>
+
+<p>コマンドとは、Modelのメソッドを呼ぶためのものですが、それに加えて「そのコマンドが実行可能か？」を示すフラグも持ちます。さらにこのフラグも <code class="highlighter-rouge">Observable&lt;boolean&gt;</code> で表します。<br />
+こうする事で、「機能が利用可能な時のみボタンを Enable にする」のようなバインディングが可能になります。今回の仕様で言えば</p>
+
+<blockquote>
+  <p>StartするとラップボタンはEnable.ストップするとDisable</p>
+</blockquote>
+
+<p>に該当します。</p>
+
+<p>コマンドのインターフェースは↓のようになります。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">interface</span> <span class="nc">Command</span> <span class="o">{</span>
+    <span class="cm">/** このコマンドが実行可能かを示すフラグの更新を通知するObservable */</span>
+    <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="nf">canExecuteObservable</span><span class="o">();</span>
+
+    <span class="cm">/** このコマンドの処理を実装する */</span>
+    <span class="kt">void</span> <span class="nf">execute</span><span class="o">();</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>今回は、このインターフェースを ViewModel で匿名クラスを作ることで実装しました。↓のような感じです。この <code class="highlighter-rouge">commandLap</code> をラップボタンとバインドさせます。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="cm">/** 経過時間の記録 */</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="n">Command</span> <span class="n">commandLap</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Command</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Boolean</span><span class="o">&gt;</span> <span class="nf">canExecuteObservable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">_stopWatch</span><span class="o">.</span><span class="na">isRunning</span><span class="o">;</span> <span class="c1">// 実行中のみ記録可能</span>
+    <span class="o">}</span>
+
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">_stopWatch</span><span class="o">.</span><span class="na">lap</span><span class="o">();</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+</code></pre>
+</div>
+
+<p>あ、ViewModel は View とは疎結合に作ります。Viewを参照してはいけないのはもちろん、<code class="highlighter-rouge">TextView</code> や <code class="highlighter-rouge">Activity</code> などが import されていたら「負け」です。</p>
+
+<p>他には、Viewの状態を保持する役割も担いますが、本アプリの仕様では、それに該当する処理はありませんでした。</p>
+
+<h3 id="view">View</h3>
+
+<p>　View層で行うことは、画面要素のレイアウトとViewModelとのバインディングです。それ以外の事は行いません。.NETの世界では、View層において値の変換を行う機能=ValueConverterが存在しますが、ValueConverterを使うべきかViewModelで行うべきかでよく議論になります。<br />
+　<br />
+　バインディングの実体は、ViewModelのプロパティである <code class="highlighter-rouge">Observable&lt;T&gt;</code> を <code class="highlighter-rouge">subscribe</code> して、Viewのプロパティにセットしているだけです。前述の通り今回は TwoWay は無いので楽です。TwoWay が出てくるとバインディングのフレームワークにお願いした方がよいです。<br />
+　<br />
+　例えば、 <code class="highlighter-rouge">Observalbe&lt;String&gt;</code> と TextViewのtextプロパティのバインディングは、下のようになります。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="n">TextViewBinder</span> <span class="nf">toTextOneWay</span><span class="o">(</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">prop</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">_subscriptions</span><span class="o">.</span><span class="na">add</span><span class="o">(</span>
+        <span class="n">prop</span><span class="o">.</span><span class="na">observeOn</span><span class="o">(</span><span class="n">AndroidSchedulers</span><span class="o">.</span><span class="na">mainThread</span><span class="o">())</span>
+        <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">_textView</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">x</span><span class="o">)));</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="o">;</span> <span class="c1">// メソッドチェーンで連続して呼べるようにしてるだけ</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>.NETの世界では、このバインディングを画面定義ファイル(.xaml)に直接記述できます。<br />
+Androidでも一部のライブラリや、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">今後公式にデータバインディングがサポートされる模様</a>ですが、xml でのバンディングの記述は、デバッグしづらくなるので個人的にはそれほどメリットを感じないです。デザイナーとの分業と言っても別な理由で不可能なケースが多いと思います。</p>
+
+<h2 id="画面遷移や-toast-の表示は誰の責務">画面遷移や Toast の表示は誰の責務？</h2>
+
+<p>大抵の MVVMフレームワーク に備わっている <code class="highlighter-rouge">Messenger</code> という機能を使います。Android界隈の人には「EventBus」と言った方がわかりやすいかも知れません。</p>
+
+<p>ViewModelが「画面遷移を要求するメッセージ」を投げ、それをViewが受信して画面遷移を行います。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//メッセージ送信側(MainViewModel.java)</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="n">Command</span> <span class="n">commandNextView</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Command</span><span class="o">()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">execute</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// LapActivity へ遷移させる</span>
+        <span class="c1">// ほんとは LapViewModel.class を指定すべき(LapActivity は使いたくない)</span>
+        <span class="n">messenger</span><span class="o">.</span><span class="na">send</span><span class="o">(</span><span class="k">new</span> <span class="n">StartActivityMessage</span><span class="o">(</span><span class="n">LapActivity</span><span class="o">.</span><span class="na">class</span><span class="o">));</span>
+    <span class="o">}</span>
+<span class="o">};</span>
+</code></pre>
+</div>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//メッセージ受信側(MainActivity.java)</span>
+<span class="c1">// 画面遷移のメッセージ受信</span>
+<span class="n">_viewModel</span><span class="o">.</span><span class="na">messenger</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="n">StartActivityMessage</span><span class="o">.</span><span class="na">class</span><span class="o">.</span><span class="na">getName</span><span class="o">(),</span> <span class="k">new</span> <span class="n">Action1</span><span class="o">&lt;</span><span class="n">Message</span><span class="o">&gt;()</span> <span class="o">{</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">call</span><span class="o">(</span><span class="kd">final</span> <span class="n">Message</span> <span class="n">message</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">runOnUiThread</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+            <span class="nd">@Override</span>
+            <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+                <span class="kd">final</span> <span class="n">StartActivityMessage</span> <span class="n">m</span> <span class="o">=</span> <span class="o">(</span><span class="n">StartActivityMessage</span><span class="o">)</span><span class="n">message</span><span class="o">;</span>
+                <span class="n">Intent</span> <span class="n">intent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">,</span> <span class="n">m</span><span class="o">.</span><span class="na">activityClass</span><span class="o">);</span>
+                <span class="n">MainActivity</span><span class="o">.</span><span class="na">this</span><span class="o">.</span><span class="na">startActivity</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">});</span>
+    <span class="o">}</span>
+<span class="o">});</span>
+</code></pre>
+</div>
+
+<p>今回は簡単な Messenger を実装しました。VM-&gt;Vの通知にしか使わないのでVM毎に一つ持つようにしています。</p>
+
+<h1 id="23-reactive-extensions-reactiveproperty-を使った-androidios-アプリxamarin-c言語">2.3. Reactive Extensions, ReactiveProperty を使った Android/iOS アプリ(Xamarin, C#言語)</h1>
+
+<p><a href="https://xamarin.com/">Xamarin</a> は、 C# で Android/iOS が作れるプロダクトです。<br />
+RubyMotion のように、CocoaTouch や Android SDK の API をラップし、同じ名称のクラス,メソッドで C# から呼び出せるようにしています。</p>
+
+<ul>
+  <li><a href="http://ytabuchi.hatenablog.com/">Xamarin 日本語情報</a></li>
+  <li><a href="http://qiita.com/amay077/items/2e86b44e5f274a34b2e9">マカーの人が Xamarin について勘違いしていそうな５つのこと - Qiita</a></li>
+</ul>
+
+<p>.NETのオープンソース実装である mono 由来の製品であり、また Microsoft とのパートナーシップも結んでいることから、.NET の資産の多くが利用可能です。</p>
+
+<p>何が言いたいかと言うと、RxJava も MVVM パターンも、元は .NET のアプリケーション開発の分野で発案・成熟してきた考え方であり、豊富な.NET製ライブラリ(今回だと Reactive Extensions と ReactiveProperty)を使って Android/iOS アプリを開発できる、という事です。</p>
+
+<h2 id="model-viewmodel-viewmvvm-で考える-1">Model-ViewModel-View(MVVM) で考える</h2>
+
+<p>Xamarin でも MVVM の役割はまったく同じですが、<br />
+<strong>「Model-ViewModel を Android/iOS で使いまわせる」</strong> <br />
+という大きなメリットがあります。</p>
+
+<p>Model と ViewModel からは、プラットフォームに依存するコードは排除できます(すべきです)。 <br />
+Xamarin(というか .NET) ではプラットフォーム非依存の処理をライブラリ化できます(これを PCL=Portable Class Library と言います)。</p>
+
+<p>Android と iOS でそれぞれに実装が必要なのは、View と、そのバインディングのみです。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/rxjava_mvvm_stopwatch_02.png" alt="クラス図的なの" /></p>
+
+<h2 id="reactive-extensions-について">Reactive Extensions について</h2>
+
+<p>本家<a href="https://github.com/Reactive-Extensions/Rx.NET">Rx.NET</a>です。RxJava はこの Reactive Extensions を Java にポートしたものです。<br />
+RxJava には、いくつか便利なメソッドが追加されています(<code class="highlighter-rouge">compose</code> とか)が、殆ど同じです。<br />
+また、 C# はラムダ式を標準でサポートしていることから、 retrolambda などに頼らなくても見やすいコードが書けるのは言うまでもないでしょう。</p>
+
+<h2 id="reactiveproperty-について">ReactiveProperty について</h2>
+
+<p><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> は、Rxの機能を活かしてMVVMパターンの実装を手助けしてくれるライブラリです。</p>
+
+<ul>
+  <li><a href="http://blog.okazuki.jp/entry/2015/02/22/212827">MVVMとリアクティブプログラミングを支援するライブラリ「ReactiveProperty v2.0」オーバービュー - かずきのBlog@hatena</a></li>
+</ul>
+
+<p>Java版ストップウォッチでは、<code class="highlighter-rouge">StopWatchModel</code> や ViewModel のプロパティを全て <code class="highlighter-rouge">Observable&lt;T&gt;</code> としましたが、 Xamarin版では <code class="highlighter-rouge">ReactiveProperty&lt;T&gt;</code> としています。 <code class="highlighter-rouge">ReactiveProperty&lt;T&gt;</code> は <code class="highlighter-rouge">Observable&lt;T&gt;</code> から継承しているので、それほど大差はありませんが、<code class="highlighter-rouge">Subject</code> のように値の設定をサポートしていたり、バリデーション、エラー通知の仕組みが備わっています。</p>
+
+<p>また、ReactiveProperty は、 Android の View要素とのバインディング機能も持ちます。これを使うとバインディングが以下のように書けます。</p>
+
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">// TextView(textTime) と viewModel.Time のバインド
+</span><span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">TextView</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">textTime</span><span class="p">)</span>
+    <span class="p">.</span><span class="nf">SetBinding</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">Text</span><span class="p">,</span> 
+        <span class="n">_viewModel</span><span class="p">.</span><span class="n">Time</span><span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="nf">ToString</span><span class="p">())</span>
+        <span class="p">.</span><span class="nf">ObserveOnUIDispatcher</span><span class="p">()</span>
+        <span class="p">.</span><span class="nf">ToReactiveProperty</span><span class="p">());</span>
+</code></pre>
+</div>
+
+<p>iOS のバインディングはありませんが、 <del>ソースの一部を持ってくる事で、殆ど解決します</del> <a href="https://twitter.com/okazuki/status/679256704689684480">ツイートしたら取り込んでもらえました(^^)</a> 。</p>
+
+<h1 id="作ったアプリのソース">作ったアプリのソース</h1>
+
+<ul>
+  <li><a href="https://github.com/amay077/StopWatchSample">amay077/StopWatchSample</a></li>
+</ul>
+
+<p>それぞれ、</p>
+
+<ol>
+  <li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppAndroid">RxJava を使った Android アプリ(Java言語)</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Android">Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.iOS">Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Core">Xamarin版アプリの Model, ViewModel</a></li>
+</ol>
+
+<p>にあります。</p>
+
+<p>Java版は、</p>
+
+<ul>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a></li>
+</ul>
+
+<p>を見るとだいたい分かると思います。</p>
+
+<p>また、Java版 と Xamarin版では、</p>
+
+<ul>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/Models/StopWatchModel.cs">StopWatchModel.cs</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/ViewModels/MainViewModel.cs">MainViewModel.cs</a></li>
+  <li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Android/Views/MainActivity.cs">MainActivity.cs</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.iOS/Views/MainViewController.cs">MainViewController.cs</a></li>
+</ul>
+
+<p>あたりを見比べるといいと思います。</p>
+
+<h1 id="まとめ">まとめ</h1>
+
+<p>MVVM と RxJava はとても相性がよいと感じました。</p>
+
+<p>Model → ViewModel → View と通知を伝搬させるのに、そのまま <code class="highlighter-rouge">Observable&lt;T&gt;</code> を繋げればよいのですから。加工が必要なら <code class="highlighter-rouge">map</code> などのオペレータを挟むだけ。<br />
+これがコールバックだったら…恐ろしくて想像したくありません。</p>
+
+<p>Model が使用するDB層やWebAPIなども RxJava をサポートしていたら、もっと便利になると思います。(Realm は RxJava サポートが追加されたようですね！)</p>
+
+<p>View - ViewModel のデータバインディングにも RxJava は有効ですが、こちらは、Android公式の Data Binding がどう実装されるかで未来が変わってきそうです。</p>
+
+<p>Android-Java には、まだメジャーな MVVMフレームワークが無いので、登場が待たれるところです。</p>
+
+<h1 id="おまけ反省など">おまけ：反省など</h1>
+
+<h2 id="view-か-viewmodel-か-model-か問題">View か ViewModel か Model か問題</h2>
+
+<p>下は View に書かれている「現在時刻と表示書式文字列のどちらかが更新されたら、時刻をフォーマットして流す」という Observable です。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">// フォーマットされた時間を表す Observable（time と timeFormat のどちらかが変更されたら更新）</span>
+<span class="kd">final</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">formattedTime</span> <span class="o">=</span> <span class="n">Observable</span><span class="o">.</span><span class="na">combineLatest</span><span class="o">(</span>
+        <span class="n">_viewModel</span><span class="o">.</span><span class="na">time</span><span class="o">,</span>
+        <span class="n">_viewModel</span><span class="o">.</span><span class="na">timeFormat</span><span class="o">,</span> <span class="o">(</span><span class="n">Long</span> <span class="n">time</span><span class="o">,</span> <span class="n">String</span> <span class="n">format</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="o">{</span>
+            <span class="kd">final</span> <span class="n">SimpleDateFormat</span> <span class="n">sdf</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleDateFormat</span><span class="o">(</span><span class="n">format</span><span class="o">,</span> <span class="n">Locale</span><span class="o">.</span><span class="na">getDefault</span><span class="o">());</span>
+            <span class="k">return</span> <span class="n">sdf</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="k">new</span> <span class="n">Date</span><span class="o">(</span><span class="n">time</span><span class="o">));</span>
+        <span class="o">});</span>
+</code></pre>
+</div>
+
+<p>これは、ViewModel に用意すべきだったかも知れません。いやいや、フォーマットされた時間を通知する機能が Model にあってもおかしくないとも言えます。<br />
+実際、 <code class="highlighter-rouge">LapActivity</code> でも同じコードを書いているので D.R.Y原則にも反します。やっぱ Model に持たせるべきだったと反省。</p>
+
+<h2 id="model-に戻り値が-void-でないメソッドを作っちゃった問題">Model に戻り値が void でないメソッドを作っちゃった問題</h2>
+
+<blockquote>
+  <p>原則として Model のメソッドの戻り値は void です</p>
+</blockquote>
+
+<p>の原則に反して、戻り値で最速、最遅ラップ値を返してしまいました。<br />
+Toast表示のためだけに取得できればいいやと思いこうしたのですが、これでは「最速、最遅ラップを常に画面に表示する」という仕様変更があっただけで破綻します。これは悪手でした、反省。</p>
+
+<p>だいたいラップの最大、最小の取得は、 <code class="highlighter-rouge">Observable&lt;List&lt;Long&gt;&gt; laps</code>  を <code class="highlighter-rouge">map</code> で変換すればよいだけの話ですね。LINQ あるいは Stream API が使えれば <code class="highlighter-rouge">List&lt;Long&gt;</code> から min/max を取得するのも簡単ですし。</p>
+
+<h2 id="timer-を-1ms-間隔にしちゃった問題">Timer を 1ms 間隔にしちゃった問題</h2>
+
+<p><code class="highlighter-rouge">Observable.interval(1ms)</code> ってやっちゃいましたが、START の時間を覚えておいて、LAP, STOP された時に、現在時刻との差分を取ればよかったですね。基本的なムダで反省。</p>
+
+<p><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を | Moonmile Solutions Blog</a> より</p>
+<blockquote>
+  <p>Lap ボタンを押したタイミングで DateTime.Now を取得すればよいわけで、何も定期的に内部データを更新する必要はありません</p>
+</blockquote>
+
+<p>その通りですね。。。</p>
+
+<h2 id="uiスレッドへの変換をだれがやるのか問題">UIスレッドへの変換をだれがやるのか問題</h2>
+
+<p>今回は、以下のように、自作したバインディングの中で <code class="highlighter-rouge">observeOn(AndroidSchedulers.mainThread())</code> 行っています。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="n">TextViewBinder</span> <span class="nf">toTextOneWay</span><span class="o">(</span><span class="n">Observable</span><span class="o">&lt;</span><span class="n">String</span><span class="o">&gt;</span> <span class="n">prop</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">_subscriptions</span><span class="o">.</span><span class="na">add</span><span class="o">(</span>
+        <span class="n">prop</span><span class="o">.</span><span class="na">observeOn</span><span class="o">(</span><span class="n">AndroidSchedulers</span><span class="o">.</span><span class="na">mainThread</span><span class="o">())</span>
+            <span class="o">.</span><span class="na">subscribe</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">_textView</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">x</span><span class="o">)));</span>
+
+    <span class="k">return</span> <span class="k">this</span><span class="o">;</span>
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>これを ViewModel で行うこと(ViewModel が公開する Observable は必ずUIスレッドで実行されるというルール)もできます。<br />
+が、セオリーが分かっていません。とりあえず View側で observeOn しとけば安全かなと思って上記のようにしているだけです。使用するMVVMフレームワークの仕様にも依存しそうです。</p>
+
+<h2 id="stopwatchmodel-のプロパティは-hot-それとも-cold">StopWatchModel のプロパティは Hot？ それとも Cold？</h2>
+
+<p>StopWatchModel の各プロパティである <code class="highlighter-rouge">Observable&lt;T&gt;</code> は、 <strong><code class="highlighter-rouge">subscribe</code> をトリガーに値が流れ始めるものではないので Hot</strong> ですね。</p>
+
+<p>また、<code class="highlighter-rouge">BehaviorSubject</code> を使っているので、 <code class="highlighter-rouge">subscribe</code> 時には、その時点の最新の値が流れてきます。</p>
+
+<p>シングルトンの <code class="highlighter-rouge">StopWatchModel</code> に対して、 <code class="highlighter-rouge">MainActivity</code> に続いて <code class="highlighter-rouge">LapActivity</code> でも購読した時に、正しくラップタイム群が表示できるのは、<code class="highlighter-rouge">BehaviorSubject</code> であるためですね。</p>
+
+<p><code class="highlighter-rouge">refCount</code> してないけど、ちゃんと破棄されているのかは未確認。。。</p>
+
+<h2 id="observalbelistt">Observalbe&lt;List&lt;T»</h2>
+
+<p>ラップタイム群を通知するプロパティは <code class="highlighter-rouge">Observalbe&lt;List&lt;T&gt;&gt;</code> にしています。<br />
+この場合、List の中身を変更されても通知されないので  <code class="highlighter-rouge">Collections.unmodifiableList</code> で変更不可にしてから onNext で通知しています。LAPボタンが押される度に List を作りなおしている感じになります。</p>
+
+<p>ListView とのバインディングも同じで、onNext を受信する度に、ListView を洗い替えしています。<br />
+このムダが嫌、大量データでパフォーマンスに問題が出る場合は、.NET にある <a href="https://msdn.microsoft.com/ja-jp/library/ms668604(v=vs.110).aspx"><code class="highlighter-rouge">ObservableCollection&lt;T&gt;</code></a> のような仕組みを作る必要があります。(Rx.NET, RxJava では管轄外かな？)</p>
+
+<p><code class="highlighter-rouge">ObservableCollection&lt;T&gt;</code> は、リストへの追加、削除、変更をアイテム毎に通知／監視できます(「 <em>項目X</em> が <em>2番目</em> に <em>追加</em> された」のような)。適切な通知とバインディングを実装すれば、ListView の差分更新が可能です（面倒ですが）。</p>
+
+<h1 id="参考">参考</h1>
+
+<ul>
+  <li><a href="http://ugaya40.hateblo.jp/entry/model-mistake">MVVMのModelにまつわる誤解 - the sea of fertility</a></li>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td>[JXUG で話した MVVM の活用の解説を</td>
+          <td>Moonmile Solutions Blog](http://www.moonmile.net/blog/archives/7627) - タイマを View/ViewModel/Model に持つそれぞれの理由が解説されています。</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li><a href="http://qiita.com/hide92795/items/f7205c8171826cc2153b">RxJava - Rxで知っておくと便利なSubjectたち - Qiita</a></li>
+  <li><a href="http://qiita.com/amay077/items/4bb6b09a1911b074f50c">RxJava - Hot Observable と ConnectableObservable について - Qiita</a></li>
+</ul>
+
+    </section>
+    <footer class="post-footer">
+
+      <section class="categories">
+        
+        <div class="category">RxJava</div>
+        
+        <div class="category">Android</div>
+        
+        <div class="category">ReactiveX</div>
+        
+        <div class="category">MVVM</div>
+        
+        <div class="category">Xamarin</div>
+        
+        <p class="published">published <time datetime="2015-12-24 23:59">24 Dec 2015</time></p>
+      </section>
+      
+      <section class="share">
+        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2015/12/24/creating-stopwatchapp-using-rxjava-and-mvvm-patternn&text=RxJava+%2B+MVVM+%E3%83%91%E3%82%BF%E3%83%BC%E3%83%B3%E3%81%A7%E4%BD%9C%E3%82%8B%E3%82%B9%E3%83%88%E3%83%83%E3%83%97%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81%E3%82%A2%E3%83%97%E3%83%AA&via=amay077" target="_blank">
+          Share on
+          
+<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+
+
+        </a>
+      </section>
+
+      <!--<div class="amazon-ads">
+        <h4>Ads</h4>
+        <iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=RxJava%7CAndroid%7CReactiveX%7CMVVM%7CXamarin&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>-->
+      
+      <section class="disqus">
+        <div id="disqus_thread"></div>
+        <amp-iframe
+          height="300"
+          sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          resizable
+          frameborder="0"
+          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2015%2F12%2F24%2Fcreating-stopwatchapp-using-rxjava-and-mvvm-patternn&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
+          <div overflow tabindex="0" role="button" aria-label="Read more">Read more!</div>
+        </amp-iframe>
+      </section>
+
+    </footer>
+    <div class="bottom-teaser cf">
+      <div class="isLeft">
+        <h5 class="index-headline featured"><span>Written by</span></h5>
+        <section class="author">
+          <a href="/about/" class="mvp-image"></a>
+          <a href="/about/"><h4>amay077</h4></a>
+          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
+</p>
+
+          <p>
+            <span>
+              
+                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">amay077</span></a>
+
+              
+            </span>
+
+            <span>
+              
+                
+<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span><span class="username">amay077</span></a>
+
+
+              
+            </span>
+          </p>
+        </section>
+      </div>
+      
+
+      <div class="isRight">
+        <h5 class="index-headline featured"><span>Supported by</span></h5>
+        <footer class="site-footer">
+          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
+          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
+          <div class="inner">
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </article>
+</main>
+
+  </body>
+</html>
