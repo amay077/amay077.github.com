@@ -1,0 +1,1094 @@
+<!doctype html>
+<html ⚡ lang="ja">
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+
+  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
+  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+
+  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
+
+  <title>Xamarin.iOS の Tutorial をなんとなくトレースしてみる</title>
+  <meta name="description" content="Xamarin.Android ネタばかり書いてきましたが、そろそろクロスプラットフォームのことも考えたいので Xamarin.iOS にも手を出してみたいと思います。ちなみに当方、iOS開発についてはシロートに毛が生えた程度です。">
+
+  <link rel="canonical" href="http://blog.amay077.net/blog/2013/03/14/xamarin-ios-tutorial/">
+  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
+
+  <script type="application/ld+json">
+  
+{
+  "@context": "http://schema.org",
+  "@type": "NewsArticle",
+  "mainEntityOfPage": "http://blog.amay077.net/blog/2013/03/14/xamarin-ios-tutorial/",
+  "headline": "Xamarin.iOS の Tutorial をなんとなくトレースしてみる",
+  "datePublished": "2013-03-14T23:07:00+09:00",
+  "dateModified": "2013-03-14T23:07:00+09:00",
+  "description": "Xamarin.Android ネタばかり書いてきましたが、そろそろクロスプラットフォームのことも考えたいので Xamarin.iOS にも手を出してみたいと思います。ちなみに当方、iOS開発についてはシロートに毛が生えた程度です。",
+  "author": {
+    "@type": "Person",
+    "name": "amay077"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Experiments Never Fail",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "http://blog.amay077.net/assets/images/logo.png",
+      "width": "60",
+      "height": "60"
+    }
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "http://blog.amay077.net/assets/images/logo.png",
+    "height": "60",
+    "width": "60"
+  }
+}
+
+  </script>
+  
+  <style amp-custom>
+  
+  .icon > svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle; }
+  .icon > svg path {
+    fill: #828282; }
+
+amp-img {
+  background-color: grey; }
+
+.cf:after {
+  content: "";
+  display: table;
+  clear: both; }
+
+main {
+  display: block; }
+
+body {
+  background-color: #fff;
+  font-family: Arial, YuGothic;
+  margin: 0;
+  padding: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased; }
+
+.site-header {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 16px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .site-header {
+      padding: 0 16px; } }
+  .site-header .page-links {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-weight: 200;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 30px; }
+    .site-header .page-links a {
+      text-decoration: none;
+      color: #999999; }
+      .site-header .page-links a:hover {
+        color: #333333; }
+
+.blog-header {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  .blog-header .blog-title {
+    margin-bottom: 8px;
+    font-size: 50px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    outline: 0;
+    line-height: 50px;
+    word-break: break-word;
+    color: #333333; }
+  .blog-header .blog-description {
+    font-size: 28px;
+    margin: 0 0 20px;
+    padding: 0;
+    line-height: 1.2;
+    color: #666666;
+    font-weight: 300; }
+
+.content {
+  width: 100%;
+  max-width: 700px;
+  margin: 25px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .content {
+      padding: 0 16px; } }
+  .content article {
+    padding: 20px 0;
+    border-bottom: 1px solid #f2f2f0; }
+    .content article:last-child {
+      border-bottom: 0px; }
+    .content article .post-title {
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-style: normal;
+      display: block;
+      font-size: 36px;
+      line-height: 1.15;
+      margin: 0 0; }
+      .content article .post-title a {
+        text-decoration: none;
+        color: #333332; }
+        .content article .post-title a:hover {
+          text-decoration: none; }
+    .content article .post-excerpt {
+      letter-spacing: -0.02em;
+      font-weight: 300;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1.59;
+      color: #666665; }
+    .content article .post-meta {
+      font-size: 14px;
+      color: #b3b3b1;
+      line-height: 30px; }
+      .content article .post-meta a {
+        color: #b3b3b1;
+        text-decoration: none; }
+        .content article .post-meta a:hover {
+          text-decoration: underline; }
+
+.post-template .content {
+  max-width: 700px; }
+
+.index-headline {
+  border-top: 1px solid #dededc;
+  margin: 0;
+  padding: 16px 0; }
+  .index-headline span {
+    color: #b3b3b1;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px; }
+
+.pagination {
+  text-align: center;
+  padding: 16px 0 0;
+  font-size: 12px; }
+  .pagination a {
+    color: #999999;
+    text-decoration: none; }
+    .pagination a:hover {
+      color: #333333; }
+
+.site-footer {
+  margin: 0 auto;
+  padding: 48px 0;
+  width: 100%;
+  max-width: 700px;
+  font-size: 12px;
+  text-align: center;
+  color: #999999;
+  line-height: 17.6px; }
+  .site-footer a {
+    color: #666666;
+    text-decoration: none; }
+    .site-footer a:hover {
+      color: #333333; }
+
+.post .post-meta {
+  font-family: Arial, YuGothic; }
+.post .post-title {
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.04em;
+  font-size: 50px;
+  line-height: 1.1;
+  color: #333332;
+  margin-bottom: 50px; }
+.post .author-image {
+  background-image: url(/assets/images/author.png);
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  margin-right: 8px;
+  margin-bottom: -10px;
+  float: left;
+  background-size: cover;
+  border-radius: 100%;
+  text-indent: -9999px; }
+.post .post-meta-text {
+  color: #b3b3b1;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  overflow: hidden;
+  font-family: Arial, YuGothic;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+.post .post-content {
+  width: 100%;
+  font-family: Verdana, YuGothic;
+  color: #333333; }
+  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
+    font-family: Arial, YuGothic; }
+  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1.3;
+    margin-top: 50px;
+    margin-bottom: 0px;
+    font-family: Arial, YuGothic; }
+  .post .post-content h3 {
+    font-size: 36px; }
+  .post .post-content h2, .post .post-content h1 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 42px;
+    line-height: 1.2;
+    margin-top: 50px;
+    margin-bottom: 0px; }
+  .post .post-content table {
+    border-collapse: collapse; }
+  .post .post-content .highlight {
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+    background-color: #f8f8f8; }
+    .post .post-content .highlight table {
+      line-height: 20px;
+      border: 1px solid transparent; }
+  .post .post-content table::not(".highlight"), .post .post-content th, .post .post-content td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left; }
+  .post .post-content p {
+    font-weight: 400;
+    font-style: normal;
+    font-size: 22px;
+    line-height: 1.59;
+    letter-spacing: -.002em;
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: #333333;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto; }
+  .post .post-content a {
+    color: #469af6;
+    text-decoration: none; }
+  .post .post-content amp-img, .post .post-content amp-youtube {
+    margin-top: 30px; }
+  .post .post-content figure {
+    margin: 0;
+    padding: 0 0 30px; }
+  .post .post-content figcaption {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #666665;
+    outline: 0;
+    z-index: 300;
+    text-align: center; }
+  .post .post-content hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 90%;
+    margin: 30px auto;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .post-content blockquote {
+    margin: 0 0 30px;
+    margin-left: -26px;
+    border-left: 3px solid #57ad68;
+    padding-left: 20px; }
+    .post .post-content blockquote p {
+      letter-spacing: 0.01rem;
+      font-weight: 400;
+      mborder-left: 3px solid #57ad68;
+      mpadding-left: 20px;
+      mmargin-left: -26px;
+      padding-bottom: 3px; }
+  .post .post-content ul, .post .post-content ol {
+    padding: 30px 0 30px;
+    margin: 0; }
+  .post .post-content li {
+    padding: 0;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 23px;
+    line-height: 30px;
+    margin-left: 30px;
+    margin-bottom: 12px;
+    padding-top: 2px; }
+    .post .post-content li p {
+      padding: 0 0 1.618rem; }
+  .post .post-content ol li {
+    list-style-type: decimal; }
+.post .bottom-teaser {
+  padding: 50px 0 0 0;
+  font-family: Arial, YuGothic; }
+  .post .bottom-teaser hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 15%;
+    margin: 16px 0 16px 100px;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .bottom-teaser .isLeft {
+    float: left;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isLeft {
+        width: 100%;
+        padding-bottom: 32px; } }
+    .post .bottom-teaser .isLeft .bio {
+      margin-top: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .username {
+      margin-left: 4px;
+      margin-right: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isLeft a {
+      color: black;
+      text-decoration: none; }
+      .post .bottom-teaser .isLeft a:hover {
+        color: #333333;
+        text-decoration: underline; }
+    .post .bottom-teaser .isLeft .author-image {
+      display: block;
+      width: 80px;
+      height: 80px;
+      float: left;
+      background-size: cover;
+      border-radius: 100%;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft .mvp-image {
+      background-image: url(/assets/images/mvp_logo_v.png);
+      display: block;
+      width: 80px;
+      height: 127px;
+      float: left;
+      background-size: cover;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft h4 {
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+    .post .bottom-teaser .isLeft p {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+      .post .bottom-teaser .isLeft p.published {
+        color: #999999; }
+  .post .bottom-teaser .isRight {
+    float: right;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isRight {
+        width: 100%; } }
+    .post .bottom-teaser .isRight .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isRight .site-footer {
+      margin: 0;
+      padding: 0;
+      color: #333333;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #999999; }
+      .post .bottom-teaser .isRight .site-footer a {
+        color: #333333;
+        text-decoration: none; }
+        .post .bottom-teaser .isRight .site-footer a:hover {
+          text-decoration: underline; }
+      .post .bottom-teaser .isRight .site-footer .poweredby {
+        display: block;
+        padding-bottom: 18px;
+        font-weight: 700;
+        color: #333333; }
+
+.share {
+  text-align: right;
+  padding: 0; }
+  .share a {
+    text-decoration: none;
+    color: #bbbbbb;
+    padding-left: 12px; }
+    .share a .hidden {
+      display: none; }
+    .share a:hover {
+      color: #333333; }
+
+pre,
+code {
+  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
+  font-size: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 5px;
+  background-color: #f8f8f8; }
+
+code {
+  padding: 1px 5px; }
+
+pre {
+  padding: 8px 12px;
+  overflow-x: scroll; }
+  pre > code {
+    border: 0;
+    padding-right: 0;
+    padding-left: 0; }
+
+.pagination .disabled {
+  opacity: 0; }
+
+.categories {
+  overflow: hidden;
+  padding: 20px 0 0 0; }
+
+.category {
+  float: left;
+  border: 1px;
+  border-radius: 3px;
+  background-color: #eeeeee;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #dddddd;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+#disqus_thread a {
+  color: #333333;
+  text-decoration: none; }
+
+.published {
+  float: left;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+  border: 0;
+  -ms-interpolation-mode: bicubic; }
+
+.amazon-ads {
+  padding: 0 0 20px 0; }
+
+
+  .highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight .cm {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cp {
+  color: #999999;
+  font-weight: bold;
+}
+.highlight .c1 {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cs {
+  color: #999999;
+  font-weight: bold;
+  font-style: italic;
+}
+.highlight .c, .highlight .cd {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .err {
+  color: #a61717;
+  background-color: #e3d2d2;
+}
+.highlight .gd {
+  color: #000000;
+  background-color: #ffdddd;
+}
+.highlight .ge {
+  color: #000000;
+  font-style: italic;
+}
+.highlight .gr {
+  color: #aa0000;
+}
+.highlight .gh {
+  color: #999999;
+}
+.highlight .gi {
+  color: #000000;
+  background-color: #ddffdd;
+}
+.highlight .go {
+  color: #888888;
+}
+.highlight .gp {
+  color: #555555;
+}
+.highlight .gs {
+  font-weight: bold;
+}
+.highlight .gu {
+  color: #aaaaaa;
+}
+.highlight .gt {
+  color: #aa0000;
+}
+.highlight .kc {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kd {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kn {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kp {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kr {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kt {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .k, .highlight .kv {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .mf {
+  color: #009999;
+}
+.highlight .mh {
+  color: #009999;
+}
+.highlight .il {
+  color: #009999;
+}
+.highlight .mi {
+  color: #009999;
+}
+.highlight .mo {
+  color: #009999;
+}
+.highlight .m, .highlight .mb, .highlight .mx {
+  color: #009999;
+}
+.highlight .sb {
+  color: #d14;
+}
+.highlight .sc {
+  color: #d14;
+}
+.highlight .sd {
+  color: #d14;
+}
+.highlight .s2 {
+  color: #d14;
+}
+.highlight .se {
+  color: #d14;
+}
+.highlight .sh {
+  color: #d14;
+}
+.highlight .si {
+  color: #d14;
+}
+.highlight .sx {
+  color: #d14;
+}
+.highlight .sr {
+  color: #009926;
+}
+.highlight .s1 {
+  color: #d14;
+}
+.highlight .ss {
+  color: #990073;
+}
+.highlight .s {
+  color: #d14;
+}
+.highlight .na {
+  color: #008080;
+}
+.highlight .bp {
+  color: #999999;
+}
+.highlight .nb {
+  color: #0086B3;
+}
+.highlight .nc {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .no {
+  color: #008080;
+}
+.highlight .nd {
+  color: #3c5d5d;
+  font-weight: bold;
+}
+.highlight .ni {
+  color: #800080;
+}
+.highlight .ne {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nf {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nl {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nn {
+  color: #555555;
+}
+.highlight .nt {
+  color: #000080;
+}
+.highlight .vc {
+  color: #008080;
+}
+.highlight .vg {
+  color: #008080;
+}
+.highlight .vi {
+  color: #008080;
+}
+.highlight .nv {
+  color: #008080;
+}
+.highlight .ow {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .o {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .w {
+  color: #bbbbbb;
+}
+.highlight {
+  background-color: #f8f8f8;
+}
+  
+  </style>
+
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+</head>
+
+  <body>
+    
+  <amp-analytics type="googleanalytics" id="analytics1">
+  <script type="application/json">
+  {
+    "vars": {
+      "account": "UA-224332-7"
+    },
+    "triggers": {
+      "trackPageview": {
+        "on": "visible",
+        "request": "pageview"
+      }
+    }
+  }
+  </script>
+  </amp-analytics>
+
+
+    <header class="site-header">
+  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.png" width="48" height="48" /></span></a>
+
+  <div class="page-links">
+    <a class="page-link" href="/">Home</a>
+     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay077.net" target="_blank">Search</a>
+    
+      
+      • <a class="page-link" href="/about/">About</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</header>
+
+
+    <main class="content" role="main">
+  <article class="post">
+    <div class="post-meta">
+      <h1 class="post-title">Xamarin.iOS の Tutorial をなんとなくトレースしてみる</h1>
+    </div>
+
+    <section class="post-content">
+      <a name="topofpage"></a>
+      <p>Xamarin.Android ネタばかり書いてきましたが、そろそろクロスプラットフォームのことも考えたいので Xamarin.iOS にも手を出してみたいと思います。ちなみに当方、iOS開発についてはシロートに毛が生えた程度です。</p>
+
+<!--more-->
+
+<p>Xamarin の公式チュートリアルがあるので、それを英語も読まずに雰囲気でトレースしてみたいと思います。</p>
+
+<ul>
+  <li>
+    <table>
+      <tbody>
+        <tr>
+          <td>[Hello, iPhone</td>
+          <td>A First Xamarin.iOS Application Getting Started - Tutorial 3](http://docs.xamarin.com/guides/ios/getting_started/hello%2C_world)</td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+
+<h2 id="プロジェクトの作成creating-a-new-xamarinios-iphone-project">プロジェクトの作成(Creating a new Xamarin.iOS iPhone Project)</h2>
+<p>とりあえず Xamarin Studio をたちあげて、新規 → ソリューション、C# → iOS → iPhone → Single View Application を選択、ソリューション名は「HelloWorld_iPhone」としました。</p>
+
+<h2 id="作成されたファイルを眺めてみる">作成されたファイルを眺めてみる</h2>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_created_screen.png" alt="&quot;create_solution&quot;" /></p>
+
+<p>ソリューションツリーを眺めてみます。</p>
+
+<p>[参照] の中には <code class="highlighter-rouge">monotouch</code> が見えますね。Xamarin.Android では <code class="highlighter-rouge">Mono.Android</code> がありました。クロスプラットフォームにするときにはこいつらに依存しない Portable なライブラリプロジェクトが必要そうです。</p>
+
+<p><code class="highlighter-rouge">AppDelegate</code> とか <code class="highlighter-rouge">xxxViewController</code> とか iOS っぽいです、が <code class="highlighter-rouge">.cs</code> です。Obc-C のキモい構文じゃないだけでも嬉しいものです。</p>
+
+<h2 id="introduction-to-xcode-4-and-interface-developer">Introduction to Xcode 4 and Interface Developer</h2>
+<p>Tutorial(英語)では突然 Xcode の説明が始まります、なんのこっちゃ。<br />
+これはえーと *.xib ファイルをダブルクリックすると Xcode が起動して UIレイアウトは Xcode の Interface Builder(IB) でやれよ、的な感じだからですねたぶん。<br />
+とりあえず <code class="highlighter-rouge">HelloWorld_iPhoneViewController.xib</code> をダブルクリックして IB を起動して追従します。</p>
+
+<p>##UI レイアウトの作成 (Creating the Interface)<br />
+見よう見まねで、Tutorial と同じようにレイアウトしました。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_ib_1.png" alt="&quot;ib1&quot;" /></p>
+
+<h2 id="アウトレットとアクションを追加する-adding-outlets-and-actions-to-the-ui">アウトレットとアクションを追加する (Adding Outlets and Actions to the UI)</h2>
+<p>だんだん和訳にすらならなくなって来てますが。。。<br />
+Outlets とは、「UI要素と関連づいた変数」、Actions は「イベントハンドラ」の意ですかね。</p>
+
+<p>さて、Xcode のバーを展開して、<code class="highlighter-rouge">HelloWorld_iPhoneViewController.h</code> を表示、それを <code class="highlighter-rouge">option</code> キーを押しながらクリックします。<br />
+するとウィンドウが縦に分割されて、右側にソースコードが表示されます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_ib_2.png" alt="&quot;ib1&quot;" /></p>
+
+<h3 id="アウトレットの追加adding-an-outlet">アウトレットの追加(Adding an Outlet)</h3>
+<p>[Click Me] と書かれたボタンを、<code class="highlighter-rouge">control</code>キーを押しながら、隣のソースコードの @end の上らへんにドラッグ＆ドロップします。<br />
+<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_ib_3.png" alt="&quot;ib1&quot;" /><br />
+次に表示されるウィンドウで Name を <strong>btnClickMe</strong> と入力して [Connect] ボタンを押すと、、、</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_ib_4.png" alt="&quot;ib1&quot;" /></p>
+
+<div class="language-objc highlighter-rouge"><pre class="highlight"><code><span class="k">@property</span> <span class="p">(</span><span class="n">retain</span><span class="p">,</span> <span class="n">nonatomic</span><span class="p">)</span> <span class="n">IBOutlet</span> <span class="n">UIButton</span> <span class="o">*</span><span class="n">btnClickMe</span><span class="p">;</span>
+</code></pre>
+</div>
+<p>という行が追加されました。<br />
+ここで一旦 Xcode を保存して、Xamarin Studio に戻り(Xcodeは終了しなくてOK)、<code class="highlighter-rouge">HelloWorld_iPhoneViewController.designer.cs</code> を開いてみてみると、、、</p>
+
+<p>```c# HelloWorld_iPhoneViewController.designer.cs<br />
+using MonoTouch.Foundation;</p>
+
+<p>namespace HelloWorld_iPhone<br />
+{<br />
+	[Register (“HelloWorld_iPhoneViewController”)]<br />
+	partial class HelloWorld_iPhoneViewController<br />
+	{<br />
+		[Outlet]<br />
+		MonoTouch.UIKit.UIButton btnClickMe { get; set; }</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>	void ReleaseDesignerOutlets ()
+	{
+		if (btnClickMe != null) {
+			btnClickMe.Dispose ();
+			btnClickMe = null;
+		}
+	}
+} } ```
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">btnClickMe</code> がこっちにも追加されてる！なにこれすごい。</p>
+
+<p>再び Xcode へ、btnClickMe と同じ要領で、次は Label もドラッグ＆ドロップし、Name は <strong>lblOutput</strong> とします。</p>
+
+<h3 id="アクションの追加adding-an-action">アクションの追加(Adding an Action)</h3>
+<p>次はアクションを追加してみます。<br />
+[Action1] と書かれたボタンを <code class="highlighter-rouge">control</code> を押しながらD&amp;D、次のウィンドウで、Connection を <strong>Action</strong> に変更、Name を <strong>actnButtonClick</strong> とします。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_ib_5.png" alt="&quot;ib1&quot;" /></p>
+
+<div class="language-objc highlighter-rouge"><pre class="highlight"><code><span class="k">-</span> <span class="p">(</span><span class="n">IBAction</span><span class="p">)</span><span class="nf">actnButtonClick</span><span class="p">:(</span><span class="n">id</span><span class="p">)</span><span class="nv">sender</span><span class="p">;</span>
+</code></pre>
+</div>
+<p>という行が追加されました。</p>
+
+<p>次の [Action2] は、Tutorial には、Action1 と同じアクションに関連付けられるよ的な事が書いてあるぽいですが、面倒なので省略。</p>
+
+<h2 id="コードを書くwriting-the-code">コードを書く(Writing the Code)</h2>
+<p>またまた Xcode を保存、Xamarin Studio へ。(Xcode はこれでお役御免)</p>
+
+<p><code class="highlighter-rouge">HelloWorld_iPhoneViewController.designer.cs</code> をみてみると、<strong>lblOutput</strong> と <strong>actnButtonClick</strong> に関連するコードが増えてるのが確認できます。</p>
+
+<p>これは Partial クラスですから、もう <code class="highlighter-rouge">HelloWorld_iPhoneViewController.cs</code> でもボタンやアクションが使えるはずです。早速実装してみます。</p>
+
+<p>```c# HelloWorld_iPhoneViewController.cs<br />
+namespace HelloWorld_iPhone<br />
+{<br />
+    public partial class HelloWorld_iPhoneViewController : UIViewController<br />
+    {<br />
+        protected int _numberOfTimesClicked = 0;</p>
+
+<div class="highlighter-rouge"><pre class="highlight"><code>    &lt;省略&gt;
+    		
+    public override void ViewDidLoad()
+    {
+        base.ViewDidLoad();
+		
+        // Perform any additional setup after loading the view, typically from a nib.
+        btnClickMe.TouchUpInside += (sender, e) =&gt; 
+        {
+            _numberOfTimesClicked++;
+            lblOutput.Text = "Clicked [" +
+                _numberOfTimesClicked.ToString() + "] times!";
+        };
+    }
+	
+    &lt;省略&gt;
+
+    partial void actnButtonClick(NSObject sender)
+    {
+        lblOutput.Text = "Action button " +  ((UIButton)sender).CurrentTitle + " clicked.";
+    }
+} } ```  
+</code></pre>
+</div>
+
+<p>実装できたら、動かしてみます。</p>
+
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_ios_created_debugger_scceeded.png" alt="&quot;ib1&quot;" /></p>
+
+<p>動いた！(Action2 は実装してないので動きません)</p>
+
+<h2 id="まとめ">まとめ</h2>
+<ul>
+  <li>Xamarin.iOS では、Xcode の IB で UIレイアウトを作成する</li>
+  <li>ので Mac 必須(なんですか？)</li>
+  <li>イベントハンドラの実装はラムダ式や Binding で行うことを考えると、Action って要らなくね？</li>
+  <li>Xcode ワカラン</li>
+</ul>
+
+<h2 id="next">Next</h2>
+<ul>
+  <li>プロジェクト作る画面に <strong>iPhone Storyboard</strong> とかあったので、ストーリーボード系はそっちでイケるみたいです。</li>
+</ul>
+
+<h2 id="参考">参考</h2>
+<ul>
+  <li><a href="http://stackoverflow.com/questions/6710957/xcode-4-keyboard-shortcut-for-switching-assistant-editor-to-tracking-automatic#">Xcode 4: Keyboard shortcut for switching Assistant Editor to Tracking (Automatic) mode? - StackOverflow</a></li>
+</ul>
+
+    </section>
+    <footer class="post-footer">
+
+      <section class="categories">
+        
+        <div class="category">Xamarin</div>
+        
+        <div class="category">iOS</div>
+        
+        <div class="category">C#</div>
+        
+        <p class="published">published <time datetime="2013-03-14 23:07">14 Mar 2013</time></p>
+      </section>
+      
+      <section class="share">
+        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2013/03/14/xamarin-ios-tutorial&text=Xamarin.iOS+%E3%81%AE+Tutorial+%E3%82%92%E3%81%AA%E3%82%93%E3%81%A8%E3%81%AA%E3%81%8F%E3%83%88%E3%83%AC%E3%83%BC%E3%82%B9%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B&via=amay077" target="_blank">
+          Share on
+          
+<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+
+
+        </a>
+      </section>
+
+      <!--<div class="amazon-ads">
+        <h4>Ads</h4>
+        <iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Xamarin%7CiOS%7CC%23&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" marginwidth="0" marginheight="0" width="728" height="90" border="0" frameborder="0" style="border:none;" scrolling="no"></iframe>
+      </div>-->
+      
+      <section class="disqus">
+        <div id="disqus_thread"></div>
+        <amp-iframe
+          height="300"
+          sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          resizable
+          frameborder="0"
+          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2013%2F03%2F14%2Fxamarin-ios-tutorial&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
+          <div overflow tabindex="0" role="button" aria-label="Read more">Read more!</div>
+        </amp-iframe>
+      </section>
+
+    </footer>
+    <div class="bottom-teaser cf">
+      <div class="isLeft">
+        <h5 class="index-headline featured"><span>Written by</span></h5>
+        <section class="author">
+          <a href="/about/" class="mvp-image"></a>
+          <a href="/about/"><h4>amay077</h4></a>
+          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
+</p>
+
+          <p>
+            <span>
+              
+                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">amay077</span></a>
+
+              
+            </span>
+
+            <span>
+              
+                
+<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span><span class="username">amay077</span></a>
+
+
+              
+            </span>
+          </p>
+        </section>
+      </div>
+      
+
+      <div class="isRight">
+        <h5 class="index-headline featured"><span>Supported by</span></h5>
+        <footer class="site-footer">
+          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
+          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
+          <div class="inner">
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </article>
+</main>
+
+  </body>
+</html>
