@@ -6,8 +6,8 @@
 </description>
     <link>http://blog.amay077.net/</link>
     <atom:link href="http://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 27 Jan 2017 11:41:26 +0900</pubDate>
-    <lastBuildDate>Fri, 27 Jan 2017 11:41:26 +0900</lastBuildDate>
+    <pubDate>Fri, 27 Jan 2017 12:05:17 +0900</pubDate>
+    <lastBuildDate>Fri, 27 Jan 2017 12:05:17 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
     
       <item>
@@ -924,155 +924,6 @@ WiFi、Xamarin Studio や VMWare Fusion などをガンガン使ってたので�
       </item>
     
       <item>
-        <title>Xamarin.Forms 向けのUIライブラリを作る時の注意点</title>
-        <description>&lt;p&gt;&lt;a href=&quot;http://qiita.com/advent-calendar/2016/xamarin-student&quot;&gt;[学生さん・初心者さん大歓迎！]Xamarin Advent Calendar 2016&lt;/a&gt; 16日目です。&lt;br /&gt;
-&lt;a href=&quot;http://ticktack.hatenablog.jp/entry/2015/11/19/083000&quot;&gt;【Xamarin.Forms】自作ライブラリのカスタムコントロール使用時にSystem.IO.FileNotFoundExceptionが発生する場合の対処 - ぴーさんログ&lt;/a&gt;&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;p&gt;これ系の話です。&lt;/p&gt;
-
-&lt;p&gt;Xamarin.Forms 向けのライブラリで、使う側が XAML のみで完結しそうなものは、次のような種類があります。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;ValueConverter&lt;/li&gt;
-  &lt;li&gt;Behavior&lt;/li&gt;
-  &lt;li&gt;Effects&lt;/li&gt;
-  &lt;li&gt;Custom Renderer&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;上２つと下２つで、症状と対策が異なるので、それぞれ説明します。&lt;/p&gt;
-
-&lt;h2 id=&quot;valueconverter-behavior-の場合&quot;&gt;ValueConverter, Behavior の場合&lt;/h2&gt;
-
-&lt;h2 id=&quot;症状&quot;&gt;症状&lt;/h2&gt;
-
-&lt;p&gt;これらのライブラリを XAML でしか使用していない（C# のコードで使用していない）場合、冒頭のリンクで紹介したような &lt;code class=&quot;highlighter-rouge&quot;&gt;System.IO.FileNotFoundException&lt;/code&gt; が発生することがあります。&lt;br /&gt;
-これは iOS プロジェクトの実行で顕著なようです。（Android プロジェクトの場合、通常の実行ではプロジェクトで参照されているアセンブリが全て配布されるためでしょうか。）&lt;/p&gt;
-
-&lt;h2 id=&quot;対策&quot;&gt;対策&lt;/h2&gt;
-
-&lt;p&gt;これを回避するには、 P3PPP さんが書いているように &lt;code class=&quot;highlighter-rouge&quot;&gt;new MyLib.MyControl()&lt;/code&gt; などと、そのアセンブリを参照するコードを明示的に書いておきます。&lt;/p&gt;
-
-&lt;p&gt;あるいは、XAMLC という、XAML の事前コンパイル機能を使用することでも回避できます。これによりコンパイル時に XAML がパースされ、それに必要なアセンブリが配布されるためです。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/guides/xamarin-forms/xaml/xamlc/&quot;&gt;XAML Compilation - Xamarin&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;XAMLC は互換性維持のためデフォルトではOFFになっており、ON にするためには &lt;code class=&quot;highlighter-rouge&quot;&gt;XamlCompilationOptions.Compile&lt;/code&gt; を namespace または page class に付与します。&lt;/p&gt;
-
-&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// アセンブリまるっと指定
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Xamarin.Forms.Xaml&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;na&quot;&gt;[assembly: XamlCompilation (XamlCompilationOptions.Compile)]&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;PhotoApp&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-
-&lt;span class=&quot;c1&quot;&gt;// 特定ページにのみ指定
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Xamarin.Forms.Xaml&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;na&quot;&gt;[XamlCompilation (XamlCompilationOptions.Compile)]&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;HomePage&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ContentPage&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-  &lt;span class=&quot;p&quot;&gt;...&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;では XAMLC を強制させればOKかというとそうでもありません。これで解決できるのは、 ValueConverter, Behavior のライブラリのみです。&lt;/p&gt;
-
-&lt;p&gt;そもそも XAMLC も、 &lt;a href=&quot;https://blog.xamarin.com/adding-bindable-native-views-directly-to-xaml/&quot;&gt;Native Embedding と併用できない&lt;/a&gt; など、ON を強制できない事情もあります。&lt;/p&gt;
-
-&lt;h2 id=&quot;effects-custom-renderer-の場合&quot;&gt;Effects, Custom Renderer の場合&lt;/h2&gt;
-
-&lt;h3 id=&quot;症状-1&quot;&gt;症状&lt;/h3&gt;
-
-&lt;p&gt;3rd party ライブラリとして提供される Effects, Custom Renderer には、 PCL による共通インターフェース部と、 Xamarin.Android、Xamarin.iOS によるプラットフォーム実装のアセンブリが存在します。&lt;/p&gt;
-
-&lt;p&gt;これらの場合、プラットフォーム実装のアセンブリ(&lt;code class=&quot;highlighter-rouge&quot;&gt;MyLib.Droid.dll&lt;/code&gt; や &lt;code class=&quot;highlighter-rouge&quot;&gt;MyLib.iOS.dll&lt;/code&gt; のこと)もまた、配布されない場合があることに注意が必要です。&lt;/p&gt;
-
-&lt;p&gt;CustomRenderer も Effects も DependencyService や RootingEffect を利用してプラットフォーム固有のアセンブリに制御を委譲していますが、プラットフォーム固有のアセンブリを参照するコードがあなたのアプリプロジェクトに存在しない場合、やはりプラットフォーム固有のアセンブリは配布されず、Effects や Custom Renderer が機能しないことになります。この場合、特に例外は出ません、機能するはずの Effects、CustomRenderer が表示されない、といった症状になります。&lt;/p&gt;
-
-&lt;h3 id=&quot;対策-1&quot;&gt;対策&lt;/h3&gt;
-
-&lt;p&gt;これの対策は、C# でそのアセンブリを参照するコードを書くしかありません。しかも &lt;strong&gt;プラットフォーム毎に書く必要があります&lt;/strong&gt; 。&lt;/p&gt;
-
-&lt;h4 id=&quot;android-側&quot;&gt;Android 側&lt;/h4&gt;
-
-&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// MainActivity.cs
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MainActivity&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Xamarin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Platform&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Android&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FormsAppCompatActivity&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;protected&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;OnCreate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Bundle&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bundle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;TabLayoutResource&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Tabbar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;ToolbarResource&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Toolbar&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-
-        &lt;span class=&quot;k&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;OnCreate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;bundle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-        &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Xamarin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Init&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;bundle&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-        &lt;span class=&quot;n&quot;&gt;MyLib&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Initializer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;InitForDroid&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// ←これ！
-&lt;/span&gt;
-        &lt;span class=&quot;nf&quot;&gt;LoadApplication&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;App&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h4 id=&quot;ios-側&quot;&gt;iOS 側&lt;/h4&gt;
-
-&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// AppDelegate.cs
-&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partial&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;AppDelegate&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Xamarin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Platform&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iOS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FormsApplicationDelegate&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;FinishedLaunching&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UIApplication&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSDictionary&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Xamarin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Init&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-
-        &lt;span class=&quot;nf&quot;&gt;LoadApplication&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;App&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
-
-        &lt;span class=&quot;n&quot;&gt;MyLib&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Initializer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;InitForiOS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// ←これ！
-&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;FinishedLaunching&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;アセンブリを読み込ませるだけのコードなので、プラットフォーム毎、アセンブリ毎に１回だけ呼べばOKです。&lt;/p&gt;
-
-&lt;p&gt;私が開発・配布している &lt;a href=&quot;https://github.com/amay077/Xamarin.Forms.GoogleMaps&quot;&gt;Xamarin.Forms.GoogleMaps&lt;/a&gt; も、Custom Renderer を使っているのでこれに該当しますが、 X.F.GoogleMaps は、各プラットフォームで Google Maps の API Key を指定してもらう必要があるため、もともと &lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity.cs&lt;/code&gt; や &lt;code class=&quot;highlighter-rouge&quot;&gt;AppDelegate.cs&lt;/code&gt; で &lt;code class=&quot;highlighter-rouge&quot;&gt;Xamarin.FormsGoogleMaps.Init(&quot;your_api_key&quot;)&lt;/code&gt; を呼び出してもらう必要があったため、本件の問題は発生していませんでした。&lt;/p&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;p&gt;Effects, Custom Renderer の場合の対応策である&lt;/p&gt;
-
-&lt;p&gt;「&lt;code class=&quot;highlighter-rouge&quot;&gt;MainActivity.cs&lt;/code&gt; や &lt;code class=&quot;highlighter-rouge&quot;&gt;AppDelegate.cs&lt;/code&gt; で &lt;code class=&quot;highlighter-rouge&quot;&gt;MyLib.Initializer.InitForDroid()&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;MyLib.Initializer.InitForiOS()&lt;/code&gt; を呼んでもらう」&lt;/p&gt;
-
-&lt;p&gt;は、ValueConverter, Behavior の対策も包括します。よって、Xamarin.Forms 向けの UI ライブラリを提供しようと考えている人は、とりあえず &lt;strong&gt;実装は空っぽの &lt;code class=&quot;highlighter-rouge&quot;&gt;Initializer.Init()&lt;/code&gt; メソッドを用意して、それを各プラットフォームの起動直後に呼び出してもらう&lt;/strong&gt; 、という「運用でカバー」をお願いします。&lt;/p&gt;
-
-&lt;p&gt;今は ValueConverter、 Behavior しか提供するつもりがなくても、将来的に Effect、Custom Renderer も提供する可能性がゼロではない場合は、最初から各プラットフォームのプロジェクトも作って、上の &lt;code class=&quot;highlighter-rouge&quot;&gt;Init()&lt;/code&gt; メソッドを用意しておいた方がよいと思います。&lt;/p&gt;
-
-&lt;p&gt;「なんだかな〜」という気もしますが、現状はこうするしかなさそうです。&lt;/p&gt;
-</description>
-        <pubDate>Sat, 31 Dec 2016 23:59:59 +0900</pubDate>
-        <link>http://blog.amay077.net/blog/2016/12/31/can_use_visual_basic_in_xamarin%E3%81%AE%E3%82%B3%E3%83%94%E3%83%BC/</link>
-        <guid isPermaLink="true">http://blog.amay077.net/blog/2016/12/31/can_use_visual_basic_in_xamarin%E3%81%AE%E3%82%B3%E3%83%94%E3%83%BC/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>Xamarin.Forms</category>
-        
-        <category>Android</category>
-        
-        <category>iOS</category>
-        
-      </item>
-    
-      <item>
         <title>Visual Basic で Xamarin.Forms アプリ開発どこまでいける？</title>
         <description>&lt;p&gt;&lt;a href=&quot;http://qiita.com/advent-calendar/2016/xamarin-welcome&quot;&gt;[初心者さん・学生さん大歓迎！] Xamarin その2 Advent Calendar 2016&lt;/a&gt; 25日目です。&lt;br /&gt;
 Xamarin アプリ開発で使用できる言語は、公式には C# と F# のみですが、初心者にやさしいとされる Visual Basic.NET(VB.NET) を使って Xamarin（今回は Xamarin.Forms）アプリは開発できないのでしょうか？&lt;br /&gt;
@@ -1238,26 +1089,8 @@ End Class
 &lt;p&gt;理由は、 「Xamarin.iOS/Android をサポートするクラスライブラリを VB.NET で作成できない事」です。Xamarin.iOS/Android はともに Monoランタイムを基盤としますが、これを基盤とする VB.NET のクラスライブラリを作成することができませんでした（少なくとも Visual Studio 2015 では）。&lt;/p&gt;
 
 &lt;ul&gt;
-  &lt;li&gt;
-    &lt;table&gt;
-      &lt;tbody&gt;
-        &lt;tr&gt;
-          &lt;td&gt;[Visual Basic support&lt;/td&gt;
-          &lt;td&gt;Mono](http://www.mono-project.com/docs/about-mono/languages/visualbasic/)&lt;/td&gt;
-        &lt;/tr&gt;
-      &lt;/tbody&gt;
-    &lt;/table&gt;
-  &lt;/li&gt;
-  &lt;li&gt;
-    &lt;table&gt;
-      &lt;tbody&gt;
-        &lt;tr&gt;
-          &lt;td&gt;[Mono DevelopでVBのソースをコンパイルする。&lt;/td&gt;
-          &lt;td&gt;かるあのメモ on WordPress](https://karuakun.wordpress.com/2011/12/19/mono-develop%E3%81%A7vb%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%92%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%99%E3%82%8B%E3%80%82/)&lt;/td&gt;
-        &lt;/tr&gt;
-      &lt;/tbody&gt;
-    &lt;/table&gt;
-  &lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.mono-project.com/docs/about-mono/languages/visualbasic/&quot;&gt;Visual Basic support ｜ Mono&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://karuakun.wordpress.com/2011/12/19/mono-develop%E3%81%A7vb%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%92%E3%82%B3%E3%83%B3%E3%83%91%E3%82%A4%E3%83%AB%E3%81%99%E3%82%8B%E3%80%82/&quot;&gt;Mono DevelopでVBのソースをコンパイルする。 ｜ かるあのメモ on WordPress&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
 &lt;p&gt;この辺を見ると &lt;code class=&quot;highlighter-rouge&quot;&gt;vbnc&lt;/code&gt; ってコンパイラでできそう？いや Xamarin.Android/iOS はそれに対応してないからダメ？とかよくわかりません。&lt;/p&gt;
@@ -1409,6 +1242,161 @@ iOS の &lt;a href=&quot;http://swift-salaryman.com/uipickerview.php&quot;&gt;UI
         <category>iOS</category>
         
         <category>Android</category>
+        
+      </item>
+    
+      <item>
+        <title>CARTO の Xamarin 向けモバイル用SDKを使ってみる</title>
+        <description>&lt;p&gt;&lt;a href=&quot;http://qiita.com/advent-calendar/2016/foss4gvol2&quot;&gt;FOSS4G 二個目だよ Advent Calendar 2016&lt;/a&gt; 21日目です。&lt;br /&gt;
+CARTO やるやる詐欺してました、すみません。&lt;br /&gt;
+CARTO といえば、地図関連で今一番イケてるサービスの一つですね。&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://carto.com/&quot;&gt;CARTO - Predict through location&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://chizudb.jp/&quot;&gt;ChizuDB - CARTO 日本向けサービス&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;紹介される媒体が Web なので、Web地図の事例しか見たことなくて、「スマホアプリで表示できないのかなー」と思っていましたら…あるじゃん！モバイル用の CARTO SDK が！&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://carto.com/engine/mobile/&quot;&gt;Mobile — CARTO&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://carto.com/docs/carto-engine/mobile-sdk/&quot;&gt;Mobile SDK — CARTO Documentation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;どうやら、 Android、iOS に対応している様子。&lt;br /&gt;
+そしてなんと、C# - Xamarin 用のSDKとサンプルも発見！&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-dotnet-samples&quot;&gt;CartoDB/mobile-dotnet-samples: CARTO Mobile SDK samples for Xamarin and WP .NET&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;さっそく使ってみましょう。&lt;/p&gt;
+
+&lt;h2 id=&quot;mobile-dotnet-samples-を動かしてみる&quot;&gt;mobile-dotnet-samples を動かしてみる&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://www.mierune.co.jp/&quot;&gt;MIERUNE. LLC&lt;/a&gt; さんが作られて、public に公開されている、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/public_map&quot;&gt;北海道内土砂災害危険箇所・土砂災害警戒区域・避難施設&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;iframe width=&quot;100%&quot; height=&quot;520&quot; frameborder=&quot;0&quot; src=&quot;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/embed_map&quot; allowfullscreen=&quot;&quot; webkitallowfullscreen=&quot;&quot; mozallowfullscreen=&quot;&quot; oallowfullscreen=&quot;&quot; msallowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;を使わせていただきます。&lt;br /&gt;
+これを iOS で表示してみます。&lt;/p&gt;
+
+&lt;h3 id=&quot;step1-サンプルソースコードを-clone-する&quot;&gt;STEP1: サンプルソースコードを Clone する&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;https://github.com/CartoDB/mobile-dotnet-samples&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;をローカルにクローンします（ZIPでダウンロードでもおｋ）。&lt;/p&gt;
+
+&lt;h3 id=&quot;step2-xamarin-studiovisual-studio-でソリューションを開く&quot;&gt;STEP2: Xamarin Studio/Visual Studio でソリューションを開く&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mobile_dotnet_samples.sln&lt;/code&gt; というファイルがあるので、Mac では Xamarin Studio、 Windows では Visual Studio で開きます。&lt;br /&gt;
+私は Visual Studio for Mac を使っているので、それでも大丈夫です。&lt;/p&gt;
+
+&lt;h3 id=&quot;step3-スタートアッププロジェクトを-cartomapios-に変更する&quot;&gt;STEP3: スタートアッププロジェクトを CartoMap.iOS に変更する&lt;/h3&gt;
+
+&lt;p&gt;Mac だとこんな↓感じで。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step4-cartomapios-のプロジェクト設定でアーキテクチャを-x86_64-に変更する&quot;&gt;STEP4: CartoMap.iOS のプロジェクト設定でアーキテクチャを x86_64 に変更する&lt;/h3&gt;
+
+&lt;p&gt;iOS アプリはもはや 64bit に移行しているので、プロジェクト設定を変更します。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;これをしないと、アプリを実行したときに「May slow down〜」などと言われます。&lt;/p&gt;
+
+&lt;h3 id=&quot;step5-ビルド実行&quot;&gt;STEP5: ビルド＆実行&lt;/h3&gt;
+
+&lt;p&gt;適当な iOSシミュレータを選んで、実行します。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_03.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;実行すると、下図のような感じに動くと思います。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_04.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;step5-表示する地図を変えてみる&quot;&gt;STEP5: 表示する地図を変えてみる&lt;/h3&gt;
+
+&lt;p&gt;サンプルアプリの 「Countries Vis」を選択したときに表示される地図を、冒頭で紹介した、「北海道内土砂災害危険箇所・土砂災害警戒区域・避難施設」に変更してみましょう。&lt;/p&gt;
+
+&lt;p&gt;読み込む地図の指定は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;CartoMap.iOS/Sections/CARTO.js API/CountriesVisController.cs&lt;/code&gt; で行っています。&lt;/p&gt;
+
+&lt;p&gt;これを以下のように修正します。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&quot;language-csharp:&quot;&gt;// CountriesVisController.cs
+using System;
+namespace CartoMap.iOS
+{
+	public class CountriesVisController : BaseVisController
+	{
+		public override string Name { get { return &quot;Countries Vis&quot;; } }
+
+		public override string Description { get { return &quot;Vis displaying countries in different colors using UTFGrid&quot;; } }
+
+		protected override string Url
+		{
+			get
+			{
+//				return &quot;http://documentation.cartodb.com/api/v2/viz/2b13c956-e7c1-11e2-806b-5404a6a683d5/viz.json&quot;; // 修正前
+				return &quot;https://mierune2016team.carto.com/api/v2/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/viz.json&quot;; // 修正後
+			}
+		}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;CARTO をブラウザで見るときの URL と、Mobile SDK に指定する時の URL の違いに注目してください。 &lt;code class=&quot;highlighter-rouge&quot;&gt;/viz/&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;/api/v2/viz&lt;/code&gt; に、 &lt;code class=&quot;highlighter-rouge&quot;&gt;public_map&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;viz.json&lt;/code&gt; に置き換えると、モバイルSDK用の URL になるようです。(仕様未確認)&lt;/p&gt;
+
+&lt;p&gt;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/public_map&lt;br /&gt;
+↓&lt;br /&gt;
+https://mierune2016team.carto.com/api/v2/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/viz.json&lt;/p&gt;
+
+&lt;p&gt;これを実行すると、↓のようになります。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_05.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;レスポンスにやや問題がある、凡例がないので主題の意味がわからないなどの問題はありますが、Web で観られる地図と同じものが iOS 端末でも観られます。&lt;/p&gt;
+
+&lt;h2 id=&quot;ソースコード&quot;&gt;ソースコード&lt;/h2&gt;
+
+&lt;p&gt;元のリポジトリは進化が早く、最新のソースだと挙動が変わるかもしれないので、私のアカウントに Fork しました(SDKが新しくなると動かなくなるかも知れませんが)。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;https://github.com/amay077/mobile-dotnet-samples/tree/20161221_blogged&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
+
+&lt;p&gt;CARTO の Mobile SDK を紹介しました。&lt;br /&gt;
+今回は Xamarin.iOS でのみトライしましたが、 Xamarin 用 SDK には他にも Android と &lt;a href=&quot;https://github.com/CartoDB/mobile-dotnet-samples/tree/master/CartoMap.WindowsPhone&quot;&gt;Windows Phone 用もあるよう&lt;/a&gt; です。&lt;/p&gt;
+
+&lt;p&gt;また、iOS / Android ネイティブ用の SDK とサンプルもあります。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-ios-samples&quot;&gt;CartoDB/mobile-ios-samples: iOS mobile app with CARTO Mobile SDK&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-android-samples&quot;&gt;CartoDB/mobile-android-samples: Android sample for CARTO Mobile SDK&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Xamarin版SDK はまだプレリリースでした。ネイティブ版SDK はどうだかわかりませんが、CARTO の地図をモバイルアプリで使いたい！という機会があったら思い出してください。&lt;/p&gt;
+</description>
+        <pubDate>Wed, 21 Dec 2016 23:59:59 +0900</pubDate>
+        <link>http://blog.amay077.net/blog/2016/12/21/using_carto_mobile_sdk_for_xamarin/</link>
+        <guid isPermaLink="true">http://blog.amay077.net/blog/2016/12/21/using_carto_mobile_sdk_for_xamarin/</guid>
+        
+        
+        <category>Xamarin</category>
+        
+        <category>CARTO</category>
+        
+        <category>foss4g</category>
         
       </item>
     
