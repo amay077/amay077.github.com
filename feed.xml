@@ -6,9 +6,197 @@
 </description>
     <link>http://blog.amay077.net/</link>
     <atom:link href="http://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Sat, 28 Jan 2017 02:02:47 +0900</pubDate>
-    <lastBuildDate>Sat, 28 Jan 2017 02:02:47 +0900</lastBuildDate>
+    <pubDate>Wed, 01 Feb 2017 02:03:34 +0900</pubDate>
+    <lastBuildDate>Wed, 01 Feb 2017 02:03:34 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>Google Maps Android API のカメラ変更イベントについて</title>
+        <description>&lt;p&gt;Android 向けの Google Maps ライブラリには、カメラの変更（＝位置、回転、チルトのヘ変更）時に発生するイベント &lt;code class=&quot;highlighter-rouge&quot;&gt;GoogleMap.OnCameraChangeListener&lt;/code&gt; があります。&lt;br /&gt;
+&lt;!--more--&gt;&lt;br /&gt;
+が、2016年８月のリリースで &lt;code class=&quot;highlighter-rouge&quot;&gt;OnCameraChangeListener&lt;/code&gt; は非推奨になっており、代わりに４つのイベントが新たに追加されました。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developers.google.com/maps/documentation/android-api/releases?hl=ja#august_1_2016&quot;&gt;Release Notes - August 1, 2016 ｜  Google Maps Android API&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;This release introduces a set of new camera change listeners for camera motion start, ongoing, and end events. You can also see why the camera is moving, whether it’s caused by user gestures, built-in API animations or developer-controlled movements. Below is a summary of the new listeners. For details, see the guide to camera change events. (Issue 4636)&lt;/p&gt;
+
+  &lt;ul&gt;
+    &lt;li&gt;The onCameraMoveStarted() callback of the OnCameraMoveStartedListener is invoked when the camera starts moving. The callback method receives a reason for the camera motion.&lt;/li&gt;
+    &lt;li&gt;The onCameraMove() callback of the OnCameraMoveListener is invoked multiple times while the camera is moving or the user is interacting with the touch screen.&lt;/li&gt;
+    &lt;li&gt;The OnCameraIdle() callback of the OnCameraIdleListener is invoked when the camera stops moving and the user has stopped interacting with the map.&lt;/li&gt;
+    &lt;li&gt;The OnCameraMoveCanceled() callback of the OnCameraMoveCanceledListener is invoked when the current camera movement has been interrupted.&lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/blockquote&gt;
+
+&lt;h3 id=&quot;oncameramovestarted---カメラの移動が開始された時&quot;&gt;onCameraMoveStarted - カメラの移動が開始された時&lt;/h3&gt;
+
+&lt;p&gt;カメラの移動が開始された直後に１回発生します。 &lt;code class=&quot;highlighter-rouge&quot;&gt;updateCamera&lt;/code&gt; や &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; などのメソッドによるカメラ移動でも、ドラッグ、ピンチなどのジェスチャによる場合でも同様です。&lt;/p&gt;
+
+&lt;h3 id=&quot;oncameramoveidle---カメラの移動が終わった時&quot;&gt;onCameraMoveIdle - カメラの移動が終わった時&lt;/h3&gt;
+
+&lt;p&gt;カメラの移動が完了した直後に１回発生します。 つまりなんらかのビューの変化が起こるときには、最後に&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveIdle&lt;/code&gt; が必ず１回呼ばれます。アニメーションがキャンセルされたときも、&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveIdle&lt;/code&gt; は呼ばれます。&lt;br /&gt;
+非推奨となった &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt; と立ち位置的には同じようです。ちなみに &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt; が呼ばれたあとで、&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveIdle&lt;/code&gt; が呼ばれます。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveStarted&lt;/code&gt; と &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveIdle&lt;/code&gt; は必ず対になるかというと、 &lt;strong&gt;そうでないケースが存在&lt;/strong&gt; します。 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; による地図の移動中に、地図をドラッグして地図を移動させた場合です。これについては後述します。&lt;/p&gt;
+
+&lt;h3 id=&quot;oncameramove---カメラが移動した時&quot;&gt;onCameraMove - カメラが移動した時&lt;/h3&gt;
+
+&lt;p&gt;カメラが移動したときに発生します。 &lt;code class=&quot;highlighter-rouge&quot;&gt;moveCamera&lt;/code&gt; によるダイレクトなカメラ位置への移動では、このイベントは &lt;strong&gt;発生したり、しなかったりします&lt;/strong&gt; 。 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; によるアニメーション付きの移動では、アニメーション中にこのイベントが発生します。ドラッグやピンチなどのジェスチャ操作でも発生します。&lt;/p&gt;
+
+&lt;h3 id=&quot;oncameramovecanceled---アニメーションがキャンセルされた時&quot;&gt;onCameraMoveCanceled - アニメーションがキャンセルされた時&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; などのアニメーション付きのカメラ移動が、何らかの操作によりキャンセルされたときに発生します。「何らかの操作」とは、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;アニメーション中に &lt;code class=&quot;highlighter-rouge&quot;&gt;stopAnimation&lt;/code&gt; が呼ぶ&lt;/li&gt;
+  &lt;li&gt;アニメーション中に画面をタップやドラッグする&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;です。&lt;/p&gt;
+
+&lt;h2 id=&quot;おまけ-animatecamera-のコールバック&quot;&gt;【おまけ】 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; のコールバック&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; には、アニメーションの完了／中止を受信できるコールバックを指定できます。&lt;/p&gt;
+
+&lt;div class=&quot;language-java highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;kd&quot;&gt;final&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;animateCamera&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;(&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;CameraUpdate&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;update&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;,&lt;/span&gt; 
+    &lt;span class=&quot;n&quot;&gt;GoogleMap&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;na&quot;&gt;CancelableCallback&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;callback&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;h2 id=&quot;ケース毎のイベント発生の様子&quot;&gt;ケース毎のイベント発生の様子&lt;/h2&gt;
+
+&lt;p&gt;サンプルアプリを作って、実際の操作でどのようなイベントが発生するのか、調べてみました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/deep_dive_in_camera_events_of_google_maps_android_api_01.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;updatecamera-メソッドの実行&quot;&gt;updateCamera メソッドの実行&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;onCameraMoveStarted&lt;/li&gt;
+  &lt;li&gt;onCameraMove ←発生しないこともある&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt;&lt;/li&gt;
+  &lt;li&gt;onCameraIdle&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;strong&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMove&lt;/code&gt; は発生することも、しないこともある&lt;/strong&gt; ようです、その条件についてはよくわかりませんでした（位置が変わるから &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMove&lt;/code&gt; が発生する、わけでもないようです）。 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt; は非推奨なので打ち消し線を入れています。&lt;/p&gt;
+
+&lt;h3 id=&quot;animatecamera-メソッドの実行中断なし&quot;&gt;animateCamera メソッドの実行(中断なし)&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;onCameraMoveStarted&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;・・・&lt;/li&gt;
+  &lt;li&gt;animateCamera_onFinish&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt;&lt;/li&gt;
+  &lt;li&gt;onCameraIdle&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;移動中に &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMove&lt;/code&gt; が複数回呼び出されます。回数はアニメーションの速度により変わります。&lt;br /&gt;
+移動が完了すると &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; メソッドのコールバックに &lt;code class=&quot;highlighter-rouge&quot;&gt;onFinish&lt;/code&gt; が通知され、その後、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; が呼び出されます。&lt;/p&gt;
+
+&lt;h3 id=&quot;animatecamera-メソッドの実行--stopanimation-の実行&quot;&gt;animateCamera メソッドの実行 → stopAnimation の実行&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;onCameraMoveStarted&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;・・・&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;stopAnimation&lt;/code&gt; 呼び出し&lt;/li&gt;
+  &lt;li&gt;onCameraMoveCanceled&lt;/li&gt;
+  &lt;li&gt;animateCamera_onCancel&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt;&lt;/li&gt;
+  &lt;li&gt;onCameraIdle&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;アニメーション中に &lt;code class=&quot;highlighter-rouge&quot;&gt;stopAnimation&lt;/code&gt; を呼び出すと、カメラの移動が停止し、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveCanceled&lt;/code&gt; → &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera_onCancel&lt;/code&gt; の順で中止が通知されます。その後、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; が呼び出されるのは完了時と変わりません。&lt;/p&gt;
+
+&lt;h3 id=&quot;animatecamera-メソッドの実行--移動中にドラッグして地図を移動&quot;&gt;animateCamera メソッドの実行 → 移動中にドラッグして地図を移動&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;onCameraMoveStarted ← animateCameraによる移動開始&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;・・・&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;ドラッグで地図移動&lt;/li&gt;
+  &lt;li&gt;onCameraMoveCanceled&lt;/li&gt;
+  &lt;li&gt;onCameraMoveStarted ← ドラッグによる移動開始&lt;/li&gt;
+  &lt;li&gt;animateCamera_onCancel&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;・・・&lt;/li&gt;
+  &lt;li&gt;ドラッグやめ&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt; ← animateCameraによる移動終了？&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;onCameraMove&lt;/li&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt; ← ドラッグによる移動終了？&lt;/li&gt;
+  &lt;li&gt;onCameraIdle&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;地図移動中にドラッグをすると、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveCanceled&lt;/code&gt; で中断が通知され、即座に 新しいカメラの移動として &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveStarted&lt;/code&gt; が通知されます。 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; にアニメーション中止 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera_onCancel&lt;/code&gt; が通知されるのはその後です。&lt;/p&gt;
+
+&lt;p&gt;その後、ドラッグによる &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMove&lt;/code&gt; が連続して発生し、ドラッグをやめると &lt;del&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt;&lt;/del&gt; が２回、&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; が最後に１回呼び出されました。&lt;/p&gt;
+
+&lt;p&gt;このケースでの要注意点をまとめると以下です。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; に &lt;code class=&quot;highlighter-rouge&quot;&gt;onCancel&lt;/code&gt; が通知されるよりも先に、ドラッグによる &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveStarted&lt;/code&gt; が通知される&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveStarted&lt;/code&gt; は２回通知される（&lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; 呼び出し時とドラッグ開始時）のに、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; は最後に１回しか通知されない。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;RxJava などで複数のイベントをストリーム化する時は、どうしてもイベントの発生順序や回数を意識せざるを得ませんが、その時に問題になりそうな気がします。&lt;/p&gt;
+
+&lt;h3 id=&quot;非アニメーション時に-stopanimation-を呼ぶ&quot;&gt;非アニメーション時に stopAnimation を呼ぶ&lt;/h3&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;&lt;del&gt;onCameraChange&lt;/del&gt;&lt;/li&gt;
+  &lt;li&gt;onCameraIdle&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;ただ &lt;code class=&quot;highlighter-rouge&quot;&gt;stopAnimation&lt;/code&gt; を呼ぶだけでも、 &lt;del&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt;&lt;/del&gt;、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; が呼ばれます。気持ち悪いですね。&lt;/p&gt;
+
+&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;非推奨になった &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraChange&lt;/code&gt; の代わりとしては &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraIdle&lt;/code&gt; が使えるが、ビミョーに発生タイミングが違うようなので注意！&lt;/li&gt;
+  &lt;li&gt;新たに追加された &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMoveStarted&lt;/code&gt; でカメラ移動の開始、 &lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraMove&lt;/code&gt; で移動中のカメラを受信できる。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;onCameraXXXX&lt;/code&gt; は、メソッドによるカメラ移動だけでなく、ジェスチャによるカメラ移動時にも通知が来る。 &lt;code class=&quot;highlighter-rouge&quot;&gt;animateCamera&lt;/code&gt; のアニメーションの終了／中断は引数のコールバックで受信する。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&quot;おまけ-google-maps-sdk-for-ios&quot;&gt;【おまけ】 Google Maps SDK for iOS&lt;/h3&gt;
+
+&lt;p&gt;姉妹ライブラリである iOS 向けの Google Maps SDK では、カメラ関連イベントは&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developers.google.com/maps/documentation/ios-sdk/reference/protocol_g_m_s_map_view_delegate-p.html?hl=ja#aabd01d59d7680799a0c24d3c8b5e4622&quot;&gt;GMSMapViewDelegate Protocol Reference  ｜  Google Maps SDK for iOS&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;にあります。これによると、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;willMove&lt;/li&gt;
+  &lt;li&gt;didChangeCameraPosition&lt;/li&gt;
+  &lt;li&gt;idleAtCameraPosition&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;があります。Android 用とことなっていて悩ましいです。。。&lt;/p&gt;
+</description>
+        <pubDate>Sat, 28 Jan 2017 23:59:58 +0900</pubDate>
+        <link>http://blog.amay077.net/blog/2017/01/28/camera_changed_event_on_google_maps_android_api/</link>
+        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/01/28/camera_changed_event_on_google_maps_android_api/</guid>
+        
+        
+        <category>Android</category>
+        
+        <category>GoogleMapsAPI</category>
+        
+        <category>Java</category>
+        
+      </item>
     
       <item>
         <title>Xamarin.Forms でソフトウェアキーボードが表示された時に画面が隠れないようにする</title>
@@ -1233,161 +1421,6 @@ iOS の &lt;a href=&quot;http://swift-salaryman.com/uipickerview.php&quot;&gt;UI
         <category>iOS</category>
         
         <category>Android</category>
-        
-      </item>
-    
-      <item>
-        <title>CARTO の Xamarin 向けモバイル用SDKを使ってみる</title>
-        <description>&lt;p&gt;&lt;a href=&quot;http://qiita.com/advent-calendar/2016/foss4gvol2&quot;&gt;FOSS4G 二個目だよ Advent Calendar 2016&lt;/a&gt; 21日目です。&lt;br /&gt;
-CARTO やるやる詐欺してました、すみません。&lt;br /&gt;
-CARTO といえば、地図関連で今一番イケてるサービスの一つですね。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://carto.com/&quot;&gt;CARTO - Predict through location&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://chizudb.jp/&quot;&gt;ChizuDB - CARTO 日本向けサービス&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;紹介される媒体が Web なので、Web地図の事例しか見たことなくて、「スマホアプリで表示できないのかなー」と思っていましたら…あるじゃん！モバイル用の CARTO SDK が！&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://carto.com/engine/mobile/&quot;&gt;Mobile — CARTO&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://carto.com/docs/carto-engine/mobile-sdk/&quot;&gt;Mobile SDK — CARTO Documentation&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;どうやら、 Android、iOS に対応している様子。&lt;br /&gt;
-そしてなんと、C# - Xamarin 用のSDKとサンプルも発見！&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-dotnet-samples&quot;&gt;CartoDB/mobile-dotnet-samples: CARTO Mobile SDK samples for Xamarin and WP .NET&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;さっそく使ってみましょう。&lt;/p&gt;
-
-&lt;h2 id=&quot;mobile-dotnet-samples-を動かしてみる&quot;&gt;mobile-dotnet-samples を動かしてみる&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;http://www.mierune.co.jp/&quot;&gt;MIERUNE. LLC&lt;/a&gt; さんが作られて、public に公開されている、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/public_map&quot;&gt;北海道内土砂災害危険箇所・土砂災害警戒区域・避難施設&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;iframe width=&quot;100%&quot; height=&quot;520&quot; frameborder=&quot;0&quot; src=&quot;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/embed_map&quot; allowfullscreen=&quot;&quot; webkitallowfullscreen=&quot;&quot; mozallowfullscreen=&quot;&quot; oallowfullscreen=&quot;&quot; msallowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
-
-&lt;p&gt;を使わせていただきます。&lt;br /&gt;
-これを iOS で表示してみます。&lt;/p&gt;
-
-&lt;h3 id=&quot;step1-サンプルソースコードを-clone-する&quot;&gt;STEP1: サンプルソースコードを Clone する&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/CartoDB/mobile-dotnet-samples&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;をローカルにクローンします（ZIPでダウンロードでもおｋ）。&lt;/p&gt;
-
-&lt;h3 id=&quot;step2-xamarin-studiovisual-studio-でソリューションを開く&quot;&gt;STEP2: Xamarin Studio/Visual Studio でソリューションを開く&lt;/h3&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mobile_dotnet_samples.sln&lt;/code&gt; というファイルがあるので、Mac では Xamarin Studio、 Windows では Visual Studio で開きます。&lt;br /&gt;
-私は Visual Studio for Mac を使っているので、それでも大丈夫です。&lt;/p&gt;
-
-&lt;h3 id=&quot;step3-スタートアッププロジェクトを-cartomapios-に変更する&quot;&gt;STEP3: スタートアッププロジェクトを CartoMap.iOS に変更する&lt;/h3&gt;
-
-&lt;p&gt;Mac だとこんな↓感じで。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;step4-cartomapios-のプロジェクト設定でアーキテクチャを-x86_64-に変更する&quot;&gt;STEP4: CartoMap.iOS のプロジェクト設定でアーキテクチャを x86_64 に変更する&lt;/h3&gt;
-
-&lt;p&gt;iOS アプリはもはや 64bit に移行しているので、プロジェクト設定を変更します。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;これをしないと、アプリを実行したときに「May slow down〜」などと言われます。&lt;/p&gt;
-
-&lt;h3 id=&quot;step5-ビルド実行&quot;&gt;STEP5: ビルド＆実行&lt;/h3&gt;
-
-&lt;p&gt;適当な iOSシミュレータを選んで、実行します。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_03.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;実行すると、下図のような感じに動くと思います。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_04.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h3 id=&quot;step5-表示する地図を変えてみる&quot;&gt;STEP5: 表示する地図を変えてみる&lt;/h3&gt;
-
-&lt;p&gt;サンプルアプリの 「Countries Vis」を選択したときに表示される地図を、冒頭で紹介した、「北海道内土砂災害危険箇所・土砂災害警戒区域・避難施設」に変更してみましょう。&lt;/p&gt;
-
-&lt;p&gt;読み込む地図の指定は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;CartoMap.iOS/Sections/CARTO.js API/CountriesVisController.cs&lt;/code&gt; で行っています。&lt;/p&gt;
-
-&lt;p&gt;これを以下のように修正します。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-csharp:&quot;&gt;// CountriesVisController.cs
-using System;
-namespace CartoMap.iOS
-{
-	public class CountriesVisController : BaseVisController
-	{
-		public override string Name { get { return &quot;Countries Vis&quot;; } }
-
-		public override string Description { get { return &quot;Vis displaying countries in different colors using UTFGrid&quot;; } }
-
-		protected override string Url
-		{
-			get
-			{
-//				return &quot;http://documentation.cartodb.com/api/v2/viz/2b13c956-e7c1-11e2-806b-5404a6a683d5/viz.json&quot;; // 修正前
-				return &quot;https://mierune2016team.carto.com/api/v2/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/viz.json&quot;; // 修正後
-			}
-		}
-	}
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;CARTO をブラウザで見るときの URL と、Mobile SDK に指定する時の URL の違いに注目してください。 &lt;code class=&quot;highlighter-rouge&quot;&gt;/viz/&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;/api/v2/viz&lt;/code&gt; に、 &lt;code class=&quot;highlighter-rouge&quot;&gt;public_map&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;viz.json&lt;/code&gt; に置き換えると、モバイルSDK用の URL になるようです。(仕様未確認)&lt;/p&gt;
-
-&lt;p&gt;https://mierune2016team.carto.com/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/public_map&lt;br /&gt;
-↓&lt;br /&gt;
-https://mierune2016team.carto.com/api/v2/viz/8a9450a2-6456-11e6-8a7a-0ee66e2c9693/viz.json&lt;/p&gt;
-
-&lt;p&gt;これを実行すると、↓のようになります。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/running_carto_mobile_sample_05.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;レスポンスにやや問題がある、凡例がないので主題の意味がわからないなどの問題はありますが、Web で観られる地図と同じものが iOS 端末でも観られます。&lt;/p&gt;
-
-&lt;h2 id=&quot;ソースコード&quot;&gt;ソースコード&lt;/h2&gt;
-
-&lt;p&gt;元のリポジトリは進化が早く、最新のソースだと挙動が変わるかもしれないので、私のアカウントに Fork しました(SDKが新しくなると動かなくなるかも知れませんが)。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/amay077/mobile-dotnet-samples/tree/20161221_blogged&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;p&gt;CARTO の Mobile SDK を紹介しました。&lt;br /&gt;
-今回は Xamarin.iOS でのみトライしましたが、 Xamarin 用 SDK には他にも Android と &lt;a href=&quot;https://github.com/CartoDB/mobile-dotnet-samples/tree/master/CartoMap.WindowsPhone&quot;&gt;Windows Phone 用もあるよう&lt;/a&gt; です。&lt;/p&gt;
-
-&lt;p&gt;また、iOS / Android ネイティブ用の SDK とサンプルもあります。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-ios-samples&quot;&gt;CartoDB/mobile-ios-samples: iOS mobile app with CARTO Mobile SDK&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/CartoDB/mobile-android-samples&quot;&gt;CartoDB/mobile-android-samples: Android sample for CARTO Mobile SDK&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Xamarin版SDK はまだプレリリースでした。ネイティブ版SDK はどうだかわかりませんが、CARTO の地図をモバイルアプリで使いたい！という機会があったら思い出してください。&lt;/p&gt;
-</description>
-        <pubDate>Wed, 21 Dec 2016 23:59:59 +0900</pubDate>
-        <link>http://blog.amay077.net/blog/2016/12/21/using_carto_mobile_sdk_for_xamarin/</link>
-        <guid isPermaLink="true">http://blog.amay077.net/blog/2016/12/21/using_carto_mobile_sdk_for_xamarin/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>CARTO</category>
-        
-        <category>foss4g</category>
         
       </item>
     
