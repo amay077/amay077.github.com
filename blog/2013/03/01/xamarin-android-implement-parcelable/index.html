@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -854,35 +854,36 @@ img {
 
 <p>メニュー → 新規 → ファイル と選択するとこんなダイアログが出るので Activity クラス名を入力して決定します。</p>
 
-<p><amp-img width="718" height="545" layout="responsive" src="https://dl.dropbox.com/u/264530/qiita/xamarin_percelable_create_activity.png" alt="&quot;new_file_dialog&quot;" /></p>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_percelable_create_activity.png" alt="&quot;new_file_dialog&quot;" /></p>
 
 <p>すると <code class="highlighter-rouge">NextActivity.cs</code> ができます。</p>
 
-<p>```c# NextActivity.cs<br />
-using System;<br />
-using System.Collections.Generic;<br />
-using System.Linq;<br />
-using System.Text;</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//NextActivity.cs
+</span><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Collections.Generic</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Linq</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Text</span><span class="p">;</span>
 
-<p>using Android.App;<br />
-using Android.Content;<br />
-using Android.OS;<br />
-using Android.Runtime;<br />
-using Android.Views;<br />
-using Android.Widget;</p>
+<span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Android.Content</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Android.OS</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Android.Runtime</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Android.Views</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Android.Widget</span><span class="p">;</span>
 
-<p>namespace HelloXamarinAndroid<br />
-{<br />
-    [Activity (Label = “NextActivity”)]			<br />
-    public class NextActivity : Activity<br />
-    {<br />
-        protected override void OnCreate(Bundle bundle)<br />
-        {<br />
-            base.OnCreate(bundle);</p>
+<span class="k">namespace</span> <span class="nn">HelloXamarinAndroid</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="nf">Activity</span> <span class="p">(</span><span class="n">Label</span> <span class="p">=</span> <span class="s">"NextActivity"</span><span class="p">)]</span>			
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">NextActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+    <span class="p">{</span>
+        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">base</span><span class="p">.</span><span class="nf">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>        // Create your application here
-    }
-} } ```
+            <span class="c1">// Create your application here
+</span>        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -896,30 +897,32 @@ using Android.Widget;</p>
 
 <p>画面遷移は本家と同じく Intent を使います。</p>
 
-<p>```c# MainActivity.cs<br />
-button.Click += (sender, e) =&gt; <br />
-{<br />
-    // Goto NextActivity<br />
-    var intent = new Intent(this, typeof(NextActivity));<br />
-    this.StartActivity(intent);<br />
-};</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-本家だと ``NextActivity.class`` としていたところは ``typeof(NextActivity)`` になってますね。
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+<span class="p">{</span>
+    <span class="c1">// Goto NextActivity
+</span>    <span class="kt">var</span> <span class="n">intent</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Intent</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">typeof</span><span class="p">(</span><span class="n">NextActivity</span><span class="p">));</span>
+    <span class="k">this</span><span class="p">.</span><span class="nf">StartActivity</span><span class="p">(</span><span class="n">intent</span><span class="p">);</span>
+<span class="p">};</span>
+</code></pre>
+</div>
 
-## 自作クラスを Intent に含める
+<p>本家だと <code class="highlighter-rouge">NextActivity.class</code> としていたところは <code class="highlighter-rouge">typeof(NextActivity)</code> になってますね。</p>
 
-さて、画面遷移時にデータを渡すという、よくある処理をやってみたいと思います。
-データは ``Card`` というクラスにします。
+<h2 id="intent-">自作クラスを Intent に含める</h2>
 
-```c# Card.cs
-namespace HelloXamarinAndroid
-{
-    class Card
-    {
-        public string Name { get; set; }
-        public string Phone { get; set; }
-    }
-}
+<p>さて、画面遷移時にデータを渡すという、よくある処理をやってみたいと思います。<br />
+データは <code class="highlighter-rouge">Card</code> というクラスにします。</p>
+
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//Card.cs
+</span><span class="k">namespace</span> <span class="nn">HelloXamarinAndroid</span>
+<span class="p">{</span>
+    <span class="k">class</span> <span class="nc">Card</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Phone</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -943,7 +946,7 @@ namespace HelloXamarinAndroid
 
 <p>いきなりこれを忘れて、謎のビルドエラーと１０分程格闘しました(汗)</p>
 
-<p><amp-img width="445" height="322" layout="responsive" src="https://dl.dropbox.com/u/264530/qiita/xamarin_assenbly_reference.png" alt="&quot;assembly_reference&quot;" /></p>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_assenbly_reference.png" alt="&quot;assembly_reference&quot;" /></p>
 
 <p>ソリューションツリーの参照の右クリックメニューからアセンブリ参照ダイアログが出るので、<code class="highlighter-rouge">Mono.Android.Export</code> を見つけて追加します。</p>
 
@@ -955,35 +958,36 @@ namespace HelloXamarinAndroid
 <p>Card クラスを、<code class="highlighter-rouge">IParcelable</code> を実装するのと共に <code class="highlighter-rouge">Java.Lang.Object</code> から派生させます。<br />
 あーそういうことですか。</p>
 
-<p>```c# Card.cs<br />
-namespace HelloXamarinAndroid<br />
-{<br />
-    class Card  : Java.Lang.Object, IParcelable<br />
-    {<br />
-        public string Name { get; set; }<br />
-        public string Phone { get; set; }</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//Card.cs
+</span><span class="k">namespace</span> <span class="nn">HelloXamarinAndroid</span>
+<span class="p">{</span>
+    <span class="k">class</span> <span class="nc">Card</span>  <span class="p">:</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span> <span class="n">IParcelable</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Phone</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public Card(string name, string phone)
-    {
-        this.Name = name;
-        this.Phone = phone;
-    }
+        <span class="k">public</span> <span class="nf">Card</span><span class="p">(</span><span class="kt">string</span> <span class="n">name</span><span class="p">,</span> <span class="kt">string</span> <span class="n">phone</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="n">name</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Phone</span> <span class="p">=</span> <span class="n">phone</span><span class="p">;</span>
+        <span class="p">}</span>
 
-    #region IParcelable implementation
+        <span class="err">#</span><span class="n">region</span> <span class="n">IParcelable</span> <span class="n">implementation</span>
 
-    public int DescribeContents()
-    {
-        return 0;
-    }
+        <span class="k">public</span> <span class="kt">int</span> <span class="nf">DescribeContents</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="m">0</span><span class="p">;</span>
+        <span class="p">}</span>
 
-    public void WriteToParcel(Parcel dest, ParcelableWriteFlags flags)
-    {
-        dest.WriteString(this.Name);
-        dest.WriteString(this.Phone);
-    }
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">WriteToParcel</span><span class="p">(</span><span class="n">Parcel</span> <span class="n">dest</span><span class="p">,</span> <span class="n">ParcelableWriteFlags</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">dest</span><span class="p">.</span><span class="nf">WriteString</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Name</span><span class="p">);</span>
+            <span class="n">dest</span><span class="p">.</span><span class="nf">WriteString</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Phone</span><span class="p">);</span>
+        <span class="p">}</span>
 
-    #endregion
-} } ```
+        <span class="err">#</span><span class="n">endregion</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -1000,62 +1004,63 @@ namespace HelloXamarinAndroid<br />
 
 <p>これらを実装すると、 Card クラスはこうなります。</p>
 
-<p>```c# Card.cs<br />
-using Java.Interop;</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//Card.cs
+</span><span class="k">using</span> <span class="nn">Java.Interop</span><span class="p">;</span>
 
-<p>namespace HelloXamarinAndroid<br />
-{<br />
-    class Card  : Java.Lang.Object, IParcelable<br />
-    {<br />
-        public string Name { get; set; }<br />
-        public string Phone { get; set; }</p>
+<span class="k">namespace</span> <span class="nn">HelloXamarinAndroid</span>
+<span class="p">{</span>
+    <span class="k">class</span> <span class="nc">Card</span>  <span class="p">:</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span> <span class="n">IParcelable</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Name</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+        <span class="k">public</span> <span class="kt">string</span> <span class="n">Phone</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>    public Card(string name, string phone)
-    {
-        this.Name = name;
-        this.Phone = phone;
-    }
+        <span class="k">public</span> <span class="nf">Card</span><span class="p">(</span><span class="kt">string</span> <span class="n">name</span><span class="p">,</span> <span class="kt">string</span> <span class="n">phone</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Name</span> <span class="p">=</span> <span class="n">name</span><span class="p">;</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Phone</span> <span class="p">=</span> <span class="n">phone</span><span class="p">;</span>
+        <span class="p">}</span>
 
-    #region IParcelable implementation
+        <span class="err">#</span><span class="n">region</span> <span class="n">IParcelable</span> <span class="n">implementation</span>
 
-    public int DescribeContents()
-    {
-        return 0;
-    }
+        <span class="k">public</span> <span class="kt">int</span> <span class="nf">DescribeContents</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="m">0</span><span class="p">;</span>
+        <span class="p">}</span>
 
-    public void WriteToParcel(Parcel dest, ParcelableWriteFlags flags)
-    {
-        dest.WriteString(this.Name);
-        dest.WriteString(this.Phone);
-    }
+        <span class="k">public</span> <span class="k">void</span> <span class="nf">WriteToParcel</span><span class="p">(</span><span class="n">Parcel</span> <span class="n">dest</span><span class="p">,</span> <span class="n">ParcelableWriteFlags</span> <span class="n">flags</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="n">dest</span><span class="p">.</span><span class="nf">WriteString</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Name</span><span class="p">);</span>
+            <span class="n">dest</span><span class="p">.</span><span class="nf">WriteString</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">Phone</span><span class="p">);</span>
+        <span class="p">}</span>
 
-    #endregion
+        <span class="err">#</span><span class="n">endregion</span>
 
-    [ExportField("CREATOR")]
-    public static IParcelableCreator GetCreator()
-    {
-        return new MyParcelableCreator();
-    }
+        <span class="p">[</span><span class="nf">ExportField</span><span class="p">(</span><span class="s">"CREATOR"</span><span class="p">)]</span>
+        <span class="k">public</span> <span class="k">static</span> <span class="n">IParcelableCreator</span> <span class="nf">GetCreator</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="k">new</span> <span class="nf">MyParcelableCreator</span><span class="p">();</span>
+        <span class="p">}</span>
 
-    // Parcelable.Creator の代わり
-    class MyParcelableCreator : Java.Lang.Object, IParcelableCreator
-    {
-        #region IParcelableCreator implementation
-        Java.Lang.Object IParcelableCreator.CreateFromParcel(Parcel source)
-        {
-            var name = source.ReadString();
-            var phone = source.ReadString();
+        <span class="c1">// Parcelable.Creator の代わり
+</span>        <span class="k">class</span> <span class="nc">MyParcelableCreator</span> <span class="p">:</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span> <span class="n">IParcelableCreator</span>
+        <span class="p">{</span>
+            <span class="err">#</span><span class="n">region</span> <span class="n">IParcelableCreator</span> <span class="n">implementation</span>
+            <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span> <span class="n">IParcelableCreator</span><span class="p">.</span><span class="nf">CreateFromParcel</span><span class="p">(</span><span class="n">Parcel</span> <span class="n">source</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="kt">var</span> <span class="n">name</span> <span class="p">=</span> <span class="n">source</span><span class="p">.</span><span class="nf">ReadString</span><span class="p">();</span>
+                <span class="kt">var</span> <span class="n">phone</span> <span class="p">=</span> <span class="n">source</span><span class="p">.</span><span class="nf">ReadString</span><span class="p">();</span>
 
-            return new Card(name, phone);
-        }
+                <span class="k">return</span> <span class="k">new</span> <span class="nf">Card</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">phone</span><span class="p">);</span>
+            <span class="p">}</span>
 
-        Java.Lang.Object[] IParcelableCreator.NewArray(int size)
-        {
-            return new Java.Lang.Object[size];
-        }
-        #endregion
-    }
-} } ```
+            <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">[]</span> <span class="n">IParcelableCreator</span><span class="p">.</span><span class="nf">NewArray</span><span class="p">(</span><span class="kt">int</span> <span class="n">size</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="k">return</span> <span class="k">new</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">[</span><span class="n">size</span><span class="p">];</span>
+            <span class="p">}</span>
+            <span class="err">#</span><span class="n">endregion</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -1065,41 +1070,43 @@ using Java.Interop;</p>
 
 <p>まず渡す方。Intent に詰めます。</p>
 
-<p>```c# MainActivity.cs<br />
-button.Click += (sender, e) =&gt; <br />
-{<br />
-    var card = new Card(“amay”, “987-654-3321”);</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+<span class="p">{</span>
+    <span class="kt">var</span> <span class="n">card</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Card</span><span class="p">(</span><span class="s">"amay"</span><span class="p">,</span> <span class="s">"987-654-3321"</span><span class="p">);</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// Goto NextActivity
-var intent = new Intent(this, typeof(NextActivity));
-intent.PutExtra("card", card); // intent に Card を詰める
-
-this.StartActivity(intent); }; ```
+    <span class="c1">// Goto NextActivity
+</span>    <span class="kt">var</span> <span class="n">intent</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Intent</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">typeof</span><span class="p">(</span><span class="n">NextActivity</span><span class="p">));</span>
+    <span class="n">intent</span><span class="p">.</span><span class="nf">PutExtra</span><span class="p">(</span><span class="s">"card"</span><span class="p">,</span> <span class="n">card</span><span class="p">);</span> <span class="c1">// intent に Card を詰める
+</span>
+    <span class="k">this</span><span class="p">.</span><span class="nf">StartActivity</span><span class="p">(</span><span class="n">intent</span><span class="p">);</span>
+<span class="p">};</span>
 </code></pre>
 </div>
 
 <p>次に取り出す方。Intent から取り出します。</p>
 
-<p>```c# NextActivity.cs<br />
-namespace HelloXamarinAndroid<br />
-{<br />
-    [Activity (Label = “NextActivity”)]<br />
-    public class NextActivity : Activity<br />
-    {<br />
-        protected override void OnCreate(Bundle bundle)<br />
-        {<br />
-            base.OnCreate(bundle);</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//NextActivity.cs
+</span><span class="k">namespace</span> <span class="nn">HelloXamarinAndroid</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="nf">Activity</span> <span class="p">(</span><span class="n">Label</span> <span class="p">=</span> <span class="s">"NextActivity"</span><span class="p">)]</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">NextActivity</span> <span class="p">:</span> <span class="n">Activity</span>
+    <span class="p">{</span>
+        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">base</span><span class="p">.</span><span class="nf">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>        // Create your application here
+            <span class="c1">// Create your application here
+</span>
+            <span class="kt">var</span> <span class="n">card</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="n">Intent</span><span class="p">.</span><span class="nf">GetParcelableExtra</span><span class="p">(</span><span class="s">"card"</span><span class="p">)</span> <span class="k">as</span> <span class="n">Card</span><span class="p">;</span>
 
-        var card = this.Intent.GetParcelableExtra("card") as Card;
-
-        // Show toast
-        Toast.MakeText(this, 
-            String.Format("name:{0}, phone:{1}", card.Name, card.Phone), 
-            ToastLength.Long).Show();
-    }
-} } ```
+            <span class="c1">// Show toast
+</span>            <span class="n">Toast</span><span class="p">.</span><span class="nf">MakeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> 
+                <span class="n">String</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"name:{0}, phone:{1}"</span><span class="p">,</span> <span class="n">card</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">card</span><span class="p">.</span><span class="n">Phone</span><span class="p">),</span> 
+                <span class="n">ToastLength</span><span class="p">.</span><span class="n">Long</span><span class="p">).</span><span class="nf">Show</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -1108,7 +1115,7 @@ namespace HelloXamarinAndroid<br />
 
 <p>これで実装完了。動かしてみます。</p>
 
-<p><amp-img width="480" height="788" layout="responsive" src="https://dl.dropbox.com/u/264530/qiita/xamarin_parcel_received.png" alt="&quot;receive_parcel&quot;" /></p>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_parcel_received.png" alt="&quot;receive_parcel&quot;" /></p>
 
 <p>以上、受け渡し可能なクラスの実装方法でした。</p>
 

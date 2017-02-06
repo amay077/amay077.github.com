@@ -855,109 +855,98 @@ img {
 
 <p>2013.1.10 修正:メソッドに全部 <code class="highlighter-rouge">synchronized</code> つけたら動かんやん、恥ずかし…</p>
 
-<p>```java FutureResult.java<br />
-/**</p>
-<ul>
-  <li>success または error が呼ばれるまで get() で待ってる Future みたいなクラス</li>
-  <li></li>
-  <li>
-    <p>@author @amay077<br />
- */<br />
-public class FutureResult<T> {
- private final int TIMEOUT = 10;
- private final TimeUnit TIMEOUT_UNIT = TimeUnit.SECONDS;</T></p>
-
-    <p>private final CountDownLatch _latch = new CountDownLatch(1);<br />
- private T _value;<br />
- private Exception _error;</p>
-
-    <p>public static class FutureResultException extends Exception {<br />
-     private static final long serialVersionUID = 1L;</p>
-
-    <div class="highlighter-rouge"><pre class="highlight"><code> public FutureResultException(Exception detailException) {
-     super(detailException);
- }  }
-</code></pre>
-    </div>
-
-    <p>/**</p>
-    <ul>
-      <li>非同期処理が成功したら呼ぶメソッド<br />
-  */<br />
- public synchronized void success(T value) {<br />
- _value = value;<br />
- _latch.countDown();<br />
- }</li>
-    </ul>
-
-    <p>/**</p>
-    <ul>
-      <li>非同期処理が失敗したら呼ぶメソッド<br />
-  */<br />
- public synchronized void error(Exception ex) {<br />
- _error = ex;<br />
- _latch.countDown();<br />
- }</li>
-    </ul>
-
-    <p>/**</p>
-    <ul>
-      <li>非同期処理が終わるまで待って結果を返す。</li>
-      <li>
-        <p>エラーだったら例外を投げる。<br />
-  */<br />
- public T get() throws Exception {<br />
- try {<br />
-     if (!_latch.await(TIMEOUT, TIMEOUT_UNIT)) {<br />
-         throw new FutureResultException(new TimeoutException());<br />
-     }<br />
- } catch (Exception ex) {<br />
-     throw new FutureResultException(ex);<br />
- }</p>
-
-        <p>if (_error != null) {<br />
-     throw _error;<br />
- }</p>
-
-        <p>return _value;<br />
- }</p>
-      </li>
-    </ul>
-  </li>
-</ul>
-
-<p>}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-Future インターフェースを implements しようと思ったけど数が多くてやめたｗ
-使い方はこんな感じ。
-
-```java AsyncMethodTest.java
-public void testAsyncMethod() {
-	final FutureResult&lt;Integer&gt; result = new FutureResult&lt;Integer&gt;();
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//FutureResult.java</span>
+<span class="cm">/**
+ * success または error が呼ばれるまで get() で待ってる Future みたいなクラス
+ * 
+ * @author @amay077
+ */</span>
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">FutureResult</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="o">{</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">TIMEOUT</span> <span class="o">=</span> <span class="mi">10</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">TimeUnit</span> <span class="n">TIMEOUT_UNIT</span> <span class="o">=</span> <span class="n">TimeUnit</span><span class="o">.</span><span class="na">SECONDS</span><span class="o">;</span>
 	
-	// 非同期なメソッドを実行
-	hoge.asyncMethod(new OnReceiveListener() {
-		@Override
-		public void onReceive(Integer data) {
-			// 正そうな値を受信しtら success を呼ぶ
-			result.success(data);
-		}
+	<span class="kd">private</span> <span class="kd">final</span> <span class="n">CountDownLatch</span> <span class="n">_latch</span> <span class="o">=</span> <span class="k">new</span> <span class="n">CountDownLatch</span><span class="o">(</span><span class="mi">1</span><span class="o">);</span>
+	<span class="kd">private</span> <span class="n">T</span> <span class="n">_value</span><span class="o">;</span>
+	<span class="kd">private</span> <span class="n">Exception</span> <span class="n">_error</span><span class="o">;</span>
+
+	<span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">FutureResultException</span> <span class="kd">extends</span> <span class="n">Exception</span> <span class="o">{</span>
+		<span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">long</span> <span class="n">serialVersionUID</span> <span class="o">=</span> <span class="mi">1L</span><span class="o">;</span>
+
+		<span class="kd">public</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">Exception</span> <span class="n">detailException</span><span class="o">)</span> <span class="o">{</span>
+			<span class="kd">super</span><span class="o">(</span><span class="n">detailException</span><span class="o">);</span>
+		<span class="o">}</span>
+	<span class="o">}</span>
+	
+	<span class="cm">/**
+	 * 非同期処理が成功したら呼ぶメソッド
+	 */</span>
+	<span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">success</span><span class="o">(</span><span class="n">T</span> <span class="n">value</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">_value</span> <span class="o">=</span> <span class="n">value</span><span class="o">;</span>
+		<span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="cm">/**
+	 * 非同期処理が失敗したら呼ぶメソッド
+	 */</span>
+	<span class="kd">public</span> <span class="kd">synchronized</span> <span class="kt">void</span> <span class="nf">error</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">_error</span> <span class="o">=</span> <span class="n">ex</span><span class="o">;</span>
+		<span class="n">_latch</span><span class="o">.</span><span class="na">countDown</span><span class="o">();</span>
+	<span class="o">}</span>
+
+	<span class="cm">/**
+	 * 非同期処理が終わるまで待って結果を返す。
+	 * エラーだったら例外を投げる。
+	 */</span>
+	<span class="kd">public</span> <span class="n">T</span> <span class="nf">get</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">Exception</span> <span class="o">{</span>
+		<span class="k">try</span> <span class="o">{</span>
+			<span class="k">if</span> <span class="o">(!</span><span class="n">_latch</span><span class="o">.</span><span class="na">await</span><span class="o">(</span><span class="n">TIMEOUT</span><span class="o">,</span> <span class="n">TIMEOUT_UNIT</span><span class="o">))</span> <span class="o">{</span>
+				<span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="k">new</span> <span class="n">TimeoutException</span><span class="o">());</span>
+			<span class="o">}</span>
+		<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">throw</span> <span class="k">new</span> <span class="nf">FutureResultException</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+		<span class="o">}</span>
 		
-		@Override
-		public void onError(Exception ex) {
-			// エラーを受信した場合は error を呼ぶ
-			result.error(ex);
-		}
-	});
+		<span class="k">if</span> <span class="o">(</span><span class="n">_error</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+			<span class="k">throw</span> <span class="n">_error</span><span class="o">;</span>
+		<span class="o">}</span>
+		
+		<span class="k">return</span> <span class="n">_value</span><span class="o">;</span>
+	<span class="o">}</span>
+
+<span class="o">}</span>
+</code></pre>
+</div>
+
+<p>Future インターフェースを implements しようと思ったけど数が多くてやめたｗ<br />
+使い方はこんな感じ。</p>
+
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//AsyncMethodTest.java</span>
+<span class="kd">public</span> <span class="kt">void</span> <span class="nf">testAsyncMethod</span><span class="o">()</span> <span class="o">{</span>
+	<span class="kd">final</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">result</span> <span class="o">=</span> <span class="k">new</span> <span class="n">FutureResult</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;();</span>
 	
-	// 検証
-	try {
-		// get で success か error かタイムアウトするまで待ってる。
-		Assert.assertEquals(0, result.get()); 
-	} catch (Exception e) {
-		fail(e.getMessage());
-	}
-}
+	<span class="c1">// 非同期なメソッドを実行</span>
+	<span class="n">hoge</span><span class="o">.</span><span class="na">asyncMethod</span><span class="o">(</span><span class="k">new</span> <span class="n">OnReceiveListener</span><span class="o">()</span> <span class="o">{</span>
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onReceive</span><span class="o">(</span><span class="n">Integer</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// 正そうな値を受信しtら success を呼ぶ</span>
+			<span class="n">result</span><span class="o">.</span><span class="na">success</span><span class="o">(</span><span class="n">data</span><span class="o">);</span>
+		<span class="o">}</span>
+		
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onError</span><span class="o">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="o">)</span> <span class="o">{</span>
+			<span class="c1">// エラーを受信した場合は error を呼ぶ</span>
+			<span class="n">result</span><span class="o">.</span><span class="na">error</span><span class="o">(</span><span class="n">ex</span><span class="o">);</span>
+		<span class="o">}</span>
+	<span class="o">});</span>
+	
+	<span class="c1">// 検証</span>
+	<span class="k">try</span> <span class="o">{</span>
+		<span class="c1">// get で success か error かタイムアウトするまで待ってる。</span>
+		<span class="n">Assert</span><span class="o">.</span><span class="na">assertEquals</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">get</span><span class="o">());</span> 
+	<span class="o">}</span> <span class="k">catch</span> <span class="o">(</span><span class="n">Exception</span> <span class="n">e</span><span class="o">)</span> <span class="o">{</span>
+		<span class="n">fail</span><span class="o">(</span><span class="n">e</span><span class="o">.</span><span class="na">getMessage</span><span class="o">());</span>
+	<span class="o">}</span>
+<span class="o">}</span>
 
 </code></pre>
 </div>

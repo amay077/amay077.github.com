@@ -851,65 +851,63 @@ img {
 
 <!--more-->
 
-<p>```java LocationFunctions.java<br />
-/**</p>
-<ul>
-  <li>
-    <p>位置を取得し続ける(finish は呼ばれない)<br />
- */<br />
-public static Observable<Location> getCurrentLocationAsObservable(			
-     final Context context, final String provider) {
- return Reactive.createWithCloseable(new Func1&lt;Observer&lt;? super Location&gt;, Closeable&gt;() {
-     private volatile boolean _stop = false;</Location></p>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//LocationFunctions.java</span>
+<span class="cm">/**
+ * 位置を取得し続ける(finish は呼ばれない)
+ */</span>
+<span class="kd">public</span> <span class="kd">static</span> <span class="n">Observable</span><span class="o">&lt;</span><span class="n">Location</span><span class="o">&gt;</span> <span class="nf">getCurrentLocationAsObservable</span><span class="o">(</span>			
+		<span class="kd">final</span> <span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">provider</span><span class="o">)</span> <span class="o">{</span>
+	<span class="k">return</span> <span class="n">Reactive</span><span class="o">.</span><span class="na">createWithCloseable</span><span class="o">(</span><span class="k">new</span> <span class="n">Func1</span><span class="o">&lt;</span><span class="n">Observer</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">Location</span><span class="o">&gt;,</span> <span class="n">Closeable</span><span class="o">&gt;()</span> <span class="o">{</span>
+		<span class="kd">private</span> <span class="kd">volatile</span> <span class="kt">boolean</span> <span class="n">_stop</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
 
-    <div class="highlighter-rouge"><pre class="highlight"><code> @Override
- public Closeable invoke(final Observer&lt;? super Location&gt; observer) {
-     final LocationManager locMan = (LocationManager)context.getSystemService(Context.LOCATION_SERVICE);
-		
-     final LocationListener listener = new LocationListener() {
+		<span class="nd">@Override</span>
+		<span class="kd">public</span> <span class="n">Closeable</span> <span class="nf">invoke</span><span class="o">(</span><span class="kd">final</span> <span class="n">Observer</span><span class="o">&lt;?</span> <span class="kd">super</span> <span class="n">Location</span><span class="o">&gt;</span> <span class="n">observer</span><span class="o">)</span> <span class="o">{</span>
+			<span class="kd">final</span> <span class="n">LocationManager</span> <span class="n">locMan</span> <span class="o">=</span> <span class="o">(</span><span class="n">LocationManager</span><span class="o">)</span><span class="n">context</span><span class="o">.</span><span class="na">getSystemService</span><span class="o">(</span><span class="n">Context</span><span class="o">.</span><span class="na">LOCATION_SERVICE</span><span class="o">);</span>
 			
-         @Override
-         public void onStatusChanged(String provider, int status, Bundle extras) { }
-			
-         @Override
-         public void onProviderEnabled(String provider) { }
-			
-         @Override
-         public void onProviderDisabled(String provider) {
-             observer.error(
-                 new InvalidParameterException("LocationProvider disabled."));
-         }
-			
-         @Override
-         public void onLocationChanged(Location location) {
-             if (_stop) {
-                 return;
-             }
+			<span class="kd">final</span> <span class="n">LocationListener</span> <span class="n">listener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">LocationListener</span><span class="o">()</span> <span class="o">{</span>
 				
-             // 発火
-             observer.next(location);
-         }
-     };
-		
-     // 位置取得開始
-     locMan.requestLocationUpdates(provider, 0, 0, listener, Looper.getMainLooper());
+				<span class="nd">@Override</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onStatusChanged</span><span class="o">(</span><span class="n">String</span> <span class="n">provider</span><span class="o">,</span> <span class="kt">int</span> <span class="n">status</span><span class="o">,</span> <span class="n">Bundle</span> <span class="n">extras</span><span class="o">)</span> <span class="o">{</span> <span class="o">}</span>
+				
+				<span class="nd">@Override</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onProviderEnabled</span><span class="o">(</span><span class="n">String</span> <span class="n">provider</span><span class="o">)</span> <span class="o">{</span> <span class="o">}</span>
+				
+				<span class="nd">@Override</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onProviderDisabled</span><span class="o">(</span><span class="n">String</span> <span class="n">provider</span><span class="o">)</span> <span class="o">{</span>
+					<span class="n">observer</span><span class="o">.</span><span class="na">error</span><span class="o">(</span>
+						<span class="k">new</span> <span class="nf">InvalidParameterException</span><span class="o">(</span><span class="s">"LocationProvider disabled."</span><span class="o">));</span>
+				<span class="o">}</span>
+				
+				<span class="nd">@Override</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onLocationChanged</span><span class="o">(</span><span class="n">Location</span> <span class="n">location</span><span class="o">)</span> <span class="o">{</span>
+					<span class="k">if</span> <span class="o">(</span><span class="n">_stop</span><span class="o">)</span> <span class="o">{</span>
+						<span class="k">return</span><span class="o">;</span>
+					<span class="o">}</span>
+					
+					<span class="c1">// 発火</span>
+					<span class="n">observer</span><span class="o">.</span><span class="na">next</span><span class="o">(</span><span class="n">location</span><span class="o">);</span>
+				<span class="o">}</span>
+			<span class="o">};</span>
+			
+			<span class="c1">// 位置取得開始</span>
+			<span class="n">locMan</span><span class="o">.</span><span class="na">requestLocationUpdates</span><span class="o">(</span><span class="n">provider</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="mi">0</span><span class="o">,</span> <span class="n">listener</span><span class="o">,</span> <span class="n">Looper</span><span class="o">.</span><span class="na">getMainLooper</span><span class="o">());</span>
 
-     return new Closeable() {
-         @Override
-         public void close() throws IOException {
-             if (_stop) {
-                 return;
-             }
-             _stop = true;
-             locMan.removeUpdates(listener);
-             observer.finish();
-         }
-     };
- }  }); } ```
+			<span class="k">return</span> <span class="k">new</span> <span class="nf">Closeable</span><span class="o">()</span> <span class="o">{</span>
+				<span class="nd">@Override</span>
+				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">close</span><span class="o">()</span> <span class="kd">throws</span> <span class="n">IOException</span> <span class="o">{</span>
+					<span class="k">if</span> <span class="o">(</span><span class="n">_stop</span><span class="o">)</span> <span class="o">{</span>
+						<span class="k">return</span><span class="o">;</span>
+					<span class="o">}</span>
+					<span class="n">_stop</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+					<span class="n">locMan</span><span class="o">.</span><span class="na">removeUpdates</span><span class="o">(</span><span class="n">listener</span><span class="o">);</span>
+					<span class="n">observer</span><span class="o">.</span><span class="na">finish</span><span class="o">();</span>
+				<span class="o">}</span>
+			<span class="o">};</span>
+		<span class="o">}</span>
+	<span class="o">});</span>
+<span class="o">}</span>
 </code></pre>
-    </div>
-  </li>
-</ul>
+</div>
 
 <p>使い方は、方位の時とほとんど同じ。パラメータが Float から Location に代わっただけ。</p>
 

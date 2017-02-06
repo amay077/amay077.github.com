@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -891,7 +891,7 @@ img {
 <p>まず、Azure マネージメントポータル (https://manage.windowsazure.com/) から、モバイルサービス → 項目 → を選んで、上部にある「プッシュ」を選択します。<br />
 次に「apple プッシュ通知の設定」の証明書に、先に手順で入手した 「.p12ファイル」をアップロードします。パスワードはその時決めたものを入力します。</p>
 
-<p><amp-img width="973" height="654" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_02.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_02.png" alt="" /></p>
 
 <h2 id="section-1">アプリケーションにプッシュ通知を実装する</h2>
 
@@ -905,29 +905,32 @@ img {
 
 <p><code class="highlighter-rouge">AppDelegate.cs</code> に、端末を識別するためのIDを保持するプロパティを作ります。</p>
 
-<p>```csharp AppDelegate.cs<br />
-public string DeviceToken { get; set; }</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-``ToDoItem.cs`` にも同じく DeviceToken を追加します。
-が、説明にある ``[DataMember…`` は間違いです。正しくは ``[JsonProperty…`` です。
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//AppDelegate.cs
+</span><span class="k">public</span> <span class="kt">string</span> <span class="n">DeviceToken</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+</code></pre>
+</div>
 
-```csharp ToDoItem.cs
-×[DataMember(Name = "deviceToken")]
-[JsonProperty(PropertyName = "deviceToken")]
-public string DeviceToken { get; set; }
+<p><code class="highlighter-rouge">ToDoItem.cs</code> にも同じく DeviceToken を追加します。<br />
+が、説明にある <code class="highlighter-rouge">[DataMember…</code> は間違いです。正しくは <code class="highlighter-rouge">[JsonProperty…</code> です。</p>
+
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//ToDoItem.cs
+</span><span class="err">×</span><span class="p">[</span><span class="nf">DataMember</span><span class="p">(</span><span class="n">Name</span> <span class="p">=</span> <span class="s">"deviceToken"</span><span class="p">)]</span>
+<span class="na">[JsonProperty(PropertyName = "deviceToken")]</span>
+<span class="k">public</span> <span class="kt">string</span> <span class="n">DeviceToken</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
 </code></pre>
 </div>
 
 <p>再び <code class="highlighter-rouge">AppDelegate.cs</code> に戻って、アプリが起動完了した時に、APNS サーバにアプリを登録するコードを追加します。</p>
 
-<p>```csharp AppDelegate.cs<br />
-public override bool FinishedLaunching(UIApplication application, NSDictionary launchOptions)<br />
-{<br />
-    UIRemoteNotificationType notificationTypes = UIRemoteNotificationType.Alert | <br />
-        UIRemoteNotificationType.Badge | UIRemoteNotificationType.Sound;<br />
-    UIApplication.SharedApplication.RegisterForRemoteNotificationTypes(notificationTypes);</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//AppDelegate.cs
+</span><span class="k">public</span> <span class="k">override</span> <span class="kt">bool</span> <span class="nf">FinishedLaunching</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSDictionary</span> <span class="n">launchOptions</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">UIRemoteNotificationType</span> <span class="n">notificationTypes</span> <span class="p">=</span> <span class="n">UIRemoteNotificationType</span><span class="p">.</span><span class="n">Alert</span> <span class="p">|</span> 
+        <span class="n">UIRemoteNotificationType</span><span class="p">.</span><span class="n">Badge</span> <span class="p">|</span> <span class="n">UIRemoteNotificationType</span><span class="p">.</span><span class="n">Sound</span><span class="p">;</span>
+    <span class="n">UIApplication</span><span class="p">.</span><span class="n">SharedApplication</span><span class="p">.</span><span class="nf">RegisterForRemoteNotificationTypes</span><span class="p">(</span><span class="n">notificationTypes</span><span class="p">);</span> 
 
-<div class="highlighter-rouge"><pre class="highlight"><code>return true; } ```
+    <span class="k">return</span> <span class="k">true</span><span class="p">;</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -936,92 +939,97 @@ public override bool FinishedLaunching(UIApplication application, NSDictionary l
 <p><strong>ここが2つ目のハマりポイントです。</strong><br />
 <code class="highlighter-rouge">deviceToken.Description</code> を使用していますが、これは iOSネイティブと異なり <strong>空白入りの文字列を返す</strong> ようです。そのためそのまま DeviceToken として利用すると、通知が来ません。エラーにもならないので原因究明に数時間要しました…。<code class="highlighter-rouge">Replace</code> で空白も取り除きます。</p>
 
-<p>```csharp AppDelegate.cs<br />
-public override void RegisteredForRemoteNotifications(UIApplication application, NSData deviceToken)<br />
-{<br />
-    string trimmedDeviceToken = deviceToken.Description;<br />
-    if (!string.IsNullOrWhiteSpace(trimmedDeviceToken))<br />
-    {<br />
-        trimmedDeviceToken = trimmedDeviceToken.Trim(‘&lt;’);<br />
-        trimmedDeviceToken = trimmedDeviceToken.Trim(‘&gt;’);<br />
-        trimmedDeviceToken = trimmedDeviceToken.Replcae(“ “, “”); // ←追加<br />
-    }<br />
-    DeviceToken = trimmedDeviceToken;<br />
-}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-そして、``AppDelegate.cs`` に、プッシュ通知受信時のコードを書きます。
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//AppDelegate.cs
+</span><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">RegisteredForRemoteNotifications</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSData</span> <span class="n">deviceToken</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">string</span> <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">deviceToken</span><span class="p">.</span><span class="n">Description</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(!</span><span class="kt">string</span><span class="p">.</span><span class="nf">IsNullOrWhiteSpace</span><span class="p">(</span><span class="n">trimmedDeviceToken</span><span class="p">))</span>
+    <span class="p">{</span>
+        <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Trim</span><span class="p">(</span><span class="sc">'&lt;'</span><span class="p">);</span>
+        <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Trim</span><span class="p">(</span><span class="sc">'&gt;'</span><span class="p">);</span>
+        <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Replcae</span><span class="p">(</span><span class="err">“</span> <span class="err">“</span><span class="p">,</span> <span class="err">“”</span><span class="p">);</span> <span class="c1">// ←追加
+</span>    <span class="p">}</span>
+    <span class="n">DeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">;</span>
+<span class="p">}</span>
+</code></pre>
+</div>
 
-```csharp AppDelegate.cs
-public override void ReceivedRemoteNotification(UIApplication application, NSDictionary userInfo)
-{
-    Debug.WriteLine(userInfo.ToString());
-    NSObject inAppMessage;
+<p>そして、<code class="highlighter-rouge">AppDelegate.cs</code> に、プッシュ通知受信時のコードを書きます。</p>
 
-    bool success = userInfo.TryGetValue(new NSString("inAppMessage"), out inAppMessage);
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//AppDelegate.cs
+</span><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ReceivedRemoteNotification</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSDictionary</span> <span class="n">userInfo</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">userInfo</span><span class="p">.</span><span class="nf">ToString</span><span class="p">());</span>
+    <span class="n">NSObject</span> <span class="n">inAppMessage</span><span class="p">;</span>
 
-    if (success)
-    {
-        var alert = new UIAlertView("Got push notification", inAppMessage.ToString(), null, "OK", null);
-        alert.Show();
-    }
-}
+    <span class="kt">bool</span> <span class="n">success</span> <span class="p">=</span> <span class="n">userInfo</span><span class="p">.</span><span class="nf">TryGetValue</span><span class="p">(</span><span class="k">new</span> <span class="nf">NSString</span><span class="p">(</span><span class="s">"inAppMessage"</span><span class="p">),</span> <span class="k">out</span> <span class="n">inAppMessage</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">success</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">alert</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">UIAlertView</span><span class="p">(</span><span class="s">"Got push notification"</span><span class="p">,</span> <span class="n">inAppMessage</span><span class="p">.</span><span class="nf">ToString</span><span class="p">(),</span> <span class="k">null</span><span class="p">,</span> <span class="s">"OK"</span><span class="p">,</span> <span class="k">null</span><span class="p">);</span>
+        <span class="n">alert</span><span class="p">.</span><span class="nf">Show</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
 <p>最後に <code class="highlighter-rouge">QSTodoListViewController.cs</code> の <code class="highlighter-rouge">OnAdd</code> を次のように変更して、追加するデータに DeviceToken を含めるようにします。この値を使って、Azure 側でプッシュ通知を送ります。</p>
 
-<p>```csharp QSTodoListViewController.cs<br />
-var deviceToken = ((AppDelegate)UIApplication.SharedApplication.Delegate).DeviceToken;</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//QSTodoListViewController.cs
+</span><span class="kt">var</span> <span class="n">deviceToken</span> <span class="p">=</span> <span class="p">((</span><span class="n">AppDelegate</span><span class="p">)</span><span class="n">UIApplication</span><span class="p">.</span><span class="n">SharedApplication</span><span class="p">.</span><span class="n">Delegate</span><span class="p">).</span><span class="n">DeviceToken</span><span class="p">;</span>
 
-<p>var newItem = new ToDoItem() <br />
-{<br />
-    Text = itemText.Text, <br />
-    Complete = false,<br />
-    DeviceToken = deviceToken<br />
-};</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-コードの記述はこれで終わりですが、Xamarin Studio から、iOS アプリを実機で動かしたことがない人は、iOS Developer Account の設定をしておきましょう。
+<span class="kt">var</span> <span class="n">newItem</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">ToDoItem</span><span class="p">()</span> 
+<span class="p">{</span>
+    <span class="n">Text</span> <span class="p">=</span> <span class="n">itemText</span><span class="p">.</span><span class="n">Text</span><span class="p">,</span> 
+    <span class="n">Complete</span> <span class="p">=</span> <span class="k">false</span><span class="p">,</span>
+    <span class="n">DeviceToken</span> <span class="p">=</span> <span class="n">deviceToken</span>
+<span class="p">};</span>
+</code></pre>
+</div>
 
-システムメニュー → Preferences、Environment → Developer Accounts から追加しておきます。
+<p>コードの記述はこれで終わりですが、Xamarin Studio から、iOS アプリを実機で動かしたことがない人は、iOS Developer Account の設定をしておきましょう。</p>
 
-![](https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_03.png)
+<p>システムメニュー → Preferences、Environment → Developer Accounts から追加しておきます。</p>
 
-## マネージメントポータルで、データの追加時のスクリプトを登録する
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_03.png" alt="" /></p>
 
-&gt; 6 Update the registered insert script in the Management Portal
+<h2 id="section-2">マネージメントポータルで、データの追加時のスクリプトを登録する</h2>
 
-についてです。
+<blockquote>
+  <p>6 Update the registered insert script in the Management Portal</p>
+</blockquote>
 
-まず、マネージメントポータル https://manage.windowsazure.com/ を開き、モバイルサービス → サービス名 → データ → テーブル名 と選択します。
+<p>についてです。</p>
 
-![](https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_04.png)
+<p>まず、マネージメントポータル https://manage.windowsazure.com/ を開き、モバイルサービス → サービス名 → データ → テーブル名 と選択します。</p>
 
-次に、スクリプト を選択し、ドロップダウンから「挿入」を選択します。テーブルにデータが追加された時に実行するスクリプトが表示されます。
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_04.png" alt="" /></p>
 
-![](https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_05.png)
+<p>次に、スクリプト を選択し、ドロップダウンから「挿入」を選択します。テーブルにデータが追加された時に実行するスクリプトが表示されます。</p>
 
-スクリプトを以下に置き換えます。
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_05.png" alt="" /></p>
 
-```js
-function insert(item, user, request) {
-    request.execute();
-    // Set timeout to delay the notification, to provide time for the 
-    // app to be closed on the device to demonstrate toast notifications
-    setTimeout(function() {
-        push.apns.send(item.deviceToken, {
-            alert: "Toast: " + item.text,
-            payload: {
-                inAppMessage: "Hey, a new item arrived: '" + item.text + "'"
-            }
-        });
-    }, 2500);
-}
+<p>スクリプトを以下に置き換えます。</p>
+
+<div class="language-js highlighter-rouge"><pre class="highlight"><code><span class="kd">function</span> <span class="nx">insert</span><span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">user</span><span class="p">,</span> <span class="nx">request</span><span class="p">)</span> <span class="p">{</span>
+    <span class="nx">request</span><span class="p">.</span><span class="nx">execute</span><span class="p">();</span>
+    <span class="c1">// Set timeout to delay the notification, to provide time for the </span>
+    <span class="c1">// app to be closed on the device to demonstrate toast notifications</span>
+    <span class="nx">setTimeout</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+        <span class="nx">push</span><span class="p">.</span><span class="nx">apns</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="nx">item</span><span class="p">.</span><span class="nx">deviceToken</span><span class="p">,</span> <span class="p">{</span>
+            <span class="na">alert</span><span class="p">:</span> <span class="s2">"Toast: "</span> <span class="o">+</span> <span class="nx">item</span><span class="p">.</span><span class="nx">text</span><span class="p">,</span>
+            <span class="na">payload</span><span class="p">:</span> <span class="p">{</span>
+                <span class="na">inAppMessage</span><span class="p">:</span> <span class="s2">"Hey, a new item arrived: '"</span> <span class="o">+</span> <span class="nx">item</span><span class="p">.</span><span class="nx">text</span> <span class="o">+</span> <span class="s2">"'"</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
+    <span class="p">},</span> <span class="mi">2500</span><span class="p">);</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
 <p>これにより、データの追加から 2.5秒後に、APNS にプッシュ通知のリクエストを投げます。</p>
 
-<h2 id="section-2">動かす</h2>
+<h2 id="section-3">動かす</h2>
 
 <blockquote>
   <p>7 Test push notifications in your app</p>
@@ -1031,7 +1039,7 @@ function insert(item, user, request) {
 
 <p>Xamarin Studio から、実機で実行します。</p>
 
-<p><amp-img width="805" height="175" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_06.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_06.png" alt="" /></p>
 
 <p>アプリ起動直後、通知の受信を許可するかどうかを尋ねられますので「Yes」で。(一度答えると二度と出ないのでしょうか？なのでチュートリアルの画像で。)</p>
 
@@ -1039,11 +1047,11 @@ function insert(item, user, request) {
 
 <p>Twitter 認証後、適当に項目を追加します。</p>
 
-<p><amp-img width="383" height="133" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_07.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_07.png" alt="" /></p>
 
 <p>しばらく待っていると…</p>
 
-<p><amp-img width="383" height="161" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_08.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_08.png" alt="" /></p>
 
 <p>無事、プッシュ通知を受信できましたー。<br />
 (実はここに辿り着くまで数十回試しているので最初に通知を受け取った時の感激と言ったら…)</p>
@@ -1052,16 +1060,16 @@ function insert(item, user, request) {
 
 <p>ハマりどころは文中にも書きましたが、下にもトラブルシューティングとして書きました。何かのお役に立てば。</p>
 
-<h2 id="section-3">トラブルシューティング</h2>
+<h2 id="section-4">トラブルシューティング</h2>
 
 <h3 id="ios-dev-center--bundle-id-">iOS Dev Center で Bundle ID 入力したらエラーになった</h3>
 
 <p>プロジェクト名に アンダースコア が含まれてるとダメです。<br />
 Xamarin Studio のプロジェクト プロパティ → iOS Application で直しましょう。</p>
 
-<p><amp-img width="963" height="670" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_09.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_09.png" alt="" /></p>
 
-<h3 id="section-4">アプリが起動直後(認証を通過した後)に落ちるようになった</h3>
+<h3 id="section-5">アプリが起動直後(認証を通過した後)に落ちるようになった</h3>
 
 <p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
 
@@ -1077,16 +1085,16 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 </code></pre>
 </div>
 
-<h3 id="section-5">クライアントで「追加」しても、プッシュ通知が来ません</h3>
+<h3 id="section-6">クライアントで「追加」しても、プッシュ通知が来ません</h3>
 
 <p>まずは、Azure マネージメントポータルで「ログ」を見てみましょう。<br />
 下記からアクセスできます。</p>
 
-<p><amp-img width="1093" height="427" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_01.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_azure_mobile_service_by_xamarin_3_01.png" alt="" /></p>
 
 <p>データ挿入時のスクリプトでエラーが出ていれば、ここに出力されるはずです。スクリプト内で <code class="highlighter-rouge">console.log</code> した内容もここに出力されます。</p>
 
-<h3 id="section-6">それでもまだ、プッシュ通知が来ません</h3>
+<h3 id="section-7">それでもまだ、プッシュ通知が来ません</h3>
 
 <p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
 
@@ -1121,7 +1129,7 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 
 <p>と、空白を除去する必要があります。</p>
 
-<h3 id="section-7">しかしそれでもまだ、プッシュ通知が来ません</h3>
+<h3 id="section-8">しかしそれでもまだ、プッシュ通知が来ません</h3>
 
 <p>最初の手順、キーチェーンアクセスで CSR を作る時、「ユーザーのメールアドレス」「通称」を iOS Developer Center に登録しているものと同じにする必要があるみたいです。これが間違っていると、.p12 ファイルを書き出す時に選択すべき「Apple Development IOS Push Services: net.azure-mobile.amay077-baas-test」という鍵が見つからない(文字化けしてる)はずです。</p>
 
@@ -1129,7 +1137,7 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 
 <p>これらを忘れると通知が来ません。そしてエラーにもならないので厄介です。</p>
 
-<h2 id="section-8">雑感</h2>
+<h2 id="section-9">雑感</h2>
 
 <p>しかし <a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp#add-push">Azure のチュートリアル</a>、これ一度も試してないんじゃないの？</p>
 

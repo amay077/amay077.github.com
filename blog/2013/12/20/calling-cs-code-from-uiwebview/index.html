@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -856,39 +856,40 @@ img {
 <!--more--></p>
 <h2 id="section">サンプル</h2>
 
-<p>```csharp MainViewController.cs</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainViewController.cs
+</span>
+<span class="cm">/* in MainViewController.designer.cs
+[Outlet]
+[GeneratedCodeAttribute ("iOS Designer", "1.0")]
+MonoTouch.UIKit.UIWebView MyWebView { get; set; }
+*/</span>
 
-<p>/* in MainViewController.designer.cs<br />
-[Outlet]<br />
-[GeneratedCodeAttribute (“iOS Designer”, “1.0”)]<br />
-MonoTouch.UIKit.UIWebView MyWebView { get; set; }<br />
-*/</p>
+<span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">base</span><span class="p">.</span><span class="nf">ViewDidLoad</span><span class="p">();</span>
+    
+    <span class="n">MyWebView</span><span class="p">.</span><span class="nf">LoadRequest</span><span class="p">(</span><span class="n">NSUrlRequest</span><span class="p">.</span><span class="nf">FromUrl</span><span class="p">(</span><span class="n">NSUrl</span><span class="p">.</span><span class="nf">FromString</span><span class="p">(</span><span class="s">"http://www.hatena.ne.jp/"</span><span class="p">)));</span>
 
-<p>public override void ViewDidLoad()<br />
-{<br />
-    base.ViewDidLoad();</p>
+    <span class="c1">// LoadFinished はイベント
+</span>    <span class="n">MyWebView</span><span class="p">.</span><span class="n">LoadFinished</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="n">MyWebView</span><span class="p">.</span><span class="n">Request</span><span class="p">.</span><span class="n">Url</span><span class="p">.</span><span class="n">Host</span><span class="p">,</span> <span class="s">"b.hatena.ne.jp"</span><span class="p">))</span>
+        <span class="p">{</span>
+            <span class="k">new</span> <span class="nf">UIAlertView</span><span class="p">(</span><span class="s">"Load Finished"</span><span class="p">,</span> <span class="s">"ページが表示されました"</span><span class="p">,</span> <span class="k">null</span><span class="p">,</span> <span class="s">"Close"</span><span class="p">).</span><span class="nf">Show</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">};</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>MyWebView.LoadRequest(NSUrlRequest.FromUrl(NSUrl.FromString("http://www.hatena.ne.jp/")));
+    <span class="c1">// ShouldStartLoad は Delegate
+</span>    <span class="n">MyWebView</span><span class="p">.</span><span class="n">ShouldStartLoad</span> <span class="p">=</span> <span class="p">(</span><span class="n">webView</span><span class="p">,</span> <span class="n">req</span><span class="p">,</span> <span class="n">navType</span><span class="p">)</span> <span class="p">=&gt;</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">permited</span> <span class="p">=</span> <span class="p">!</span><span class="n">String</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="n">req</span><span class="p">.</span><span class="n">Url</span><span class="p">.</span><span class="n">Host</span><span class="p">,</span> <span class="s">"hatenablog.com"</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(!</span><span class="n">permited</span><span class="p">)</span>
+        <span class="p">{</span>
+            <span class="k">new</span> <span class="nf">UIAlertView</span><span class="p">(</span><span class="s">"ShouldStartLoad"</span><span class="p">,</span> <span class="err">“はてなブログは見ちゃダメ！</span><span class="s">", null, "</span><span class="n">Close</span><span class="s">").Show();
+</span>        <span class="p">}</span> 
 
-// LoadFinished はイベント
-MyWebView.LoadFinished += (sender, e) =&gt; {
-    if (String.Equals(MyWebView.Request.Url.Host, "b.hatena.ne.jp"))
-    {
-        new UIAlertView("Load Finished", "ページが表示されました", null, "Close").Show();
-    }
-};
-
-// ShouldStartLoad は Delegate
-MyWebView.ShouldStartLoad = (webView, req, navType) =&gt;
-{
-    var permited = !String.Equals(req.Url.Host, "hatenablog.com");
-    if (!permited)
-    {
-        new UIAlertView("ShouldStartLoad", “はてなブログは見ちゃダメ！", null, "Close").Show();
-    } 
-
-    return permited;
-}; } ```
+        <span class="k">return</span> <span class="n">permited</span><span class="p">;</span>
+    <span class="p">};</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -913,7 +914,7 @@ MyWebView.ShouldStartLoad = (webView, req, navType) =&gt;
 
 <p>最後に、作ったサンプルを動かしてみます。</p>
 
-<p><amp-img width="321" height="591" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/calling_csharp_from_webview_01.gif" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/calling_csharp_from_webview_01.gif" alt="" /></p>
 
 <p>なんか <code class="highlighter-rouge">LoadFinished</code> が２回呼ばれてる。重複チェックしなきゃダメですね</p>
 

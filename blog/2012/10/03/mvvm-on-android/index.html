@@ -869,7 +869,8 @@ public interface Message {<br />
 	public void invoke(T arg);
 }</T></p>
 <div class="highlighter-rouge"><pre class="highlight"><code>
-```java Messenger.java
+```java
+//Messenger.java
 public final class Messenger {
 	
 	private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
@@ -905,31 +906,32 @@ public final class Messenger {
 
 <p>しかしいろいろ試していたら、こんな方法で文字列としては取り出すことができました。</p>
 
-<p>```java Messenger.java<br />
-public final class Messenger {</p>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//Messenger.java</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Messenger</span> <span class="o">{</span>
+	
+	<span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Action1</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;&gt;</span> <span class="n">_actions</span> <span class="o">=</span> 
+			<span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Action1</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;&gt;();</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
-		new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
+	<span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">register</span><span class="o">(</span><span class="n">Action1</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">action</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// action が使ってる Generics な型を取り出す(という意味？)。</span>
+		<span class="c1">// action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。</span>
+		<span class="n">Type</span><span class="o">[]</span> <span class="n">types</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getGenericInterfaces</span><span class="o">();</span>
+		<span class="c1">// 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。</span>
+		<span class="c1">// ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"</span>
+		<span class="n">String</span> <span class="n">typeString</span> <span class="o">=</span> <span class="n">types</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">toString</span><span class="o">();</span>
 
-public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
-	// action が使ってる Generics な型を取り出す(という意味？)。
-	// action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
-	Type[] types = action.getClass().getGenericInterfaces();
-	// 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
-	// ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
-	String typeString = types[0].toString();
+		<span class="c1">// &lt; &gt; 内だけ取り出す		</span>
+		<span class="kt">int</span> <span class="n">start</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">indexOf</span><span class="o">(</span><span class="s">"&lt;"</span><span class="o">);</span>
+		<span class="kt">int</span> <span class="n">end</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">lastIndexOf</span><span class="o">(</span><span class="s">"&gt;"</span><span class="o">);</span>
+		<span class="n">String</span> <span class="n">nameOfT</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">subSequence</span><span class="o">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="o">,</span> <span class="n">end</span><span class="o">).</span><span class="na">toString</span><span class="o">();</span>
 
-	// &lt; &gt; 内だけ取り出す		
-	int start = typeString.indexOf("&lt;");
-	int end = typeString.lastIndexOf("&gt;");
-	String nameOfT = typeString.subSequence(start + 1, end).toString();
+		<span class="n">_actions</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">nameOfT</span><span class="o">,</span> <span class="n">action</span><span class="o">);</span>
+	<span class="o">}</span>
 
-	_actions.put(nameOfT, action);
-}
-
-public void send(Message message) {
-	/* TODO message の型をキーにして _actions から取り出して invoke */
-} } ```
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">send</span><span class="o">(</span><span class="n">Message</span> <span class="n">message</span><span class="o">)</span> <span class="o">{</span>
+		<span class="cm">/* TODO message の型をキーにして _actions から取り出して invoke */</span>
+	<span class="o">}</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 
@@ -939,43 +941,44 @@ public void send(Message message) {
 <code class="highlighter-rouge">_actions.get(nameOfMessage)</code> で取り出した <code class="highlighter-rouge">Action1&lt;? extend Message&gt;</code> は、invoke メソッドの型が <code class="highlighter-rouge">null</code> になってて、使えませんでした。<br />
 なので仕方なく、Generics パラメータなしの <code class="highlighter-rouge">Action1</code> で受けることに。</p>
 
-<p>```java Messenger.java<br />
-public final class Messenger {</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>private Map&lt;String, Action1&lt;? extends Message&gt;&gt; _actions = 
-		new HashMap&lt;String, Action1&lt;? extends Message&gt;&gt;();
-
-public &lt;T extends Message&gt; void register(Action1&lt;T&gt; action) {
-	// action が使ってる Generics な型を取り出す(という意味？)。
-	// action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。
-	Type[] types = action.getClass().getGenericInterfaces();
-	// 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。
-	// ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"
-	String typeString = types[0].toString();
-
-	// &lt; &gt; 内だけ取り出す		
-	int start = typeString.indexOf("&lt;");
-	int end = typeString.lastIndexOf("&gt;");
-	String nameOfT = typeString.subSequence(start + 1, end).toString();
-
-	_actions.put(nameOfT, action);
-}
-
-@SuppressWarnings("unchecked")
-public void send(Message message) {
-	final String messengerTypeName = message.getClass().getName();
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//Messenger.java</span>
+<span class="kd">public</span> <span class="kd">final</span> <span class="kd">class</span> <span class="nc">Messenger</span> <span class="o">{</span>
 	
-	if (!_actions.containsKey(messengerTypeName)) {
-		return;
-	}
+	<span class="kd">private</span> <span class="n">Map</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Action1</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;&gt;</span> <span class="n">_actions</span> <span class="o">=</span> 
+			<span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Action1</span><span class="o">&lt;?</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;&gt;();</span>
 
-	// Action1&lt;? extends Message&gt; だと、invoke の型が null になってしまう。
-	// が、_actions は追加/取得を兼ねているので Action1&lt;? super Message&gt; にすることもできず…		
-	// 仕方なく Generics 未使用で。
-	@SuppressWarnings("rawtypes")
-	Action1 action = _actions.get(messengerTypeName);
-	action.invoke(message);
-} } ```
+	<span class="kd">public</span> <span class="o">&lt;</span><span class="n">T</span> <span class="kd">extends</span> <span class="n">Message</span><span class="o">&gt;</span> <span class="kt">void</span> <span class="nf">register</span><span class="o">(</span><span class="n">Action1</span><span class="o">&lt;</span><span class="n">T</span><span class="o">&gt;</span> <span class="n">action</span><span class="o">)</span> <span class="o">{</span>
+		<span class="c1">// action が使ってる Generics な型を取り出す(という意味？)。</span>
+		<span class="c1">// action.getClass().getInterfaces(); でもいけるかと思ったら、Action1 までしか取り出せなかった。</span>
+		<span class="n">Type</span><span class="o">[]</span> <span class="n">types</span> <span class="o">=</span> <span class="n">action</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getGenericInterfaces</span><span class="o">();</span>
+		<span class="c1">// 文字列化したら Action1&lt;T&gt; の T の部分も実際の型名が得られた。</span>
+		<span class="c1">// ex: "hoge.mvvm.Action1&lt;com.piyo.MyMessage&gt;"</span>
+		<span class="n">String</span> <span class="n">typeString</span> <span class="o">=</span> <span class="n">types</span><span class="o">[</span><span class="mi">0</span><span class="o">].</span><span class="na">toString</span><span class="o">();</span>
+
+		<span class="c1">// &lt; &gt; 内だけ取り出す		</span>
+		<span class="kt">int</span> <span class="n">start</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">indexOf</span><span class="o">(</span><span class="s">"&lt;"</span><span class="o">);</span>
+		<span class="kt">int</span> <span class="n">end</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">lastIndexOf</span><span class="o">(</span><span class="s">"&gt;"</span><span class="o">);</span>
+		<span class="n">String</span> <span class="n">nameOfT</span> <span class="o">=</span> <span class="n">typeString</span><span class="o">.</span><span class="na">subSequence</span><span class="o">(</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="o">,</span> <span class="n">end</span><span class="o">).</span><span class="na">toString</span><span class="o">();</span>
+
+		<span class="n">_actions</span><span class="o">.</span><span class="na">put</span><span class="o">(</span><span class="n">nameOfT</span><span class="o">,</span> <span class="n">action</span><span class="o">);</span>
+	<span class="o">}</span>
+
+	<span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">"unchecked"</span><span class="o">)</span>
+	<span class="kd">public</span> <span class="kt">void</span> <span class="nf">send</span><span class="o">(</span><span class="n">Message</span> <span class="n">message</span><span class="o">)</span> <span class="o">{</span>
+		<span class="kd">final</span> <span class="n">String</span> <span class="n">messengerTypeName</span> <span class="o">=</span> <span class="n">message</span><span class="o">.</span><span class="na">getClass</span><span class="o">().</span><span class="na">getName</span><span class="o">();</span>
+		
+		<span class="k">if</span> <span class="o">(!</span><span class="n">_actions</span><span class="o">.</span><span class="na">containsKey</span><span class="o">(</span><span class="n">messengerTypeName</span><span class="o">))</span> <span class="o">{</span>
+			<span class="k">return</span><span class="o">;</span>
+		<span class="o">}</span>
+
+		<span class="c1">// Action1&lt;? extends Message&gt; だと、invoke の型が null になってしまう。</span>
+		<span class="c1">// が、_actions は追加/取得を兼ねているので Action1&lt;? super Message&gt; にすることもできず…		</span>
+		<span class="c1">// 仕方なく Generics 未使用で。</span>
+		<span class="nd">@SuppressWarnings</span><span class="o">(</span><span class="s">"rawtypes"</span><span class="o">)</span>
+		<span class="n">Action1</span> <span class="n">action</span> <span class="o">=</span> <span class="n">_actions</span><span class="o">.</span><span class="na">get</span><span class="o">(</span><span class="n">messengerTypeName</span><span class="o">);</span>
+		<span class="n">action</span><span class="o">.</span><span class="na">invoke</span><span class="o">(</span><span class="n">message</span><span class="o">);</span>
+	<span class="o">}</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 

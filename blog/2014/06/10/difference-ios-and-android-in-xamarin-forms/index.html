@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -873,53 +873,56 @@ Forms アプリを Android で動かして回転させると、なんと <strong
 
 <h2 id="section-3">回避方法</h2>
 
-<amp-twitter data-tweetid="uote class=" width="800" height="600" layout="responsive" ></amp-twitter><!-- te class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…） by @atsushieno -->
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 <p>こんな感じっすね。</p>
 
-<p>```csharp MainActivity.cs<br />
-[Activity(MainLauncher = true, <br />
-    ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation )]<br />
-public class MainActivity : AndroidActivity<br />
-{</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-## BACKキーの扱い
-
-iOS なら ``NavigationPage.SetHasNavigationBar(page, false)`` としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。
-
-### 自己解決
-
-``AndroidActivity`` のサブクラスで、``OnBackPressed`` を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。
-
-## デフォルトスタイル
-
-iOS は白基調、Androidは黒基調なので、Forms側で ``TextColor = Color.Black`` などとすると、当たり前だが Android で見えない。
-iOS はスタイル変えるのしんどいので、Android側の Theme を ``Theme.Holo.Light`` にしとく。
-
-```csharp MainActivity.cs
-[Activity(Label = "MyApp",  
- MainLauncher = true, 
- Theme = "@android:style/Theme.Holo.Light")]
-public class MainActivity : AndroidActivity
-{
-    protected override void OnCreate(Bundle bundle)
-    {
-        /* 以下省略 */
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="p">[</span><span class="nf">Activity</span><span class="p">(</span><span class="n">MainLauncher</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span> 
+    <span class="n">ConfigurationChanges</span> <span class="p">=</span> <span class="n">ConfigChanges</span><span class="p">.</span><span class="n">ScreenSize</span> <span class="p">|</span> <span class="n">ConfigChanges</span><span class="p">.</span><span class="n">Orientation</span> <span class="p">)]</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
+<span class="p">{</span>
 </code></pre>
 </div>
 
-<h2 id="section-4">起動時</h2>
+<h2 id="back">BACKキーの扱い</h2>
+
+<p>iOS なら <code class="highlighter-rouge">NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
+
+<h3 id="section-4">自己解決</h3>
+
+<p><code class="highlighter-rouge">AndroidActivity</code> のサブクラスで、<code class="highlighter-rouge">OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
+
+<h2 id="section-5">デフォルトスタイル</h2>
+
+<p>iOS は白基調、Androidは黒基調なので、Forms側で <code class="highlighter-rouge">TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。<br />
+iOS はスタイル変えるのしんどいので、Android側の Theme を <code class="highlighter-rouge">Theme.Holo.Light</code> にしとく。</p>
+
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="p">[</span><span class="nf">Activity</span><span class="p">(</span><span class="n">Label</span> <span class="p">=</span> <span class="s">"MyApp"</span><span class="p">,</span>  
+ <span class="n">MainLauncher</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span> 
+ <span class="n">Theme</span> <span class="p">=</span> <span class="s">"@android:style/Theme.Holo.Light"</span><span class="p">)]</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
+<span class="p">{</span>
+    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="cm">/* 以下省略 */</span>
+</code></pre>
+</div>
+
+<h2 id="section-6">起動時</h2>
 
 <p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？<br />
 ActionBar だけでも消したくて Theme を <code class="highlighter-rouge">Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
 
 <p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
 
-<h2 id="section-5">文字の自動縮小</h2>
+<h2 id="section-7">文字の自動縮小</h2>
 
 <p>iOS の <code class="highlighter-rouge">UITextField</code> は <code class="highlighter-rouge">adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code class="highlighter-rouge">Label</code> にはそんなものはありません。<code class="highlighter-rouge">PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
 
-<h3 id="section-6">自己解決</h3>
+<h3 id="section-8">自己解決</h3>
 
 <p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
 

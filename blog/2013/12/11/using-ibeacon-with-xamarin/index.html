@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -876,7 +876,7 @@ img {
 
 <p>などで勉強したところ、受信の流れは下図のようになるかと思います。</p>
 
-<p><amp-img width="1040" height="329" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ibeacon_with_xamarin_01.png" alt="img" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ibeacon_with_xamarin_01.png" alt="img" /></p>
 
 <p>全てのメソッドが非同期でコールバックを受け取るタイプ、また並行処理＆同期とか、なんだか見やすいコードになる気がしません。</p>
 
@@ -899,89 +899,91 @@ Rx は、非同期処理やイベントコールバックを一直線なスト�
 
 <p>実際には動かない空想のコードを掲載していたので、実機で動作したコードに書き換えました。</p>
 
-<p>```csharp FindTheMonkeyViewController_after.cs<br />
-if (!UserInterfaceIdiomIsPhone)<br />
-{<br />
-  /* 省略 */<br />
-} else<br />
-{<br />
-  InitPitchAndVolume();<br />
-  var man = new CLLocationManager();</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//FindTheMonkeyViewController_after.cs
+</span><span class="k">if</span> <span class="p">(!</span><span class="n">UserInterfaceIdiomIsPhone</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="cm">/* 省略 */</span>
+<span class="p">}</span> <span class="k">else</span>
+<span class="p">{</span>
+  <span class="nf">InitPitchAndVolume</span><span class="p">();</span>
+  <span class="kt">var</span> <span class="n">man</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">CLLocationManager</span><span class="p">();</span>
 
-<p>man.StartMonitoringAsObservable(beaconRegion) // 監視開始<br />
-  .SelectMany(r =&gt;<br />
-    man.RegionEnteredAsObservable() // A:進入の受信<br />
-    .Amb(man.RequestStateAsObservable(r) // B:リージョン状態要求<br />
-      .Where(e =&gt; e.State == CLRegionState.Inside) // 範囲内のみ<br />
-      .Select(x =&gt; x.Region as CLBeaconRegion) // CLRegion からcast<br />
-    .SelectMany(man.StartRangingBeaconsAsObservable) // A/B どちらかを受信したらレンジング開始<br />
-      .Where(x =&gt; x.Beacons.Length &gt; 0) // ビーコンが1個以上みつかった場合のみ<br />
-      .Select(x =&gt; x.Beacons [0]) // LINQ の Fisrt() でもOk<br />
-      .DistinctUntilChanged(x =&gt; x.Proximity) // Proximity が変わった時のみ流す<br />
-  .Subscribe((CLBeacon beacon) =&gt;<br />
-  {<br />
-    // Beacon が見つかった時に行う処理を書く<br />
-  });<br />
-}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-```csharp CLLocationManagerExtensions.cs
-public static class CLLocationManagerExtensions
-{
-  // リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド
-  public static IObservable&lt;CLBeaconRegion&gt; StartMonitoringAsObservable(
-    this CLLocationManager man, CLBeaconRegion beaconRegion)
-  {
-    return Observable.Defer(() =&gt;
-    {
-      var o = Observable.FromEventPattern&lt;CLRegionEventArgs&gt;(
-            h =&gt; man.DidStartMonitoringForRegion += h, 
-            h =&gt; man.DidStartMonitoringForRegion -= h)
-      .Select(x =&gt; x.EventArgs.Region as CLBeaconRegion);
+  <span class="n">man</span><span class="p">.</span><span class="nf">StartMonitoringAsObservable</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">)</span> <span class="c1">// 監視開始
+</span>  <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">r</span> <span class="p">=&gt;</span>
+    <span class="n">man</span><span class="p">.</span><span class="nf">RegionEnteredAsObservable</span><span class="p">()</span> <span class="c1">// A:進入の受信
+</span>    <span class="p">.</span><span class="nf">Amb</span><span class="p">(</span><span class="n">man</span><span class="p">.</span><span class="nf">RequestStateAsObservable</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="c1">// B:リージョン状態要求
+</span>      <span class="p">.</span><span class="nf">Where</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">State</span> <span class="p">==</span> <span class="n">CLRegionState</span><span class="p">.</span><span class="n">Inside</span><span class="p">)</span> <span class="c1">// 範囲内のみ
+</span>      <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">)</span> <span class="c1">// CLRegion からcast
+</span>    <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">man</span><span class="p">.</span><span class="n">StartRangingBeaconsAsObservable</span><span class="p">)</span> <span class="c1">// A/B どちらかを受信したらレンジング開始
+</span>      <span class="p">.</span><span class="nf">Where</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Beacons</span><span class="p">.</span><span class="n">Length</span> <span class="p">&gt;</span> <span class="m">0</span><span class="p">)</span> <span class="c1">// ビーコンが1個以上みつかった場合のみ
+</span>      <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Beacons</span> <span class="p">[</span><span class="m">0</span><span class="p">])</span> <span class="c1">// LINQ の Fisrt() でもOk
+</span>      <span class="p">.</span><span class="nf">DistinctUntilChanged</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">Proximity</span><span class="p">)</span> <span class="c1">// Proximity が変わった時のみ流す
+</span>  <span class="p">.</span><span class="nf">Subscribe</span><span class="p">((</span><span class="n">CLBeacon</span> <span class="n">beacon</span><span class="p">)</span> <span class="p">=&gt;</span>
+  <span class="p">{</span>
+    <span class="c1">// Beacon が見つかった時に行う処理を書く
+</span>  <span class="p">});</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//CLLocationManagerExtensions.cs
+</span><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">CLLocationManagerExtensions</span>
+<span class="p">{</span>
+  <span class="c1">// リージョン監視を開始して、開始通知を IObservable で得る拡張メソッド
+</span>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLBeaconRegion</span><span class="p">&gt;</span> <span class="nf">StartMonitoringAsObservable</span><span class="p">(</span>
+    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span>
+    <span class="p">{</span>
+      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span>
+            <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidStartMonitoringForRegion</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> 
+            <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidStartMonitoringForRegion</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+      <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">);</span>
       
-      man.StartMonitoring(beaconRegion);          
-      return o;
-    });
-  }
+      <span class="n">man</span><span class="p">.</span><span class="nf">StartMonitoring</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>          
+      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
   
-  // リージョンへの進入を IObservable で得る拡張メソッド
-  public static IObservable&lt;CLBeaconRegion&gt; RegionEnteredAsObservable(
-    this CLLocationManager man)
-  {
-    return Observable.FromEventPattern&lt;CLRegionEventArgs&gt;(
-      h =&gt; man.RegionEntered += h, h =&gt; man.RegionEntered -= h)
-        .Select(e =&gt; e.EventArgs.Region as CLBeaconRegion);
-  }
+  <span class="c1">// リージョンへの進入を IObservable で得る拡張メソッド
+</span>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLBeaconRegion</span><span class="p">&gt;</span> <span class="nf">RegionEnteredAsObservable</span><span class="p">(</span>
+    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionEventArgs</span><span class="p">&gt;(</span>
+      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">RegionEntered</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">RegionEntered</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">.</span><span class="n">Region</span> <span class="k">as</span> <span class="n">CLBeaconRegion</span><span class="p">);</span>
+  <span class="p">}</span>
   
-  // リージョンの状態を要求して、結果を IObservable で得る拡張メソッド
-  public static IObservable&lt;CLRegionStateDeterminedEventArgs&gt; RequestStateAsObservable(
-    this CLLocationManager man, CLBeaconRegion beaconRegion)
-  {
-    return Observable.Defer&lt;CLRegionStateDeterminedEventArgs&gt;(() =&gt; 
-    {
-      var o = Observable.FromEventPattern&lt;CLRegionStateDeterminedEventArgs&gt;(
-      h =&gt; man.DidDetermineState += h, h =&gt; man.DidDetermineState -= h)
-        .Select(e =&gt; e.EventArgs);
+  <span class="c1">// リージョンの状態を要求して、結果を IObservable で得る拡張メソッド
+</span>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;</span> <span class="nf">RequestStateAsObservable</span><span class="p">(</span>
+    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Defer</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;(()</span> <span class="p">=&gt;</span> 
+    <span class="p">{</span>
+      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionStateDeterminedEventArgs</span><span class="p">&gt;(</span>
+      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidDetermineState</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidDetermineState</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">);</span>
       
-      man.RequestState(beaconRegion);
-      return o;
-    });
-  }
+      <span class="n">man</span><span class="p">.</span><span class="nf">RequestState</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
   
-  // レンジングを開始してビーコン信号を IObservable で得る拡張メソッド
-  public static IObservable&lt;CLRegionBeaconsRangedEventArgs&gt; StartRangingBeaconsAsObservable(
-    this CLLocationManager man, CLBeaconRegion beaconRegion)
-  {
-    return Observable.Defer(() =&gt; 
-    {
-      var o = Observable.FromEventPattern&lt;CLRegionBeaconsRangedEventArgs&gt;(
-      h =&gt; man.DidRangeBeacons += h, h =&gt; man.DidRangeBeacons -= h)
-        .Select(e =&gt; e.EventArgs);
+  <span class="c1">// レンジングを開始してビーコン信号を IObservable で得る拡張メソッド
+</span>  <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">CLRegionBeaconsRangedEventArgs</span><span class="p">&gt;</span> <span class="nf">StartRangingBeaconsAsObservable</span><span class="p">(</span>
+    <span class="k">this</span> <span class="n">CLLocationManager</span> <span class="n">man</span><span class="p">,</span> <span class="n">CLBeaconRegion</span> <span class="n">beaconRegion</span><span class="p">)</span>
+  <span class="p">{</span>
+    <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">Defer</span><span class="p">(()</span> <span class="p">=&gt;</span> 
+    <span class="p">{</span>
+      <span class="kt">var</span> <span class="n">o</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">CLRegionBeaconsRangedEventArgs</span><span class="p">&gt;(</span>
+      <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidRangeBeacons</span> <span class="p">+=</span> <span class="n">h</span><span class="p">,</span> <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">man</span><span class="p">.</span><span class="n">DidRangeBeacons</span> <span class="p">-=</span> <span class="n">h</span><span class="p">)</span>
+        <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="n">e</span><span class="p">.</span><span class="n">EventArgs</span><span class="p">);</span>
       
-      man.StartRangingBeacons(beaconRegion);
-      return o;
-    });
-  }
-}
+      <span class="n">man</span><span class="p">.</span><span class="nf">StartRangingBeacons</span><span class="p">(</span><span class="n">beaconRegion</span><span class="p">);</span>
+      <span class="k">return</span> <span class="n">o</span><span class="p">;</span>
+    <span class="p">});</span>
+  <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 

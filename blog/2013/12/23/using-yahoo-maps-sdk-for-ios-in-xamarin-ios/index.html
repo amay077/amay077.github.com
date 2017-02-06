@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -896,49 +896,51 @@ Obj-Cライブラリを呼び出すラッパーのようなものを C# で記�
 <p>Xamarin Studio で新しいソリューションを作ります。<br />
 iOS → iOS Binding Project で、名前は 「YMapBinding」、ソリューション名は「YMapSample」とします。</p>
 
-<p><amp-img width="927" height="558" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_01.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_01.png" alt="" /></p>
 
 <h3 id="yahoo-iossdk--binding-">3. Yahoo! iOSマップSDK のライブラリファイルを Binding プロジェクトに入れる</h3>
 
 <p>ダウンロードした Yahoo! iOSマップSDK を解凍して、中に含まれる <code class="highlighter-rouge">YMapKit</code> ファイルを <code class="highlighter-rouge">libYMapKit.a</code> にリネームします。</p>
 
-<p><amp-img width="612" height="268" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_02.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_02.png" alt="" /></p>
 
 <p>Xamarin Studio で、YMapBinding プロジェクトに <code class="highlighter-rouge">libYMapKit.a</code> を追加します。</p>
 
-<p><amp-img width="320" height="175" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_03.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_03.png" alt="" /></p>
 
 <h3 id="yahoo-iossdk--api-c-">4. Yahoo! iOSマップSDK の API定義を C# で書く</h3>
 
 <p>Binding プロジェクトにある <code class="highlighter-rouge">ApiDefinition.cs</code> を以下のように書き換えます。</p>
 
-<p>```csharp ApiDefinition.cs<br />
-using System;<br />
-using System.Drawing;<br />
-using MonoTouch.ObjCRuntime;<br />
-using MonoTouch.Foundation;<br />
-using MonoTouch.UIKit;</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//ApiDefinition.cs
+</span><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Drawing</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">MonoTouch.ObjCRuntime</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">MonoTouch.Foundation</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">MonoTouch.UIKit</span><span class="p">;</span>
 
-<p>namespace YMapBinding<br />
-{<br />
-    [BaseType (typeof (UIView))]<br />
-    public partial interface YMKMapView {<br />
-        [Export (“initWithFrame:appid:”)]<br />
-        IntPtr Constructor (RectangleF frame, string appid);<br />
-    }<br />
-}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-よく目を凝らすと分かるんですが、これは iOS版ライブラリの ``initWithFrame:appId:`` というコンストラクタを C# で定義しています。
-他のメソッドやプロパティ、イベント(delegate)も同じように定義するのですが、ここでは省略します。
+<span class="k">namespace</span> <span class="nn">YMapBinding</span>
+<span class="p">{</span>
+    <span class="p">[</span><span class="nf">BaseType</span> <span class="p">(</span><span class="k">typeof</span> <span class="p">(</span><span class="n">UIView</span><span class="p">))]</span>
+    <span class="k">public</span> <span class="k">partial</span> <span class="k">interface</span> <span class="n">YMKMapView</span> <span class="p">{</span>
+        <span class="p">[</span><span class="nf">Export</span> <span class="p">(</span><span class="s">"initWithFrame:appid:"</span><span class="p">)]</span>
+        <span class="n">IntPtr</span> <span class="nf">Constructor</span> <span class="p">(</span><span class="n">RectangleF</span> <span class="n">frame</span><span class="p">,</span> <span class="kt">string</span> <span class="n">appid</span><span class="p">);</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
 
-次に ``libYMapKit.linkwith.cs`` を開いて、以下のように書き換えます。
+<p>よく目を凝らすと分かるんですが、これは iOS版ライブラリの <code class="highlighter-rouge">initWithFrame:appId:</code> というコンストラクタを C# で定義しています。<br />
+他のメソッドやプロパティ、イベント(delegate)も同じように定義するのですが、ここでは省略します。</p>
 
-```csharp libYMapKit.linkwith.cs
-using System;
-using MonoTouch.ObjCRuntime;
+<p>次に <code class="highlighter-rouge">libYMapKit.linkwith.cs</code> を開いて、以下のように書き換えます。</p>
 
-[assembly: LinkWith ("libYMapKit.a", LinkTarget.ArmV7 | LinkTarget.ArmV7s | LinkTarget.Simulator ,ForceLoad = true, 
-    Frameworks="UIKit SystemConfiguration CoreGraphics CoreLocation Foundation OpenGLES QuartzCore")]
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//libYMapKit.linkwith.cs
+</span><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">MonoTouch.ObjCRuntime</span><span class="p">;</span>
+
+<span class="p">[</span><span class="n">assembly</span><span class="p">:</span> <span class="nf">LinkWith</span> <span class="p">(</span><span class="s">"libYMapKit.a"</span><span class="p">,</span> <span class="n">LinkTarget</span><span class="p">.</span><span class="n">ArmV7</span> <span class="p">|</span> <span class="n">LinkTarget</span><span class="p">.</span><span class="n">ArmV7s</span> <span class="p">|</span> <span class="n">LinkTarget</span><span class="p">.</span><span class="n">Simulator</span> <span class="p">,</span><span class="n">ForceLoad</span> <span class="p">=</span> <span class="k">true</span><span class="p">,</span> 
+    <span class="n">Frameworks</span><span class="p">=</span><span class="s">"UIKit SystemConfiguration CoreGraphics CoreLocation Foundation OpenGLES QuartzCore"</span><span class="p">)]</span>
 </code></pre>
 </div>
 
@@ -950,26 +952,27 @@ using MonoTouch.ObjCRuntime;
 
 <p>YMapSample ソリューションに 新しいプロジェクト を追加、iPhone の Single view Application 、名称は「YMapApp」とします。</p>
 
-<p><amp-img width="307" height="280" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_04.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_04.png" alt="" /></p>
 
 <p>YMapApp プロジェクトを右クリックして、スタートアッププロジェクトをこちらに変更しておきます。</p>
 
 <p>次に、参照設定で YMapBinding を追加します。</p>
 
-<p><amp-img width="484" height="247" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_05.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_05.png" alt="" /></p>
 
 <h4 id="yahoo-iossdk--1">6. Yahoo! iOSマップSDK を表示するコードを書く</h4>
 
 <p>YMapApp のビューコントローラ(たぶん YMapAppViewController)の<code class="highlighter-rouge">ViewDidLoad</code> に、以下のように追記します。</p>
 
-<p>```csharp YMapAppViewController.cs<br />
-public override void ViewDidLoad()<br />
-{<br />
-    base.ViewDidLoad();</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>var v = new YMKMapView(new RectangleF(0f, 0f, 320f, 320f), 
-    “&lt;your app key&gt;”);  // あなたが取得した APIキー
-this.View.AddSubview(v); } ```
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//YMapAppViewController.cs
+</span><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">base</span><span class="p">.</span><span class="nf">ViewDidLoad</span><span class="p">();</span>
+    
+    <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">YMKMapView</span><span class="p">(</span><span class="k">new</span> <span class="nf">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="m">0f</span><span class="p">,</span> <span class="m">320f</span><span class="p">,</span> <span class="m">320f</span><span class="p">),</span> 
+        <span class="err">“</span><span class="p">&lt;</span><span class="n">your</span> <span class="n">app</span> <span class="n">key</span><span class="p">&gt;</span><span class="err">”</span><span class="p">);</span>  <span class="c1">// あなたが取得した APIキー
+</span>    <span class="k">this</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="nf">AddSubview</span><span class="p">(</span><span class="n">v</span><span class="p">);</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -981,7 +984,7 @@ this.View.AddSubview(v); } ```
 
 <p>YMapApp を iOSシミュレータで実行してみます。</p>
 
-<p><amp-img width="325" height="511" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_06.gif" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_ymapsdk_on_xamarin_ios_06.gif" alt="" /></p>
 
 <p>はい、このように「とりあえず」Yahoo! iOSマップSDK を Xamarin.iOS で動かすことができました。</p>
 

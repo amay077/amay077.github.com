@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -859,7 +859,7 @@ img {
 
 <p>こんな感じ↓です。</p>
 
-<p><amp-img width="418" height="652" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/drag_and_drop_listview_01.gif" alt="" /> capture by <a href="http://www.cockos.com/licecap/">LICEcap</a></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/drag_and_drop_listview_01.gif" alt="" /> capture by <a href="http://www.cockos.com/licecap/">LICEcap</a></p>
 
 <p>修正後のソースです。</p>
 
@@ -870,316 +870,317 @@ img {
   <li><code class="highlighter-rouge">updateLayoutParams</code> はスクリーン座標を前提に。元は <code class="highlighter-rouge">listView.getTop() + event.getY()</code> でしたが、これではステータスバーとActionBarの高さが考慮されないようだったので、<code class="highlighter-rouge">event.getRawY()</code> を使うようにしました。</li>
 </ol>
 
-<p>```java SortableListView.java<br />
-import android.content.Context;<br />
-import android.graphics.Bitmap;<br />
-import android.graphics.Canvas;<br />
-import android.graphics.Color;<br />
-import android.graphics.PixelFormat;<br />
-import android.util.AttributeSet;<br />
-import android.view.Gravity;<br />
-import android.view.MotionEvent;<br />
-import android.view.View;<br />
-import android.view.WindowManager;<br />
-import android.widget.AdapterView;<br />
-import android.widget.AdapterView.OnItemLongClickListener;<br />
-import android.widget.ImageView;<br />
-import android.widget.ListView;</p>
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//SortableListView.java</span>
+<span class="kn">import</span> <span class="nn">android.content.Context</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.graphics.Bitmap</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.graphics.Canvas</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.graphics.Color</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.graphics.PixelFormat</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.util.AttributeSet</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.view.Gravity</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.view.MotionEvent</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.view.View</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.view.WindowManager</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.widget.AdapterView</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.widget.AdapterView.OnItemLongClickListener</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.widget.ImageView</span><span class="o">;</span>
+<span class="kn">import</span> <span class="nn">android.widget.ListView</span><span class="o">;</span>
 
-<p>public class SortableListView extends ListView implements<br />
-        OnItemLongClickListener {<br />
-    private static final int SCROLL_SPEED_FAST = 25;<br />
-    private static final int SCROLL_SPEED_SLOW = 8;<br />
-    private static final Bitmap.Config DRAG_BITMAP_CONFIG = Bitmap.Config.ARGB_8888;</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>private boolean mSortable = false;
-private boolean mDragging = false;
-private DragListener mDragListener = new SimpleDragListener();
-private int mBitmapBackgroundColor = Color.argb(128, 0xFF, 0xFF, 0xFF);
-private Bitmap mDragBitmap = null;
-private ImageView mDragImageView = null;
-private WindowManager.LayoutParams mLayoutParams = null;
-private MotionEvent mActionDownEvent;
-private int mPositionFrom = -1;
-
-/** コンストラクタ */
-public SortableListView(Context context) {
-    super(context);
-    setOnItemLongClickListener(this);
-}
-
-/** コンストラクタ */
-public SortableListView(Context context, AttributeSet attrs) {
-    super(context, attrs);
-    setOnItemLongClickListener(this);
-}
-
-/** コンストラクタ */
-public SortableListView(Context context, AttributeSet attrs, int defStyle) {
-    super(context, attrs, defStyle);
-    setOnItemLongClickListener(this);
-}
-
-/** ドラッグイベントリスナの設定 */
-public void setDragListener(DragListener listener) {
-    mDragListener = listener;
-}
-
-/** ソートモードの切替 */
-public void setSortable(boolean sortable) {
-    this.mSortable = sortable;
-}
-
-/** ソート中アイテムの背景色を設定 */
-@Override
-public void setBackgroundColor(int color) {
-    mBitmapBackgroundColor = color;
-}
-
-/** ソートモードの設定 */
-public boolean getSortable() {
-    return mSortable;
-}
-
-/** MotionEvent から position を取得する */
-private int eventToPosition(MotionEvent event) {
-    return pointToPosition((int) event.getX(), (int) event.getY());
-}
-
-/** タッチイベント処理 */
-@Override
-public boolean onTouchEvent(MotionEvent event) {
-    if (!mSortable) {
-        return super.onTouchEvent(event);
-    }
-    switch (event.getAction()) {
-        case MotionEvent.ACTION_DOWN: {
-            storeMotionEvent(event);
-            break;
-        }
-        case MotionEvent.ACTION_MOVE: {
-            if (duringDrag(event)) {
-                return true;
-            }
-            break;
-        }
-        case MotionEvent.ACTION_UP: {
-            if (stopDrag(event, true)) {
-                return true;
-            }
-            break;
-        }
-        case MotionEvent.ACTION_CANCEL:
-        case MotionEvent.ACTION_OUTSIDE: {
-            if (stopDrag(event, false)) {
-                return true;
-            }
-            break;
-        }
-    }
-    return super.onTouchEvent(event);
-}
-
-/** リスト要素長押しイベント処理 */
-@Override
-public boolean onItemLongClick(AdapterView&lt;?&gt; parent, View view,
-        int position, long id) {
-    return startDrag();
-}
-
-/** ACTION_DOWN 時の MotionEvent をプロパティに格納 */
-private void storeMotionEvent(MotionEvent event) {
-    mActionDownEvent = MotionEvent.obtain(event); // 複製しないと値が勝手に変わる
-}
-
-/** ドラッグ開始 */
-private boolean startDrag() {
-    // イベントから position を取得
-    mPositionFrom = eventToPosition(mActionDownEvent);
+<span class="kd">public</span> <span class="kd">class</span> <span class="nc">SortableListView</span> <span class="kd">extends</span> <span class="n">ListView</span> <span class="kd">implements</span>
+        <span class="n">OnItemLongClickListener</span> <span class="o">{</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SCROLL_SPEED_FAST</span> <span class="o">=</span> <span class="mi">25</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="kt">int</span> <span class="n">SCROLL_SPEED_SLOW</span> <span class="o">=</span> <span class="mi">8</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">Config</span> <span class="n">DRAG_BITMAP_CONFIG</span> <span class="o">=</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">Config</span><span class="o">.</span><span class="na">ARGB_8888</span><span class="o">;</span>
     
-    // 取得した position が 0未満＝範囲外の場合はドラッグを開始しない
-    if (mPositionFrom &lt; 0) {
-        return false;
-    }
-    mDragging = true;
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mSortable</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">DragListener</span> <span class="n">mDragListener</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SimpleDragListener</span><span class="o">();</span>
+    <span class="kd">private</span> <span class="kt">int</span> <span class="n">mBitmapBackgroundColor</span> <span class="o">=</span> <span class="n">Color</span><span class="o">.</span><span class="na">argb</span><span class="o">(</span><span class="mi">128</span><span class="o">,</span> <span class="mi">0</span><span class="n">xFF</span><span class="o">,</span> <span class="mi">0</span><span class="n">xFF</span><span class="o">,</span> <span class="mi">0</span><span class="n">xFF</span><span class="o">);</span>
+    <span class="kd">private</span> <span class="n">Bitmap</span> <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">ImageView</span> <span class="n">mDragImageView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span> <span class="n">mLayoutParams</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="n">MotionEvent</span> <span class="n">mActionDownEvent</span><span class="o">;</span>
+    <span class="kd">private</span> <span class="kt">int</span> <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">;</span>
     
-    // View, Canvas, WindowManager の取得・生成
-    final View view = getChildByIndex(mPositionFrom);
-    final Canvas canvas = new Canvas();
-    final WindowManager wm = getWindowManager();
+    <span class="cm">/** コンストラクタ */</span>
+    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">);</span>
+        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="o">}</span>
     
-    // ドラッグ対象要素の View を Canvas に描画
-    mDragBitmap = Bitmap.createBitmap(view.getWidth(), view.getHeight(),
-            DRAG_BITMAP_CONFIG);
-    canvas.setBitmap(mDragBitmap);
-    view.draw(canvas);
+    <span class="cm">/** コンストラクタ */</span>
+    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">);</span>
+        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="o">}</span>
     
-    // 前回使用した ImageView が残っている場合は除去（念のため？）
-    if (mDragImageView != null) {
-        wm.removeView(mDragImageView);
-    }
+    <span class="cm">/** コンストラクタ */</span>
+    <span class="kd">public</span> <span class="nf">SortableListView</span><span class="o">(</span><span class="n">Context</span> <span class="n">context</span><span class="o">,</span> <span class="n">AttributeSet</span> <span class="n">attrs</span><span class="o">,</span> <span class="kt">int</span> <span class="n">defStyle</span><span class="o">)</span> <span class="o">{</span>
+        <span class="kd">super</span><span class="o">(</span><span class="n">context</span><span class="o">,</span> <span class="n">attrs</span><span class="o">,</span> <span class="n">defStyle</span><span class="o">);</span>
+        <span class="n">setOnItemLongClickListener</span><span class="o">(</span><span class="k">this</span><span class="o">);</span>
+    <span class="o">}</span>
     
-    // ImageView 用の LayoutParams が未設定の場合は設定する
-    if (mLayoutParams == null) {
-        initLayoutParams();
-    }
+    <span class="cm">/** ドラッグイベントリスナの設定 */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setDragListener</span><span class="o">(</span><span class="n">DragListener</span> <span class="n">listener</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">mDragListener</span> <span class="o">=</span> <span class="n">listener</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    // ImageView を生成し WindowManager に addChild する
-    mDragImageView = new ImageView(getContext());
-    mDragImageView.setBackgroundColor(mBitmapBackgroundColor);
-    mDragImageView.setImageBitmap(mDragBitmap);
-    wm.addView(mDragImageView, mLayoutParams);
+    <span class="cm">/** ソートモードの切替 */</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setSortable</span><span class="o">(</span><span class="kt">boolean</span> <span class="n">sortable</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">this</span><span class="o">.</span><span class="na">mSortable</span> <span class="o">=</span> <span class="n">sortable</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    // ドラッグ開始
-    if (mDragListener != null) {
-        mPositionFrom = mDragListener.onStartDrag(mPositionFrom);
-    }
-    return duringDrag(mActionDownEvent);
-}
-
-/** ドラッグ処理 */
-private boolean duringDrag(MotionEvent event) {
-    if (!mDragging || mDragImageView == null) {
-        return false;
-    }
-    final int x = (int) event.getX();
-    final int y = (int) event.getY();
-    final int height = getHeight();
-    final int middle = height / 2;
+    <span class="cm">/** ソート中アイテムの背景色を設定 */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">void</span> <span class="nf">setBackgroundColor</span><span class="o">(</span><span class="kt">int</span> <span class="n">color</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">mBitmapBackgroundColor</span> <span class="o">=</span> <span class="n">color</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    // スクロール速度の決定
-    final int speed;
-    final int fastBound = height / 9;
-    final int slowBound = height / 4;
-    if (event.getEventTime() - event.getDownTime() &lt; 500) {
-        // ドラッグの開始から500ミリ秒の間はスクロールしない
-        speed = 0;
-    } else if (y &lt; slowBound) {
-        speed = y &lt; fastBound ? -SCROLL_SPEED_FAST : -SCROLL_SPEED_SLOW;
-    } else if (y &gt; height - slowBound) {
-        speed = y &gt; height - fastBound ? SCROLL_SPEED_FAST
-                : SCROLL_SPEED_SLOW;
-    } else {
-        speed = 0;
-    }
+    <span class="cm">/** ソートモードの設定 */</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">getSortable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="n">mSortable</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    // スクロール処理
-    if (speed != 0) {
-        // 横方向はとりあえず考えない
-        int middlePosition = pointToPosition(0, middle);
-        if (middlePosition == AdapterView.INVALID_POSITION) {
-            middlePosition = pointToPosition(0, middle + getDividerHeight()
-                    + 64);
-        }
-        final View middleView = getChildByIndex(middlePosition);
-        if (middleView != null) {
-            setSelectionFromTop(middlePosition, middleView.getTop() - speed);
-        }
-    }
+    <span class="cm">/** MotionEvent から position を取得する */</span>
+    <span class="kd">private</span> <span class="kt">int</span> <span class="nf">eventToPosition</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">pointToPosition</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">(),</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">());</span>
+    <span class="o">}</span>
     
-    // ImageView の表示や位置を更新
-    if (mDragImageView.getHeight() &lt; 0) {
-        mDragImageView.setVisibility(View.INVISIBLE);
-    } else {
-        mDragImageView.setVisibility(View.VISIBLE);
-    }
-    updateLayoutParams((int)event.getRawY()); // ここだけスクリーン座標を使う
-    getWindowManager().updateViewLayout(mDragImageView, mLayoutParams);
-    if (mDragListener != null) {
-        mPositionFrom = mDragListener.onDuringDrag(mPositionFrom,
-                pointToPosition(x, y));
-    }
-    return true;
-}
-
-/** ドラッグ終了 */
-private boolean stopDrag(MotionEvent event, boolean isDrop) {
-    if (!mDragging) {
-        return false;
-    }
-    if (isDrop &amp;&amp; mDragListener != null) {
-        mDragListener.onStopDrag(mPositionFrom, eventToPosition(event));
-    }
-    mDragging = false;
-    if (mDragImageView != null) {
-        getWindowManager().removeView(mDragImageView);
-        mDragImageView = null;
-        // リサイクルするとたまに死ぬけどタイミング分からない by vvakame
-        // mDragBitmap.recycle();
-        mDragBitmap = null;
+    <span class="cm">/** タッチイベント処理 */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onTouchEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">mSortable</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">switch</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getAction</span><span class="o">())</span> <span class="o">{</span>
+            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_DOWN</span><span class="o">:</span> <span class="o">{</span>
+                <span class="n">storeMotionEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_MOVE</span><span class="o">:</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">duringDrag</span><span class="o">(</span><span class="n">event</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_UP</span><span class="o">:</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">stopDrag</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="kc">true</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_CANCEL</span><span class="o">:</span>
+            <span class="k">case</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">ACTION_OUTSIDE</span><span class="o">:</span> <span class="o">{</span>
+                <span class="k">if</span> <span class="o">(</span><span class="n">stopDrag</span><span class="o">(</span><span class="n">event</span><span class="o">,</span> <span class="kc">false</span><span class="o">))</span> <span class="o">{</span>
+                    <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+                <span class="o">}</span>
+                <span class="k">break</span><span class="o">;</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="kd">super</span><span class="o">.</span><span class="na">onTouchEvent</span><span class="o">(</span><span class="n">event</span><span class="o">);</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** リスト要素長押しイベント処理 */</span>
+    <span class="nd">@Override</span>
+    <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onItemLongClick</span><span class="o">(</span><span class="n">AdapterView</span><span class="o">&lt;?&gt;</span> <span class="n">parent</span><span class="o">,</span> <span class="n">View</span> <span class="n">view</span><span class="o">,</span>
+            <span class="kt">int</span> <span class="n">position</span><span class="o">,</span> <span class="kt">long</span> <span class="n">id</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">startDrag</span><span class="o">();</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ACTION_DOWN 時の MotionEvent をプロパティに格納 */</span>
+    <span class="kd">private</span> <span class="kt">void</span> <span class="nf">storeMotionEvent</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">mActionDownEvent</span> <span class="o">=</span> <span class="n">MotionEvent</span><span class="o">.</span><span class="na">obtain</span><span class="o">(</span><span class="n">event</span><span class="o">);</span> <span class="c1">// 複製しないと値が勝手に変わる</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ドラッグ開始 */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">startDrag</span><span class="o">()</span> <span class="o">{</span>
+        <span class="c1">// イベントから position を取得</span>
+        <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">eventToPosition</span><span class="o">(</span><span class="n">mActionDownEvent</span><span class="o">);</span>
         
-        mActionDownEvent.recycle();
-        mActionDownEvent = null;
-        return true;
-    }
-    return false;
-}
-
-/** 指定インデックスのView要素を取得する */
-private View getChildByIndex(int index) {
-    return getChildAt(index - getFirstVisiblePosition());
-}
-
-/** WindowManager の取得 */
-protected WindowManager getWindowManager() {
-    return (WindowManager) getContext().getSystemService(
-            Context.WINDOW_SERVICE);
-}
-
-/** ImageView 用 LayoutParams の初期化 */
-protected void initLayoutParams() {
-    mLayoutParams = new WindowManager.LayoutParams();
-    mLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
-    mLayoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
-    mLayoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-    mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE
-            | WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
-            | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-            | WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS;
-    mLayoutParams.format = PixelFormat.TRANSLUCENT;
-    mLayoutParams.windowAnimations = 0;
-    mLayoutParams.x = getLeft();
-    mLayoutParams.y = getTop();
-}
-
-/** ImageView 用 LayoutParams の座標情報を更新 */
-protected void updateLayoutParams(int rawY) {
-    mLayoutParams.y =  rawY - 32;
-}
-
-/** ドラッグイベントリスナーインターフェース */
-public interface DragListener {
-    /** ドラッグ開始時の処理 */
-    public int onStartDrag(int position);
+        <span class="c1">// 取得した position が 0未満＝範囲外の場合はドラッグを開始しない</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mPositionFrom</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">true</span><span class="o">;</span>
+        
+        <span class="c1">// View, Canvas, WindowManager の取得・生成</span>
+        <span class="kd">final</span> <span class="n">View</span> <span class="n">view</span> <span class="o">=</span> <span class="n">getChildByIndex</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">);</span>
+        <span class="kd">final</span> <span class="n">Canvas</span> <span class="n">canvas</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Canvas</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="n">WindowManager</span> <span class="n">wm</span> <span class="o">=</span> <span class="n">getWindowManager</span><span class="o">();</span>
+        
+        <span class="c1">// ドラッグ対象要素の View を Canvas に描画</span>
+        <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="n">Bitmap</span><span class="o">.</span><span class="na">createBitmap</span><span class="o">(</span><span class="n">view</span><span class="o">.</span><span class="na">getWidth</span><span class="o">(),</span> <span class="n">view</span><span class="o">.</span><span class="na">getHeight</span><span class="o">(),</span>
+                <span class="n">DRAG_BITMAP_CONFIG</span><span class="o">);</span>
+        <span class="n">canvas</span><span class="o">.</span><span class="na">setBitmap</span><span class="o">(</span><span class="n">mDragBitmap</span><span class="o">);</span>
+        <span class="n">view</span><span class="o">.</span><span class="na">draw</span><span class="o">(</span><span class="n">canvas</span><span class="o">);</span>
+        
+        <span class="c1">// 前回使用した ImageView が残っている場合は除去（念のため？）</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">wm</span><span class="o">.</span><span class="na">removeView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">);</span>
+        <span class="o">}</span>
+        
+        <span class="c1">// ImageView 用の LayoutParams が未設定の場合は設定する</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mLayoutParams</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">initLayoutParams</span><span class="o">();</span>
+        <span class="o">}</span>
+        
+        <span class="c1">// ImageView を生成し WindowManager に addChild する</span>
+        <span class="n">mDragImageView</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ImageView</span><span class="o">(</span><span class="n">getContext</span><span class="o">());</span>
+        <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setBackgroundColor</span><span class="o">(</span><span class="n">mBitmapBackgroundColor</span><span class="o">);</span>
+        <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setImageBitmap</span><span class="o">(</span><span class="n">mDragBitmap</span><span class="o">);</span>
+        <span class="n">wm</span><span class="o">.</span><span class="na">addView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">,</span> <span class="n">mLayoutParams</span><span class="o">);</span>
+        
+        <span class="c1">// ドラッグ開始</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">mDragListener</span><span class="o">.</span><span class="na">onStartDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="nf">duringDrag</span><span class="o">(</span><span class="n">mActionDownEvent</span><span class="o">);</span>
+    <span class="o">}</span>
     
-    /** ドラッグ中の処理 */
-    public int onDuringDrag(int positionFrom, int positionTo);
+    <span class="cm">/** ドラッグ処理 */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">duringDrag</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">mDragging</span> <span class="o">||</span> <span class="n">mDragImageView</span> <span class="o">==</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">x</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getX</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">y</span> <span class="o">=</span> <span class="o">(</span><span class="kt">int</span><span class="o">)</span> <span class="n">event</span><span class="o">.</span><span class="na">getY</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">height</span> <span class="o">=</span> <span class="n">getHeight</span><span class="o">();</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">middle</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="o">;</span>
+        
+        <span class="c1">// スクロール速度の決定</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">speed</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">fastBound</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">9</span><span class="o">;</span>
+        <span class="kd">final</span> <span class="kt">int</span> <span class="n">slowBound</span> <span class="o">=</span> <span class="n">height</span> <span class="o">/</span> <span class="mi">4</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">event</span><span class="o">.</span><span class="na">getEventTime</span><span class="o">()</span> <span class="o">-</span> <span class="n">event</span><span class="o">.</span><span class="na">getDownTime</span><span class="o">()</span> <span class="o">&lt;</span> <span class="mi">500</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// ドラッグの開始から500ミリ秒の間はスクロールしない</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">y</span> <span class="o">&lt;</span> <span class="n">slowBound</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">fastBound</span> <span class="o">?</span> <span class="o">-</span><span class="n">SCROLL_SPEED_FAST</span> <span class="o">:</span> <span class="o">-</span><span class="n">SCROLL_SPEED_SLOW</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">y</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">-</span> <span class="n">slowBound</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">-</span> <span class="n">fastBound</span> <span class="o">?</span> <span class="n">SCROLL_SPEED_FAST</span>
+                    <span class="o">:</span> <span class="n">SCROLL_SPEED_SLOW</span><span class="o">;</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">speed</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="o">}</span>
+        
+        <span class="c1">// スクロール処理</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">speed</span> <span class="o">!=</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="c1">// 横方向はとりあえず考えない</span>
+            <span class="kt">int</span> <span class="n">middlePosition</span> <span class="o">=</span> <span class="n">pointToPosition</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">middle</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">middlePosition</span> <span class="o">==</span> <span class="n">AdapterView</span><span class="o">.</span><span class="na">INVALID_POSITION</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">middlePosition</span> <span class="o">=</span> <span class="n">pointToPosition</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="n">middle</span> <span class="o">+</span> <span class="n">getDividerHeight</span><span class="o">()</span>
+                        <span class="o">+</span> <span class="mi">64</span><span class="o">);</span>
+            <span class="o">}</span>
+            <span class="kd">final</span> <span class="n">View</span> <span class="n">middleView</span> <span class="o">=</span> <span class="n">getChildByIndex</span><span class="o">(</span><span class="n">middlePosition</span><span class="o">);</span>
+            <span class="k">if</span> <span class="o">(</span><span class="n">middleView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+                <span class="n">setSelectionFromTop</span><span class="o">(</span><span class="n">middlePosition</span><span class="o">,</span> <span class="n">middleView</span><span class="o">.</span><span class="na">getTop</span><span class="o">()</span> <span class="o">-</span> <span class="n">speed</span><span class="o">);</span>
+            <span class="o">}</span>
+        <span class="o">}</span>
+        
+        <span class="c1">// ImageView の表示や位置を更新</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span><span class="o">.</span><span class="na">getHeight</span><span class="o">()</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setVisibility</span><span class="o">(</span><span class="n">View</span><span class="o">.</span><span class="na">INVISIBLE</span><span class="o">);</span>
+        <span class="o">}</span> <span class="k">else</span> <span class="o">{</span>
+            <span class="n">mDragImageView</span><span class="o">.</span><span class="na">setVisibility</span><span class="o">(</span><span class="n">View</span><span class="o">.</span><span class="na">VISIBLE</span><span class="o">);</span>
+        <span class="o">}</span>
+        <span class="n">updateLayoutParams</span><span class="o">((</span><span class="kt">int</span><span class="o">)</span><span class="n">event</span><span class="o">.</span><span class="na">getRawY</span><span class="o">());</span> <span class="c1">// ここだけスクリーン座標を使う</span>
+        <span class="n">getWindowManager</span><span class="o">().</span><span class="na">updateViewLayout</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">,</span> <span class="n">mLayoutParams</span><span class="o">);</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">mPositionFrom</span> <span class="o">=</span> <span class="n">mDragListener</span><span class="o">.</span><span class="na">onDuringDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">,</span>
+                    <span class="n">pointToPosition</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">));</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    /** ドラッグ終了＝ドロップ時の処理 */
-    public boolean onStopDrag(int positionFrom, int positionTo);
-}
-
-/** ドラッグイベントリスナー実装 */
-public static class SimpleDragListener implements DragListener {
-    /** ドラッグ開始時の処理 */
-    @Override
-    public int onStartDrag(int position) {
-        return position;
-    }
+    <span class="cm">/** ドラッグ終了 */</span>
+    <span class="kd">private</span> <span class="kt">boolean</span> <span class="nf">stopDrag</span><span class="o">(</span><span class="n">MotionEvent</span> <span class="n">event</span><span class="o">,</span> <span class="kt">boolean</span> <span class="n">isDrop</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">if</span> <span class="o">(!</span><span class="n">mDragging</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">isDrop</span> <span class="o">&amp;&amp;</span> <span class="n">mDragListener</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">mDragListener</span><span class="o">.</span><span class="na">onStopDrag</span><span class="o">(</span><span class="n">mPositionFrom</span><span class="o">,</span> <span class="n">eventToPosition</span><span class="o">(</span><span class="n">event</span><span class="o">));</span>
+        <span class="o">}</span>
+        <span class="n">mDragging</span> <span class="o">=</span> <span class="kc">false</span><span class="o">;</span>
+        <span class="k">if</span> <span class="o">(</span><span class="n">mDragImageView</span> <span class="o">!=</span> <span class="kc">null</span><span class="o">)</span> <span class="o">{</span>
+            <span class="n">getWindowManager</span><span class="o">().</span><span class="na">removeView</span><span class="o">(</span><span class="n">mDragImageView</span><span class="o">);</span>
+            <span class="n">mDragImageView</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="c1">// リサイクルするとたまに死ぬけどタイミング分からない by vvakame</span>
+            <span class="c1">// mDragBitmap.recycle();</span>
+            <span class="n">mDragBitmap</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            
+            <span class="n">mActionDownEvent</span><span class="o">.</span><span class="na">recycle</span><span class="o">();</span>
+            <span class="n">mActionDownEvent</span> <span class="o">=</span> <span class="kc">null</span><span class="o">;</span>
+            <span class="k">return</span> <span class="kc">true</span><span class="o">;</span>
+        <span class="o">}</span>
+        <span class="k">return</span> <span class="kc">false</span><span class="o">;</span>
+    <span class="o">}</span>
     
-    /** ドラッグ中の処理 */
-    @Override
-    public int onDuringDrag(int positionFrom, int positionTo) {
-        return positionFrom;
-    }
+    <span class="cm">/** 指定インデックスのView要素を取得する */</span>
+    <span class="kd">private</span> <span class="n">View</span> <span class="nf">getChildByIndex</span><span class="o">(</span><span class="kt">int</span> <span class="n">index</span><span class="o">)</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="nf">getChildAt</span><span class="o">(</span><span class="n">index</span> <span class="o">-</span> <span class="n">getFirstVisiblePosition</span><span class="o">());</span>
+    <span class="o">}</span>
     
-    /** ドラッグ終了＝ドロップ時の処理 */
-    @Override
-    public boolean onStopDrag(int positionFrom, int positionTo) {
-        return positionFrom != positionTo &amp;&amp; positionFrom &gt;= 0
-                || positionTo &gt;= 0;
-    }
-} } ```
+    <span class="cm">/** WindowManager の取得 */</span>
+    <span class="kd">protected</span> <span class="n">WindowManager</span> <span class="nf">getWindowManager</span><span class="o">()</span> <span class="o">{</span>
+        <span class="k">return</span> <span class="o">(</span><span class="n">WindowManager</span><span class="o">)</span> <span class="n">getContext</span><span class="o">().</span><span class="na">getSystemService</span><span class="o">(</span>
+                <span class="n">Context</span><span class="o">.</span><span class="na">WINDOW_SERVICE</span><span class="o">);</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ImageView 用 LayoutParams の初期化 */</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">initLayoutParams</span><span class="o">()</span> <span class="o">{</span>
+        <span class="n">mLayoutParams</span> <span class="o">=</span> <span class="k">new</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">();</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">gravity</span> <span class="o">=</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">TOP</span> <span class="o">|</span> <span class="n">Gravity</span><span class="o">.</span><span class="na">LEFT</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">height</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">width</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">WRAP_CONTENT</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">flags</span> <span class="o">=</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_NOT_FOCUSABLE</span>
+                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_NOT_TOUCHABLE</span>
+                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_KEEP_SCREEN_ON</span>
+                <span class="o">|</span> <span class="n">WindowManager</span><span class="o">.</span><span class="na">LayoutParams</span><span class="o">.</span><span class="na">FLAG_LAYOUT_NO_LIMITS</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">format</span> <span class="o">=</span> <span class="n">PixelFormat</span><span class="o">.</span><span class="na">TRANSLUCENT</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">windowAnimations</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">x</span> <span class="o">=</span> <span class="n">getLeft</span><span class="o">();</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span> <span class="n">getTop</span><span class="o">();</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ImageView 用 LayoutParams の座標情報を更新 */</span>
+    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">updateLayoutParams</span><span class="o">(</span><span class="kt">int</span> <span class="n">rawY</span><span class="o">)</span> <span class="o">{</span>
+        <span class="n">mLayoutParams</span><span class="o">.</span><span class="na">y</span> <span class="o">=</span>  <span class="n">rawY</span> <span class="o">-</span> <span class="mi">32</span><span class="o">;</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ドラッグイベントリスナーインターフェース */</span>
+    <span class="kd">public</span> <span class="kd">interface</span> <span class="nc">DragListener</span> <span class="o">{</span>
+        <span class="cm">/** ドラッグ開始時の処理 */</span>
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onStartDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">);</span>
+        
+        <span class="cm">/** ドラッグ中の処理 */</span>
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onDuringDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">);</span>
+        
+        <span class="cm">/** ドラッグ終了＝ドロップ時の処理 */</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onStopDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">);</span>
+    <span class="o">}</span>
+    
+    <span class="cm">/** ドラッグイベントリスナー実装 */</span>
+    <span class="kd">public</span> <span class="kd">static</span> <span class="kd">class</span> <span class="nc">SimpleDragListener</span> <span class="kd">implements</span> <span class="n">DragListener</span> <span class="o">{</span>
+        <span class="cm">/** ドラッグ開始時の処理 */</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onStartDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">position</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">position</span><span class="o">;</span>
+        <span class="o">}</span>
+        
+        <span class="cm">/** ドラッグ中の処理 */</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">int</span> <span class="nf">onDuringDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">positionFrom</span><span class="o">;</span>
+        <span class="o">}</span>
+        
+        <span class="cm">/** ドラッグ終了＝ドロップ時の処理 */</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">onStopDrag</span><span class="o">(</span><span class="kt">int</span> <span class="n">positionFrom</span><span class="o">,</span> <span class="kt">int</span> <span class="n">positionTo</span><span class="o">)</span> <span class="o">{</span>
+            <span class="k">return</span> <span class="n">positionFrom</span> <span class="o">!=</span> <span class="n">positionTo</span> <span class="o">&amp;&amp;</span> <span class="n">positionFrom</span> <span class="o">&gt;=</span> <span class="mi">0</span>
+                    <span class="o">||</span> <span class="n">positionTo</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="o">;</span>
+        <span class="o">}</span>
+    <span class="o">}</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 

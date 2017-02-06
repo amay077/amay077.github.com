@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -887,68 +887,71 @@ Hash: ba05545</p>
 
 <p>まず何も考えず同期処理で書くと、、、</p>
 
-<p>```c# sync.cs<br />
-// ボタンが押されたよ<br />
-private void button1_Click(Object sender, EventArgs e)<br />
-{<br />
-    button.Enabled = false; // 実行中はボタン使えなくする</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//sync.cs
+// ボタンが押されたよ
+</span><span class="k">private</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする
+</span>    
+    <span class="c1">// 超時間のかかる計算
+</span>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="nf">HeavyCalc</span><span class="p">();</span>
+    
+    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"result:{0}"</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する
+</span>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+<span class="p">}</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>// 超時間のかかる計算
-var result = HeavyCalc();
-
-button.Text = String.Format("result:{0}", result); // 結果を表示する
-button.Enabled = true; }
+<span class="c1">// 超時間のかかる計算
+</span><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">HeavyCalc</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="n">Threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="m">10000</span><span class="p">);</span>
+    <span class="k">return</span> <span class="m">5</span><span class="p">;</span> <span class="c1">// 超時間をかけて 5 を計算したつもり
+</span><span class="p">}</span>
 </code></pre>
 </div>
 
-<p>// 超時間のかかる計算<br />
-private static int HeavyCalc()<br />
-{<br />
-    System.Threading.Thread.Sleep(10000);<br />
-    return 5; // 超時間をかけて 5 を計算したつもり<br />
-}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-こんな感じ。
-動かしてみます。
+<p>こんな感じ。<br />
+動かしてみます。</p>
 
-!["anr"](https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_anr.png)
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_anr.png" alt="&quot;anr&quot;" /></p>
 
-あえなくフリーズ＆ANR、当然です。
+<p>あえなくフリーズ＆ANR、当然です。</p>
 
-## async/await 化
+<h2 id="asyncawait-">async/await 化</h2>
 
-async/await については、ググればたくさん情報が出てきますが、探した中でもっとも簡単とおもわれる例を紹介します。
+<p>async/await については、ググればたくさん情報が出てきますが、探した中でもっとも簡単とおもわれる例を紹介します。</p>
 
-* [[C#]async/awaitの使い方メモ、その１。 ｜ Kimux.Net](http://kimux.net/?p=902)
+<ul>
+  <li><a href="http://kimux.net/?p=902">[C#]async/awaitの使い方メモ、その１。 ｜ Kimux.Net</a></li>
+</ul>
 
-さて、先ほどのプログラムを、async/await 構文を使って非同期化してみます。
+<p>さて、先ほどのプログラムを、async/await 構文を使って非同期化してみます。</p>
 
-```c# async.cs
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//async.cs
 // ボタンが押されたよ
-private async void button1_Click(Object sender, EventArgs e)
-{
-    button.Enabled = false; // 実行中はボタン使えなくする
+</span><span class="k">private</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする
+</span>    
+    <span class="c1">// 超時間のかかる計算
+</span>    <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="k">await</span> <span class="nf">HeavyCalcAsync</span><span class="p">();</span>
     
-    // 超時間のかかる計算
-    var result = await HeavyCalcAsync();
-    
-    // ここから下は UIスレッド で実行される
-    button.Text = String.Format("result:{0}", result); // 結果を表示する
-    button.Enabled = true;
-}
+    <span class="c1">// ここから下は UIスレッド で実行される
+</span>    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"result:{0}"</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する
+</span>    <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+<span class="p">}</span>
 
-// 超時間のかかる計算
-private static int HeavyCalc()
-{
-    System.Threading.Thread.Sleep(10000);
-    return 5; // 超時間をかけて 5 を計算したつもり
-}
+<span class="c1">// 超時間のかかる計算
+</span><span class="k">private</span> <span class="k">static</span> <span class="kt">int</span> <span class="nf">HeavyCalc</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="n">System</span><span class="p">.</span><span class="n">Threading</span><span class="p">.</span><span class="n">Thread</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="m">10000</span><span class="p">);</span>
+    <span class="k">return</span> <span class="m">5</span><span class="p">;</span> <span class="c1">// 超時間をかけて 5 を計算したつもり
+</span><span class="p">}</span>
 
-// HeavyCalc をラップして非同期で実行
-private Task&lt;int&gt; HeavyCalcAsync()
-{
-    return Task.Run(() =&gt; HeavyCalc());
-}
+<span class="c1">// HeavyCalc をラップして非同期で実行
+</span><span class="k">private</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="nf">HeavyCalcAsync</span><span class="p">()</span>
+<span class="p">{</span>
+    <span class="k">return</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="nf">HeavyCalc</span><span class="p">());</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
@@ -964,7 +967,7 @@ private Task&lt;int&gt; HeavyCalcAsync()
 
 <p>動かしてみます。</p>
 
-<p><amp-img width="240" height="320" layout="responsive" src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_asyc.png" alt="&quot;async&quot;" /></p>
+<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_async_await_preview_asyc.png" alt="&quot;async&quot;" /></p>
 
 <p>ANR でませんし、ちゃんと計算後に画面が更新されます。</p>
 
@@ -975,48 +978,50 @@ private Task&lt;int&gt; HeavyCalcAsync()
 <p>まず、AsyncTask を拡張して、HeavyCalc をバックグラウンドで実行する <code class="highlighter-rouge">HeavyCalcTask</code> を用意します。<br />
 <code class="highlighter-rouge">OnPreExecute</code> と <code class="highlighter-rouge">OnPostExecute</code> でボタンを無効/有効 にしています。</p>
 
-<p>```c# HeavyCalcTask.cs<br />
-// HeavyCalc を非同期で実行する AsyncTask<br />
-class HeavyCalcTask : Android.OS.AsyncTask<br />
-{<br />
-    private readonly Button button;</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//HeavyCalcTask.cs
+// HeavyCalc を非同期で実行する AsyncTask
+</span><span class="k">class</span> <span class="nc">HeavyCalcTask</span> <span class="p">:</span> <span class="n">Android</span><span class="p">.</span><span class="n">OS</span><span class="p">.</span><span class="n">AsyncTask</span>
+<span class="p">{</span>
+    <span class="k">private</span> <span class="k">readonly</span> <span class="n">Button</span> <span class="n">button</span><span class="p">;</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public HeavyCalcTask(Button button)
-{
-    this.button = button;
-}
+    <span class="k">public</span> <span class="nf">HeavyCalcTask</span><span class="p">(</span><span class="n">Button</span> <span class="n">button</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="n">button</span> <span class="p">=</span> <span class="n">button</span><span class="p">;</span>
+    <span class="p">}</span>
 
-#region implemented abstract members of AsyncTask
-protected override void OnPreExecute()
-{
-    button.Enabled = false; // 実行中はボタン使えなくする
-}
+    <span class="err">#</span><span class="n">region</span> <span class="n">implemented</span> <span class="k">abstract</span> <span class="n">members</span> <span class="n">of</span> <span class="n">AsyncTask</span>
+    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnPreExecute</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// 実行中はボタン使えなくする
+</span>    <span class="p">}</span>
 
-protected override Java.Lang.Object DoInBackground(params Java.Lang.Object[] @params)
-{
-    // 超時間のかかる計算
-    return HeavyCalc();
-}
+    <span class="k">protected</span> <span class="k">override</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span> <span class="nf">DoInBackground</span><span class="p">(</span><span class="k">params</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">[]</span> <span class="n">@params</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="c1">// 超時間のかかる計算
+</span>        <span class="k">return</span> <span class="nf">HeavyCalc</span><span class="p">();</span>
+    <span class="p">}</span>
 
-protected override void OnPostExecute(Java.Lang.Object result)
-{
-    button.Text = String.Format("result:{0}", result); // 結果を表示する
-    button.Enabled = true;
-}
-#endregion } ```
+    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnPostExecute</span><span class="p">(</span><span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span> <span class="n">result</span><span class="p">)</span>
+    <span class="p">{</span>
+        <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"result:{0}"</span><span class="p">,</span> <span class="n">result</span><span class="p">);</span> <span class="c1">// 結果を表示する
+</span>        <span class="n">button</span><span class="p">.</span><span class="n">Enabled</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="err">#</span><span class="n">endregion</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
 <p>使う方は、まあ普通に。</p>
 
-<p><code class="highlighter-rouge">c# asynctask_execute.cs
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//asynctask_execute.cs
 // ボタンが押されたよ
-private async void button1_Click(Object sender, EventArgs e)
-{
-    var asyncTask = new HeavyCalcTask(button);
-    asyncTask.Execute();
-}
-</code></p>
+</span><span class="k">private</span> <span class="k">async</span> <span class="k">void</span> <span class="nf">button1_Click</span><span class="p">(</span><span class="n">Object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="kt">var</span> <span class="n">asyncTask</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">HeavyCalcTask</span><span class="p">(</span><span class="n">button</span><span class="p">);</span>
+    <span class="n">asyncTask</span><span class="p">.</span><span class="nf">Execute</span><span class="p">();</span>
+<span class="p">}</span>
+</code></pre>
+</div>
 
 <p>クラスを作らなきゃいけないし、AsyncTask の仕方ないところですけど、View に対する処理とロジックが同じクラスに同居しちゃうし、複数の非同期処理を逐次実行できないし、とあまり良い所が見えません。</p>
 

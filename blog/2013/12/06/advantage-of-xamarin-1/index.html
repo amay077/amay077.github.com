@@ -854,97 +854,99 @@ img {
 
 <p><code class="highlighter-rouge">setOnClickListener</code> とかリスナー系が全部 <code class="highlighter-rouge">Event</code> になっているので、複数のリスナを登録可能、削除もできます。</p>
 
-<p>```csharp MainActivity.cs<br />
-protected override void OnCreate(Bundle bundle)<br />
-{<br />
-    /** 省略 **/</p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
+</span><span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
+<span class="p">{</span>
+    <span class="cm">/** 省略 **/</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Button button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
+    <span class="n">Button</span> <span class="n">button</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">myButton</span><span class="p">);</span>
 
-// Label 変えます
-button.Click += delegate
-{
-	button.Text = string.Format("{0} clicks!", count++);
-};
+	<span class="c1">// Label 変えます
+</span>    <span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="k">delegate</span>
+    <span class="p">{</span>
+		<span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="kt">string</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"{0} clicks!"</span><span class="p">,</span> <span class="n">count</span><span class="p">++);</span>
+    <span class="p">};</span>
 
-// Logcat にも出しちゃう
-button.Click += (sender, e) =&gt; Android.Util.Log.Debug("Main", "Clicked!");
+	<span class="c1">// Logcat にも出しちゃう
+</span>	<span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Android</span><span class="p">.</span><span class="n">Util</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="nf">Debug</span><span class="p">(</span><span class="s">"Main"</span><span class="p">,</span> <span class="s">"Clicked!"</span><span class="p">);</span>
 
-// .NET2.0 な方の書き方
-button.Click += button_Click; }
+	<span class="c1">// .NET2.0 な方の書き方
+</span>	<span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="n">button_Click</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">// Toast にも出そ
+</span><span class="k">void</span> <span class="nf">button_Click</span><span class="p">(</span><span class="kt">object</span> <span class="n">sender</span><span class="p">,</span> <span class="n">EventArgs</span> <span class="n">e</span><span class="p">)</span>
+<span class="p">{</span>
+	<span class="n">Toast</span><span class="p">.</span><span class="nf">MakeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="s">"Clicked!"</span><span class="p">,</span> <span class="n">ToastLength</span><span class="p">.</span><span class="n">Short</span><span class="p">).</span><span class="nf">Show</span><span class="p">();</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 
-<p>// Toast にも出そ<br />
-void button_Click(object sender, EventArgs e)<br />
-{<br />
-	Toast.MakeText(this, “Clicked!”, ToastLength.Short).Show();<br />
-}</p>
+<h2 id="var-">2. <code class="highlighter-rouge">var</code> が使える！</h2>
+
+<p>C# なら <code class="highlighter-rouge">var</code> 使わなきゃ。</p>
+
+<p>```csharp using_var<br />
+Dictionary&lt;String, Object&gt; map = new Dictionary&lt;Piyo, Hoge&gt;(); // 長いよ…<br />
+var map = new Dictionary&lt;Piyo, Hoge&gt;();</p>
+
+<p>//Button button = FindViewById<button>(Resource.Id.myButton);
+var button = FindViewById<button>(Resource.Id.myButton);</button></button></p>
 <div class="highlighter-rouge"><pre class="highlight"><code>
-## 2. ``var`` が使える！
+Variant じゃないですから、念の為。
 
-C# なら ``var`` 使わなきゃ。
+## 3. Runnable がラムダ式で書ける！
 
-```csharp using_var
-Dictionary&lt;String, Object&gt; map = new Dictionary&lt;Piyo, Hoge&gt;(); // 長いよ…
-var map = new Dictionary&lt;Piyo, Hoge&gt;();
+Android-Java では ``Activity.runOnUiThread`` や ``Handler.post`` って Runnable を受け取るようになっていて、大抵無名クラスにするので、長ったらしい記述になってしまいますが、Xamarin.Android では、Runnable に加えて ``Action`` も受け取ってくれ、これはラムダ式で書けるので非常にスッキリ書けます。
+Runnable にかぎらずラムダ式の恩恵は大きいのですが(イベントハンドラとか)。
 
-//Button button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
+```csharp
+//UsingLambdaInsteadOfRunnable.cs
 var button = FindViewById&lt;Button&gt;(Resource.Id.myButton);
-</code></pre>
-</div>
 
-<p>Variant じゃないですから、念の為。</p>
-
-<h2 id="runnable-">3. Runnable がラムダ式で書ける！</h2>
-
-<p>Android-Java では <code class="highlighter-rouge">Activity.runOnUiThread</code> や <code class="highlighter-rouge">Handler.post</code> って Runnable を受け取るようになっていて、大抵無名クラスにするので、長ったらしい記述になってしまいますが、Xamarin.Android では、Runnable に加えて <code class="highlighter-rouge">Action</code> も受け取ってくれ、これはラムダ式で書けるので非常にスッキリ書けます。<br />
-Runnable にかぎらずラムダ式の恩恵は大きいのですが(イベントハンドラとか)。</p>
-
-<p>```csharp UsingLambdaInsteadOfRunnable.cs<br />
-var button = FindViewById<button>(Resource.Id.myButton);</button></p>
-
-<p>button.Click += (s, e) =&gt;<br />
-{<br />
-    button.Text = “Progress…”;</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>Task.Factory.StartNew(() =&gt;
+button.Click += (s, e) =&gt;
 {
-    // Fat な処理
-    Thread.Sleep(3000);
+    button.Text = "Progress...";
 
-    // UIスレッドで実行
-    this.RunOnUiThread(() =&gt; button.Text = "Finished.");
-    /*// Java だとこんな長ったらしいコードが書かないといけない
-    MainActivity.this.runOnUiThread(new Runnable() {
-        @Override
-        public void run() {
-            // hogehoge
-        }
-    }); */
-}); }; ```
+    Task.Factory.StartNew(() =&gt;
+    {
+        // Fat な処理
+        Thread.Sleep(3000);
+
+        // UIスレッドで実行
+        this.RunOnUiThread(() =&gt; button.Text = "Finished.");
+        /*// Java だとこんな長ったらしいコードが書かないといけない
+        MainActivity.this.runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                // hogehoge
+            }
+        }); */
+    });
+};
 </code></pre>
 </div>
 
 <p>ちょっと話がそれますが、<code class="highlighter-rouge">Activity.runOnUiThread</code> 自体、Android 固有の API なので、プラットフォーム依存を減らそうと思ったら <code class="highlighter-rouge">SynchronizationContext</code> を使います。</p>
 
-<p>```csharp UsingSynchronizationContext.cs<br />
-var button = FindViewById<button>(Resource.Id.myButton);</button></p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//UsingSynchronizationContext.cs
+</span><span class="kt">var</span> <span class="n">button</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">myButton</span><span class="p">);</span>
 
-<p>var syncContext = SynchronizationContext.Current;<br />
-button.Click += (s, e) =&gt;<br />
-{<br />
-    button.Text = “Progress…”;</p>
+<span class="kt">var</span> <span class="n">syncContext</span> <span class="p">=</span> <span class="n">SynchronizationContext</span><span class="p">.</span><span class="n">Current</span><span class="p">;</span>
+<span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span>
+<span class="p">{</span>
+    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">"Progress..."</span><span class="p">;</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Task.Factory.StartNew(() =&gt;
-{
-    // Fat な処理を別スレッドで
-    Thread.Sleep(3000);
-}).ContinueWith(t =&gt; syncContext.Post(state =&gt;
-{
-    // UIスレッドでの処理
-    button.Text = "Finished.";
-}, null)); }; ```
+    <span class="n">Task</span><span class="p">.</span><span class="n">Factory</span><span class="p">.</span><span class="nf">StartNew</span><span class="p">(()</span> <span class="p">=&gt;</span>
+    <span class="p">{</span>
+        <span class="c1">// Fat な処理を別スレッドで
+</span>        <span class="n">Thread</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="m">3000</span><span class="p">);</span>
+    <span class="p">}).</span><span class="nf">ContinueWith</span><span class="p">(</span><span class="n">t</span> <span class="p">=&gt;</span> <span class="n">syncContext</span><span class="p">.</span><span class="nf">Post</span><span class="p">(</span><span class="n">state</span> <span class="p">=&gt;</span>
+    <span class="p">{</span>
+        <span class="c1">// UIスレッドでの処理
+</span>        <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">"Finished."</span><span class="p">;</span>
+    <span class="p">},</span> <span class="k">null</span><span class="p">));</span>
+<span class="p">};</span>
 </code></pre>
 </div>
 
@@ -953,16 +955,17 @@ button.Click += (s, e) =&gt;<br />
 <p>それはそうと上のコード、async/await を使ったらたったの3行ですよ！<br />
 Android の <code class="highlighter-rouge">AsyncTask</code> とか、iOS の GCD とか、ほぼ捨てられますよ。</p>
 
-<p>```csharp UsingAsyncAwait.cs<br />
-var button = FindViewById<button>(Resource.Id.myButton);</button></p>
+<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//UsingAsyncAwait.cs
+</span><span class="kt">var</span> <span class="n">button</span> <span class="p">=</span> <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">myButton</span><span class="p">);</span>
 
-<p>button.Click += async (sender, e) =&gt; <br />
-{<br />
-    button.Text = “Progress…”; // UIスレッド<br />
-    await Task.Run(() =&gt; Thread.Sleep(3000)); // ワーカースレッド<br />
-    button.Text = “Finished.”; // UIスレッド<br />
-};<br />
-```</p>
+<span class="n">button</span><span class="p">.</span><span class="n">Click</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+<span class="p">{</span>
+    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">"Progress..."</span><span class="p">;</span> <span class="c1">// UIスレッド
+</span>    <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">Thread</span><span class="p">.</span><span class="nf">Sleep</span><span class="p">(</span><span class="m">3000</span><span class="p">));</span> <span class="c1">// ワーカースレッド
+</span>    <span class="n">button</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">"Finished."</span><span class="p">;</span> <span class="c1">// UIスレッド
+</span><span class="p">};</span>
+</code></pre>
+</div>
 
 <p>とりあえずこんなところで。<br />
 他にも、気づいたら書きます。</p>

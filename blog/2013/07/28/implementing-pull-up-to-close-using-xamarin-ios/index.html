@@ -855,7 +855,9 @@ img {
 <p>こんな感じ。<br />
 WebView なんですが、一番下までスクロールして、さらに上に引っ張ると “Pull up to Close” → “Release to Close” とラベルが変わり、そこで離すとコールバックします。</p>
 
-<iframe width="640" height="360" src="http://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage" frameborder="0" allowfullscreen=""></iframe>
+<ul>
+  <li><a href="https://www.youtube.com/embed/AP6xPqwwXMI?feature=player_detailpage">Pull up to close - YouTube</a></li>
+</ul>
 
 <h2 id="section-1">実装してみたコード</h2>
 
@@ -863,92 +865,93 @@ WebView なんですが、一番下までスクロールして、さらに上に
 
 <p>UIWebView でやってますが、ScrollView なコントロールならだいたい同じ感じでいけるんじゃないかと思います。</p>
 
-<p>```c# PullUpToCloseSampleViewController.cs<br />
-public partial class PullUpToCloseSampleViewController : UIViewController<br />
-{<br />
-    public PullUpToCloseSampleViewController() : base (“PullUpToCloseSampleViewController”, null)<br />
-    {<br />
-    }</p>
+<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//PullUpToCloseSampleViewController.cs
+</span><span class="k">public</span> <span class="k">partial</span> <span class="k">class</span> <span class="nc">PullUpToCloseSampleViewController</span> <span class="p">:</span> <span class="n">UIViewController</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="nf">PullUpToCloseSampleViewController</span><span class="p">()</span> <span class="p">:</span> <span class="k">base</span> <span class="p">(</span><span class="s">"PullUpToCloseSampleViewController"</span><span class="p">,</span> <span class="k">null</span><span class="p">)</span>
+    <span class="p">{</span>
+    <span class="p">}</span>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>public override void ViewDidLoad()
-{
-    base.ViewDidLoad();
+    <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">base</span><span class="p">.</span><span class="nf">ViewDidLoad</span><span class="p">();</span>
 
-    // WebView が持ってる ScrollView、よく使うので変数化しておく
-    // webView は Interface Builder で UIWebView を Outlet にしたもの。
-    var scrollView = webView.ScrollView;
+        <span class="c1">// WebView が持ってる ScrollView、よく使うので変数化しておく
+</span>        <span class="c1">// webView は Interface Builder で UIWebView を Outlet にしたもの。
+</span>        <span class="kt">var</span> <span class="n">scrollView</span> <span class="p">=</span> <span class="n">webView</span><span class="p">.</span><span class="n">ScrollView</span><span class="p">;</span>
 
-    // Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
-    scrollView.Subviews.Where(v =&gt; v is UIImageView)
-        .ToList().ForEach(v =&gt; v.Hidden = true);
+        <span class="c1">// Bounces の影を消す via http://stackoverflow.com/questions/8480571/removing-shadows-from-uiwebview
+</span>        <span class="n">scrollView</span><span class="p">.</span><span class="n">Subviews</span><span class="p">.</span><span class="nf">Where</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span> <span class="k">is</span> <span class="n">UIImageView</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">v</span> <span class="p">=&gt;</span> <span class="n">v</span><span class="p">.</span><span class="n">Hidden</span> <span class="p">=</span> <span class="k">true</span><span class="p">);</span>
 
-    // 上に引っ張った時に見える背景とラベル
-    var bounceBackground = new UIView(
-        new RectangleF(0f, 0f, webView.Frame.Width, webView.Frame.Height));
-    bounceBackground.BackgroundColor = UIColor.LightGray;
-    var bounceLabel = new UILabel(
-        new RectangleF(0f, webView.Frame.Height - 30f, webView.Frame.Width, 30f));
-    bounceLabel.Text = "Pull up to Close";
-    bounceLabel.TextAlignment = UITextAlignment.Center;
-    bounceLabel.BackgroundColor = UIColor.Clear;
-    bounceLabel.Opaque = false;
+        <span class="c1">// 上に引っ張った時に見える背景とラベル
+</span>        <span class="kt">var</span> <span class="n">bounceBackground</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">UIView</span><span class="p">(</span>
+            <span class="k">new</span> <span class="nf">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="m">0f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span><span class="p">));</span>
+        <span class="n">bounceBackground</span><span class="p">.</span><span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">UIColor</span><span class="p">.</span><span class="n">LightGray</span><span class="p">;</span>
+        <span class="kt">var</span> <span class="n">bounceLabel</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">UILabel</span><span class="p">(</span>
+            <span class="k">new</span> <span class="nf">RectangleF</span><span class="p">(</span><span class="m">0f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">-</span> <span class="m">30f</span><span class="p">,</span> <span class="n">webView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Width</span><span class="p">,</span> <span class="m">30f</span><span class="p">));</span>
+        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="s">"Pull up to Close"</span><span class="p">;</span>
+        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">TextAlignment</span> <span class="p">=</span> <span class="n">UITextAlignment</span><span class="p">.</span><span class="n">Center</span><span class="p">;</span>
+        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">BackgroundColor</span> <span class="p">=</span> <span class="n">UIColor</span><span class="p">.</span><span class="n">Clear</span><span class="p">;</span>
+        <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Opaque</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
 
-    // 背景とラベルを WebView の一番奥に追加する
-    webView.InsertSubview(bounceLabel, 0);
-    webView.InsertSubview(bounceBackground, 0);
+        <span class="c1">// 背景とラベルを WebView の一番奥に追加する
+</span>        <span class="n">webView</span><span class="p">.</span><span class="nf">InsertSubview</span><span class="p">(</span><span class="n">bounceLabel</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+        <span class="n">webView</span><span class="p">.</span><span class="nf">InsertSubview</span><span class="p">(</span><span class="n">bounceBackground</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
 
-    // 適当な URL を読み込み
-    webView.LoadRequest(NSUrlRequest.FromUrl(new NSUrl("http://yahoo.co.jp/")));
-	
-    // 閉じるのに必要な分だけ上に引っ張ったら true になる
-    var canClose = false;
+        <span class="c1">// 適当な URL を読み込み
+</span>        <span class="n">webView</span><span class="p">.</span><span class="nf">LoadRequest</span><span class="p">(</span><span class="n">NSUrlRequest</span><span class="p">.</span><span class="nf">FromUrl</span><span class="p">(</span><span class="k">new</span> <span class="nf">NSUrl</span><span class="p">(</span><span class="s">"http://yahoo.co.jp/"</span><span class="p">)));</span>
+		
+        <span class="c1">// 閉じるのに必要な分だけ上に引っ張ったら true になる
+</span>        <span class="kt">var</span> <span class="n">canClose</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
 
-    // ドラッグ開始時にフラグOFF(一応)
-    scrollView.DraggingStarted += (sender, e) =&gt; 
-    {
-        canClose = false;
-    };
+        <span class="c1">// ドラッグ開始時にフラグOFF(一応)
+</span>        <span class="n">scrollView</span><span class="p">.</span><span class="n">DraggingStarted</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+        <span class="p">{</span>
+            <span class="n">canClose</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span>
+        <span class="p">};</span>
 
-    // ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
-    scrollView.DraggingEnded += (sender, e) =&gt; 
-    {
-        if (canClose)
-        {
-            OnCloseByPullUp();
-        }
-    };
+        <span class="c1">// ドラッグ終了時、必要量引っ張っていたら OnCloseByPullUp を呼ぶ
+</span>        <span class="n">scrollView</span><span class="p">.</span><span class="n">DraggingEnded</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+        <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">canClose</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="nf">OnCloseByPullUp</span><span class="p">();</span>
+            <span class="p">}</span>
+        <span class="p">};</span>
 
-    // スクロールした時にいろいろやる
-    scrollView.Scrolled += (sender, e) =&gt; 
-    {
-        var labelFrame = bounceLabel.Frame;
+        <span class="c1">// スクロールした時にいろいろやる
+</span>        <span class="n">scrollView</span><span class="p">.</span><span class="n">Scrolled</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
+        <span class="p">{</span>
+            <span class="kt">var</span> <span class="n">labelFrame</span> <span class="p">=</span> <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Frame</span><span class="p">;</span>
 
-        // コンテンツの一番下まで表示してさらに引っ張ったサイズ
-        var offsetY = (scrollView.Frame.Height + scrollView.ContentOffset.Y) 
-            - scrollView.ContentSize.Height;
+            <span class="c1">// コンテンツの一番下まで表示してさらに引っ張ったサイズ
+</span>            <span class="kt">var</span> <span class="n">offsetY</span> <span class="p">=</span> <span class="p">(</span><span class="n">scrollView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">+</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">ContentOffset</span><span class="p">.</span><span class="n">Y</span><span class="p">)</span> 
+                <span class="p">-</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">ContentSize</span><span class="p">.</span><span class="n">Height</span><span class="p">;</span>
 
-        // 50px 上に引っ張ったら閉じるものとする
-        canClose = offsetY &gt; 50f;
-        bounceLabel.Text = canClose ? "Release to Close" : "Pull up to Close";
+            <span class="c1">// 50px 上に引っ張ったら閉じるものとする
+</span>            <span class="n">canClose</span> <span class="p">=</span> <span class="n">offsetY</span> <span class="p">&gt;</span> <span class="m">50f</span><span class="p">;</span>
+            <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">canClose</span> <span class="p">?</span> <span class="s">"Release to Close"</span> <span class="p">:</span> <span class="s">"Pull up to Close"</span><span class="p">;</span>
 
-        // ラベルがいつまでも移動しないように
-        if (offsetY &gt; labelFrame.Height)
-        {
-            offsetY = labelFrame.Height;
-        }
+            <span class="c1">// ラベルがいつまでも移動しないように
+</span>            <span class="k">if</span> <span class="p">(</span><span class="n">offsetY</span> <span class="p">&gt;</span> <span class="n">labelFrame</span><span class="p">.</span><span class="n">Height</span><span class="p">)</span>
+            <span class="p">{</span>
+                <span class="n">offsetY</span> <span class="p">=</span> <span class="n">labelFrame</span><span class="p">.</span><span class="n">Height</span><span class="p">;</span>
+            <span class="p">}</span>
 
-        // ラベルがドラッグと共に下からせり出してくるように
-        labelFrame.Y = scrollView.Frame.Height - offsetY;
-        bounceLabel.Frame = labelFrame;
-    };
-}
-
-// "Release to Close" で離すと呼ばれる
-void OnCloseByPullUp()
-{
-    var v = new UIAlertView("", "Close this view",  null, "Close");
-    v.Show ();
-} } ```
+            <span class="c1">// ラベルがドラッグと共に下からせり出してくるように
+</span>            <span class="n">labelFrame</span><span class="p">.</span><span class="n">Y</span> <span class="p">=</span> <span class="n">scrollView</span><span class="p">.</span><span class="n">Frame</span><span class="p">.</span><span class="n">Height</span> <span class="p">-</span> <span class="n">offsetY</span><span class="p">;</span>
+            <span class="n">bounceLabel</span><span class="p">.</span><span class="n">Frame</span> <span class="p">=</span> <span class="n">labelFrame</span><span class="p">;</span>
+        <span class="p">};</span>
+    <span class="p">}</span>
+    
+    <span class="c1">// "Release to Close" で離すと呼ばれる
+</span>    <span class="k">void</span> <span class="nf">OnCloseByPullUp</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="kt">var</span> <span class="n">v</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">UIAlertView</span><span class="p">(</span><span class="s">""</span><span class="p">,</span> <span class="s">"Close this view"</span><span class="p">,</span>  <span class="k">null</span><span class="p">,</span> <span class="s">"Close"</span><span class="p">);</span>
+        <span class="n">v</span><span class="p">.</span><span class="nf">Show</span> <span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre>
 </div>
 

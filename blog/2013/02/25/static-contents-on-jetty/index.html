@@ -883,119 +883,119 @@ $ mkdir htdocs
 
 <p>適当な HTML を htdocs に入れる。</p>
 
-<p>``` html ~/dev/sdks/jetty-8.1.9/htdocs/index.html<br />
-&lt;!DOCTYPE html&gt;</p>
-<html lang="ja">
-<body>
-	<h1>Hello World!</h1>
-</body>
-</html>
+<div class="language-html highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- ~/dev/sdks/jetty-8.1.9/htdocs/index.html --&gt;</span>
+<span class="cp">&lt;!DOCTYPE html&gt;</span>
+<span class="nt">&lt;html</span> <span class="na">lang=</span><span class="s">"ja"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;body&gt;</span>
+	<span class="nt">&lt;H1&gt;</span>Hello World!<span class="nt">&lt;/H1&gt;</span>
+<span class="nt">&lt;/body&gt;</span>
+<span class="nt">&lt;/html&gt;</span>
+</code></pre>
+</div>
+
+<h2 id="jetty--handler-">jetty の設定ファイルで、静的コンテンツを有効にする Handler とかいうやつを設定する</h2>
+
+<p><code class="highlighter-rouge">etc/jetty.xml</code> をコピーして、<code class="highlighter-rouge">etc/jetty_static.xml</code> とか適当な名前にする。</p>
+
+<p>handler の設定のところに ResourceHandler のブロックを入れる</p>
+
+<p>``` xml jetty_static.xml<br />
+<?xml version="1.0"?><br />
+&lt;!DOCTYPE Configure PUBLIC “-//Jetty//Configure//EN” “http://www.eclipse.org/jetty/configure.dtd”&gt;</p>
+
+<!-- =============================================================== -->
+<!-- Configure the Jetty Server                                      -->
+<!--                                                                 -->
+<!-- Documentation of this file format can be found at:              -->
+<!-- http://wiki.eclipse.org/Jetty/Reference/jetty.xml_syntax        -->
+<!--                                                                 -->
+<!-- Additional configuration files are available in $JETTY_HOME/etc -->
+<!-- and can be mixed in.  For example:                              -->
+<!--   java -jar start.jar etc/jetty-ssl.xml                         -->
+<!--                                                                 -->
+<!-- See start.ini file for the default configuraton files           -->
+<!-- =============================================================== -->
+
+<Configure id="Server" class="org.eclipse.jetty.server.Server">
+
+    <!-- =========================================================== -->
+    <!-- Server Thread Pool                                          -->
+    <!-- =========================================================== -->
+    <Set name="ThreadPool">
+      <!-- Default queued blocking threadpool -->
+      <New class="org.eclipse.jetty.util.thread.QueuedThreadPool">
+        <Set name="minThreads">10</Set>
+        <Set name="maxThreads">200</Set>
+        <Set name="detailedDump">false</Set>
+      </New>
+    </Set>
+
+    <!-- =========================================================== -->
+    <!-- Set connectors                                              -->
+    <!-- =========================================================== -->
+
+    <Call name="addConnector">
+      <Arg>
+          <New class="org.eclipse.jetty.server.nio.SelectChannelConnector">
+            <Set name="host"><Property name="jetty.host" /></Set>
+            <Set name="port"><Property name="jetty.port" default="8080" /></Set>
+            <Set name="maxIdleTime">300000</Set>
+            <Set name="Acceptors">2</Set>
+            <Set name="statsOn">false</Set>
+            <Set name="confidentialPort">8443</Set>
+	    <Set name="lowResourcesConnections">20000</Set>
+	    <Set name="lowResourcesMaxIdleTime">5000</Set>
+          </New>
+      </Arg>
+    </Call>
+
+    <!-- =========================================================== -->
+    <!-- Set handler Collection Structure                            --> 
+    <!-- =========================================================== -->
+    <Set name="handler">
+      <New id="Handlers" class="org.eclipse.jetty.server.handler.HandlerCollection">
+        <Set name="handlers">
+         <Array type="org.eclipse.jetty.server.Handler">
+
+           <!-- ここから -->
+           <Item>
+            <New class="org.eclipse.jetty.server.handler.ResourceHandler">
+             <Set name="resourceBase"><Property name="files.base" default="./htdocs" /></Set>
+            </New>
+           </Item>
+           <!-- ここまで -->
+
+			<!-- よくわからないのでコメントアウトしてみた
+           <Item>
+             <New id="Contexts" class="org.eclipse.jetty.server.handler.ContextHandlerCollection"/>
+           </Item>
+           <Item>
+             <New id="DefaultHandler" class="org.eclipse.jetty.server.handler.DefaultHandler"/>
+           </Item> -->
+         </Array>
+        </Set>
+      </New>
+    </Set>
+
+    <!-- =========================================================== -->
+    <!-- extra options                                               -->
+    <!-- =========================================================== -->
+    <Set name="stopAtShutdown">true</Set>
+    <Set name="sendServerVersion">true</Set>
+    <Set name="sendDateHeader">true</Set>
+    <Set name="gracefulShutdown">1000</Set>
+    <Set name="dumpAfterStart">false</Set>
+    <Set name="dumpBeforeStop">false</Set>
+
+</Configure>
 <div class="highlighter-rouge"><pre class="highlight"><code>
-## jetty の設定ファイルで、静的コンテンツを有効にする Handler とかいうやつを設定する
+## 設定ファイルを指定して起動してみる
 
-``etc/jetty.xml`` をコピーして、``etc/jetty_static.xml`` とか適当な名前にする。
-
-handler の設定のところに ResourceHandler のブロックを入れる
-
-``` xml jetty_static.xml
-&lt;?xml version="1.0"?&gt;
-&lt;!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure.dtd"&gt;
-
-&lt;!-- =============================================================== --&gt;
-&lt;!-- Configure the Jetty Server                                      --&gt;
-&lt;!--                                                                 --&gt;
-&lt;!-- Documentation of this file format can be found at:              --&gt;
-&lt;!-- http://wiki.eclipse.org/Jetty/Reference/jetty.xml_syntax        --&gt;
-&lt;!--                                                                 --&gt;
-&lt;!-- Additional configuration files are available in $JETTY_HOME/etc --&gt;
-&lt;!-- and can be mixed in.  For example:                              --&gt;
-&lt;!--   java -jar start.jar etc/jetty-ssl.xml                         --&gt;
-&lt;!--                                                                 --&gt;
-&lt;!-- See start.ini file for the default configuraton files           --&gt;
-&lt;!-- =============================================================== --&gt;
-
-
-&lt;Configure id="Server" class="org.eclipse.jetty.server.Server"&gt;
-
-    &lt;!-- =========================================================== --&gt;
-    &lt;!-- Server Thread Pool                                          --&gt;
-    &lt;!-- =========================================================== --&gt;
-    &lt;Set name="ThreadPool"&gt;
-      &lt;!-- Default queued blocking threadpool --&gt;
-      &lt;New class="org.eclipse.jetty.util.thread.QueuedThreadPool"&gt;
-        &lt;Set name="minThreads"&gt;10&lt;/Set&gt;
-        &lt;Set name="maxThreads"&gt;200&lt;/Set&gt;
-        &lt;Set name="detailedDump"&gt;false&lt;/Set&gt;
-      &lt;/New&gt;
-    &lt;/Set&gt;
-
-    &lt;!-- =========================================================== --&gt;
-    &lt;!-- Set connectors                                              --&gt;
-    &lt;!-- =========================================================== --&gt;
-
-    &lt;Call name="addConnector"&gt;
-      &lt;Arg&gt;
-          &lt;New class="org.eclipse.jetty.server.nio.SelectChannelConnector"&gt;
-            &lt;Set name="host"&gt;&lt;Property name="jetty.host" /&gt;&lt;/Set&gt;
-            &lt;Set name="port"&gt;&lt;Property name="jetty.port" default="8080"/&gt;&lt;/Set&gt;
-            &lt;Set name="maxIdleTime"&gt;300000&lt;/Set&gt;
-            &lt;Set name="Acceptors"&gt;2&lt;/Set&gt;
-            &lt;Set name="statsOn"&gt;false&lt;/Set&gt;
-            &lt;Set name="confidentialPort"&gt;8443&lt;/Set&gt;
-	    &lt;Set name="lowResourcesConnections"&gt;20000&lt;/Set&gt;
-	    &lt;Set name="lowResourcesMaxIdleTime"&gt;5000&lt;/Set&gt;
-          &lt;/New&gt;
-      &lt;/Arg&gt;
-    &lt;/Call&gt;
-
-    &lt;!-- =========================================================== --&gt;
-    &lt;!-- Set handler Collection Structure                            --&gt; 
-    &lt;!-- =========================================================== --&gt;
-    &lt;Set name="handler"&gt;
-      &lt;New id="Handlers" class="org.eclipse.jetty.server.handler.HandlerCollection"&gt;
-        &lt;Set name="handlers"&gt;
-         &lt;Array type="org.eclipse.jetty.server.Handler"&gt;
-
-           &lt;!-- ここから --&gt;
-           &lt;Item&gt;
-            &lt;New class="org.eclipse.jetty.server.handler.ResourceHandler"&gt;
-             &lt;Set name="resourceBase"&gt;&lt;Property name="files.base" default="./htdocs"/&gt;&lt;/Set&gt;
-            &lt;/New&gt;
-           &lt;/Item&gt;
-           &lt;!-- ここまで --&gt;
-
-			&lt;!-- よくわからないのでコメントアウトしてみた
-           &lt;Item&gt;
-             &lt;New id="Contexts" class="org.eclipse.jetty.server.handler.ContextHandlerCollection"/&gt;
-           &lt;/Item&gt;
-           &lt;Item&gt;
-             &lt;New id="DefaultHandler" class="org.eclipse.jetty.server.handler.DefaultHandler"/&gt;
-           &lt;/Item&gt; --&gt;
-         &lt;/Array&gt;
-        &lt;/Set&gt;
-      &lt;/New&gt;
-    &lt;/Set&gt;
-
-    &lt;!-- =========================================================== --&gt;
-    &lt;!-- extra options                                               --&gt;
-    &lt;!-- =========================================================== --&gt;
-    &lt;Set name="stopAtShutdown"&gt;true&lt;/Set&gt;
-    &lt;Set name="sendServerVersion"&gt;true&lt;/Set&gt;
-    &lt;Set name="sendDateHeader"&gt;true&lt;/Set&gt;
-    &lt;Set name="gracefulShutdown"&gt;1000&lt;/Set&gt;
-    &lt;Set name="dumpAfterStart"&gt;false&lt;/Set&gt;
-    &lt;Set name="dumpBeforeStop"&gt;false&lt;/Set&gt;
-
-&lt;/Configure&gt;
 </code></pre>
 </div>
-
-<h2 id="section-2">設定ファイルを指定して起動してみる</h2>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>$ cd ~/dev/sdks/jetty-8.1.9
-$ java -jar start.jar --ini etc/jetty_static.xml
-</code></pre>
-</div>
+<p>$ cd ~/dev/sdks/jetty-8.1.9<br />
+$ java -jar start.jar –ini etc/jetty_static.xml<br />
+```</p>
 
 <p>–ini は不要な気もするのだけど、付けないとエラーになっちゃった。</p>
 

@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -858,22 +858,23 @@ img {
 
 <p>GoogleMap v2 を使ったよくあるコード。</p>
 
-<p>```java MainActivity.java<br />
-@Override<br />
-protected void onCreate(Bundle savedInstanceState) {<br />
-    super.onCreate(savedInstanceState);<br />
-    setContentView(R.layout.activity_main);</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
-        .findFragmentById(R.id.map));
-GoogleMap gmap = fragment.getMap();
-
-LatLngBounds bounds = LatLngBounds.builder()
-    .include(new LatLng(35.4433011,139.646108)) // 横浜
-    .include(new LatLng(35.6846001,139.696919)) // 東京
-    .build();
-
-gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15)); } ```
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.java</span>
+<span class="nd">@Override</span>
+<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+    
+    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+    <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+    
+    <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+        <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+        <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+    
+    <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 
@@ -914,34 +915,35 @@ gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15)); } ```
 
 <p>これによると <code class="highlighter-rouge">view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
 
-<p>```java MainActivity.java<br />
-@Override<br />
-protected void onCreate(Bundle savedInstanceState) {<br />
-    super.onCreate(savedInstanceState);<br />
-    setContentView(R.layout.activity_main);</p>
-
-<div class="highlighter-rouge"><pre class="highlight"><code>SupportMapFragment fragment = ((SupportMapFragment)getSupportFragmentManager()
-        .findFragmentById(R.id.map));
-final GoogleMap gmap = fragment.getMap();
-
-// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった
-fragment.getView().post(new Runnable() {
-    @Override
-    public void run() {
-        LatLngBounds bounds = LatLngBounds.builder()
-                .include(new LatLng(35.4433011,139.646108)) // 横浜
-                .include(new LatLng(35.6846001,139.696919)) // 東京
-                .build();
-        
-        gmap.moveCamera(CameraUpdateFactory.newLatLngBounds(bounds, 15));
-    }
-}); } ```
+<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.java</span>
+<span class="nd">@Override</span>
+<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
+    <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
+    <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
+    
+    <span class="n">SupportMapFragment</span> <span class="n">fragment</span> <span class="o">=</span> <span class="o">((</span><span class="n">SupportMapFragment</span><span class="o">)</span><span class="n">getSupportFragmentManager</span><span class="o">()</span>
+            <span class="o">.</span><span class="na">findFragmentById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">map</span><span class="o">));</span>
+    <span class="kd">final</span> <span class="n">GoogleMap</span> <span class="n">gmap</span> <span class="o">=</span> <span class="n">fragment</span><span class="o">.</span><span class="na">getMap</span><span class="o">();</span>
+    
+    <span class="c1">// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった</span>
+    <span class="n">fragment</span><span class="o">.</span><span class="na">getView</span><span class="o">().</span><span class="na">post</span><span class="o">(</span><span class="k">new</span> <span class="n">Runnable</span><span class="o">()</span> <span class="o">{</span>
+        <span class="nd">@Override</span>
+        <span class="kd">public</span> <span class="kt">void</span> <span class="nf">run</span><span class="o">()</span> <span class="o">{</span>
+            <span class="n">LatLngBounds</span> <span class="n">bounds</span> <span class="o">=</span> <span class="n">LatLngBounds</span><span class="o">.</span><span class="na">builder</span><span class="o">()</span>
+                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.4433011</span><span class="o">,</span><span class="mf">139.646108</span><span class="o">))</span> <span class="c1">// 横浜</span>
+                    <span class="o">.</span><span class="na">include</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="mf">35.6846001</span><span class="o">,</span><span class="mf">139.696919</span><span class="o">))</span> <span class="c1">// 東京</span>
+                    <span class="o">.</span><span class="na">build</span><span class="o">();</span>
+            
+            <span class="n">gmap</span><span class="o">.</span><span class="na">moveCamera</span><span class="o">(</span><span class="n">CameraUpdateFactory</span><span class="o">.</span><span class="na">newLatLngBounds</span><span class="o">(</span><span class="n">bounds</span><span class="o">,</span> <span class="mi">15</span><span class="o">));</span>
+        <span class="o">}</span>
+    <span class="o">});</span>
+<span class="o">}</span>
 </code></pre>
 </div>
 
 <p>としたところ、正常に地図がズームされました。</p>
 
-<p><amp-img width="534" height="446" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img" /></p>
 
 <p>ちなみに、処理をメインスレッド上で行う <code class="highlighter-rouge">Activity.runOnUiThread</code> や <code class="highlighter-rouge">Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
 
