@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -852,7 +852,7 @@ img {
 
 <p>Components で右クリック → Get more components → Reactive とかで検索 → 見つけたら Add to App で OK です。あ、この手順は .iOS でも .Android でも同じです。</p>
 
-<p><amp-img width="1403" height="886" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_01.gif" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_01.gif" alt="" /></p>
 
 <h2 id="section">使ってみましょうか</h2>
 
@@ -860,37 +860,35 @@ img {
 
 <p>まずこんな感じのどうでもいい画面を用意しまして、</p>
 
-<p><amp-img width="323" height="592" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_02.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/install_rx_to_xamarin_ios_02.png" alt="" /></p>
 
 <p><code class="highlighter-rouge">UIButton.TouchUpInside</code> を <code class="highlighter-rouge">IObservable</code> に変換する拡張メソッドを用意します。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//UIButtonExtensions.cs
-</span><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">UIButtonExtensions</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">static</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="nf">ClickAsObservable</span><span class="p">(</span><span class="k">this</span> <span class="n">UIButton</span> <span class="n">button</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">FromEventPattern</span><span class="p">&lt;</span><span class="n">EventArgs</span><span class="p">&gt;(</span><span class="n">button</span><span class="p">,</span> <span class="s">"TouchUpInside"</span><span class="p">)</span>
-                <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">e</span> <span class="p">=&gt;</span> <span class="p">((</span><span class="n">UIButton</span><span class="p">)</span><span class="n">e</span><span class="p">.</span><span class="n">Sender</span><span class="p">).</span><span class="n">TitleLabel</span><span class="p">.</span><span class="n">Text</span><span class="p">);</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-</code></pre>
-</div>
+<p>```csharp UIButtonExtensions.cs<br />
+public static class UIButtonExtensions<br />
+{<br />
+    public static IObservable<string> ClickAsObservable(this UIButton button)
+    {
+        return Observable.FromEventPattern<EventArgs>(button, "TouchUpInside")
+                .Select(e =&gt; ((UIButton)e.Sender).TitleLabel.Text);
+    }
+}</EventArgs></string></p>
+<div class="highlighter-rouge"><pre class="highlight"><code>
+で、こんなコードを書きます。
 
-<p>で、こんなコードを書きます。</p>
+```csharp MainViewController_amb.cs
+public override void ViewDidLoad()
+{
+    base.ViewDidLoad();
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainViewController_amb.cs
-</span><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">ViewDidLoad</span><span class="p">()</span>
-<span class="p">{</span>
-    <span class="k">base</span><span class="p">.</span><span class="nf">ViewDidLoad</span><span class="p">();</span>
-
-    <span class="n">Button1</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">()</span>
-        <span class="p">.</span><span class="nf">Publish</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> 
-            <span class="n">Button2</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">()</span>
-            <span class="p">.</span><span class="nf">Amb</span><span class="p">(</span>
-                <span class="n">Button3</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">()))</span>
-        <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">btnName</span> <span class="p">=&gt;</span> <span class="nf">InvokeOnMainThread</span><span class="p">(()</span> <span class="p">=&gt;</span> 
-            <span class="n">Label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">btnName</span> <span class="p">+</span> <span class="s">" Clicked"</span><span class="p">));</span>
-<span class="p">}</span>
+    Button1.ClickAsObservable()
+        .Publish(_ =&gt; 
+            Button2.ClickAsObservable()
+            .Amb(
+                Button3.ClickAsObservable()))
+        .Subscribe(btnName =&gt; InvokeOnMainThread(() =&gt; 
+            Label1.Text = btnName + " Clicked"));
+}
 </code></pre>
 </div>
 
@@ -903,16 +901,15 @@ Publish で分配して <strong>Amb</strong> は Button2 のクリックと Butt
 
 <p>Amb を Zip に変えてみます。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainViewController_zip.cs
-</span>    <span class="n">Button1</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">()</span>
-        <span class="p">.</span><span class="nf">Publish</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> 
-            <span class="n">Button2</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">()</span>
-            <span class="p">.</span><span class="nf">Zip</span><span class="p">(</span>
-                <span class="n">Button3</span><span class="p">.</span><span class="nf">ClickAsObservable</span><span class="p">(),</span> <span class="p">(</span><span class="n">l</span><span class="p">,</span><span class="n">r</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span><span class="n">l</span><span class="p">,</span> <span class="n">r</span><span class="p">}))</span>
-        <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">p</span> <span class="p">=&gt;</span> <span class="nf">InvokeOnMainThread</span><span class="p">(()</span> <span class="p">=&gt;</span> 
-            <span class="n">Label1</span><span class="p">.</span><span class="n">Text</span> <span class="p">=</span> <span class="n">p</span><span class="p">.</span><span class="n">l</span> <span class="p">+</span> <span class="s">" and "</span> <span class="p">+</span> <span class="n">p</span><span class="p">.</span><span class="n">r</span> <span class="p">+</span> <span class="s">"Clicked"</span><span class="p">));</span>
-</code></pre>
-</div>
+<p><code class="highlighter-rouge">csharp MainViewController_zip.cs
+    Button1.ClickAsObservable()
+        .Publish(_ =&gt; 
+            Button2.ClickAsObservable()
+            .Zip(
+                Button3.ClickAsObservable(), (l,r) =&gt; new {l, r}))
+        .Subscribe(p =&gt; InvokeOnMainThread(() =&gt; 
+            Label1.Text = p.l + " and " + p.r + "Clicked"));
+</code></p>
 
 <p>Zip は2つのシーケンスの結果を待ってから後続へ流します。<br />
 なので、Button2 と Button3 の両方が押されると、Label1 に表示されます。</p>

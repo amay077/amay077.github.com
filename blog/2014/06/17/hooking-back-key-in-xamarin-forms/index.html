@@ -859,109 +859,107 @@ img {
 
 <p>まず画面１と２はこんな感じ。ボタンを押したら画面２へ遷移するだけ。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//Pages.cs
-// 画面１
-</span><span class="k">public</span> <span class="k">class</span> <span class="nc">MainPage</span> <span class="p">:</span> <span class="n">ContentPage</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="nf">MainPage</span><span class="p">()</span> 
-    <span class="p">{</span>
-        <span class="kt">var</span> <span class="n">button</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span>
-        <span class="p">{</span>
-            <span class="n">Text</span> <span class="p">=</span> <span class="s">"To Second"</span><span class="p">,</span>
-            <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
-        <span class="p">};</span>
+<p>```csharp Pages.cs<br />
+// 画面１<br />
+public class MainPage : ContentPage<br />
+{<br />
+    public MainPage() <br />
+    {<br />
+        var button = new Button<br />
+        {<br />
+            Text = “To Second”,<br />
+            VerticalOptions = LayoutOptions.Center,<br />
+        };</p>
 
-        <span class="n">button</span><span class="p">.</span><span class="n">Clicked</span> <span class="p">+=</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
-        <span class="p">{</span>
-            <span class="k">this</span><span class="p">.</span><span class="n">Navigation</span><span class="p">.</span><span class="nf">PushAsync</span><span class="p">(</span><span class="k">new</span> <span class="nf">SecondPage</span><span class="p">());</span>
-        <span class="p">};</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>    button.Clicked += (sender, e) =&gt; 
+    {
+        this.Navigation.PushAsync(new SecondPage());
+    };
 
-        <span class="n">Content</span> <span class="p">=</span> <span class="n">button</span><span class="p">;</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-
-<span class="c1">// 画面２
-</span><span class="k">public</span> <span class="k">class</span> <span class="nc">SecondPage</span> <span class="p">:</span> <span class="n">ContentPage</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="nf">SecondPage</span><span class="p">()</span>
-    <span class="p">{</span>
-        <span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Label</span>
-        <span class="p">{</span>
-            <span class="n">Text</span> <span class="p">=</span> <span class="s">"Second"</span>
-        <span class="p">};</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+    Content = button;
+} }
 </code></pre>
 </div>
 
-<p>ここからが本題。<br />
-まず Android側のエントリポイントである <code class="highlighter-rouge">MainActivity.cs</code> は以下のように、<code class="highlighter-rouge">ContentPage</code> プロパティを設ける。そして <code class="highlighter-rouge">OnBackPressed</code> メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。</p>
+<p>// 画面２<br />
+public class SecondPage : ContentPage<br />
+{<br />
+    public SecondPage()<br />
+    {<br />
+        Content = new Label<br />
+        {<br />
+            Text = “Second”<br />
+        };<br />
+    }<br />
+}</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>
+ここからが本題。
+まず Android側のエントリポイントである ``MainActivity.cs`` は以下のように、``ContentPage`` プロパティを設ける。そして ``OnBackPressed`` メソッドを override して、MainPage だったら OnBackPressed を親へ伝搬する。
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
-</span><span class="na">[Activity(Label = "ScrollTest.Android.Android", MainLauncher = true)]</span>
-<span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AndroidActivity</span>
-<span class="p">{</span>
-    <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span>
-    <span class="p">{</span>
-        <span class="k">base</span><span class="p">.</span><span class="nf">OnCreate</span><span class="p">(</span><span class="n">bundle</span><span class="p">);</span>
+```csharp MainActivity.cs
+[Activity(Label = "ScrollTest.Android.Android", MainLauncher = true)]
+public class MainActivity : AndroidActivity
+{
+    protected override void OnCreate(Bundle bundle)
+    {
+        base.OnCreate(bundle);
 
-        <span class="n">Xamarin</span><span class="p">.</span><span class="n">Forms</span><span class="p">.</span><span class="n">Forms</span><span class="p">.</span><span class="nf">Init</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">bundle</span><span class="p">);</span>
+        Xamarin.Forms.Forms.Init(this, bundle);
 
-        <span class="nf">SetPage</span><span class="p">(</span><span class="k">new</span> <span class="nf">NavigationPage</span><span class="p">(</span><span class="k">new</span> <span class="nf">MainPage</span><span class="p">()));</span>
-    <span class="p">}</span>
+        SetPage(new NavigationPage(new MainPage()));
+    }
 
-    <span class="k">internal</span> <span class="n">Page</span> <span class="n">ContentPage</span>
-    <span class="p">{</span>
-        <span class="k">get</span><span class="p">;</span>
-        <span class="k">set</span><span class="p">;</span>
-    <span class="p">}</span>
+    internal Page ContentPage
+    {
+        get;
+        set;
+    }
 
-    <span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnBackPressed</span><span class="p">()</span>
-    <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="n">ContentPage</span> <span class="k">is</span> <span class="n">MainPage</span><span class="p">)</span>
-        <span class="p">{</span>
-            <span class="k">base</span><span class="p">.</span><span class="nf">OnBackPressed</span><span class="p">();</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+    public override void OnBackPressed()
+    {
+        if (this.ContentPage is MainPage)
+        {
+            base.OnBackPressed();
+        }
+    }
+}
 </code></pre>
 </div>
 
 <p>次に、MainActivity.ContentPage への設定を行うコードは以下の通り。<br />
 PageRenderer を拡張して ExportRenderer することで、すべての Page にフックをかけ、Page の表示時に MainActivity.ContentPage に設定する。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MyPageRenderer.cs
-</span><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Xamarin.Forms.Platform.Android</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Android.App</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">ScrollTest.Android</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Android.Views</span><span class="p">;</span>
-<span class="k">using</span> <span class="nn">Android.Graphics</span><span class="p">;</span>
+<p>```csharp MyPageRenderer.cs<br />
+using System;<br />
+using Xamarin.Forms.Platform.Android;<br />
+using Android.App;<br />
+using Xamarin.Forms;<br />
+using ScrollTest.Android;<br />
+using Android.Views;<br />
+using Android.Graphics;</p>
 
-<span class="na">[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</span>
+<p>[assembly:ExportRenderer(typeof(ContentPage), typeof(MyPageRenderer))]</p>
 
-<span class="k">namespace</span> <span class="nn">ScrollTest.Android</span>
-<span class="p">{</span>
-    <span class="k">public</span> <span class="k">class</span> <span class="nc">MyPageRenderer</span> <span class="p">:</span> <span class="n">PageRenderer</span>
-    <span class="p">{</span>
-        <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnElementChanged</span><span class="p">(</span><span class="n">ElementChangedEventArgs</span><span class="p">&lt;</span><span class="n">Xamarin</span><span class="p">.</span><span class="n">Forms</span><span class="p">.</span><span class="n">Page</span><span class="p">&gt;</span> <span class="n">e</span><span class="p">)</span>
-        <span class="p">{</span>
-            <span class="k">base</span><span class="p">.</span><span class="nf">OnElementChanged</span><span class="p">(</span><span class="n">e</span><span class="p">);</span>
+<p>namespace ScrollTest.Android<br />
+{<br />
+    public class MyPageRenderer : PageRenderer<br />
+    {<br />
+        protected override void OnElementChanged(ElementChangedEventArgs<Xamarin.Forms.Page> e)
+        {
+            base.OnElementChanged(e);</Xamarin.Forms.Page></p>
 
-            <span class="c1">// なんとなく不安なので weak にしてみた
-</span>            <span class="kt">var</span> <span class="n">activity</span> <span class="p">=</span> <span class="k">new</span> <span class="n">WeakReference</span><span class="p">&lt;</span><span class="n">MainActivity</span><span class="p">&gt;(</span><span class="k">this</span><span class="p">.</span><span class="n">Context</span> <span class="k">as</span> <span class="n">MainActivity</span><span class="p">);</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>        // なんとなく不安なので weak にしてみた
+        var activity = new WeakReference&lt;MainActivity&gt;(this.Context as MainActivity);
 
-            <span class="n">e</span><span class="p">.</span><span class="n">NewElement</span><span class="p">.</span><span class="n">Appearing</span> <span class="p">+=</span> <span class="p">(</span><span class="n">_</span><span class="p">,</span> <span class="n">__</span><span class="p">)</span> <span class="p">=&gt;</span>
-            <span class="p">{</span>
-                <span class="n">MainActivity</span> <span class="n">a</span><span class="p">;</span>
-                <span class="k">if</span> <span class="p">(</span><span class="n">activity</span><span class="p">.</span><span class="nf">TryGetTarget</span><span class="p">(</span><span class="k">out</span> <span class="n">a</span><span class="p">))</span> <span class="p">{</span>
-                    <span class="n">a</span><span class="p">.</span><span class="n">ContentPage</span> <span class="p">=</span> <span class="n">e</span><span class="p">.</span><span class="n">NewElement</span><span class="p">;</span>    
-                <span class="p">}</span>
-            <span class="p">};</span>
-        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+        e.NewElement.Appearing += (_, __) =&gt;
+        {
+            MainActivity a;
+            if (activity.TryGetTarget(out a)) {
+                a.ContentPage = e.NewElement;    
+            }
+        };
+    }
+} } ```
 </code></pre>
 </div>
 

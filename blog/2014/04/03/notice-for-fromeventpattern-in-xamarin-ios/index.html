@@ -863,41 +863,34 @@ img {
 
 <p>これを FromEventPattern を使うとこう書けます。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//DoesNotWorkOnDevice.cs
-</span><span class="n">Observable</span><span class="p">.</span><span class="nf">FromEventPattern</span><span class="p">(</span><span class="n">MyButton</span><span class="p">,</span> <span class="s">"TouchUpInside"</span><span class="p">)</span>
-<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">MyButton</span><span class="p">.</span><span class="nf">SetTitle</span><span class="p">(</span><span class="s">"Clicked!"</span><span class="p">,</span> <span class="n">UIControlState</span><span class="p">.</span><span class="n">Normal</span><span class="p">));</span>
-</code></pre>
-</div>
+<p>```csharp DoesNotWorkOnDevice.cs<br />
+Observable.FromEventPattern(MyButton, “TouchUpInside”)<br />
+.Subscribe(x =&gt; MyButton.SetTitle(“Clicked!”, UIControlState.Normal));</p>
+<div class="highlighter-rouge"><pre class="highlight"><code>
+このコード、iOSシミュレータでは正常に動作しますが、 **実機では、ビルドは通りますが動作しません。** 実行時にこんなエラーがでます。
 
-<p>このコード、iOSシミュレータでは正常に動作しますが、 <strong>実機では、ビルドは通りますが動作しません。</strong> 実行時にこんなエラーがでます。</p>
 
-<blockquote>
-  <p>System.InvalidOperationException: Could not find event ‘TouchUpInside’ on object of type ‘MonoTouch.UIKit.UIButton’.</p>
-</blockquote>
+&gt; System.InvalidOperationException: Could not find event 'TouchUpInside' on object of type 'MonoTouch.UIKit.UIButton'.
 
-<p><code class="highlighter-rouge">TouchUpInside</code> が無いと言われます。</p>
+``TouchUpInside`` が無いと言われます。
 
-<p>これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。</p>
+これは AOT により生成されたコードに、このイベントが含まれないのだと推測します。イベント名を文字列リテラルで指定しているので、そこまでの解析は期待できないですよね。
 
-<p>シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。</p>
+シミュレータで動作したのは、この場合は AOT でなく JIT で動作しているため。以下でも言及されています。
 
-<ul>
-  <li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
-</ul>
+* [Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider](http://www.buildinsider.net/mobile/insidexamarin/05)
 
-<blockquote>
-  <p>対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。</p>
-</blockquote>
+&gt; 対象がiOSシミュレーターである場合と、iOSデバイスである場合とで、大きく異なる。iOSシミュレーターは、エミュレーターではなく、あくまでMac OS Xが動作しているx86 CPUの上で動作している仮想マシンであり、アプリケーションはJITによって動作する。iOSデバイスはARMであり、iOSデバイス用にビルドされたアプリケーションはAOTによってARMのCPU命令に変換されており、ARM上でしか動作しない。
 
-<p>Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。</p>
+Xamarin.iOS では実機で動作させないと安心ならないと言われる所以です。
 
-<p>さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。</p>
+さて、このケースでは、FromEventPattern の別なオーバーロードを使うことで解決です。
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//WorkOnDevice.cs
-</span><span class="n">Observable</span><span class="p">.</span><span class="nf">FromEventPattern</span><span class="p">(</span>
-  <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">MyButton</span><span class="p">.</span><span class="n">TouchUpInside</span><span class="p">+=</span><span class="n">h</span><span class="p">,</span> 
-  <span class="n">h</span> <span class="p">=&gt;</span> <span class="n">MyButton</span><span class="p">.</span><span class="n">TouchUpInside</span><span class="p">-=</span><span class="n">h</span><span class="p">)</span>
-<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">MyButton</span><span class="p">.</span><span class="nf">SetTitle</span><span class="p">(</span><span class="s">"Clicked!"</span><span class="p">,</span> <span class="n">UIControlState</span><span class="p">.</span><span class="n">Normal</span><span class="p">));</span>
+```csharp WorkOnDevice.cs
+Observable.FromEventPattern(
+  h =&gt; MyButton.TouchUpInside+=h, 
+  h =&gt; MyButton.TouchUpInside-=h)
+.Subscribe(x =&gt; MyButton.SetTitle("Clicked!", UIControlState.Normal));
 </code></pre>
 </div>
 

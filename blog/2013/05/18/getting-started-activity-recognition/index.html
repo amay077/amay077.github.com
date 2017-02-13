@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -852,7 +852,7 @@ img {
 <!--more--></p>
 <h2 id="sdk--google-play-services-">1. SDK の Google Play Services を更新する</h2>
 
-<p><amp-img width="728" height="808" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition1.png" alt="image1" /></p>
 
 <p>SDK Manager で、Google Play service を最新に更新します。<br />
 私は勢いで Android SDK Tools なども最新にしてしまいましたが、これが必要だったかは定かでないです。また SDK Tools を更新したら Eclipse のプラグインも更新する必要がありました。</p>
@@ -872,7 +872,7 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 <p>コピーしたら、ActivityRecognizingSample で、 google-play-services_lib をライブラリ参照します。</p>
 
-<p><amp-img width="784" height="437" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition2.png" alt="image2" /></p>
 
 <p>次から ActivityRecognizingSample の実装です。</p>
 
@@ -880,22 +880,21 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 <p>行動認識結果は IntentService で受け取ります。そのためのクラス <code class="highlighter-rouge">ReceiveRecognitionIntentService</code> を作成します。</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//ReceiveRecognitionIntentService.java</span>
-<span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
+<p>```java ReceiveRecognitionIntentService.java<br />
+package com.example.activityrecognizingsample;</p>
 
-<span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
+<p>import android.app.IntentService;</p>
 
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
+<p>public class ReceiveRecognitionIntentService extends IntentService {</p>
 
-	<span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
-		<span class="kd">super</span><span class="o">(</span><span class="s">"ReceiveRecognitionIntentService"</span><span class="o">);</span>
-	<span class="o">}</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>public ReceiveRecognitionIntentService()  {
+	super("ReceiveRecognitionIntentService");
+}
 
-	<span class="nd">@Override</span>
-	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-        <span class="c1">// まだ未実装</span>
-	<span class="o">}</span>
-<span class="o">}</span>
+@Override
+protected void onHandleIntent(Intent intent) {
+    // まだ未実装
+} } ```
 </code></pre>
 </div>
 
@@ -1115,70 +1114,71 @@ public class MainActivity extends Activity {
 </code></pre>
 </div>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//ReceiveRecognitionIntentService.java</span>
-<span class="kn">package</span> <span class="n">com</span><span class="o">.</span><span class="na">example</span><span class="o">.</span><span class="na">activityrecognizingsample</span><span class="o">;</span>
+<p>```java ReceiveRecognitionIntentService.java<br />
+package com.example.activityrecognizingsample;</p>
 
-<span class="kn">import</span> <span class="nn">com.google.android.gms.location.ActivityRecognitionResult</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">com.google.android.gms.location.DetectedActivity</span><span class="o">;</span>
+<p>import com.google.android.gms.location.ActivityRecognitionResult;<br />
+import com.google.android.gms.location.DetectedActivity;</p>
 
-<span class="kn">import</span> <span class="nn">android.app.IntentService</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">android.content.Intent</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">android.text.format.DateFormat</span><span class="o">;</span>
-<span class="kn">import</span> <span class="nn">android.util.Log</span><span class="o">;</span>
+<p>import android.app.IntentService;<br />
+import android.content.Intent;<br />
+import android.text.format.DateFormat;<br />
+import android.util.Log;</p>
 
-<span class="cm">/**
- * 行動認識結果を取得するための IntentService 
- * 
- * ActivityRecognitionClient.requestActivityUpdates に仕込んでおくと
- * 認識結果を受信する度にこれが呼ばれる。
- * 
- */</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ReceiveRecognitionIntentService</span> <span class="kd">extends</span> <span class="n">IntentService</span> <span class="o">{</span>
-	<span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">"ReceiveRecognitionIntentService"</span><span class="o">;</span>
+<p>/**</p>
+<ul>
+  <li>行動認識結果を取得するための IntentService</li>
+  <li></li>
+  <li>ActivityRecognitionClient.requestActivityUpdates に仕込んでおくと</li>
+  <li>認識結果を受信する度にこれが呼ばれる。</li>
+  <li>
+    <p>*/<br />
+public class ReceiveRecognitionIntentService extends IntentService {<br />
+private static final String TAG = “ReceiveRecognitionIntentService”;</p>
 
-	<span class="kd">public</span> <span class="nf">ReceiveRecognitionIntentService</span><span class="o">()</span>  <span class="o">{</span>
-		<span class="kd">super</span><span class="o">(</span><span class="s">"ReceiveRecognitionIntentService"</span><span class="o">);</span>
-	<span class="o">}</span>
+    <p>public ReceiveRecognitionIntentService()  {<br />
+    super(“ReceiveRecognitionIntentService”);<br />
+}</p>
 
-	<span class="nd">@Override</span>
-	<span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onHandleIntent</span><span class="o">(</span><span class="n">Intent</span> <span class="n">intent</span><span class="o">)</span> <span class="o">{</span>
-		<span class="k">if</span> <span class="o">(!</span><span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">hasResult</span><span class="o">(</span><span class="n">intent</span><span class="o">))</span> <span class="o">{</span>
-			<span class="c1">// 行動認識結果持ってないよ</span>
-			<span class="k">return</span><span class="o">;</span>
-		<span class="o">}</span>
-		
-		<span class="c1">// 認識結果を取得する</span>
-		<span class="n">ActivityRecognitionResult</span> <span class="n">result</span> <span class="o">=</span> 
-				<span class="n">ActivityRecognitionResult</span><span class="o">.</span><span class="na">extractResult</span><span class="o">(</span><span class="n">intent</span><span class="o">);</span>
-		
-		<span class="n">DetectedActivity</span> <span class="n">mostProbableActivity</span> <span class="o">=</span> <span class="n">result</span><span class="o">.</span><span class="na">getMostProbableActivity</span><span class="o">();</span>
-		<span class="kt">int</span> <span class="n">activityType</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getType</span><span class="o">();</span>
-		<span class="kt">int</span> <span class="n">confidence</span> <span class="o">=</span> <span class="n">mostProbableActivity</span><span class="o">.</span><span class="na">getConfidence</span><span class="o">();</span>
-		
-		<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">"Receive recognition."</span><span class="o">);</span>
-		<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">" activityType - "</span> <span class="o">+</span> <span class="n">activityType</span><span class="o">);</span> <span class="c1">// 行動タイプ</span>
-		<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">" confidence - "</span> <span class="o">+</span> <span class="n">confidence</span><span class="o">);</span> <span class="c1">// 確実性（精度みたいな）</span>
-		<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">" time - "</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"hh:mm:ss.sss"</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">()));</span> <span class="c1">// 時間</span>
-		<span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="n">TAG</span><span class="o">,</span> <span class="s">" elapsedTime - "</span> <span class="o">+</span> <span class="n">DateFormat</span><span class="o">.</span><span class="na">format</span><span class="o">(</span><span class="s">"hh:mm:ss.sss"</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getElapsedRealtimeMillis</span><span class="o">()));</span> <span class="c1">// よく分からん</span>
+    <p>@Override<br />
+protected void onHandleIntent(Intent intent) {<br />
+    if (!ActivityRecognitionResult.hasResult(intent)) {<br />
+        // 行動認識結果持ってないよ<br />
+        return;<br />
+    }</p>
 
-		<span class="c1">// 画面に結果を表示するために、Broadcast で通知。</span>
-		<span class="c1">//  MainActivity にしかけた BroadcastReceiver で受信する。</span>
-		<span class="n">Intent</span> <span class="n">notifyIntent</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Intent</span><span class="o">(</span><span class="s">"receive_recognition"</span><span class="o">);</span>
-		<span class="n">notifyIntent</span><span class="o">.</span><span class="na">setPackage</span><span class="o">(</span><span class="n">getPackageName</span><span class="o">());</span>
-		<span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">"activity_type"</span><span class="o">,</span> <span class="n">activityType</span><span class="o">);</span>
-		<span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">"confidence"</span><span class="o">,</span> <span class="n">confidence</span><span class="o">);</span>
-		<span class="n">notifyIntent</span><span class="o">.</span><span class="na">putExtra</span><span class="o">(</span><span class="s">"time"</span><span class="o">,</span> <span class="n">result</span><span class="o">.</span><span class="na">getTime</span><span class="o">());</span>
-		<span class="n">sendBroadcast</span><span class="o">(</span><span class="n">notifyIntent</span><span class="o">);</span>
-	<span class="o">}</span>
-<span class="o">}</span>
+    <div class="highlighter-rouge"><pre class="highlight"><code>// 認識結果を取得する
+ActivityRecognitionResult result = 
+        ActivityRecognitionResult.extractResult(intent);
+	
+DetectedActivity mostProbableActivity = result.getMostProbableActivity();
+int activityType = mostProbableActivity.getType();
+int confidence = mostProbableActivity.getConfidence();
+	
+Log.d(TAG, "Receive recognition.");
+Log.d(TAG, " activityType - " + activityType); // 行動タイプ
+Log.d(TAG, " confidence - " + confidence); // 確実性（精度みたいな）
+Log.d(TAG, " time - " + DateFormat.format("hh:mm:ss.sss", result.getTime())); // 時間
+Log.d(TAG, " elapsedTime - " + DateFormat.format("hh:mm:ss.sss", result.getElapsedRealtimeMillis())); // よく分からん
+
+// 画面に結果を表示するために、Broadcast で通知。
+//  MainActivity にしかけた BroadcastReceiver で受信する。
+Intent notifyIntent = new Intent("receive_recognition");
+notifyIntent.setPackage(getPackageName());
+notifyIntent.putExtra("activity_type", activityType);
+notifyIntent.putExtra("confidence", confidence);
+notifyIntent.putExtra("time", result.getTime());
+sendBroadcast(notifyIntent); } } ```
 </code></pre>
-</div>
+    </div>
+  </li>
+</ul>
 
 <h2 id="section">7. 動くのか！？</h2>
 
 <p>HTC J(not蝶) で動かしてみました。</p>
 
-<p><amp-img width="1300" height="630" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition3.jpg" alt="image3" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition3.jpg" alt="image3" /></p>
 
 <p>on_foot ってのが「歩いてる」ってやつですね。<br />
 感覚としてはズボンの尻ポケに入れて、5mくらいは歩かないと認識されない感じ。結構 unknown が多いですね。</p>
@@ -1193,7 +1193,7 @@ public class MainActivity extends Activity {
 
 <p>東京に出張する機会があったので、新幹線と在来線でも試してみました。</p>
 
-<p><amp-img width="985" height="635" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition4.png" alt="image4" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/getting_started_activity_recognition4.png" alt="image4" /></p>
 
 <p>新幹線は窓側の席だったので、窓の机に端末を放置していました。<br />
 在来線は座ることができなかったので、立った状態で端末は尻ポケ、カベに持たれてなるべく動かないようにしていました。</p>

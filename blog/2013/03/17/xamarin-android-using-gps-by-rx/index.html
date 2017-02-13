@@ -15,7 +15,7 @@
   <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
 
   <title>Xamarin.Android で GPS を使う(Reactive Extensions版)</title>
-  <meta name="description" content="RxM4A により Reactive Extensions が使えるようになった ので、以前に Android+reactive4Java でやったコレ を Xamarin.Android でやってみます。```c#//LocationManager.Extenstion.csnamespace Amay077....">
+  <meta name="description" content="RxM4A により Reactive Extensions が使えるようになった ので、以前に Android+reactive4Java でやったコレ を Xamarin.Android でやってみます。```c# LocationManager.Extenstion.csnamespace Amay077.A...">
 
   <link rel="canonical" href="http://blog.amay077.net/blog/2013/03/17/xamarin-android-using-gps-by-rx/">
   <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
@@ -37,7 +37,7 @@
   "headline": "Xamarin.Android で GPS を使う(Reactive Extensions版)",
   "datePublished": "2013-03-17T00:42:00+09:00",
   "dateModified": "2013-03-17T00:42:00+09:00",
-  "description": "RxM4A により Reactive Extensions が使えるようになった ので、以前に Android+reactive4Java でやったコレ を Xamarin.Android でやってみます。```c#//LocationManager.Extenstion.csnamespace Amay077....",
+  "description": "RxM4A により Reactive Extensions が使えるようになった ので、以前に Android+reactive4Java でやったコレ を Xamarin.Android でやってみます。```c# LocationManager.Extenstion.csnamespace Amay077.A...",
   "author": {
     "@type": "Person",
     "name": "amay077"
@@ -847,68 +847,67 @@ img {
     <section class="post-content">
       <a name="topofpage"></a>
       <p>RxM4A により <a href="http://amay077.github.com/blog/2013/03/01/how-to-use-rx-in-xamarin/">Reactive Extensions が使えるようになった</a> ので、以前に <a href="http://amay077.github.com/blog/2012/10/03/locate-using-reactive4java/">Android+reactive4Java でやったコレ</a> を Xamarin.Android でやってみます。<br />
-<!--more--></p>
-<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//LocationManager.Extenstion.cs
-</span><span class="k">namespace</span> <span class="nn">Amay077.Android.Locations</span>
-<span class="p">{</span>
-    <span class="k">static</span> <span class="k">class</span> <span class="nc">LocationManagerExtenstion</span>
-    <span class="p">{</span>
-        <span class="c1">// 渡した Action&lt;Location&gt; を OnLocationChanged で実行されるようにしただけ
-</span>        <span class="k">class</span> <span class="nc">LocationListener</span> <span class="p">:</span> <span class="n">Java</span><span class="p">.</span><span class="n">Lang</span><span class="p">.</span><span class="n">Object</span><span class="p">,</span> <span class="n">ILocationListener</span>
-        <span class="p">{</span>
-            <span class="k">private</span> <span class="k">readonly</span> <span class="n">Action</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">_locationChangedHandler</span><span class="p">;</span>
-            
-            <span class="k">public</span> <span class="nf">LocationListener</span><span class="p">(</span><span class="n">Action</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="n">locationChangedHandler</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="n">_locationChangedHandler</span> <span class="p">=</span> <span class="n">locationChangedHandler</span><span class="p">;</span>
-            <span class="p">}</span>
-            
-            <span class="err">#</span><span class="n">region</span> <span class="n">ILocationListener</span> <span class="n">implementation</span>
-            <span class="k">public</span> <span class="k">void</span> <span class="nf">OnLocationChanged</span><span class="p">(</span><span class="n">Location</span> <span class="n">location</span><span class="p">)</span>
-            <span class="p">{</span>
-                <span class="nf">_locationChangedHandler</span><span class="p">(</span><span class="n">location</span><span class="p">);</span>
-            <span class="p">}</span>
-            
-            <span class="k">public</span> <span class="k">void</span> <span class="nf">OnProviderDisabled</span><span class="p">(</span><span class="kt">string</span> <span class="n">provider</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-            <span class="k">public</span> <span class="k">void</span> <span class="nf">OnProviderEnabled</span><span class="p">(</span><span class="kt">string</span> <span class="n">provider</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-            <span class="k">public</span> <span class="k">void</span> <span class="nf">OnStatusChanged</span><span class="p">(</span><span class="kt">string</span> <span class="n">provider</span><span class="p">,</span> <span class="n">Availability</span> <span class="n">status</span><span class="p">,</span> <span class="n">Bundle</span> <span class="n">extras</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-            <span class="err">#</span><span class="n">endregion</span>
-        <span class="p">}</span>
+<!--more--><br />
+```c# LocationManager.Extenstion.cs<br />
+namespace Amay077.Android.Locations<br />
+{<br />
+    static class LocationManagerExtenstion<br />
+    {<br />
+        // 渡した Action<Location> を OnLocationChanged で実行されるようにしただけ
+        class LocationListener : Java.Lang.Object, ILocationListener
+        {
+            private readonly Action<Location> _locationChangedHandler;</Location></Location></p>
 
-        <span class="k">public</span> <span class="k">static</span> <span class="n">IConnectableObservable</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;</span> <span class="nf">RequestLocationAsObservable</span><span class="p">(</span>
-            <span class="k">this</span> <span class="n">LocationManager</span> <span class="n">locMan</span><span class="p">,</span>
-            <span class="kt">string</span> <span class="n">provider</span><span class="p">)</span>
-        <span class="p">{</span>
-            <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="n">Location</span><span class="p">&gt;(</span><span class="n">o</span> <span class="p">=&gt;</span> 
-            <span class="p">{</span>
-                <span class="k">try</span> <span class="p">{</span>
-                    <span class="kt">var</span> <span class="n">isStop</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// RemoveUpdates してもすぐ止まるか分からんので一応フラグ持っとく
-</span>
-                    <span class="kt">var</span> <span class="n">listener</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">LocationListener</span><span class="p">(</span><span class="n">l</span> <span class="p">=&gt;</span> 
-                    <span class="p">{</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="n">isStop</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-                        <span class="n">o</span><span class="p">.</span><span class="nf">OnNext</span><span class="p">(</span><span class="n">l</span><span class="p">);</span>
-                    <span class="p">});</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>        public LocationListener(Action&lt;Location&gt; locationChangedHandler)
+        {
+            _locationChangedHandler = locationChangedHandler;
+        }
+        
+        #region ILocationListener implementation
+        public void OnLocationChanged(Location location)
+        {
+            _locationChangedHandler(location);
+        }
+        
+        public void OnProviderDisabled(string provider) { }
+        public void OnProviderEnabled(string provider) { }
+        public void OnStatusChanged(string provider, Availability status, Bundle extras) { }
+        #endregion
+    }
 
-                    <span class="c1">// 位置取得開始
-</span>                    <span class="n">locMan</span><span class="p">.</span><span class="nf">RequestLocationUpdates</span><span class="p">(</span><span class="n">provider</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="n">listener</span><span class="p">);</span>
-                    
-                    <span class="k">return</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="c1">// Dispose() した時に停止
-</span>                    <span class="p">{</span>
-                        <span class="k">if</span> <span class="p">(</span><span class="n">isStop</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
-                        <span class="n">isStop</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
-                        <span class="n">locMan</span><span class="p">.</span><span class="nf">RemoveUpdates</span><span class="p">(</span><span class="n">listener</span><span class="p">);</span>
-                        <span class="n">o</span><span class="p">.</span><span class="nf">OnCompleted</span><span class="p">();</span>
-                    <span class="p">};</span>
+    public static IConnectableObservable&lt;Location&gt; RequestLocationAsObservable(
+        this LocationManager locMan,
+        string provider)
+    {
+        return Observable.Create&lt;Location&gt;(o =&gt; 
+        {
+            try {
+                var isStop = false; // RemoveUpdates してもすぐ止まるか分からんので一応フラグ持っとく
 
-                <span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">Exception</span> <span class="n">ex</span><span class="p">)</span> <span class="p">{</span>
-                    <span class="n">o</span><span class="p">.</span><span class="nf">OnError</span><span class="p">(</span><span class="n">ex</span><span class="p">);</span>
-                    <span class="k">return</span> <span class="p">()</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="cm">/* empty */</span> <span class="p">};</span>
-                <span class="p">}</span>
-            <span class="p">}).</span><span class="nf">Publish</span><span class="p">();</span> <span class="c1">// Hot な Observable に
-</span>        <span class="p">}</span>
-    <span class="p">}</span>
-<span class="p">}</span>
+                var listener = new LocationListener(l =&gt; 
+                {
+                    if (isStop) return;
+                    o.OnNext(l);
+                });
+
+                // 位置取得開始
+                locMan.RequestLocationUpdates(provider, 0, 0, listener);
+                
+                return () =&gt; // Dispose() した時に停止
+                {
+                    if (isStop) return;
+                    isStop = true;
+                    locMan.RemoveUpdates(listener);
+                    o.OnCompleted();
+                };
+
+            } catch (Exception ex) {
+                o.OnError(ex);
+                return () =&gt; { /* empty */ };
+            }
+        }).Publish(); // Hot な Observable に
+    }
+} } ```
 </code></pre>
 </div>
 
@@ -920,29 +919,29 @@ img {
 
 <p>さて使う方。</p>
 
-<div class="language-c# highlighter-rouge"><pre class="highlight"><code><span class="c1">//Howtouse.cs
-</span><span class="k">using</span> <span class="nn">Amay077.Android.Locations</span><span class="p">;</span> <span class="c1">// 拡張メソッドを使えるように
-</span>
-<span class="p">&lt;</span><span class="err">省略</span><span class="p">&gt;</span>
+<p>```c# Howtouse.cs<br />
+using Amay077.Android.Locations; // 拡張メソッドを使えるように</p>
 
-<span class="c1">// LocationManager を得る
-</span><span class="kt">var</span> <span class="n">locationMan</span> <span class="p">=</span> <span class="p">(</span><span class="n">LocationManager</span><span class="p">)</span><span class="n">context</span><span class="p">.</span><span class="nf">GetSystemService</span><span class="p">(</span><span class="n">Context</span><span class="p">.</span><span class="n">LocationService</span><span class="p">);</span>
-<span class="c1">// RequestLocationAsObservable があたかも LocationManager のメンバのよ(ry
-</span><span class="kt">var</span> <span class="n">observable</span> <span class="p">=</span> <span class="n">locationMan</span><span class="p">.</span><span class="nf">RequestLocationAsObservable</span><span class="p">(</span><span class="n">LocationManager</span><span class="p">.</span><span class="n">GpsProvider</span><span class="p">);</span>
-<span class="n">observable</span><span class="p">.</span><span class="nf">Take</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// 3回取得
-</span><span class="p">.</span><span class="nf">Timeout</span><span class="p">(</span><span class="k">new</span> <span class="nf">TimeSpan</span><span class="p">(</span><span class="m">10000</span><span class="p">))</span> <span class="c1">// 10秒待って取得できなかったらタイムアウト
-</span><span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
-    <span class="n">l</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="n">Android</span><span class="p">.</span><span class="n">Util</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="nf">Debug</span><span class="p">(</span><span class="n">TAG</span><span class="p">,</span> 
-              <span class="n">String</span><span class="p">.</span><span class="nf">Format</span><span class="p">(</span><span class="s">"received: {0}/{1}"</span><span class="p">,</span> 
-                <span class="n">l</span><span class="p">.</span><span class="n">Latitude</span><span class="p">,</span> <span class="n">l</span><span class="p">.</span><span class="n">Longitude</span><span class="p">));</span> <span class="p">},</span> <span class="c1">// 位置が取得される度に呼ばれる
-</span>    <span class="n">e</span> <span class="p">=&gt;</span> <span class="n">Android</span><span class="p">.</span><span class="n">Util</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="nf">Debug</span><span class="p">(</span><span class="n">TAG</span><span class="p">,</span> <span class="s">"error:"</span> <span class="p">+</span> <span class="n">e</span><span class="p">.</span><span class="n">Message</span><span class="p">),</span> <span class="c1">// エラー(タイムアウト含む)の時呼ばれる
-</span>    <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Android</span><span class="p">.</span><span class="n">Util</span><span class="p">.</span><span class="n">Log</span><span class="p">.</span><span class="nf">Debug</span><span class="p">(</span><span class="n">TAG</span><span class="p">,</span> <span class="s">"finished."</span><span class="p">));</span> <span class="c1">// 全部終わったら呼ばれる
-</span>
-<span class="n">observable</span><span class="p">.</span><span class="nf">Connect</span><span class="p">();</span> <span class="c1">// 接続開始
-</span></code></pre>
-</div>
+<省略>
 
-<p>Reactive Extensions と C# の拡張メソッドなどのおかげで、Java よりもずいぶんとすっきり書けました。</p>
+// LocationManager を得る
+var locationMan = (LocationManager)context.GetSystemService(Context.LocationService);
+// RequestLocationAsObservable があたかも LocationManager のメンバのよ(ry
+var observable = locationMan.RequestLocationAsObservable(LocationManager.GpsProvider);
+observable.Take(3) // 3回取得
+.Timeout(new TimeSpan(10000)) // 10秒待って取得できなかったらタイムアウト
+.Subscribe(
+    l =&gt; { Android.Util.Log.Debug(TAG, 
+              String.Format("received: {0}/{1}", 
+                l.Latitude, l.Longitude)); }, // 位置が取得される度に呼ばれる
+    e =&gt; Android.Util.Log.Debug(TAG, "error:" + e.Message), // エラー(タイムアウト含む)の時呼ばれる
+    () =&gt; Android.Util.Log.Debug(TAG, "finished.")); // 全部終わったら呼ばれる
+
+observable.Connect(); // 接続開始
+```
+
+Reactive Extensions と C# の拡張メソッドなどのおかげで、Java よりもずいぶんとすっきり書けました。
+</省略>
 
     </section>
     <footer class="post-footer">

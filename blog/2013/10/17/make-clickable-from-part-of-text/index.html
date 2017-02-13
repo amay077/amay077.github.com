@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -15,7 +15,7 @@
   <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
 
   <title>TextView で、テキストの一部だけクリック可能にする</title>
-  <meta name="description" content="Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが ClickableSpan というのを使えばできそうだったので、やってみました。```java//ClikcableSpanTestActivity.javapublic class ClikcableSpa...">
+  <meta name="description" content="Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが ClickableSpan というのを使えばできそうだったので、やってみました。```java ClikcableSpanTestActivity.javapublic class ClikcableSpan...">
 
   <link rel="canonical" href="http://blog.amay077.net/blog/2013/10/17/make-clickable-from-part-of-text/">
   <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
@@ -37,7 +37,7 @@
   "headline": "TextView で、テキストの一部だけクリック可能にする",
   "datePublished": "2013-10-17T21:16:00+09:00",
   "dateModified": "2013-10-17T21:16:00+09:00",
-  "description": "Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが ClickableSpan というのを使えばできそうだったので、やってみました。```java//ClikcableSpanTestActivity.javapublic class ClikcableSpa...",
+  "description": "Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが ClickableSpan というのを使えばできそうだったので、やってみました。```java ClikcableSpanTestActivity.javapublic class ClikcableSpan...",
   "author": {
     "@type": "Person",
     "name": "amay077"
@@ -847,44 +847,43 @@ img {
     <section class="post-content">
       <a name="topofpage"></a>
       <p>Android の TextView で、「テキストの一部を押すとなんかのアクションが起こる」というのが <code class="highlighter-rouge">ClickableSpan</code> というのを使えばできそうだったので、やってみました。<br />
-<!--more--></p>
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//ClikcableSpanTestActivity.java</span>
-<span class="kd">public</span> <span class="kd">class</span> <span class="nc">ClikcableSpanTestActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
-	<span class="nd">@Override</span>
-    <span class="kd">protected</span> <span class="kt">void</span> <span class="nf">onCreate</span><span class="o">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="o">)</span> <span class="o">{</span>
-        <span class="kd">super</span><span class="o">.</span><span class="na">onCreate</span><span class="o">(</span><span class="n">savedInstanceState</span><span class="o">);</span>
-        <span class="n">setContentView</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">layout</span><span class="o">.</span><span class="na">activity_main</span><span class="o">);</span>
-        
-        <span class="kd">final</span> <span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">data</span> <span class="o">=</span> <span class="k">new</span> <span class="n">ArrayList</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span><span class="n">String</span><span class="o">&gt;&gt;();</span>
-        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">"りんご"</span><span class="o">,</span> <span class="s">"隠し味としてカレーに入れます"</span><span class="o">));</span>
-        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">"みかん"</span><span class="o">,</span> <span class="s">"あぶりだしに使います"</span><span class="o">));</span>
-        <span class="n">data</span><span class="o">.</span><span class="na">add</span><span class="o">(</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;(</span><span class="s">"すいか"</span><span class="o">,</span> <span class="s">"種を食べると盲腸になります（嘘）"</span><span class="o">));</span>
-        
-        <span class="kd">final</span> <span class="n">SpannableStringBuilder</span> <span class="n">sb</span> <span class="o">=</span> <span class="k">new</span> <span class="n">SpannableStringBuilder</span><span class="o">();</span>
-        <span class="kd">final</span> <span class="n">String</span> <span class="n">SEP</span> <span class="o">=</span> <span class="s">", "</span><span class="o">;</span>
-        <span class="kt">int</span> <span class="n">spanStart</span> <span class="o">=</span> <span class="mi">0</span><span class="o">;</span>
+<!--more--><br />
+```java ClikcableSpanTestActivity.java<br />
+public class ClikcableSpanTestActivity extends Activity {<br />
+	@Override<br />
+    protected void onCreate(Bundle savedInstanceState) {<br />
+        super.onCreate(savedInstanceState);<br />
+        setContentView(R.layout.activity_main);</p>
 
-        <span class="k">for</span> <span class="o">(</span><span class="kd">final</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;</span> <span class="n">p</span> <span class="o">:</span> <span class="n">data</span><span class="o">)</span> <span class="o">{</span>
-            <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">);</span>
-            <span class="n">sb</span><span class="o">.</span><span class="na">append</span><span class="o">(</span><span class="n">SEP</span><span class="o">);</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>    final List&lt;Pair&lt;String, String&gt;&gt; data = new ArrayList&lt;Pair&lt;String,String&gt;&gt;();
+    data.add(new Pair&lt;String, String&gt;("りんご", "隠し味としてカレーに入れます"));
+    data.add(new Pair&lt;String, String&gt;("みかん", "あぶりだしに使います"));
+    data.add(new Pair&lt;String, String&gt;("すいか", "種を食べると盲腸になります（嘘）"));
+    
+    final SpannableStringBuilder sb = new SpannableStringBuilder();
+    final String SEP = ", ";
+    int spanStart = 0;
 
-            <span class="c1">// 追加した文字列を Span にする</span>
-            <span class="n">sb</span><span class="o">.</span><span class="na">setSpan</span><span class="o">(</span><span class="k">new</span> <span class="n">ClickableSpan</span><span class="o">()</span> <span class="o">{</span>
-				<span class="nd">@Override</span>
-				<span class="kd">public</span> <span class="kt">void</span> <span class="nf">onClick</span><span class="o">(</span><span class="n">View</span> <span class="n">widget</span><span class="o">)</span> <span class="o">{</span>
-					<span class="n">Toast</span><span class="o">.</span><span class="na">makeText</span><span class="o">(</span><span class="n">getApplicationContext</span><span class="o">(),</span> 
-						<span class="n">p</span><span class="o">.</span><span class="na">second</span><span class="o">,</span> <span class="n">Toast</span><span class="o">.</span><span class="na">LENGTH_SHORT</span><span class="o">).</span><span class="na">show</span><span class="o">();</span>
-				<span class="o">}</span>
-			<span class="o">},</span> <span class="n">spanStart</span><span class="o">,</span> <span class="n">spanStart</span> <span class="o">+</span> <span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">.</span><span class="na">length</span><span class="o">(),</span> <span class="n">Spannable</span><span class="o">.</span><span class="na">SPAN_EXCLUSIVE_EXCLUSIVE</span><span class="o">);</span>
-            
-            <span class="n">spanStart</span> <span class="o">+=</span> <span class="o">(</span><span class="n">p</span><span class="o">.</span><span class="na">first</span><span class="o">.</span><span class="na">length</span><span class="o">()</span> <span class="o">+</span> <span class="n">SEP</span><span class="o">.</span><span class="na">length</span><span class="o">());</span>
-		<span class="o">}</span>
+    for (final Pair&lt;String, String&gt; p : data) {
+        sb.append(p.first);
+        sb.append(SEP);
+
+        // 追加した文字列を Span にする
+        sb.setSpan(new ClickableSpan() {
+			@Override
+			public void onClick(View widget) {
+				Toast.makeText(getApplicationContext(), 
+					p.second, Toast.LENGTH_SHORT).show();
+			}
+		}, spanStart, spanStart + p.first.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         
-        <span class="n">TextView</span> <span class="n">tv</span> <span class="o">=</span> <span class="o">(</span><span class="n">TextView</span><span class="o">)</span><span class="n">findViewById</span><span class="o">(</span><span class="n">R</span><span class="o">.</span><span class="na">id</span><span class="o">.</span><span class="na">text</span><span class="o">);</span>
-        <span class="n">tv</span><span class="o">.</span><span class="na">setText</span><span class="o">(</span><span class="n">sb</span><span class="o">);</span>
-        <span class="n">tv</span><span class="o">.</span><span class="na">setMovementMethod</span><span class="o">(</span><span class="n">LinkMovementMethod</span><span class="o">.</span><span class="na">getInstance</span><span class="o">());</span> <span class="c1">// これ忘れるとクリックできなくて小一時間悩む</span>
-    <span class="o">}</span>
-<span class="o">}</span>
+        spanStart += (p.first.length() + SEP.length());
+	}
+    
+    TextView tv = (TextView)findViewById(R.id.text);
+    tv.setText(sb);
+    tv.setMovementMethod(LinkMovementMethod.getInstance()); // これ忘れるとクリックできなくて小一時間悩む
+} } ```
 </code></pre>
 </div>
 
@@ -892,7 +891,7 @@ img {
 リンクをクリックすると Toast を表示します。（下図のように）<br />
 また <code class="highlighter-rouge">URLSpan</code> というクラスもあり、クリックすると指定したURLに移動（ブラウザアプリが起動）します。</p>
 
-<p><amp-img width="960" height="540" layout="responsive" src="https://dl.dropboxusercontent.com/u/264530/qiita/using_clickablespan_01.png" alt="" /></p>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/using_clickablespan_01.png" alt="" /></p>
 
 <h2 id="section">参考</h2>
 

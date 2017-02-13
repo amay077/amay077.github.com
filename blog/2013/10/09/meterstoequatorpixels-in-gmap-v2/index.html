@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -850,27 +850,26 @@ img {
 <!--more--><br />
 ので、以下のような代替関数を作ってみました。</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="c1">//metersToEquatorPixels.java</span>
-<span class="kd">public</span> <span class="kd">static</span> <span class="kt">int</span> <span class="nf">metersToEquatorPixels</span><span class="o">(</span><span class="n">GoogleMap</span> <span class="n">map</span><span class="o">,</span> <span class="n">LatLng</span> <span class="n">base</span><span class="o">,</span> <span class="kt">float</span> <span class="n">meters</span><span class="o">)</span> <span class="o">{</span>
-	<span class="kd">final</span> <span class="kt">double</span> <span class="n">OFFSET_LON</span> <span class="o">=</span> <span class="mf">0.5d</span><span class="o">;</span>
-	
-	<span class="n">Location</span> <span class="n">baseLoc</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Location</span><span class="o">(</span><span class="s">""</span><span class="o">);</span>
-	<span class="n">baseLoc</span><span class="o">.</span><span class="na">setLatitude</span><span class="o">(</span><span class="n">base</span><span class="o">.</span><span class="na">latitude</span><span class="o">);</span>
-	<span class="n">baseLoc</span><span class="o">.</span><span class="na">setLongitude</span><span class="o">(</span><span class="n">base</span><span class="o">.</span><span class="na">longitude</span><span class="o">);</span>
-	
-	<span class="n">Location</span> <span class="n">dest</span> <span class="o">=</span> <span class="k">new</span> <span class="n">Location</span><span class="o">(</span><span class="s">""</span><span class="o">);</span>
-	<span class="n">dest</span><span class="o">.</span><span class="na">setLatitude</span><span class="o">(</span><span class="n">base</span><span class="o">.</span><span class="na">latitude</span><span class="o">);</span>
-	<span class="n">dest</span><span class="o">.</span><span class="na">setLongitude</span><span class="o">(</span><span class="n">base</span><span class="o">.</span><span class="na">longitude</span> <span class="o">+</span> <span class="n">OFFSET_LON</span><span class="o">);</span>
-	
-	<span class="kt">double</span> <span class="n">degPerMeter</span> <span class="o">=</span> <span class="n">OFFSET_LON</span> <span class="o">/</span> <span class="n">baseLoc</span><span class="o">.</span><span class="na">distanceTo</span><span class="o">(</span><span class="n">dest</span><span class="o">);</span> <span class="c1">// 1m は何度？</span>
-	<span class="kt">double</span> <span class="n">lonDistance</span> <span class="o">=</span> <span class="n">meters</span> <span class="o">*</span> <span class="n">degPerMeter</span><span class="o">;</span> <span class="c1">// m を度に変換</span>
+<p>```java metersToEquatorPixels.java<br />
+public static int metersToEquatorPixels(GoogleMap map, LatLng base, float meters) {<br />
+	final double OFFSET_LON = 0.5d;</p>
 
-	<span class="n">Projection</span> <span class="n">proj</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getProjection</span><span class="o">();</span>
-	<span class="n">Point</span> <span class="n">basePt</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="na">toScreenLocation</span><span class="o">(</span><span class="n">base</span><span class="o">);</span>
-	<span class="n">Point</span> <span class="n">destPt</span> <span class="o">=</span> <span class="n">proj</span><span class="o">.</span><span class="na">toScreenLocation</span><span class="o">(</span><span class="k">new</span> <span class="n">LatLng</span><span class="o">(</span><span class="n">base</span><span class="o">.</span><span class="na">latitude</span><span class="o">,</span> <span class="n">base</span><span class="o">.</span><span class="na">longitude</span> <span class="o">+</span> <span class="n">lonDistance</span><span class="o">));</span>
-	
-	<span class="k">return</span> <span class="n">Math</span><span class="o">.</span><span class="na">abs</span><span class="o">(</span><span class="n">destPt</span><span class="o">.</span><span class="na">x</span> <span class="o">-</span> <span class="n">basePt</span><span class="o">.</span><span class="na">x</span><span class="o">);</span>
-<span class="o">}</span>
+<div class="highlighter-rouge"><pre class="highlight"><code>Location baseLoc = new Location("");
+baseLoc.setLatitude(base.latitude);
+baseLoc.setLongitude(base.longitude);
+
+Location dest = new Location("");
+dest.setLatitude(base.latitude);
+dest.setLongitude(base.longitude + OFFSET_LON);
+
+double degPerMeter = OFFSET_LON / baseLoc.distanceTo(dest); // 1m は何度？
+double lonDistance = meters * degPerMeter; // m を度に変換
+
+Projection proj = map.getProjection();
+Point basePt = proj.toScreenLocation(base);
+Point destPt = proj.toScreenLocation(new LatLng(base.latitude, base.longitude + lonDistance));
+
+return Math.abs(destPt.x - basePt.x); } ```
 </code></pre>
 </div>
 
@@ -890,7 +889,8 @@ img {
 
 <p>それと、この記事を書く前に私のツイートを読まれた @honjo2 さんが、 v1 と同じ(赤道の距離を使う)仕様の関数を公開してくださいました。</p>
 
-<amp-twitter data-tweetid="uote class=" width="800" height="600" layout="responsive" ></amp-twitter><!-- te class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。 by @honjo2 -->
+<blockquote class="twitter-tweet"><p>どうぞ <a href="https://t.co/quYnqvn1tw">https://t.co/quYnqvn1tw</a> RT <a href="https://twitter.com/amay077">@amay077</a>: Google Map Android v2 になって metersToEquatorPixels がなくなっちゃったのが地味に不便だ。</p>&mdash; 本城 博昭 (@honjo2) <a href="https://twitter.com/honjo2/statuses/387368608541589505">October 8, 2013</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 
     </section>
