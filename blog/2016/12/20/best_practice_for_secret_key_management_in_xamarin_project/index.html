@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -861,13 +861,13 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p>Xamarin（というか .NET アプリケーション、MSBuild）のエコシステムには、そういう仕組みがなさそう（見つからなかった…）なので、自力でやるしかなさそうです。</p>
 
-<h1 id="google-maps--api-">ケース1:Google Maps の API キー</h1>
+<h1 id="ケース1google-maps-の-api-キー">ケース1:Google Maps の API キー</h1>
 
 <p>私は <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Xamarin.Forms.GoogleMaps</a> というライブラリを開発していて、それの <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/tree/master/XFGoogleMapSample">サンプルアプリケーションのコードも</a> 公開しています。</p>
 
 <p>Android や iOS で Google Maps を使うには、各々の API Key を入手して、ライブラリに設定する必要があるわけで、サンプルアプリケーションでそれをやっているのですが、API key をソースコードに直書きしてしまうと、それをうっかりコミットしてしまう危険があるし、これを Fork してくれる人にもそのような間違いを起こして欲しくありません。</p>
 
-<h2 id="step1api">STEP1:APIキーの定義を分離する</h2>
+<h2 id="step1apiキーの定義を分離する">STEP1:APIキーの定義を分離する</h2>
 
 <p>まずは APIキーを Static なクラスに追い出します。</p>
 
@@ -888,7 +888,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p><code class="highlighter-rouge">static readonly</code> なプロパティにせず <code class="highlighter-rouge">const</code> にしているのは、Android での <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/Droid/MyApp.cs#L8-L9">API Key の指定が属性になっている</a> からです。</p>
 
-<h2 id="step2variablescs--gitignore-">STEP2:Variables.cs を .gitignore に追加する</h2>
+<h2 id="step2variablescs-を-gitignore-に追加する">STEP2:Variables.cs を .gitignore に追加する</h2>
 
 <p>https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/.gitignore</p>
 
@@ -900,7 +900,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p>これで、 <code class="highlighter-rouge">README.md</code> などに、 「<code class="highlighter-rouge">Variable_sample.cs</code> を <code class="highlighter-rouge">Variable.cs</code> にリネームして、あなたのAPIKeyを設定して使ってください」とでも記述しておけば、大抵の開発者は理解できると思います。</p>
 
-<h2 id="step3-variablessamplecs--variablescs-">STEP3:ビルドイベントで <code class="highlighter-rouge">Variables_sample.cs</code> を <code class="highlighter-rouge">Variables.cs</code> にコピーする</h2>
+<h2 id="step3ビルドイベントで-variables_samplecs-を-variablescs-にコピーする">STEP3:ビルドイベントで <code class="highlighter-rouge">Variables_sample.cs</code> を <code class="highlighter-rouge">Variables.cs</code> にコピーする</h2>
 
 <p>このままでもまあよいのですが、git clone してすぐビルドしてエラーになるのは悪いような良いような…。</p>
 
@@ -938,7 +938,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p>これで、「ソースを取得してすぐビルドできるけど、 <code class="highlighter-rouge">Variables.cs</code> は git では管理されない」ようになりました。</p>
 
-<h1 id="ci">ケース2:CI(継続的インテグレーション)への対応</h1>
+<h1 id="ケース2ci継続的インテグレーションへの対応">ケース2:CI(継続的インテグレーション)への対応</h1>
 
 <p>Visual Studio Team Services(VSTS)などの CI サービスで自動ビルドすることを考えると、CIサービスの機能で <code class="highlighter-rouge">Variables.cs</code> に、正しい APIKey を設定してやる必要があります。</p>
 
@@ -959,7 +959,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p>の例では、Perl を使って <code class="highlighter-rouge">AndroidManifest.xml</code> のプレースホルダを置換してAPIKeyを差し込んでいるようです。</p>
 
-<h2 id="visual-studio-mobile-center-">Visual Studio Mobile Center ではどうよ？</h2>
+<h2 id="visual-studio-mobile-center-ではどうよ">Visual Studio Mobile Center ではどうよ？</h2>
 
 <p>Connect(); で発表され、今はプレビュー版を誰でも試せるようになっている</p>
 
@@ -979,17 +979,19 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 <p>にも、github などからソースを取得して自動ビルドできる機能があります。<br />
 が、今のところ、VSTS や他のCIサービスほど機能が用意されていない為か、ビルド前に任意のコマンドを実行させることはできません、今のところ(期待を込めて２回言った)。</p>
 
-<h1 id="section">求む！ベストプラクティス</h1>
+<h1 id="求むベストプラクティス">求む！ベストプラクティス</h1>
 
 <p>というわけで、泥臭い方法をいくつか使わないと実現できないのがなんだかなあ、という感じです。</p>
 
 <p>「こういうもの」なのか、「もっとスマートな方法がある」のか、情報をお待ちしております。</p>
 
-<amp-twitter data-tweetid="809752860707561473" width="800" height="600" layout="responsive" ></amp-twitter><!-- これと同じ事を Xamarin というか .NET アプリでやりたいよ～。MSBuild でできる？ /【Android Studio】Api keyを始めとしたgit管理したくない定数を環境変数で管理する <a href="https://t.co/OPfOZSCjDS">https://t.co/OPfOZSCjDS</a> by @amay077 -->
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">これと同じ事を Xamarin というか .NET アプリでやりたいよ～。MSBuild でできる？ /【Android Studio】Api keyを始めとしたgit管理したくない定数を環境変数で管理する <a href="https://t.co/OPfOZSCjDS">https://t.co/OPfOZSCjDS</a></p>&mdash; これがあめいの選択だよ (@amay077) <a href="https://twitter.com/amay077/status/809752860707561473">2016年12月16日</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
-<h2 id="section-1">やばい</h2>
+<h2 id="やばい">やばい</h2>
 
-<amp-twitter data-tweetid="811061374361047041" width="800" height="600" layout="responsive" ></amp-twitter><!-- とりあえずこんなんでどうかな… <a href="https://t.co/2teIgC2NkQ">https://t.co/2teIgC2NkQ</a> <a href="https://t.co/zJjgsvvMdT">https://t.co/zJjgsvvMdT</a> by @atsushieno -->
+<blockquote class="twitter-tweet" data-cards="hidden" data-lang="ja"><p lang="ja" dir="ltr">とりあえずこんなんでどうかな… <a href="https://t.co/2teIgC2NkQ">https://t.co/2teIgC2NkQ</a> <a href="https://t.co/zJjgsvvMdT">https://t.co/zJjgsvvMdT</a></p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/status/811061374361047041">2016年12月20日</a></blockquote>
+<script async="" src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
 
 
     </section>
