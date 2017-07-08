@@ -6,9 +6,117 @@
 </description>
     <link>http://blog.amay077.net/</link>
     <atom:link href="http://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 04 Jul 2017 15:39:15 +0900</pubDate>
-    <lastBuildDate>Tue, 04 Jul 2017 15:39:15 +0900</lastBuildDate>
+    <pubDate>Sat, 08 Jul 2017 17:49:02 +0900</pubDate>
+    <lastBuildDate>Sat, 08 Jul 2017 17:49:02 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>コンソールアプリからBot Frameworkを使ってBotからクライアントにメッセージを送る</title>
+        <description>&lt;p&gt;&lt;a href=&quot;https://docs.microsoft.com/en-us/Bot-Framework/index&quot;&gt;Microsoft の Bot Framework&lt;/a&gt; を使った Botアプリケーションの開発にハマっています（楽しい方の意味で）。&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;自作botをazureにデプロイしてskypeで対話&quot;&gt;自作BotをAzureにデプロイしてSkypeで対話&lt;/h2&gt;
+
+&lt;p&gt;まず、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://qiita.com/Shinji-Hashimoto/items/80515f26c5b07b71b600&quot;&gt;Visual Studio2017でBot Frameworkを試す - Qiita&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/bluesky/2016/11/15/5-step-tutorial-smilescorebot-bot-framework-cognitive-services-ja/&quot;&gt;5ステップでズバリ！笑顔判定BOT を作成しよう by Microsoft Bot Framework and Cognitive Services – 青い空の向こうへ&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://dorapon2000.hatenablog.com/entry/2016/09/04/031821&quot;&gt;Microsoft Bot Frameworkを使ってSkypeボットを作る - dorapon2000’s diary&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;このあたりの情報を元に、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;簡単な Bot アプリをビルドして Botエミュレータで実行してみる&lt;/li&gt;
+  &lt;li&gt;その Bot を Azure にデプロイする&lt;/li&gt;
+  &lt;li&gt;Azure に配置した Bot を Skype と繋げる&lt;/li&gt;
+  &lt;li&gt;自分の Skype アカウントと Bot で対話する&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;まで行うことができました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/my_first_bot_app_01.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;コンソールアプリから-skype-のユーザークライアントへメッセージを送信する&quot;&gt;コンソールアプリから Skype のユーザー（クライアント）へメッセージを送信する&lt;/h2&gt;
+
+&lt;p&gt;さて、私が本当にやりたいのは「定期的にBotからユーザーへメッセージを送る（時報とか）」ことです。&lt;br /&gt;
+が、 Visual Studio の Bot Application のプロジェクトテンプレートでは?（あるいは「Botアプリケーション」では）、処理の起点は必ずユーザー(クライアント)からBotへのメッセージ送信をBotが受信するところから始まるようです（違ってたら教えてください）。&lt;/p&gt;
+
+&lt;p&gt;Bot Framework の REST API には &lt;a href=&quot;https://docs.microsoft.com/en-us/bot-framework/rest-api/bot-framework-rest-connector-send-and-receive-messages&quot;&gt;Send and receive messages&lt;/a&gt; もあるので、任意のタイミングでメッセージを送信することも可能なはず。&lt;/p&gt;
+
+&lt;p&gt;いろいろ探していたら&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://stackoverflow.com/a/39274159/3309589&quot;&gt;Starting a conversation with Microsoft bot builder and microsoft bot framework - Stack Overflow&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;という情報を発見。おお、コンソールアプリからメッセージを送信できれば、これをcron的なものやAzure Functionsで定期的に実行させられそうです。&lt;/p&gt;
+
+&lt;p&gt;コード例を元に悪戦苦闘した結果、下のようなコードでメッセージ送信ができました。&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c1&quot;&gt;// Program.cs
+&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;args&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;serviceUrl&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;https://smba.trafficmanager.net/apis/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appId&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&amp;lt;APP_ID&amp;gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appPassword&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;&amp;lt;APP_PASSWORD&amp;gt;&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;MicrosoftAppCredentials&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;TrustServiceUrl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serviceUrl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// ※これがないと認証エラーになる
+&lt;/span&gt;    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;connector&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ConnectorClient&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;Uri&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;serviceUrl&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appId&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;appPassword&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;botAccount&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ChannelAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;28:8734b597-b313-2457-bda6-d7c342245fea&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 送信元(Botの)ユーザー ※IDは適当だけどこんな感じの文字列だった
+&lt;/span&gt;    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;userAccount&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ChannelAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;29:2WLwfakXxSbEze4gfeGxeS31nXfELePLX3deELoxHw&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 送信先ユーザー ※IDは適当だけどこんな感じの文字列だった
+&lt;/span&gt;    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;connector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Conversations&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;CreateDirectConversation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;botAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;userAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;IMessageActivity&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Activity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;CreateMessageActivity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;From&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;botAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Recipient&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;userAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Conversation&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;ConversationAccount&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;res&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Text&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;こんにちわ&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Locale&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ja-Jp&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;connector&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Conversations&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;SendToConversation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Activity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;message&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;以下、ポイント&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;コンソールアプリプロジェクトを作ったら、ターゲットフレームワークを .NET Framework 4.6 に上げる（４．５ だと Bot.Builder が入れられなかった）&lt;/li&gt;
+  &lt;li&gt;Nugetパッケージマネージャから「Microsoft.Bot.Builder」を入れる（ここで入れたのは v3.8.0 です）&lt;/li&gt;
+  &lt;li&gt;＜APP_ID＞、＜APP_PASSWORD＞は、Botを https://dev.botframework.com/ に登録する仮定で得られるやつ&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MicrosoftAppCredentials.TrustServiceUrl(serviceUrl)&lt;/code&gt; をしないと、&lt;code class=&quot;highlighter-rouge&quot;&gt;CreateDirectConversation&lt;/code&gt; で認証(401)エラーになりました。 &lt;a href=&quot;https://codedump.io/share/43fLSEl1kzYX/1/bot-framework-unauthorized-when-creating-a-conversation&quot;&gt;Bot Framework Unauthorized when creating a conversation (C#) - Codedump.io&lt;/a&gt; が大変役に立ちました。&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;serviceUrl&lt;/code&gt; は、なんかよく分からんけどこれらしい&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;serviceUrl&lt;/code&gt;、 &lt;code class=&quot;highlighter-rouge&quot;&gt;botAccount&lt;/code&gt; のId、 &lt;code class=&quot;highlighter-rouge&quot;&gt;userAccount&lt;/code&gt; のIdは、&lt;a href=&quot;https://github.com/Microsoft/BotBuilder-Samples/tree/master/CSharp/core-GetConversationMembers&quot;&gt;BotBuilder-Samples/CSharp/core-GetConversationMembers&lt;/a&gt; も参考にして、Bot ApplicationのHelloWorldを改造して取得しました。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;このプログラムを実行すると、 &lt;code class=&quot;highlighter-rouge&quot;&gt;userAccount&lt;/code&gt; が示すSkypeユーザー(ここでは私)に「こんにちわ」のメッセージが送信されます、やった！&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/my_first_bot_app_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;今作りたいと思っているのは「タイムカード打刻BOT」で、月末に EXCEL に退勤時間を書くのが面倒なので、毎日、18:00 になったら、Botに「仕事おわった？」と聞いて欲しいのです。「はい」と回答すればその時刻を打刻、「いいえ」と答えたら１時間後にまた聞いてくる・・・、という感じで（弊社は Skype 常時起動させてるから Skype で試してるけど Bot Connector により Slack などの別ツールにも対応できるはず）。&lt;/p&gt;
+
+&lt;p&gt;これを行うには、クライアント起点の対話でなく、BOT起点の対話が必要で、コンソールアプリからメッセージ送信することができたので、次はAzure Functionでやってみようかと思います。&lt;/p&gt;
+
+&lt;p&gt;BOT開発、しばらく楽しめそうです。&lt;/p&gt;
+</description>
+        <pubDate>Sat, 08 Jul 2017 17:40:00 +0900</pubDate>
+        <link>http://blog.amay077.net/blog/2017/07/08/sending_message_from_console_app_using_bot_framework/</link>
+        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/07/08/sending_message_from_console_app_using_bot_framework/</guid>
+        
+        
+        <category>.NET</category>
+        
+        <category>BotFramework</category>
+        
+        <category>C#</category>
+        
+        <category>skype</category>
+        
+        <category>VisualStudio</category>
+        
+      </item>
     
       <item>
         <title>macOS 初期セットアップ時にインストールするアプリ</title>
@@ -575,178 +683,6 @@ HoloLens やばいし、Bitcoin/ブロックチェーンも抑えとかないと
         <category>git</category>
         
         <category>GitHub</category>
-        
-      </item>
-    
-      <item>
-        <title>Jekyll で作ったブログを Google AMP に対応させた</title>
-        <description>&lt;p&gt;自分のブログは Jekyll を使って Markdown から生成し、それを GitHub pages でホストしている。&lt;br /&gt;
-GitHub 側でのページ生成はしてなくて、ローカルで Jekyll を実行して、その結果を push している。&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;特につよい興味があったわけでもないけど、 Jekyll のテーマに AMP 対応をうたうものがあったから使ってみたら、それだけではダメで、いろいろ四苦八苦した（してる）という事を書きます。&lt;/p&gt;
-
-&lt;h2 id=&quot;jekyll-テーマ&quot;&gt;Jekyll テーマ&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/ageitgey/amplify&quot;&gt;ageitgey/amplify: A Jekyll html theme in the vague style of Medium.com built using Google AMP&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;という AMP 対応とされるテーマを使っている。&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;html&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lang=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;en&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;&lt;/code&gt; になってたので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;html&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lang=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ja&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;&lt;/code&gt; に直したりした。&lt;br /&gt;
-テンプレートのタグは AMP 対応になってたので、まあ便利、余計なプラグインなどは入ってなくてシンプルなのもよい。&lt;/p&gt;
-
-&lt;h2 id=&quot;画像&quot;&gt;画像&lt;/h2&gt;
-
-&lt;p&gt;AMP では、&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-img&amp;gt;&lt;/code&gt; というタグを使わないといけなくて、しかも &lt;code class=&quot;highlighter-rouge&quot;&gt;width&lt;/code&gt; と &lt;code class=&quot;highlighter-rouge&quot;&gt;height&lt;/code&gt; が必須だと言う。&lt;br /&gt;
-Markdown から HTML の変換は &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;img&amp;gt;&lt;/code&gt; タグを出力するので、その結果を &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-img&amp;gt;&lt;/code&gt; に置換するようにしたが、Markdown では画像のサイズは指定できない。&lt;br /&gt;
-Markdown の方言でサイズが指定できるものもあるようだが、書きたくないし。&lt;/p&gt;
-
-&lt;p&gt;仕方がないので、Markdown から変換された HTML のタグを置換しつつ、画像を読み込んで縦横のサイズを取得し、 &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-img width=? height=?&lt;/code&gt; に変換するツールを作った。&lt;br /&gt;
-なぜか Mono 製ｗ&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/amay077/AmpImgnizer&quot;&gt;amay077/AmpImgnizer: img タグを amp-img タグに置換する mono コンソールアプリ&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;ビルドしてできた &lt;code class=&quot;highlighter-rouge&quot;&gt;AmpImgnizer.exe&lt;/code&gt; を以下のようにして使う。&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;find &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; -type f -name &lt;span class=&quot;s2&quot;&gt;&quot;*.html&quot;&lt;/span&gt; -print | xargs -0 mono ../AmpImgnizer/AmpImgnizer.exe
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;相対URLと絶対URL、あと SVG にも対応してたりするし、一度サイズを取得したら、そのURLをキーにキャッシュして、時間は画像を読み直さず処理するようになっている。&lt;br /&gt;
-（副次的な効果として、 404 な画像を発見できる。）&lt;/p&gt;
-
-&lt;p&gt;Markdown から生成された HTML を対象にしているので、 HTML パーサなんぞは使ってなくて、テキストとして1行ずつ回していくテキトーな実装。&lt;br /&gt;
-でもこれで十分使えてる。&lt;/p&gt;
-
-&lt;h2 id=&quot;ツイートの貼り付け&quot;&gt;ツイートの貼り付け&lt;/h2&gt;
-
-&lt;p&gt;自分や誰かのツイートをブログに貼り付ける時、 Twitter の Webサイトから生成できるスクリプトをそのまま貼り付けるのが楽で使っている。&lt;br /&gt;
-そのタグはこう↓&lt;/p&gt;
-
-&lt;div class=&quot;language-html highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;blockquote&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;class=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;twitter-tweet&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;data-lang=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ja&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;p&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;lang=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ja&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;dir=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ltr&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;うおおおお！ &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://twitter.com/hashtag/jxug?src=hash&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;#jxug&lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://t.co/lc7x6vaNWl&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;pic.twitter.com/lc7x6vaNWl&lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&amp;lt;/p&amp;gt;&lt;/span&gt;&lt;span class=&quot;ni&quot;&gt;&amp;amp;mdash;&lt;/span&gt; これがあめいの選択だよ (@amay077) &lt;span class=&quot;nt&quot;&gt;&amp;lt;a&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;href=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://twitter.com/amay077/status/802320470204788737&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;2016年11月26日&lt;span class=&quot;nt&quot;&gt;&amp;lt;/a&amp;gt;&amp;lt;/blockquote&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;script &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;async&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;//platform.twitter.com/widgets.js&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;charset=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;utf-8&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/script&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;が、 AMP は外部のスクリプトを実行できないので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;script&amp;gt;&lt;/code&gt; タグは使えない。&lt;/p&gt;
-
-&lt;p&gt;ツイートを埋め込むためには、 &lt;a href=&quot;https://www.ampproject.org/ja/docs/reference/components/amp-twitter&quot;&gt;amp-twitter&lt;/a&gt; という “許可された” スクリプトを定義し、 &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-twitter&amp;gt;&lt;/code&gt; タグを使う必要がある。&lt;/p&gt;
-
-&lt;p&gt;いちいちこのタグを書くのも面倒だし、AMP が廃れて使えなくなった時も考えて、オリジナル(Markdown)は Twitter 公式の埋め込みにしておきたい。&lt;/p&gt;
-
-&lt;p&gt;なので、これも前述の &lt;code class=&quot;highlighter-rouge&quot;&gt;AmpImgnizer&lt;/code&gt; で変換した。&lt;br /&gt;
-上の &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;blockquote 〜 /script&amp;gt;&lt;/code&gt; は、以下のように変換される。&lt;/p&gt;
-
-&lt;div class=&quot;language-html highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;amp-twitter&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;data-tweetid=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;802320470204788737&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;800&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;height=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;600&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;layout=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;responsive&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/amp-twitter&amp;gt;&lt;/span&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- うおおおお！ &amp;lt;a href=&quot;https://twitter.com/hashtag/jxug?src=hash&quot;&amp;gt;#jxug&amp;lt;/a&amp;gt; &amp;lt;a href=&quot;https://t.co/lc7x6vaNWl&quot;&amp;gt;pic.twitter.com/lc7x6vaNWl&amp;lt;/a&amp;gt; by @amay077 --&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;こっちもテキトーな実装なので、変換出来ないケースがあるかも。&lt;/p&gt;
-
-&lt;h2 id=&quot;広告&quot;&gt;広告&lt;/h2&gt;
-
-&lt;p&gt;Amazon の広告を各ページに配置している。もともとの広告タグは &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;iframe&amp;gt;&lt;/code&gt; だが、AMP では &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-iframe&amp;gt;&lt;/code&gt; を使う必要がある。&lt;/p&gt;
-
-&lt;p&gt;これはもともと&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://okzk.org/blog/jekyll-amazon-gem&quot;&gt;Jekyllでamazonアソシエイトリンクを作るためのgem ”jekyll-amazon”&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を使っていたので、そのソースを少し改造して &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-iframe&lt;/code&gt; を吐くようにした。結果は以下のようなものだ。&lt;/p&gt;
-
-&lt;div class=&quot;language-html highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;nt&quot;&gt;&amp;lt;amp-iframe&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;src=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&amp;amp;o=9&amp;amp;p=48&amp;amp;l=st1&amp;amp;mode=books-jp&amp;amp;search=Xamarin%7C%E5%8B%89%E5%BC%B7%E4%BC%9A&amp;amp;lt1=_blank&amp;amp;lc1=469AF6&amp;amp;bg1=FFFFFF&amp;amp;f=ifr&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;width=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;728&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;height=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;90&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;frameborder=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;0&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;scrolling=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;no&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&amp;lt;/amp-iframe&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h2 id=&quot;disqus&quot;&gt;DISQUS&lt;/h2&gt;
-
-&lt;p&gt;コメントシステムに &lt;a href=&quot;https://disqus.com/&quot;&gt;DISQUS&lt;/a&gt; を採用している。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://blog.disqus.com/disqus-now-compatible-with-google-amp&quot;&gt;Disqus now compatible with Google AMP&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;ってことで「Disqus も AMP 対応したぜ！」って言ってるけど、実体は &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;amp-iframe&lt;/code&gt; を使っているだけだ。&lt;br /&gt;
-しかも amp-iframe の src に指定するコンテンツは自分でホストしなければならない。ちょっと面倒だったので、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://dangoldin.com/2016/09/13/supporting-disqus-in-amp/&quot;&gt;Supporting Disqus in AMP&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;で Dan Goldin さんが使用している s3 を間借りしちゃってる、怒られたら謝る。&lt;/p&gt;
-
-&lt;h2 id=&quot;css-とか-analytics&quot;&gt;CSS とか Analytics&lt;/h2&gt;
-
-&lt;p&gt;これらは何も特殊なことはしてなくて、CSS はリンクせずに各ページに Jekyll で埋め込んじゃってる。&lt;/p&gt;
-
-&lt;div class=&quot;language-html highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;  &lt;span class=&quot;c&quot;&gt;&amp;lt;!--head.html--&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;style &lt;/span&gt;&lt;span class=&quot;na&quot;&gt;amp-custom&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;err&quot;&gt;｛％&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;capture&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;include_to_scssify&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;％｝&lt;/span&gt;
-    &lt;span class=&quot;err&quot;&gt;｛％&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;styles&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;.scss&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;％｝&lt;/span&gt;
-  &lt;span class=&quot;err&quot;&gt;｛％&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;endcapture&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;％｝&lt;/span&gt;
-  &lt;span class=&quot;err&quot;&gt;｛｛&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;include_to_scssify&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;|&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;scssify&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;｝｝&lt;/span&gt;
-
-  &lt;span class=&quot;err&quot;&gt;｛％&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;include&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;syntax&lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;.css&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;％｝&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/style&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;シンタックスハイライトに使う CSS も毎ページに埋め込まれてるので、冗長と言えば冗長。&lt;/p&gt;
-
-&lt;p&gt;Google Anaytics は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;/amp-analytics&amp;gt;&lt;/code&gt; を使ってる。&lt;/p&gt;
-
-&lt;h2 id=&quot;ビルドとデプロイ&quot;&gt;ビルドとデプロイ&lt;/h2&gt;
-
-&lt;p&gt;下のような感じで、 Jekyll でビルドした後、例の AmpImgnizer で img と twitter を変換して、サイトに push してる。&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;jekyll build
-&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;_site
-git add .
-git commit -m &lt;span class=&quot;s2&quot;&gt;&quot;site update&quot;&lt;/span&gt;
-find &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt; -type f -name &lt;span class=&quot;s2&quot;&gt;&quot;*.html&quot;&lt;/span&gt; -print | xargs -0 mono ../AmpImgnizer/AmpImgnizer.exe
-git add .
-git commit -m &lt;span class=&quot;s2&quot;&gt;&quot;replace img to amp-img&quot;&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;press enter to deploy&quot;&lt;/span&gt;
-&lt;span class=&quot;nb&quot;&gt;read
-&lt;/span&gt;git push
-&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ..
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;p&gt;ここまで対応して、ほとんどのページを AMP 対応にする事ができた。&lt;br /&gt;
-2017/2/3現在では、まだ AMP として認識されているページは少ないけど、放っておけば更新されてくのかな？&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/google_amp_in_jekyll_blog_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;AMP 対応した方が SEO 的にも効く、との情報もあるけど、まあそのへんは期待してないです。&lt;/p&gt;
-
-&lt;p&gt;何の役にたつかわからないけど、このサイトの Jekyll プロジェクトと、github page のリポジトリは以下です。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/amay077/blog.vNext&quot;&gt;amay077/blog.vNext&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/amay077/amay077.github.com&quot;&gt;amay077/amay077.github.com: My blog powered by jekyll.&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-        <pubDate>Fri, 03 Feb 2017 19:20:00 +0900</pubDate>
-        <link>http://blog.amay077.net/blog/2017/02/03/google_amp_in_jekyll_blog/</link>
-        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/02/03/google_amp_in_jekyll_blog/</guid>
-        
-        
-        <category>AMP</category>
-        
-        <category>Google</category>
-        
-        <category>Markdown</category>
-        
-        <category>jekyll</category>
         
       </item>
     
