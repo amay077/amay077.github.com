@@ -14,16 +14,16 @@
 
   <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
 
-  <title>Xamarin.Android で Google Maps Android API v2 を使う</title>
-  <meta name="description" content="だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。">
+  <title>Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</title>
+  <meta name="description" content="別に Bot Application に限った話ではないのですけどね。">
 
-  <link rel="canonical" href="http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">
+  <link rel="canonical" href="http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/">
   <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
 
   <!--ogp-->
-  <meta property="og:title" content="Xamarin.Android で Google Maps Android API v2 を使う">
+  <meta property="og:title" content="Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2">
+  <meta property="og:url" content="http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project">
   <meta property="og:site_name" content="amay077">
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:site" content="@amay077" />
@@ -33,11 +33,11 @@
 {
   "@context": "http://schema.org",
   "@type": "NewsArticle",
-  "mainEntityOfPage": "http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/",
-  "headline": "Xamarin.Android で Google Maps Android API v2 を使う",
-  "datePublished": "2013-03-05T23:10:00+09:00",
-  "dateModified": "2013-03-05T23:10:00+09:00",
-  "description": "だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。",
+  "mainEntityOfPage": "http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/",
+  "headline": "Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法",
+  "datePublished": "2017-07-15T23:59:00+09:00",
+  "dateModified": "2017-07-15T23:59:00+09:00",
+  "description": "別に Bot Application に限った話ではないのですけどね。",
   "author": {
     "@type": "Person",
     "name": "amay077"
@@ -843,125 +843,166 @@ img {
     <main class="content" role="main">
   <article class="post">
     <div class="post-meta">
-      <h1 class="post-title">Xamarin.Android で Google Maps Android API v2 を使う</h1>
+      <h1 class="post-title">Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</h1>
     </div>
 
     <section class="post-content">
       <a name="topofpage"></a>
-      <p>だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。</p>
+      <p>別に Bot Application に限った話ではないのですけどね。<br />
+<!--more--></p>
+
+<p>Microsoft の Bot Framework を使った Bot Application の作成方法は、いくつかWebで公開されていますが、それらに沿って作成したソースコードを GitHub などの誰でも閲覧できるリポジトリで管理・公開すると、本来公開すべきでない以下の情報が含まれてしまいます。</p>
 
 <ul>
-  <li><a href="https://github.com/xamarin/monodroid-samples">xamarin / monodroid-samples</a></li>
+  <li>Bot Directory へ登録する際に発行される「Bot ID」, 「App ID」, 「App Password」</li>
+  <li>Azure へ発行する際の設定情報</li>
 </ul>
 
-<!--more-->
+<p>これらをソースコード管理に含めないようにする方法を紹介します。</p>
 
-<p>すごく豊富なので、これひと通り動かせば大抵のことはできるようになるんじゃないか。。。</p>
+<h2 id="bot-id-app-id-app-password-をソースコード管理に含めないようにする">「Bot ID」, 「App ID」, 「App Password」 をソースコード管理に含めないようにする</h2>
 
-<p>というわけで、この中の <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> を動かしてみます。Readme.md に沿って。</p>
-
-<h2 id="ソースを取得する">ソースを取得する</h2>
-<p>まず monodroid-samples を Clone しときます。</p>
-
-<blockquote>
-  <p>$git clone git://github.com/xamarin/monodroid-samples.git</p>
-</blockquote>
-
-<h2 id="クライアントライブラリをビルドするbuilding-the-client-library">クライアントライブラリをビルドする(Building the Client Library)</h2>
-<p>ここでいうクライアントライブラリとは、Android SDK に含まれる <strong>Google Play services</strong> の事です。<br />
-この準備は本家Android開発で Google Maps Android API v2 を使うときに必要なので、これが何者かは、</p>
+<p>たとえば、</p>
 
 <ul>
-  <li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+  <li><a href="https://blogs.msdn.microsoft.com/bluesky/2016/11/15/5-step-tutorial-smilescorebot-bot-framework-cognitive-services-ja/">5ステップでズバリ！笑顔判定BOT を作成しよう by Microsoft Bot Framework and Cognitive Services – 青い空の向こうへ</a></li>
 </ul>
 
-<p>などを参考に。<br />
-SDK で Google Play services が取得できていれば、</p>
+<p>では、BotのIDやパスワードなどを、<code class="highlighter-rouge">Web.config</code> の <code class="highlighter-rouge">&lt;app key="BotId"</code> などに設定するよう書かれています。<br />
+実際プロジェクト作成直後の <code class="highlighter-rouge">Web.config</code> を見ても “YourBotID” などと書かれており、「ここに書くのが当然」感を醸し出しています。これがよくない！</p>
 
-<p><code class="highlighter-rouge"><span class="p">{</span><span class="err">※あなたのAndroidSDKディレクトリ</span><span class="p">}</span><span class="err">/extras/google/google_play_services/libproject/google-play-services_lib</span></code> ができているはず。</p>
+<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+    <span class="nt">&lt;appsettings&gt;</span>
+    <span class="c">&lt;!-- update these with your BotId, Microsoft App Id and your Microsoft App Password--&gt;</span>
+    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"BotId"</span> <span class="na">value=</span><span class="s">"YourBotID"</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppId"</span> <span class="na">value=</span><span class="s">""</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppPassword"</span> <span class="na">value=</span><span class="s">""</span> <span class="nt">/&gt;</span>
+    <span class="nt">&lt;/appsettings&gt;</span>
+: (略)
+</code></pre>
+</div>
 
-<p>※Xamarin.Android で使われる Android SDK は、Xamarin Studio のPreferences → SDK Locations → Android で確認できます。</p>
+<p><code class="highlighter-rouge">Web.config</code> 及び <code class="highlighter-rouge">Web.Debug.config</code>, <code class="highlighter-rouge">Web.Release.config</code> は、 ASP.NET の Webアプリケーションに関する設定を記述するもので、ソースコード管理に含めるべき情報です。<br />
+<strong>ここにIDやパスワードを記述してはいけません</strong></p>
 
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_sdk_locations.png" alt="&quot;sdklocations&quot;" /></p>
-
-<p><code class="highlighter-rouge">google-play-services_lib</code> へ移動して、Ant 用のビルドファイルを生成します。</p>
-
-<blockquote>
-  <p>$cd google-play-services_lib<br />
-$Android update project –path .<br />
-$ant debug</p>
-</blockquote>
-
-<p>Readme.md では <code class="highlighter-rouge">android project update -p .</code> って書いてあるけど上のコマンドじゃないとうまくいかないんですけど？<br />
-あと <code class="highlighter-rouge"><span class="p">{</span><span class="err">あなたのAndroidSDKディレクトリ</span><span class="p">}</span><span class="err">/tools</span></code> にパス通しておかないと android コマンド使えないです。ant も(ry</p>
-
-<p>ant の実行に成功すると /bin の中に classes.jar とかができてるはずです。</p>
-
-<p>次に、Xamarin Studio で <code class="highlighter-rouge">MapsAndLocationDemo.sln</code> を開いて、GooglePlayService プロジェクトを展開します。<br />
-すると、<code class="highlighter-rouge">project.properties</code>` ファイルが赤くなってる(ちゃんと指定した位置に google-play-services_lib をコピってれば赤くなってないかも)ので、これを一度削除して、追加しなおします。リンクファイルとして、ね。</p>
-
-<p>一連の画像貼っときます。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_delete_file.png" alt="&quot;red&quot;" /><br />
-<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_exist_file.png" alt="&quot;red&quot;" /><br />
-<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_a_link.png" alt="&quot;red&quot;" /></p>
-
-<h2 id="google-maps-v2-api-key">Google Maps v2 API Key</h2>
-
-<p>Google Maps v2 API Key の取得も本家と同じですが、<br />
-ディレクトリが、<code class="highlighter-rouge">/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code> なのでそこだけ注意。(←Mac の場合。Win は Readme.md 見て)</p>
-
-<p>該当のディレクトリへ移動して、以下のコマンドで表示されるキーの内、SHA-1 をコピーします。</p>
-
-<blockquote>
-  <p>$ keytool -V -list -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android</p>
-</blockquote>
-
-<p>あとは、</p>
+<p>ではどこに記述するかというと、</p>
 
 <ul>
-  <li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+  <li><a href="http://devadjust.exblog.jp/20400427/">ASP.NET Web アプリで、APIキーなどの “秘密のキー” をどこに保存するべきか? : @jsakamoto</a></li>
 </ul>
 
-<p>を参考に、Google API Console から、API key を取得します。<br />
-API Key を取得する際に必要なパッケージ名、取得した API Key を貼り付ける場所は、いずれも MapsAndLocationDemo プロジェクトの AndroidManifest.xml にあるので、先に開いておくとよいでしょう。</p>
+<p>で紹介されている方法を使って、別のファイルに逃します。</p>
 
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_manifest.png" alt="&quot;apikey&quot;" /></p>
+<p>具体的には、</p>
 
-<p>API Key を取得したら、<code class="highlighter-rouge">com.google.android.maps.v2.API_KEY</code> のところに貼り付けて準備完了です。</p>
+<ol>
+  <li>新たに <code class="highlighter-rouge">Web.local.config</code> というファイル（ファイル名は何でもよい）をプロジェクトに追加し、秘匿情報を含む XML のブロックはそちらに記述する</li>
+  <li><code class="highlighter-rouge">Web.config</code> に上記ファイルへの参照を記述する</li>
+</ol>
 
-<h2 id="a-note-about-google-play-services">A Note About Google Play Services</h2>
+<p>とします。</p>
 
-<p>Google Play Services が端末にインストールされてないと動かんよ、つまりエミュレータでは動かんよ。Google Play Services のインストールの仕方など、私の知ったことではない。だそうです。</p>
+<p><code class="highlighter-rouge">Web.local.config</code> は、 <code class="highlighter-rouge">Web.config</code> などと同じディレクトリに追加し、ビルドアクションを「コンテンツ」とします。</p>
 
-<h2 id="動かしてみる">動かしてみる</h2>
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_01.png" alt="" /></p>
 
-<p>「実機で」動かしてみます。</p>
+<p><code class="highlighter-rouge">Web.local.config</code> の内容は以下です。</p>
 
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_google_maps_api_v2.png" alt="&quot;play&quot;" /></p>
+<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.local.config --&gt;</span>
+<span class="nt">&lt;appSettings&gt;</span>
+  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"BotId"</span> <span class="na">value=</span><span class="s">"＜あならのBOTID＞"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppId"</span> <span class="na">value=</span><span class="s">"＜あなたのMicrosoftAppId＞"</span> <span class="nt">/&gt;</span>
+  <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppPassword"</span> <span class="na">value=</span><span class="s">"＜あなたのMicrosoftAppPassword＞"</span> <span class="nt">/&gt;</span>
+<span class="nt">&lt;/appSettings&gt;</span>
+</code></pre>
+</div>
 
-<p>動いてます。(上は Show Map with Overlays を動かしたところ)</p>
+<p><code class="highlighter-rouge">Web.config</code> に記述していた <code class="highlighter-rouge">&lt;appSettings&gt;</code> 要素を切り出してきた感じですね。</p>
 
-<p>今回はここまで。コードの深追いは日を改めて。</p>
+<p>そして、 <code class="highlighter-rouge">Web.config</code> を次のように修正します。</p>
+
+<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+  <span class="nt">&lt;appSettings</span> <span class="na">file=</span><span class="s">"Web.local.config"</span><span class="nt">&gt;</span>
+    <span class="c">&lt;!-- 秘匿でない設定情報があればここに書く --&gt;</span>
+  <span class="nt">&lt;/appSettings&gt;</span>
+: (略)
+</code></pre>
+</div>
+
+<p><code class="highlighter-rouge">&lt;appSettings file="Web.local.config"&gt;</code> と記述することで、<code class="highlighter-rouge">Web.local.config</code> の内容をここに注入できます。</p>
+
+<p>あとは <code class="highlighter-rouge">Web.local.config</code> を <code class="highlighter-rouge">.gitignore</code> に追加するなどしてソースコード管理対象から除外します。<br />
+<code class="highlighter-rouge">Web.local.config</code> が存在しなくてもビルドや実行はできるようですが、初見の人には不親切なので、 <code class="highlighter-rouge">README.md</code> で補足説明をしておくのがよいでしょう。</p>
+
+<h2 id="開発用とプロダクト用で-bot-id-app-id-app-password-を切り替える">開発用とプロダクト用で 「Bot ID」, 「App ID」, 「App Password」 を切り替える</h2>
+
+<p>前の手順で設定したID、パスワードなどは「開発用」の情報です。<br />
+Azureに配置した本番環境では、別のID、パスワードを使用したいケースは普通にあります。<br />
+本番環境の設定はAzureポータルから行えます。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_02.png" alt="" /></p>
+
+<p>この図のように、</p>
+
+<ol>
+  <li>Azure ポータル（https://portal.azure.com/） で、配布した Bot Application（App Service） を開き、さらに「アプリケーション設定」を開きます</li>
+  <li>「アプリ設定」で、 本番用の「Bot ID」, 「App ID」, 「App Password」を追加します</li>
+  <li>最後に「保存」を押します</li>
+</ol>
+
+<p>ここで設定した内容は、配布した <code class="highlighter-rouge">Web.config</code> にある <code class="highlighter-rouge">&lt;appSettings&gt;</code> の内容を上書きします。</p>
+
+<h2 id="azure-へ発行する際の設定情報をソースコード管理に含めないようにする">Azure へ発行する際の設定情報をソースコード管理に含めないようにする</h2>
+
+<p>Visual Studio 2017 は、IDE から Azure への発行ができてとても便利なのですが、発行のための情報も保持してしまうので、その際の情報もソースコード管理に含めるべきではありません。</p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_03.png" alt="" /></p>
+
+<p>これらの情報はプロジェクトのディレクトリの <code class="highlighter-rouge">Properties\PublishProfiles</code> というサブディレクトリに、 <code class="highlighter-rouge">*.pubxml</code>, <code class="highlighter-rouge">*.pubxml.user</code> というファイル名で保存されるようなので、このディレクトリ毎、あるいは個別のファイルを <code class="highlighter-rouge">.gitignore</code> に追加すればよいです。</p>
+
+<h2 id="まとめ">まとめ</h2>
+
+<ul>
+  <li><code class="highlighter-rouge">Web.config</code> には秘匿情報を書かない</li>
+  <li><code class="highlighter-rouge">Web.local.config</code> を作って、そちらに書く、このファイルはソースコード管理しない</li>
+  <li>本番用のIDやパスワードはAzureポータルで設定する</li>
+  <li>Azureへ発行する際の設定情報もソースコード管理しない</li>
+</ul>
+
+<p>結果、 <code class="highlighter-rouge">.gitignore</code> に次の２行を追加するとよいです。</p>
+
+<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="c"># .gitignore</span>
+＜省略＞
+
+<span class="k">*</span>.local.config
+PublishProfiles/
+</code></pre>
+</div>
+
+<p>手前味噌ですが、上記以外の <code class="highlighter-rouge">.gitignore</code> の設定は https://www.gitignore.io/ で “VisualStudio” と検索して生成されるものを使用すると便利です（上の2行が含まれているわけではありません）。</p>
 
     </section>
     <footer class="post-footer">
 
       <section class="categories">
         
-        <div class="category">Xamarin</div>
-        
-        <div class="category">Android</div>
+        <div class="category">BotFramework</div>
         
         <div class="category">C#</div>
         
-        <div class="category">GoogleMapsAPI</div>
+        <div class="category">.NET</div>
         
-        <p class="published">published <time datetime="2013-03-05 23:10">05 Mar 2013</time></p>
+        <div class="category">ASP.NET</div>
+        
+        <div class="category">VisualStudio</div>
+        
+        <p class="published">published <time datetime="2017-07-15 23:59">15 Jul 2017</time></p>
       </section>
       
       <section class="share">
-        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2&text=Xamarin.Android+%E3%81%A7+Google+Maps+Android+API+v2+%E3%82%92%E4%BD%BF%E3%81%86&via=amay077" target="_blank">
+        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project&text=Bot+Application+%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92+GitHub+%E3%81%A7%E5%85%AC%E9%96%8B%E3%81%99%E3%82%8B%E6%99%82%E3%81%AB%E7%A7%98%E5%8C%BF%E6%83%85%E5%A0%B1%E3%82%92%E5%90%AB%E3%82%81%E3%81%AA%E3%81%84%E6%96%B9%E6%B3%95&via=amay077" target="_blank">
           Share on
           
 <span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
@@ -973,7 +1014,7 @@ API Key を取得する際に必要なパッケージ名、取得した API Key 
 
       <div class="amazon-ads">
         <h4>Ads</h4>
-        <amp-iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Xamarin%7CAndroid%7CC%23%7CGoogleMapsAPI&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
+        <amp-iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=BotFramework%7CC%23%7C.NET%7CASP.NET%7CVisualStudio&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
       </div>
       
       <section class="disqus">
@@ -983,7 +1024,7 @@ API Key を取得する際に必要なパッケージ名、取得した API Key 
           sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
           resizable
           frameborder="0"
-          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2013%2F03%2F05%2Fxamarin-android-using-google-maps-android-api-v2&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
+          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2017%2F07%2F15%2Favoid_secrets_from_github_in_your_bot_application_project&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
           <div overflow tabindex="0" role="button" aria-label="Read more">Read more!</div>
         </amp-iframe>
       </section>

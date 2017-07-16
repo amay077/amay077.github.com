@@ -6,9 +6,163 @@
 </description>
     <link>http://blog.amay077.net/</link>
     <atom:link href="http://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Fri, 14 Jul 2017 00:56:31 +0900</pubDate>
-    <lastBuildDate>Fri, 14 Jul 2017 00:56:31 +0900</lastBuildDate>
+    <pubDate>Mon, 17 Jul 2017 00:29:32 +0900</pubDate>
+    <lastBuildDate>Mon, 17 Jul 2017 00:29:32 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</title>
+        <description>&lt;p&gt;別に Bot Application に限った話ではないのですけどね。&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;Microsoft の Bot Framework を使った Bot Application の作成方法は、いくつかWebで公開されていますが、それらに沿って作成したソースコードを GitHub などの誰でも閲覧できるリポジトリで管理・公開すると、本来公開すべきでない以下の情報が含まれてしまいます。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Bot Directory へ登録する際に発行される「Bot ID」, 「App ID」, 「App Password」&lt;/li&gt;
+  &lt;li&gt;Azure へ発行する際の設定情報&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;これらをソースコード管理に含めないようにする方法を紹介します。&lt;/p&gt;
+
+&lt;h2 id=&quot;bot-id-app-id-app-password-をソースコード管理に含めないようにする&quot;&gt;「Bot ID」, 「App ID」, 「App Password」 をソースコード管理に含めないようにする&lt;/h2&gt;
+
+&lt;p&gt;たとえば、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/bluesky/2016/11/15/5-step-tutorial-smilescorebot-bot-framework-cognitive-services-ja/&quot;&gt;5ステップでズバリ！笑顔判定BOT を作成しよう by Microsoft Bot Framework and Cognitive Services – 青い空の向こうへ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;では、BotのIDやパスワードなどを、&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; の &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;app key=&quot;BotId&quot;&lt;/code&gt; などに設定するよう書かれています。&lt;br /&gt;
+実際プロジェクト作成直後の &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; を見ても “YourBotID” などと書かれており、「ここに書くのが当然」感を醸し出しています。これがよくない！&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.config --&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;appsettings&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- update these with your BotId, Microsoft App Id and your Microsoft App Password--&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;BotId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;YourBotID&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppPassword&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/appsettings&amp;gt;&lt;/span&gt;
+: (略)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; 及び &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.Debug.config&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.Release.config&lt;/code&gt; は、 ASP.NET の Webアプリケーションに関する設定を記述するもので、ソースコード管理に含めるべき情報です。&lt;br /&gt;
+&lt;strong&gt;ここにIDやパスワードを記述してはいけません&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;ではどこに記述するかというと、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://devadjust.exblog.jp/20400427/&quot;&gt;ASP.NET Web アプリで、APIキーなどの “秘密のキー” をどこに保存するべきか? : @jsakamoto&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;で紹介されている方法を使って、別のファイルに逃します。&lt;/p&gt;
+
+&lt;p&gt;具体的には、&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;新たに &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; というファイル（ファイル名は何でもよい）をプロジェクトに追加し、秘匿情報を含む XML のブロックはそちらに記述する&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; に上記ファイルへの参照を記述する&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;とします。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; などと同じディレクトリに追加し、ビルドアクションを「コンテンツ」とします。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; の内容は以下です。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.local.config --&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;BotId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あならのBOTID＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あなたのMicrosoftAppId＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppPassword&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あなたのMicrosoftAppPassword＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/appSettings&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; に記述していた &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/code&gt; 要素を切り出してきた感じですね。&lt;/p&gt;
+
+&lt;p&gt;そして、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; を次のように修正します。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.config --&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;appSettings&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Web.local.config&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 秘匿でない設定情報があればここに書く --&amp;gt;&lt;/span&gt;
+  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/appSettings&amp;gt;&lt;/span&gt;
+: (略)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings file=&quot;Web.local.config&quot;&amp;gt;&lt;/code&gt; と記述することで、&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; の内容をここに注入できます。&lt;/p&gt;
+
+&lt;p&gt;あとは &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に追加するなどしてソースコード管理対象から除外します。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; が存在しなくてもビルドや実行はできるようですが、初見の人には不親切なので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;README.md&lt;/code&gt; で補足説明をしておくのがよいでしょう。&lt;/p&gt;
+
+&lt;h2 id=&quot;開発用とプロダクト用で-bot-id-app-id-app-password-を切り替える&quot;&gt;開発用とプロダクト用で 「Bot ID」, 「App ID」, 「App Password」 を切り替える&lt;/h2&gt;
+
+&lt;p&gt;前の手順で設定したID、パスワードなどは「開発用」の情報です。&lt;br /&gt;
+Azureに配置した本番環境では、別のID、パスワードを使用したいケースは普通にあります。&lt;br /&gt;
+本番環境の設定はAzureポータルから行えます。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;この図のように、&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Azure ポータル（https://portal.azure.com/） で、配布した Bot Application（App Service） を開き、さらに「アプリケーション設定」を開きます&lt;/li&gt;
+  &lt;li&gt;「アプリ設定」で、 本番用の「Bot ID」, 「App ID」, 「App Password」を追加します&lt;/li&gt;
+  &lt;li&gt;最後に「保存」を押します&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;ここで設定した内容は、配布した &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; にある &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/code&gt; の内容を上書きします。&lt;/p&gt;
+
+&lt;h2 id=&quot;azure-へ発行する際の設定情報をソースコード管理に含めないようにする&quot;&gt;Azure へ発行する際の設定情報をソースコード管理に含めないようにする&lt;/h2&gt;
+
+&lt;p&gt;Visual Studio 2017 は、IDE から Azure への発行ができてとても便利なのですが、発行のための情報も保持してしまうので、その際の情報もソースコード管理に含めるべきではありません。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/avoid_secrets_from_github_in_your_bot_application_project_03.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;これらの情報はプロジェクトのディレクトリの &lt;code class=&quot;highlighter-rouge&quot;&gt;Properties\PublishProfiles&lt;/code&gt; というサブディレクトリに、 &lt;code class=&quot;highlighter-rouge&quot;&gt;*.pubxml&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;*.pubxml.user&lt;/code&gt; というファイル名で保存されるようなので、このディレクトリ毎、あるいは個別のファイルを &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に追加すればよいです。&lt;/p&gt;
+
+&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; には秘匿情報を書かない&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; を作って、そちらに書く、このファイルはソースコード管理しない&lt;/li&gt;
+  &lt;li&gt;本番用のIDやパスワードはAzureポータルで設定する&lt;/li&gt;
+  &lt;li&gt;Azureへ発行する際の設定情報もソースコード管理しない&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;結果、 &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に次の２行を追加するとよいです。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# .gitignore&lt;/span&gt;
+＜省略＞
+
+&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.local.config
+PublishProfiles/
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;手前味噌ですが、上記以外の &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; の設定は https://www.gitignore.io/ で “VisualStudio” と検索して生成されるものを使用すると便利です（上の2行が含まれているわけではありません）。&lt;/p&gt;
+</description>
+        <pubDate>Sat, 15 Jul 2017 23:59:00 +0900</pubDate>
+        <link>http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/</link>
+        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/</guid>
+        
+        
+        <category>BotFramework</category>
+        
+        <category>C#</category>
+        
+        <category>.NET</category>
+        
+        <category>ASP.NET</category>
+        
+        <category>VisualStudio</category>
+        
+      </item>
     
       <item>
         <title>Visual Studio for Mac で作ったプロジェクトを Visual Studio 2017 で実行する時気をつけること</title>
@@ -589,81 +743,6 @@ mstdn.jp にも作ったけど、メインはこっちで。頑張ってる人�
         <category>Android</category>
         
         <category>技術書典</category>
-        
-      </item>
-    
-      <item>
-        <title>DroidKaigi2017で「Xamarin.Android で始めるクロスプラットモバイルアプリ開発」という話をしました</title>
-        <description>&lt;p&gt;登壇したのが既に２ヶ月前の事に感じるくらい余韻に浸っています。&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/had_a_session_about_xamain_android_in_droidkaigi_2017_01.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;資料&quot;&gt;資料&lt;/h2&gt;
-
-&lt;script async=&quot;&quot; class=&quot;speakerdeck-embed&quot; data-id=&quot;592959beb9de46fcb6d0e51652b20e23&quot; data-ratio=&quot;1.33333333333333&quot; src=&quot;//speakerdeck.com/assets/embed.js&quot;&gt;&lt;/script&gt;
-
-&lt;h2 id=&quot;感想とか&quot;&gt;感想とか&lt;/h2&gt;
-
-&lt;p&gt;DroidKaigi は3年連続の参加で、登壇は初めてです。&lt;/p&gt;
-
-&lt;p&gt;前日まではのほほんとしていたのですけど、当日になると緊張しますね。トップ登壇で良かったです。&lt;br /&gt;
-登壇終わった後の虚脱感がハンパなくて、次のセッション聞けませんでした（普段人前で話すのが職業な人マジリスペクト）。&lt;/p&gt;
-
-&lt;p&gt;Xamarin に関して、伝えたいことはある程度伝えられたと思ってはいますが、継続的に発信していくのが大事かなと思いました。&lt;/p&gt;
-
-&lt;p&gt;普段 Android をやっていて、iOS もやる事になったら、こんなツールもあるよと思い出して欲しいです。&lt;/p&gt;
-
-&lt;p&gt;一番伝えたかったのは、&lt;br /&gt;
-&lt;strong&gt;「Android でも iOS でも MVVM+Rx でやるよね、Xamarin なら大部分共通化できるよー」&lt;/strong&gt;&lt;br /&gt;
-だったのですが、Twitter とかでの反応を見てるとあまりピンと来てなさそうな感じでしたかね？&lt;br /&gt;
-他の MVVM や Rx セッションが盛り上がってるのを見ると、まだ知らない層が多いのかなーと。&lt;br /&gt;
-Xamarin とはなんぞや、から始めて Rx まで説明するのも難しいし、まあ仕方ないですね。&lt;/p&gt;
-
-&lt;p&gt;でも、質問タイムでたくさん聞いて頂いて嬉しかったです。（えいごりょく欲しい…）&lt;/p&gt;
-
-&lt;p&gt;オフィスアワーやアフターパーティで、Twitter でしか知らない人とお話しできたり、同郷のすごい人たちと会えたり、とても楽しかったです。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/had_a_session_about_xamain_android_in_droidkaigi_2017_02.jpg&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Xamarin 然り、RxJava 然り、 Qiita などでチマチマと情報発信してきた些細なネタが誰かの役に立っていたと知れてとても嬉しかった。&lt;/p&gt;
-
-&lt;p&gt;普段 Xamarin を使ってる人が、 Android の最新動向を知るきっかけにもなってくれたみたいで、それも狙ってた事なので良かったです。&lt;/p&gt;
-
-&lt;p&gt;翌日は .NET系のイベントの &lt;a href=&quot;https://metro.connpass.com/event/50917/?utm_source=t.co&amp;amp;utm_medium=referral&quot;&gt;まどすた #2&lt;/a&gt; に行きました。&lt;br /&gt;
-HoloLens やばいし、Bitcoin/ブロックチェーンも抑えとかないといけないし、Visual Studio 2017 はやっぱり最強だったし、にゃーんがにゃーんでした。&lt;/p&gt;
-
-&lt;p&gt;try!Swift には行けなかったので、 &lt;a href=&quot;https://iosdc.jp/2017/&quot;&gt;iOSDC Japan 2017&lt;/a&gt; には必ず行きたいと思います。&lt;/p&gt;
-
-&lt;p&gt;将来のことを考えて生きてはいませんが、こうした経験が脳にインプットされて、なんとなく無意識の内に自分の行きたい方向に自分を導いてくれると思っています。&lt;/p&gt;
-
-&lt;p&gt;運営スタッフの皆さま、参加された皆さま、ありがとうございました。&lt;/p&gt;
-
-&lt;h2 id=&quot;技術書典２--超技術書典&quot;&gt;技術書典２ ＆ 超技術書典&lt;/h2&gt;
-
-&lt;p&gt;あっ、次は 4/9(日)に、 &lt;a href=&quot;https://techbookfest.org/event/tbf02&quot;&gt;技術書典２&lt;/a&gt; がありますね。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://dl.dropboxusercontent.com/u/264530/qiita/had_a_session_about_xamain_android_in_droidkaigi_2017_03.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Xamarin に関する技術書を配布します！&lt;br /&gt;
-代表の @atsushieno さん以下5名で絶賛執筆中です。&lt;br /&gt;
-今回話した Xamarin.Android ネタの完全版を掲載します。というか DroidKaigi のスライドの原稿と言うべきものです。&lt;/p&gt;
-
-&lt;p&gt;技術書典２または &lt;a href=&quot;https://techbookfest.org/event/cho01&quot;&gt;超技術書典&lt;/a&gt; でお会いしましょう(^o^)／&lt;/p&gt;
-</description>
-        <pubDate>Fri, 10 Mar 2017 23:01:00 +0900</pubDate>
-        <link>http://blog.amay077.net/blog/2017/03/10/had_a_session_about_xamarin_android_in_droidkaigi2017/</link>
-        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/03/10/had_a_session_about_xamarin_android_in_droidkaigi2017/</guid>
-        
-        
-        <category>Android</category>
-        
-        <category>Xamarin</category>
-        
-        <category>DroidKaigi</category>
-        
-        <category>登壇</category>
         
       </item>
     
