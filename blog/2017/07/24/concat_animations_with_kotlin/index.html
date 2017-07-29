@@ -14,16 +14,16 @@
 
   <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
 
-  <title>Xamarin.Android で Google Maps Android API v2 を使う</title>
-  <meta name="description" content="だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。">
+  <title>Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話</title>
+  <meta name="description" content="Android で「浮いてるように見える」アニメーションを実装する機会がありまして。次の画像のようなものなんですが。">
 
-  <link rel="canonical" href="http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/">
+  <link rel="canonical" href="http://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin/">
   <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="http://blog.amay077.net/feed.xml">
 
   <!--ogp-->
-  <meta property="og:title" content="Xamarin.Android で Google Maps Android API v2 を使う">
+  <meta property="og:title" content="Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話">
   <meta property="og:type" content="article">
-  <meta property="og:url" content="http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2">
+  <meta property="og:url" content="http://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin">
   <meta property="og:site_name" content="amay077">
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:site" content="@amay077" />
@@ -33,11 +33,11 @@
 {
   "@context": "http://schema.org",
   "@type": "NewsArticle",
-  "mainEntityOfPage": "http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2/",
-  "headline": "Xamarin.Android で Google Maps Android API v2 を使う",
-  "datePublished": "2013-03-05T23:10:00+09:00",
-  "dateModified": "2013-03-05T23:10:00+09:00",
-  "description": "だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。",
+  "mainEntityOfPage": "http://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin/",
+  "headline": "Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話",
+  "datePublished": "2017-07-24T23:59:00+09:00",
+  "dateModified": "2017-07-24T23:59:00+09:00",
+  "description": "Android で「浮いてるように見える」アニメーションを実装する機会がありまして。次の画像のようなものなんですが。",
   "author": {
     "@type": "Person",
     "name": "amay077"
@@ -843,125 +843,222 @@ img {
     <main class="content" role="main">
   <article class="post">
     <div class="post-meta">
-      <h1 class="post-title">Xamarin.Android で Google Maps Android API v2 を使う</h1>
+      <h1 class="post-title">Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話</h1>
     </div>
 
     <section class="post-content">
       <a name="topofpage"></a>
-      <p>だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。</p>
+      <p>Android で「浮いてるように見える」アニメーションを実装する機会がありまして。次の画像のようなものなんですが。<br />
+<!--more--></p>
+
+<p><img src="https://dl.dropboxusercontent.com/u/264530/qiita/concat_animations_with_kotlin_01.gif" alt="" /></p>
+
+<p>このアニメーションは、</p>
+
+<ol>
+  <li>2秒かけて上へ少し移動する</li>
+  <li>2秒かけて下へ少し移動する</li>
+</ol>
+
+<p>を「連続で」「繰り返し」実行させることで実現しています。<br />
+「連続で」とは、 1. のアニメーションが終わったら 2. のアニメーションを開始する、という意味です。</p>
+
+<h2 id="java-android-では">Java-Android では…</h2>
+
+<p>これを Android の View のアニメーションAPI で実現すると、普通にひどいコードになります。次がそれ。</p>
+
+<pre><code class="language-Java">// 2秒かけて上へ移動するアニメーション
+final TranslateAnimation anim1 = new TranslateAnimation(
+        Animation.RELATIVE_TO_SELF,  0.0f,
+        Animation.RELATIVE_TO_SELF,  0.0f,
+        Animation.RELATIVE_TO_SELF,  0.0f,
+        Animation.RELATIVE_TO_SELF, -0.1f);
+anim1.setDuration(2000);
+
+// 2秒かけて下へ移動するアニメーション
+final TranslateAnimation anim2 = new TranslateAnimation(
+        Animation.RELATIVE_TO_SELF,  0.0f,
+        Animation.RELATIVE_TO_SELF,  0.0f,
+        Animation.RELATIVE_TO_SELF, -0.1f,
+        Animation.RELATIVE_TO_SELF,  0.0f);
+anim2.setDuration(2000);
+
+anim1.setAnimationListener(new Animation.AnimationListener() {
+    @Override
+    public void onAnimationStart(Animation animation) { }
+
+    @Override
+    public void onAnimationEnd(Animation animation) {
+        anim2.setAnimationListener(new Animation.AnimationListener() {
+            @Override
+            public void onAnimationStart(Animation animation) { }
+
+            @Override
+            public void onAnimationEnd(Animation animation) {
+                // 3. 下へのアニメーションが終わったら、上へ移動するアニメーションをまた開始
+                view.startAnimation(anim1);
+            }
+
+            @Override
+            public void onAnimationRepeat(Animation animation) { }
+        });
+
+        // 2. 上へのアニメーションが終わったら、下へ移動するアニメーションを開始
+        view.startAnimation(anim2);
+    }
+
+    @Override
+    public void onAnimationRepeat(Animation animation) { }
+});
+
+// 1. 上へ移動するアニメーションを開始
+view.startAnimation(anim1);
+</code></pre>
+
+<p>コールバックのネストに、行いたい処理とコードの記述順が逆という二重苦、これはやってられません。</p>
+
+<p>これだけで Kotlin を使いたい案件です（Java でも Deferred が使えるライブラリ<RxJava でも可="">を使えばマシにはなります）。</RxJava></p>
+
+<h2 id="これが-kotlin-だと">これが Kotlin だと…</h2>
+
+<p>というわけで Kotlin でやってみました。</p>
+
+<p>まず、「アニメーションを実行して、アニメーションが終わったら次へ継続する関数」を作成します。<br />
+ここでは <code class="highlighter-rouge">View</code> の拡張関数として定義してみました。</p>
+
+<div class="language-kotlin highlighter-rouge"><pre class="highlight"><code><span class="k">package</span> <span class="nn">net.amay077.animsample</span>
+
+<span class="k">import</span> <span class="nn">android.view.View</span>
+<span class="k">import</span> <span class="nn">android.view.animation.Animation</span>
+<span class="k">import</span> <span class="nn">kotlin.coroutines.experimental.suspendCoroutine</span>
+
+<span class="n">suspend</span> <span class="k">fun</span> <span class="nf">View</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim</span><span class="p">:</span> <span class="n">Animation</span><span class="p">)</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="n">suspendCoroutine</span> <span class="p">{</span> <span class="n">continuation</span> <span class="p">-&gt;</span>
+        <span class="n">anim</span><span class="p">.</span><span class="n">setAnimationListener</span><span class="p">(</span><span class="kd">object</span> <span class="err">: </span><span class="nc">Animation</span><span class="p">.</span><span class="n">AnimationListener</span> <span class="p">{</span>
+            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationStart</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
+
+            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationEnd</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span>
+                <span class="n">continuation</span><span class="p">.</span><span class="n">resume</span><span class="p">(</span><span class="n">Unit</span><span class="p">)</span>
+            <span class="p">}</span>
+
+            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationRepeat</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
+        <span class="p">})</span>
+
+        <span class="k">this</span><span class="p">.</span><span class="n">startAnimation</span><span class="p">(</span><span class="n">anim</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>呼び出し側は次のような感じ。<br />
+コールバック地獄の Java に比べて天国かよここは…。<br />
+アニメーションはUIスレッドから呼び出す必要があるので <code class="highlighter-rouge">async() { }</code> ではなく <code class="highlighter-rouge">launch(UI) { }</code> を使う必要があるようです。</p>
+
+<div class="language-kotlin highlighter-rouge"><pre class="highlight"><code><span class="kd">val</span> <span class="py">button1</span> <span class="p">=</span> <span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">button1</span><span class="p">)</span>
+
+<span class="kd">val</span> <span class="py">anim1</span> <span class="p">=</span> <span class="n">TranslateAnimation</span><span class="p">(</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="p">-</span><span class="m">0.5f</span><span class="p">)</span>
+<span class="n">anim1</span><span class="p">.</span><span class="n">duration</span> <span class="p">=</span> <span class="m">2000</span>
+
+<span class="kd">val</span> <span class="py">anim2</span> <span class="p">=</span> <span class="n">TranslateAnimation</span><span class="p">(</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="p">-</span><span class="m">0.5f</span><span class="p">,</span>
+        <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">)</span>
+<span class="n">anim2</span><span class="p">.</span><span class="n">duration</span> <span class="p">=</span> <span class="m">2000</span>
+
+<span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// メインスレッドから async するよ
+</span>    <span class="c1">// ずっとくりかえし
+</span>    <span class="k">while</span> <span class="p">(</span><span class="k">true</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim1</span><span class="p">)</span> <span class="c1">// 1. 2秒かけて上へ移動するアニメーションを実行
+</span>        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim2</span><span class="p">)</span> <span class="c1">// 2. 2秒かけて下へ移動するアニメーションを実行
+</span>    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+</div>
+
+<p>Kotlin をまともに使うのが初めてなのでまだ改善できるかも。。<br />
+よいコードがありましたらご指摘ください。</p>
+
+<p>※Kotlin の coroutine(async/await) は 2017年7月現在、正式リリースされていません(experimental 版です)。</p>
+
+<p>Kotlin での実装には、次のサイトを参考にさせていただきました</p>
 
 <ul>
-  <li><a href="https://github.com/xamarin/monodroid-samples">xamarin / monodroid-samples</a></li>
+  <li><a href="http://qiita.com/Kogarasi/items/4bd0a37763b057e9d796">Android開発ではじめるKotlin - Qiita</a></li>
+  <li><a href="http://qiita.com/ke__kyukyun1828/items/c4c321650d888765140e">Kotlin覚書-環境構築 - Qiita</a></li>
+  <li><a href="http://qiita.com/k-kagurazaka@github/items/702c92bc3381af36db12">Kotlin+Androidでasync/await - Qiita</a></li>
+  <li><a href="https://stackoverflow.com/questions/37805860/how-to-instantiate-an-anonymous-class-that-implements-an-interface-in-kotlin">How to instantiate an anonymous class that implements an interface in Kotlin - Stack Overflow</a></li>
+  <li><a href="https://github.com/gildor/kotlin-coroutines-retrofit">gildor/kotlin-coroutines-retrofit: Kotlin Coroutines await() extension for Retrofit Call</a></li>
 </ul>
 
-<!--more-->
+<h2 id="ちなみに-c-でもできます">ちなみに C# でもできます</h2>
 
-<p>すごく豊富なので、これひと通り動かせば大抵のことはできるようになるんじゃないか。。。</p>
+<p>C#（つまり Xamarin.Android）でも <code class="highlighter-rouge">async/await(つまり Task)</code> と <code class="highlighter-rouge">TaskCompletionSource</code> を組み合わせて実現できます。</p>
 
-<p>というわけで、この中の <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> を動かしてみます。Readme.md に沿って。</p>
+<p>C# にも拡張メソッドがあり、次のように定義することができます。</p>
 
-<h2 id="ソースを取得する">ソースを取得する</h2>
-<p>まず monodroid-samples を Clone しときます。</p>
+<pre><code class="language-C#">public static class ViewAnimationExtensions
+{
+    public static Task&lt;bool&gt; StartAnimationAsync(this View view, Animation anim)
+    {
+        var source = new TaskCompletionSource&lt;bool&gt;();
+        EventHandler&lt;Animation.AnimationEndEventArgs&gt; handler = null;
 
-<blockquote>
-  <p>$git clone git://github.com/xamarin/monodroid-samples.git</p>
-</blockquote>
+        handler = (sender, e) =&gt;
+        {
+            anim.AnimationEnd -= handler; // 購読解除を忘れずに
+            source.SetResult(true); // kotlin の continuation.resume(Unit) にあたるトコ
+        };
+        anim.AnimationEnd += handler; // イベントを購読
 
-<h2 id="クライアントライブラリをビルドするbuilding-the-client-library">クライアントライブラリをビルドする(Building the Client Library)</h2>
-<p>ここでいうクライアントライブラリとは、Android SDK に含まれる <strong>Google Play services</strong> の事です。<br />
-この準備は本家Android開発で Google Maps Android API v2 を使うときに必要なので、これが何者かは、</p>
+        view.StartAnimation(anim);
+        return source.Task;
+    }
+}
+</code></pre>
 
-<ul>
-  <li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
-</ul>
+<p>よびだし側はこう。<br />
+呼び出し時に <code class="highlighter-rouge">await</code> キーワードをつけ、それが含まれるメソッド(ここでは <code class="highlighter-rouge">OnCreate</code>)に <code class="highlighter-rouge">async</code> キーワードをつけます。</p>
 
-<p>などを参考に。<br />
-SDK で Google Play services が取得できていれば、</p>
+<pre><code class="language-C#">protected async override void OnCreate(Bundle savedInstanceState)
+{
+    /* 省略 */
 
-<p><code class="highlighter-rouge"><span class="p">{</span><span class="err">※あなたのAndroidSDKディレクトリ</span><span class="p">}</span><span class="err">/extras/google/google_play_services/libproject/google-play-services_lib</span></code> ができているはず。</p>
+    while (true)
+    {
+        await button1.StartAnimationAsync(anim1);
+        await button1.StartAnimationAsync(anim2);
+    }
+}
+</code></pre>
 
-<p>※Xamarin.Android で使われる Android SDK は、Xamarin Studio のPreferences → SDK Locations → Android で確認できます。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_android_sdk_locations.png" alt="&quot;sdklocations&quot;" /></p>
-
-<p><code class="highlighter-rouge">google-play-services_lib</code> へ移動して、Ant 用のビルドファイルを生成します。</p>
-
-<blockquote>
-  <p>$cd google-play-services_lib<br />
-$Android update project –path .<br />
-$ant debug</p>
-</blockquote>
-
-<p>Readme.md では <code class="highlighter-rouge">android project update -p .</code> って書いてあるけど上のコマンドじゃないとうまくいかないんですけど？<br />
-あと <code class="highlighter-rouge"><span class="p">{</span><span class="err">あなたのAndroidSDKディレクトリ</span><span class="p">}</span><span class="err">/tools</span></code> にパス通しておかないと android コマンド使えないです。ant も(ry</p>
-
-<p>ant の実行に成功すると /bin の中に classes.jar とかができてるはずです。</p>
-
-<p>次に、Xamarin Studio で <code class="highlighter-rouge">MapsAndLocationDemo.sln</code> を開いて、GooglePlayService プロジェクトを展開します。<br />
-すると、<code class="highlighter-rouge">project.properties</code>` ファイルが赤くなってる(ちゃんと指定した位置に google-play-services_lib をコピってれば赤くなってないかも)ので、これを一度削除して、追加しなおします。リンクファイルとして、ね。</p>
-
-<p>一連の画像貼っときます。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_delete_file.png" alt="&quot;red&quot;" /><br />
-<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_exist_file.png" alt="&quot;red&quot;" /><br />
-<img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_add_a_link.png" alt="&quot;red&quot;" /></p>
-
-<h2 id="google-maps-v2-api-key">Google Maps v2 API Key</h2>
-
-<p>Google Maps v2 API Key の取得も本家と同じですが、<br />
-ディレクトリが、<code class="highlighter-rouge">/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code> なのでそこだけ注意。(←Mac の場合。Win は Readme.md 見て)</p>
-
-<p>該当のディレクトリへ移動して、以下のコマンドで表示されるキーの内、SHA-1 をコピーします。</p>
-
-<blockquote>
-  <p>$ keytool -V -list -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android</p>
-</blockquote>
-
-<p>あとは、</p>
-
-<ul>
-  <li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
-</ul>
-
-<p>を参考に、Google API Console から、API key を取得します。<br />
-API Key を取得する際に必要なパッケージ名、取得した API Key を貼り付ける場所は、いずれも MapsAndLocationDemo プロジェクトの AndroidManifest.xml にあるので、先に開いておくとよいでしょう。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_manifest.png" alt="&quot;apikey&quot;" /></p>
-
-<p>API Key を取得したら、<code class="highlighter-rouge">com.google.android.maps.v2.API_KEY</code> のところに貼り付けて準備完了です。</p>
-
-<h2 id="a-note-about-google-play-services">A Note About Google Play Services</h2>
-
-<p>Google Play Services が端末にインストールされてないと動かんよ、つまりエミュレータでは動かんよ。Google Play Services のインストールの仕方など、私の知ったことではない。だそうです。</p>
-
-<h2 id="動かしてみる">動かしてみる</h2>
-
-<p>「実機で」動かしてみます。</p>
-
-<p><img src="https://dl.dropbox.com/u/264530/qiita/xamarin_studio_android_google_maps_api_v2.png" alt="&quot;play&quot;" /></p>
-
-<p>動いてます。(上は Show Map with Overlays を動かしたところ)</p>
-
-<p>今回はここまで。コードの深追いは日を改めて。</p>
+<p>Kotlin は同一プロジェクト内に Java と混ぜて使うことができるのがよいですね。</p>
 
     </section>
     <footer class="post-footer">
 
       <section class="categories">
         
-        <div class="category">Xamarin</div>
+        <div class="category">Kotlin</div>
         
         <div class="category">Android</div>
         
+        <div class="category">Java</div>
+        
+        <div class="category">Xamarin</div>
+        
         <div class="category">C#</div>
         
-        <div class="category">GoogleMapsAPI</div>
-        
-        <p class="published">published <time datetime="2013-03-05 23:10">05 Mar 2013</time></p>
+        <p class="published">published <time datetime="2017-07-24 23:59">24 Jul 2017</time></p>
       </section>
       
       <section class="share">
-        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2013/03/05/xamarin-android-using-google-maps-android-api-v2&text=Xamarin.Android+%E3%81%A7+Google+Maps+Android+API+v2+%E3%82%92%E4%BD%BF%E3%81%86&via=amay077" target="_blank">
+        <a class="icon" href="https://twitter.com/intent/tweet?url=http://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin&text=Android%E3%81%A7%E3%82%A2%E3%83%8B%E3%83%A1%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3%E3%82%92%E9%80%A3%E7%B6%9A%E3%81%A7%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B%E3%81%AE%E3%81%8C%E9%9D%A2%E5%80%92%E3%81%AA%E3%81%AE%E3%82%92+Kotlin+%E3%81%A7%E4%BE%BF%E5%88%A9%E3%81%AB%E3%81%97%E3%81%9F%E8%A9%B1&via=amay077" target="_blank">
           Share on
           
 <span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
@@ -973,7 +1070,7 @@ API Key を取得する際に必要なパッケージ名、取得した API Key 
 
       <div class="amazon-ads">
         <h4>Ads</h4>
-        <amp-iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Xamarin%7CAndroid%7CC%23%7CGoogleMapsAPI&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
+        <amp-iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Kotlin%7CAndroid%7CJava%7CXamarin%7CC%23&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
       </div>
       
       <section class="disqus">
@@ -983,7 +1080,7 @@ API Key を取得する際に必要なパッケージ名、取得した API Key 
           sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
           resizable
           frameborder="0"
-          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2013%2F03%2F05%2Fxamarin-android-using-google-maps-android-api-v2&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
+          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=http%3A%2F%2Fblog.amay077.net%2Fblog%2F2017%2F07%2F24%2Fconcat_animations_with_kotlin&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
           <div overflow tabindex="0" role="button" aria-label="Read more">Read more!</div>
         </amp-iframe>
       </section>
