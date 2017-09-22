@@ -6,9 +6,143 @@
 </description>
     <link>http://blog.amay077.net/</link>
     <atom:link href="http://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Mon, 18 Sep 2017 20:30:45 +0900</pubDate>
-    <lastBuildDate>Mon, 18 Sep 2017 20:30:45 +0900</lastBuildDate>
+    <pubDate>Sat, 23 Sep 2017 01:48:32 +0900</pubDate>
+    <lastBuildDate>Sat, 23 Sep 2017 01:48:32 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>Mapbox GL JS をデバッグするまで</title>
+        <description>&lt;p&gt;オープンソースのベクトル地図ライブラリ Mapbox GL JS のデバッグがしたいので調べました。&lt;/p&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;mapbox-なにそれ&quot;&gt;Mapbox なにそれ？&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Google Maps JavaScript API みたいなもん&lt;/li&gt;
+  &lt;li&gt;こういうの → &lt;a href=&quot;https://www.mapbox.com/mapbox-gl-js/examples/&quot;&gt;Display a map / Mapbox&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;要は地図を表示・操作するためのオープンソース JavaScript ライブラリ&lt;/li&gt;
+  &lt;li&gt;類似のライブラリとして OpenLayers, leaflet などがある&lt;/li&gt;
+  &lt;li&gt;上記との違いは「ベクトルタイル」を「WebGL」で描画するものであるということ&lt;/li&gt;
+  &lt;li&gt;“GL” とは WebGL を差しており、姉妹ライブラリとして Mapbox GL Native がある（こちらはモバイルやデスクトップの “ネイティブ” アプリ用であり、OpenGL を使用している）。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;つまり、 Google Maps JavaScript API 以外の方法で、Google Maps のようなベクトル地図レンダリングをしたければ、Mapbox GL JS を使うのが現在の事実上唯一の方法である。&lt;/p&gt;
+
+&lt;h2 id=&quot;何をしらべたいのあるいは何を調べてないの&quot;&gt;何をしらべたいの？（あるいは何を調べてないの？）&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;ライブラリの使い方は調べてない（ってか Google Maps とそんなに変わらないはず）&lt;/li&gt;
+  &lt;li&gt;Mapbox GL JS の（非同期な）地図データ取得の仕組み&lt;/li&gt;
+  &lt;li&gt;Mapbox GL JS の高速な描画の仕組み&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;今回は、その足がかりとして、Mapbox GL JS のデバッグ環境を作ります。&lt;/p&gt;
+
+&lt;h2 id=&quot;調べたわたしは&quot;&gt;調べたわたしは&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;JavaScript 力はあんまりない&lt;/li&gt;
+  &lt;li&gt;WebGL やったことない&lt;/li&gt;
+  &lt;li&gt;OpenGL もない&lt;/li&gt;
+  &lt;li&gt;Mapbox GL Native のソースを追ってみたが C++14 が分からずあきらめた&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;大丈夫か・・・？&lt;/p&gt;
+
+&lt;h2 id=&quot;デバッグ環境を作る&quot;&gt;デバッグ環境を作る&lt;/h2&gt;
+
+&lt;h3 id=&quot;用意するものというか私の環境&quot;&gt;用意するもの(というか私の環境)&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;https://github.com/mapbox/mapbox-gl-js のローカルクローン&lt;/li&gt;
+  &lt;li&gt;macOS&lt;/li&gt;
+  &lt;li&gt;Xcode（入ってた)&lt;/li&gt;
+  &lt;li&gt;homebrew&lt;/li&gt;
+  &lt;li&gt;yarn とかいうやつ（homebrew で入れる）&lt;/li&gt;
+  &lt;li&gt;node.js(v4.0以上)&lt;/li&gt;
+  &lt;li&gt;Visual Studio Code (デバッグするのに使う。VSCodeと略すかも)&lt;/li&gt;
+  &lt;li&gt;Debugger for Chrome (Visual Studio Code の拡張機能)&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;すでに「yarn って何？」というレベルです・・・。&lt;/p&gt;
+
+&lt;h3 id=&quot;デバッグ環境を作る手順1mapboxのセットアップ&quot;&gt;デバッグ環境を作る手順1(mapboxのセットアップ)&lt;/h3&gt;
+
+&lt;p&gt;https://github.com/mapbox/mapbox-gl-js/blob/master/CONTRIBUTING.md に丁寧に書いてあることの写しだけど。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Xcode Command Line Tools を入れる(入ってた。けど一度 Xcode を起動て License に agree しないといけなかった）&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;brew install node&lt;/code&gt; で node をインストール（以前 anyenv/ndenv で入れてあったので余裕）&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;brew install yarn&lt;/code&gt; で yarn というやつを入れる&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;cd mapbox-gl-js&lt;/code&gt; でクローンしたリポジトリに移動して、 &lt;code class=&quot;highlighter-rouge&quot;&gt;yarn install&lt;/code&gt; で何かをインストールする（何？）&lt;/li&gt;
+  &lt;li&gt;https://www.mapbox.com/studio/account/tokens/ で、 Mapbox の API キーを生成する。Mapbox アカウントがなければ同じく作る&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/mapbox/mapbox-gl-js/blob/master/CONTRIBUTING.md#serving-the-debug-page&quot;&gt;Serving the Debug Page&lt;/a&gt; にあるように &lt;code class=&quot;highlighter-rouge&quot;&gt;MAPBOX_ACCESS_TOKEN=pk.iEkc36fR… yarn run start-debug&lt;/code&gt; を実行する&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;んでブラウザで http://localhost:9966/debug にアクセスすると、地図が表示されるはずである。&lt;/p&gt;
+
+&lt;p&gt;この状態で、 Chrome のデベロッパーツールでデバッグできるけど、効率上げるために Visual Studio Code を使う。その手順が以下。&lt;/p&gt;
+
+&lt;h3 id=&quot;デバッグ環境を作る手順2vscodeのセットアップ&quot;&gt;デバッグ環境を作る手順2(VSCodeのセットアップ)&lt;/h3&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://ics.media/entry/11356&quot;&gt;Visual Studio Codeを使いこなせ！ Chromeと接続してJSをデバッグする方法 - ICS MEDIA&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;https://github.com/Microsoft/vscode-chrome-debug#launch&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;を参考に。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;VSCode で mapbox-gl-js のフォルダを開く&lt;/li&gt;
+  &lt;li&gt;メニュー → デバッグ → 構成の追加 とすると &lt;code class=&quot;highlighter-rouge&quot;&gt;.vscode/launch.json&lt;/code&gt; が生成されるので、下記の &lt;code class=&quot;highlighter-rouge&quot;&gt;launch.json&lt;/code&gt; のように記述する&lt;/li&gt;
+  &lt;li&gt;前述の &lt;code class=&quot;highlighter-rouge&quot;&gt;MAPBOX_ACCESS_TOKEN=pk.iEkc36fR… yarn run start-debug&lt;/code&gt; をしたまま、VSCode のメニュー → デバッグ → デバッグの開始（F5 でもおｋ）すると、新しいタブに地図が表示される。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;div class=&quot;language-json highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;err&quot;&gt;//&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;launch.json&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;version&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;0.2.0&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;configurations&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;type&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;chrome&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;request&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;launch&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;name&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;Launch Chrome against localhost&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;url&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;http://localhost:9966/debug/&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+            &lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&quot;webRoot&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;${workspaceRoot}&quot;&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+        &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+    &lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;span class=&quot;w&quot;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/how_to_debugging_mapbox_gl_js_01.png&quot; alt=&quot;how_to_debugging_mapbox_gl_js_01.png&quot; /&gt;&lt;/p&gt;
+
+&lt;h3 id=&quot;試しにデバッグしてみる&quot;&gt;試しにデバッグしてみる&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;src/render/draw_line.js&lt;/code&gt; の 14行目あたりにブレークポイントを置いてみる（F9 で）。F5 でデバッグ開始する。&lt;/p&gt;
+
+&lt;p&gt;地図が表示される過程でブレークポイントで一時停止し、その箇所の「変数」「ウオッチ」「コールスタック」などが見られる。下図は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;drawLine&lt;/code&gt; 関数の &lt;code class=&quot;highlighter-rouge&quot;&gt;coords&lt;/code&gt; 変数の中身を表示しているところ。描画するラインの頂点が確認できる。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/how_to_debugging_mapbox_gl_js_02.png&quot; alt=&quot;how_to_debugging_mapbox_gl_js_02.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;ちなみに、この &lt;code class=&quot;highlighter-rouge&quot;&gt;drawLine&lt;/code&gt; 関数をスキップ（すぐに &lt;code class=&quot;highlighter-rouge&quot;&gt;return&lt;/code&gt;）すると、次図のようにラインが描画されない地図になる。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/how_to_debugging_mapbox_gl_js_03.png&quot; alt=&quot;how_to_debugging_mapbox_gl_js_03.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;「デバッグするまで」としてはこんな感じで。&lt;/p&gt;
+</description>
+        <pubDate>Thu, 21 Sep 2017 23:59:00 +0900</pubDate>
+        <link>http://blog.amay077.net/blog/2017/09/21/how_to_debugging_mapbox_gl_js/</link>
+        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/09/21/how_to_debugging_mapbox_gl_js/</guid>
+        
+        
+        <category>mapbox</category>
+        
+        <category>JavaScript</category>
+        
+        <category>geo</category>
+        
+      </item>
     
       <item>
         <title>iOSDC 2017 に参加してきました</title>
@@ -1089,53 +1223,6 @@ PublishProfiles/
         
         
         <category>macOS</category>
-        
-      </item>
-    
-      <item>
-        <title>JetBrains Rider で Xamarin.Android プロジェクトのデバッグが行えるようになりました</title>
-        <description>&lt;p&gt;クロスプラットフォーム対応の.NET向けIDE、JetBrains Rider の EAP(Early Access Program) ver.20 で、ついに Xamarin.Android の「実行」がサポートされました（今までも「ビルドだけ」はできたのですが）。&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://blog.jetbrains.com/dotnet/2017/04/14/rider-eap-20-xamarin-android-node-js-net-core-improvements/&quot;&gt;Rider EAP 20: Xamarin Android, Node.js, .NET Core improvements, and more - .NET Tools Blog.NET Tools Blog&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;たとえば &lt;a href=&quot;https://developer.xamarin.com/samples/&quot;&gt;Xamarin Samples&lt;/a&gt; の&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/samples/xamarin-forms/ButtonCode/&quot;&gt;ButtonCode - Xamarin&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を Rider で開いてビルド、デバッグ実行してみます。&lt;br /&gt;
-これは Xamarin.Forms のソリューションですが、その中の Android プロジェクトは実行できます。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;http://blog.amay077.net/assets/images/posts/rider_supports_xamarin_android_project_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;上図のように、エミュレータも起動でき、ブレークポイントを置いてのステップイン・ステップオーバーなども実行できます。&lt;br /&gt;
-デバッグ画面のルック＆フィールは JetBrains 製品らしくなっており、Android Studio を使っている人にとっても馴染みがあります。&lt;/p&gt;
-
-&lt;p&gt;また、Rider で Xamarin.Android プロジェクトを新規作成することも可能です。&lt;br /&gt;
-が、Rider で作成したプロジェクトをXamarin Studioなどで開くとエラーになってしまいます。&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;ja&quot; dir=&quot;ltr&quot;&gt;JetBrains Rider  Xamarin Android プロジェクト作成→Run→エミュ起動→アプリ実行、までできたけど、その .sln/csproj を Visual Studio for Mac で開くとエラー &lt;a href=&quot;https://t.co/u0HXb4dVSr&quot;&gt;pic.twitter.com/u0HXb4dVSr&lt;/a&gt;&lt;/p&gt;&amp;mdash; あめい@超技術書典4/30 あ-12 (@amay077) &lt;a href=&quot;https://twitter.com/amay077/status/852912306056863744&quot;&gt;2017年4月14日&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-&lt;p&gt;こちらは今後の開発進行に伴い改善されていくでしょう。&lt;/p&gt;
-</description>
-        <pubDate>Wed, 19 Apr 2017 23:59:00 +0900</pubDate>
-        <link>http://blog.amay077.net/blog/2017/04/19/rider_supports_xamarin_android_project/</link>
-        <guid isPermaLink="true">http://blog.amay077.net/blog/2017/04/19/rider_supports_xamarin_android_project/</guid>
-        
-        
-        <category>Android</category>
-        
-        <category>Xamarin</category>
-        
-        <category>JetBrains</category>
-        
-        <category>Rider</category>
         
       </item>
     
