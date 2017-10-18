@@ -6,9 +6,118 @@
 </description>
     <link>https://blog.amay077.net/</link>
     <atom:link href="https://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 04 Oct 2017 03:12:08 +0900</pubDate>
-    <lastBuildDate>Wed, 04 Oct 2017 03:12:08 +0900</lastBuildDate>
+    <pubDate>Wed, 18 Oct 2017 22:37:49 +0900</pubDate>
+    <lastBuildDate>Wed, 18 Oct 2017 22:37:49 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>Kotlin製のAndroidアプリを Visual Studio Mobile Center でビルドして DeployGate にアップロードする</title>
+        <description>&lt;p&gt;タイトル長いｗ&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;vsmc-とは&quot;&gt;VSMC とは&lt;/h2&gt;
+
+&lt;p&gt;Visual Studio Mobile Center(以下 VSMC) は Microsoft が提供している CI サービスです。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://codezine.jp/article/detail/10095&quot;&gt;iOS／Androidアプリの開発を支援する「Visual Studio Mobile Center （preview）」を使ってみよう (1/5)：CodeZine（コードジン）&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;あまり知られていないでしょうが、 Java/Kotlin で書かれた普通の Android アプリもビルドできます。（そしてもちろん Swift 製の iOS アプリも対応してます。あと React Native もな。）&lt;/p&gt;
+
+&lt;p&gt;Kotlin/Java な Android Studio プロジェクトのレポジトリを VSMC に設定してやるだけでビルドまではできるのでなんにも難しいことはないです。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://dev.classmethod.jp/smartphone/visual-studio-mobile-center-ios-app-build/&quot;&gt;Visual Studio Mobile CenterでiOSアプリをビルドしてみた ｜ Developers.IO&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;今日のメインは、VSMC でもようやくビルド後にスクリプトを実行させることができるようになったので、その紹介です。&lt;/p&gt;
+
+&lt;h2 id=&quot;vsmc-がビルドスクリプトに対応した&quot;&gt;VSMC がビルドスクリプトに対応した&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.microsoft.com/en-us/mobile-center/build/custom/scripts/&quot;&gt;Build Scripts ｜ Visual Studio Mobile Center ｜ Microsoft Docs&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;これによると、プロジェクトのレポジトリに、特定のスクリプトファイルを入れておくと、ビルド後（やビルド前）に、そのスクリプトファイルを実行してくれる、というものです。&lt;/p&gt;
+
+&lt;p&gt;現在は、３つのトリガに対応していて、それぞれ次に示すファイル名のスクリプトファイルをリポジトリのプロジェクトディレクトリにおいておきます。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Post-clone(クローン後) - &lt;code class=&quot;highlighter-rouge&quot;&gt;mobile-center-post-clone.sh&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Pre-build(ビルド前) - &lt;code class=&quot;highlighter-rouge&quot;&gt;mobile-center-pre-build.sh&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;Post-build(ビルド後) - &lt;code class=&quot;highlighter-rouge&quot;&gt;mobile-center-post-build.sh&lt;/code&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;プロジェクトディレクトリとは、Android Studio プロジェクトの場合、プロジェクトの &lt;code class=&quot;highlighter-rouge&quot;&gt;build.gradle&lt;/code&gt; がある場所、大抵は &lt;code class=&quot;highlighter-rouge&quot;&gt;app&lt;/code&gt; ディレクトリになります（下図参照）。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center_01.png&quot; alt=&quot;01&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;試しにビルドされた apk ファイルを DeployGate にアップロードする、というのをやってみます。&lt;br /&gt;
+VSMC にもアプリの配信機能はありますが、社内で既に DeployGate を使っているし、DeployGate の方が専用アプリが用意されていてβテストサービスとしては勝っているので、今回例としました。&lt;/p&gt;
+
+&lt;p&gt;まず、当然ながら DeployGate 側の準備が必要です。ユーザー登録をして、手動でビルドした apk を DeployGate にアップロードしておきます。&lt;/p&gt;
+
+&lt;p&gt;そして、次のようなファイルを &lt;code class=&quot;highlighter-rouge&quot;&gt;mobile-center-post-build.sh&lt;/code&gt; というファイル名で &lt;code class=&quot;highlighter-rouge&quot;&gt;app&lt;/code&gt; ディレクトリの中に入れておきます。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/usr/bin/env bash&lt;/span&gt;
+
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;Upload to DeployGate&quot;&lt;/span&gt;
+
+curl &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  -F &lt;span class=&quot;s2&quot;&gt;&quot;token={deploygateのAPI key}&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  -F &lt;span class=&quot;s2&quot;&gt;&quot;file=@&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$MOBILECENTER_OUTPUT_DIRECTORY&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;/app-release.apk&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  -F &lt;span class=&quot;s2&quot;&gt;&quot;message=build by Visual Studio Mobile Center - #&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$MOBILECENTER_BUILD_ID&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+  https://deploygate.com/api/users/&lt;span class=&quot;o&quot;&gt;{&lt;/span&gt;deploygateのユーザーID&lt;span class=&quot;o&quot;&gt;}&lt;/span&gt;/apps
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;deploygateのAPI&lt;/span&gt;&lt;span class=&quot;w&quot;&gt; &lt;/span&gt;&lt;span class=&quot;err&quot;&gt;key&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt; には、DeployGate のアカウント設定のページから API key の値を転記します。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;&lt;span class=&quot;err&quot;&gt;deploygateのユーザーID&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;&lt;/code&gt; には、DeployGate に作成したユーザーのユーザーID を転記します（正しければ上記のURLが存在するはず）。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;file=&lt;/code&gt; に記述した &lt;code class=&quot;highlighter-rouge&quot;&gt;app-release.apk&lt;/code&gt; は、ビルド構成（Build Variant）が release の場合です。デバッグの場合は &lt;code class=&quot;highlighter-rouge&quot;&gt;app-debug.apk&lt;/code&gt; になるはずです（未確認）。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;mobile-center-post-build.sh&lt;/code&gt; をコミット、プッシュして VSMC の Build Configulation を見ると「Build scripts」 の項目に &lt;strong&gt;Post-build&lt;/strong&gt; とチェックされ、正しく認識できていることがわかります。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center_02.png&quot; alt=&quot;02&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;あとは、 apk への署名を忘れないようにしましょう。Sign builds を On にして、 keystore ファイルなどを指定します。&lt;br /&gt;
+社内配布であればデバッグ時と同じいいやってことで、開発用PCに入っている(Mac なら &lt;code class=&quot;highlighter-rouge&quot;&gt;~/.android/&lt;/code&gt; にある) &lt;code class=&quot;highlighter-rouge&quot;&gt;debug.keystore&lt;/code&gt; をアップロード、入力項目は次のとおりです。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Keystore password: android&lt;/li&gt;
+  &lt;li&gt;Key alias: androiddebugkey&lt;/li&gt;
+  &lt;li&gt;Key password: android&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center_03.png&quot; alt=&quot;03&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;設定できたら、「Save &amp;amp; Build」 を押すと、ビルドが開始され、ビルドログを見るとスクリプトが実行されていることが確認できます。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/assets/images/posts/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center_04.png&quot; alt=&quot;04&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;これで勝つる&quot;&gt;これで勝つる？&lt;/h2&gt;
+
+&lt;p&gt;よっしゃー！これでスクリプトさえ書けば Bitrise や CircleCI 並みになんでもできるぞー、と思いました。&lt;/p&gt;
+
+&lt;p&gt;が、 &lt;strong&gt;スクリプトファイルをリポジトリに含める&lt;/strong&gt; のが作動条件なので、今回試したような 「DeployGate へのアップロード」というシナリオでは DeployGate の API key をリポジトリに含めることになってしまい、これは推奨されることではありません（公開リポジトリではご法度モノ）。&lt;/p&gt;
+
+&lt;p&gt;なんという「Microsoft、分かってない」感。なんでこんな仕様にしたのでしょう。&lt;br /&gt;
+VSMC はプライベートリポジトリ推奨なのでしょうか…。私はプライベートなアプリのビルドを、Bitrise の無料プランでぶん回していたらビルド時間制限の上限に達してしまったので VSMC に移行してきたのですが、そういうシナリオなのでしょうか。&lt;/p&gt;
+
+&lt;p&gt;早いとこカスタムな Environment variables を作れるようにして欲しいところです。&lt;/p&gt;
+</description>
+        <pubDate>Wed, 18 Oct 2017 22:30:00 +0900</pubDate>
+        <link>https://blog.amay077.net/blog/2017/10/18/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center/</link>
+        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/10/18/upload_android_apps_made_by_kotlin_to_deploygate_using_visual_studio_mobile_center/</guid>
+        
+        
+        <category>Android</category>
+        
+        <category>DeployGate</category>
+        
+        <category>VisualStudio</category>
+        
+      </item>
     
       <item>
         <title>JetBrains OpenSource License を更新しました</title>
@@ -1237,41 +1346,6 @@ PublishProfiles/
         <category>ASP.NET</category>
         
         <category>VisualStudio</category>
-        
-      </item>
-    
-      <item>
-        <title>Visual Studio for Mac で作ったプロジェクトを Visual Studio 2017 で実行する時気をつけること</title>
-        <description>&lt;p&gt;小ネタです。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;p&gt;Xamarin でのモバイルアプリ開発では、 Mac の方が（主に iOS 関連で）都合がよいことが多いので、Visual Studio for Mac を使っています。&lt;/p&gt;
-
-&lt;p&gt;そんなわけなので新規ソリューション作成も Visual Studio for Mac（以前は Xamarin Studio） で行っているのですが、これらで作成したソリューションを Windows の Visual Studio 2017 で開いてビルドし、いざ実行しようと「デバッグの開始(F5)」を押しても、一向にアプリが起動しません。それどころかAndroidエミュレータも起動しません。&lt;/p&gt;
-
-&lt;p&gt;こんなこと初めてだなー、と思っていろいろみていたら、ふとソリューションの構成マネージャーに、「配置」をいう項目が増えているのに気づきました。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/solution_created_vs4mac_does_not_running_on_vs2017_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;「キミ、いつからそこに居たの・・・」、完全にこれが犯人じゃん。&lt;br /&gt;
-ということで、この「配置」にチェックを入れて、再度 F5 で実行すると、無事、エミュレータが起動してアプリが実行できました。&lt;/p&gt;
-
-&lt;p&gt;ちなみに下は Visual Studio for Mac の構成マネージャー的な画面ですが、「配置」なんてないんですよね。。。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/solution_created_vs4mac_does_not_running_on_vs2017_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Win と Mac で同じ機能はまったく期待してない Visual Studio ですが、細かいところ（可能なところ）は統一してほしいなあと思います。&lt;/p&gt;
-</description>
-        <pubDate>Thu, 13 Jul 2017 23:59:00 +0900</pubDate>
-        <link>https://blog.amay077.net/blog/2017/07/13/solution_created_vs4mac_does_not_running_on_vs2017/</link>
-        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/07/13/solution_created_vs4mac_does_not_running_on_vs2017/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>VisualStudio</category>
-        
-        <category>C#</category>
         
       </item>
     
