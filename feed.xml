@@ -6,9 +6,174 @@
 </description>
     <link>https://blog.amay077.net/</link>
     <atom:link href="https://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Wed, 18 Oct 2017 22:37:49 +0900</pubDate>
-    <lastBuildDate>Wed, 18 Oct 2017 22:37:49 +0900</lastBuildDate>
+    <pubDate>Sun, 10 Dec 2017 19:59:39 +0900</pubDate>
+    <lastBuildDate>Sun, 10 Dec 2017 19:59:39 +0900</lastBuildDate>
     <generator>Jekyll v3.3.1</generator>
+    
+      <item>
+        <title>2017年冬から始める ReactiveProperty + Xamarin.Forms</title>
+        <description>&lt;p&gt;つい最近まで PCL な Xamarin.Forms では、 ReactiveProperty の 2.x 系しか使えないと思っていたのですが、いろいろな方の協力で使える方法が分かったので示しておきます。&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;今から ReactiveProperty を（Xamarin で）使ってみたいぞ、という人向けのクイックスタートも兼ねて。&lt;/p&gt;
+
+&lt;h2 id=&quot;1-ソリューションを作る&quot;&gt;1. ソリューションを作る&lt;/h2&gt;
+
+&lt;p&gt;Visual Studio for Mac で行きます。&lt;/p&gt;
+
+&lt;p&gt;新しいソリューションから、 アプリ - 空白フォームのアプリ を選んで、適当な名前で作成します。ここでは 「ReactivePropertySample」 としますね。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/8cfdeb53-c9d5-1134-b9d7-042a3a9f5536.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;2-pcl-のプロファイルを-44-に変える&quot;&gt;2. PCL のプロファイルを “44” に変える&lt;/h2&gt;
+
+&lt;p&gt;ソリューションが作成できたら、３つあるプロジェクトの中のコアプロジェクト(.Droid や .iOS のついてないもの)を選択して右クリック → 「オプション」を開きます。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/7d58f3ae-6641-a079-8fe1-08770a6c3bdd.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;ダイアログから、「ビルド」 → 「全般」を選択して、Target Framework の 「.NET ポータブル」の横にある「変更」を押し、プロファイルを &lt;strong&gt;「PCL 4.6 - Profile44」&lt;/strong&gt; に変更して OK を押します。対応プラットフォームから Windows Phone のチェックが外れますが &lt;strong&gt;まったく問題ありません&lt;/strong&gt; 。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/62a20ef9-1a16-41f9-8c4d-7be50d4a3c31.png&quot; alt=&quot;snap1.png&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;3-systemruntimeinteropservicesruntimeinformation-の-nuget-パッケージを追加する&quot;&gt;3. System.Runtime.InteropServices.RuntimeInformation の nuget パッケージを追加する&lt;/h2&gt;
+
+&lt;p&gt;@yamachu さんが書かれた、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://teitoku-window.hatenablog.com/entry/2017/11/18/185501&quot;&gt;XamarinなどのPCLプロジェクトにSystem.Reactiveを導入しようとすると失敗することへの対策 - 窓を作っては壊していた人のブログ&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;の通りです。ReactiveProperty 3.x が依存している System.Reactive をインストールするには、まず &lt;br /&gt;
+System.Runtime.InteropServices.RuntimeInformation を入れる必要があります。&lt;/p&gt;
+
+&lt;p&gt;コアプロジェクトを選択して、 メニュー → プロジェクト → Nuget パッケージの追加 とし、右上検索ボックスに “System.Runtime.InteropServices.RuntimeInformation” をタイプして絞り込みます。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/8d61fc47-b069-a850-873b-824c8c1c2bf2.png&quot; alt=&quot;snap2.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;見つかったら、右下の追加ボタンでインストールします。現在の最新バージョンは 4.3.0 です。&lt;/p&gt;
+
+&lt;h2 id=&quot;4-systemreactive-の-nuget-パッケージを追加する&quot;&gt;4. System.Reactive の nuget パッケージを追加する&lt;/h2&gt;
+
+&lt;p&gt;次に、ReactiveProperty 3.x が依存している System.Reactive をインストールします（いきなり ReactiveProperty を入れてもよいのかもだけど、まあ順番にやってみましょう）。&lt;/p&gt;
+
+&lt;p&gt;方法は 3. と同じです。 nuget のダイアログボックスで System.Reactive とタイプして、結果から選択して追加します（雑になってきたｗ）。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/52afd47b-5998-6ac3-90d8-c38c47fa6afe.png&quot; alt=&quot;snap3.png&quot; /&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;5-reactiveproperty-の-nuget-パッケージを追加する&quot;&gt;5. ReactiveProperty の nuget パッケージを追加する&lt;/h2&gt;
+
+&lt;p&gt;ついに ReactiveProperty のインストールです。 3. 4. と同じ方法で追加しましょう（雑）。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/42902eb0-9f29-0e3b-e9b0-5d00d0ab7021.png&quot; alt=&quot;snap4.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;バージョン 3.x 系をついにいれる事ができました。現在の最新stableは 3.6.0 です。&lt;/p&gt;
+
+&lt;p&gt;できてしまえば簡単ですが、この方法に辿りつくまでに多くの労力と時間とご協力をいただきました。みなさまありがとうございました。&lt;/p&gt;
+
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;ja&quot; dir=&quot;ltr&quot;&gt;うーん，なんというか微妙なハックですけど，System.Runtime.InteropServices.RuntimeInformation 4.0.0(Reactive 3.1.1が依存しているバージョン)の依存にMicrosoft.NETCore.Platformsが含まれていて，そのせいでPCLのでの展開が出来ないんじゃないかなぁと睨んでいます．&lt;/p&gt;&amp;mdash; 留まり奈緒 (@y_chu5) &lt;a href=&quot;https://twitter.com/y_chu5/status/931805975878582274?ref_src=twsrc%5Etfw&quot;&gt;2017年11月18日&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;https://platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;ja&quot; dir=&quot;ltr&quot;&gt;PCL Profile111 が Windows Phone を含んでるならそのせいですね&lt;/p&gt;&amp;mdash; かずき@66.8kg (@okazuki) &lt;a href=&quot;https://twitter.com/okazuki/status/932919102351450112?ref_src=twsrc%5Etfw&quot;&gt;2017年11月21日&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;https://platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;h2 id=&quot;reactiveproperty-を使ってみよう&quot;&gt;ReactiveProperty を使ってみよう&lt;/h2&gt;
+
+&lt;p&gt;せっかくいれたのでちゃちゃっと使ってみましょう。&lt;br /&gt;
+ぜんぶコアプロジェクトでやります。&lt;/p&gt;
+
+&lt;h3 id=&quot;i-mainviewmodel-を作る&quot;&gt;I. MainViewModel を作る&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;MainViewModel&lt;/code&gt; というクラスを作って、次のように書きます。&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;System.Reactive.Linq&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;using&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;Reactive.Bindings&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;namespace&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;ReactivePropertySample&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MainViewModel&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ReactiveProperty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;long&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+        &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;MainViewModel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Observable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Interval&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;TimeSpan&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;FromSeconds&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ToReactiveProperty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Counter&lt;/code&gt; という変更通知プロパティを ReactiveProperty を使ってつくります。&lt;br /&gt;
+Reactive Extensions の機能を使って、「１秒おきに１ずつカウントアップ」していきます。&lt;/p&gt;
+
+&lt;h3 id=&quot;ii-画面pageとバインドする&quot;&gt;II. 画面(Page)とバインドする&lt;/h3&gt;
+
+&lt;p&gt;プロジェクトを作った時に &lt;code class=&quot;highlighter-rouge&quot;&gt;ReactivePropertySamplePage.xaml&lt;/code&gt; という画面ができていると思うので、それを編集します。 XAML の編集だけでいきましょう。&lt;/p&gt;
+
+&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;cp&quot;&gt;&amp;lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&amp;gt;&lt;/span&gt;
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;ContentPage&lt;/span&gt; 
+    &lt;span class=&quot;na&quot;&gt;xmlns=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://xamarin.com/schemas/2014/forms&quot;&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;xmlns:x=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;http://schemas.microsoft.com/winfx/2009/xaml&quot;&lt;/span&gt;
+    &lt;span class=&quot;na&quot;&gt;xmlns:local=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;clr-namespace:ReactivePropertySample&quot;&lt;/span&gt; 
+    &lt;span class=&quot;na&quot;&gt;x:Class=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;ReactivePropertySample.ReactivePropertySamplePage&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
+
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;ContentPage.BindingContext&amp;gt;&lt;/span&gt;
+        &lt;span class=&quot;nt&quot;&gt;&amp;lt;local:MainViewModel&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/ContentPage.BindingContext&amp;gt;&lt;/span&gt;
+    
+    &lt;span class=&quot;nt&quot;&gt;&amp;lt;Label&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;Text=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;{Binding Counter.Value}&quot;&lt;/span&gt; 
+        &lt;span class=&quot;na&quot;&gt;VerticalOptions=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Center&quot;&lt;/span&gt; 
+        &lt;span class=&quot;na&quot;&gt;HorizontalOptions=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Center&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
+    
+&lt;span class=&quot;nt&quot;&gt;&amp;lt;/ContentPage&amp;gt;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;ContentPage.BindingContext&amp;gt;&lt;/code&gt; で、 &lt;code class=&quot;highlighter-rouge&quot;&gt;MainViewModel&lt;/code&gt; をバインド対象としています。&lt;br /&gt;
+そして、ラベルの Text に &lt;code class=&quot;highlighter-rouge&quot;&gt;&quot;{Binding Counter.Value}&quot;&lt;/code&gt; と書くことで、 Counter 値をデータバインドしています。 &lt;strong&gt;.Value を付けるのを忘れずに！&lt;/strong&gt;（と言っても忘れるんだよ、分かる。みんなやってる。）&lt;/p&gt;
+
+&lt;h3 id=&quot;iii-動かす&quot;&gt;III. 動かす&lt;/h3&gt;
+
+&lt;p&gt;OK, これで完成です。 Android でも iOS でも動きます。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/0166bdbd-c0e0-4c6f-8289-49fec91335bf.gif&quot; alt=&quot;Untitled2.gif&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;文字ちっさ！&lt;/p&gt;
+
+&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
+
+&lt;p&gt;最新の環境で ReactiveProperty を使う方法を紹介しました。&lt;/p&gt;
+
+&lt;p&gt;ReactiveProperty は、Reactive Extension のパワーを View とのデータバインディングにそのまま活用できる、現代においては必須のライブラリです。&lt;br /&gt;
+もちろん、変更通知プロパティを手書きする手間をなくす目的で使うのもよいですね。&lt;/p&gt;
+
+&lt;p&gt;「ReactiveProperty のここがすごい！」というのをもう少し、別記事で紹介していきたいと思います。&lt;/p&gt;
+
+&lt;p&gt;ちなみに、コアプロジェクトが PCL でなく .NET Standard なら、もうちょっといろいろ楽…なハズ！それについては誰かが書いてくれることを望みます :pray:&lt;/p&gt;
+
+&lt;h2 id=&quot;おまけ&quot;&gt;おまけ&lt;/h2&gt;
+
+&lt;p&gt;これだけなのにインストールされたパッケージ群がえらいことになった。。。。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/cf41f313-9ab7-2bd1-5736-f8551d701029.png&quot; alt=&quot;snap5.png&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Wed, 22 Nov 2017 23:59:00 +0900</pubDate>
+        <link>https://blog.amay077.net/blog/2017/11/22/getting_started_reactiveproperty_with_xamarin_forms_in_winter_2017/</link>
+        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/11/22/getting_started_reactiveproperty_with_xamarin_forms_in_winter_2017/</guid>
+        
+        
+        <category>Xamarin</category>
+        
+        <category>C#</category>
+        
+        <category>.NET</category>
+        
+        <category>Android</category>
+        
+        <category>iOS</category>
+        
+      </item>
     
       <item>
         <title>Kotlin製のAndroidアプリを Visual Studio Mobile Center でビルドして DeployGate にアップロードする</title>
@@ -1192,160 +1357,6 @@ view.startAnimation(anim1);
         <category>iOS</category>
         
         <category>.NET</category>
-        
-      </item>
-    
-      <item>
-        <title>Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</title>
-        <description>&lt;p&gt;別に Bot Application に限った話ではないのですけどね。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;p&gt;Microsoft の Bot Framework を使った Bot Application の作成方法は、いくつかWebで公開されていますが、それらに沿って作成したソースコードを GitHub などの誰でも閲覧できるリポジトリで管理・公開すると、本来公開すべきでない以下の情報が含まれてしまいます。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Bot Directory へ登録する際に発行される「Bot ID」, 「App ID」, 「App Password」&lt;/li&gt;
-  &lt;li&gt;Azure へ発行する際の設定情報&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;これらをソースコード管理に含めないようにする方法を紹介します。&lt;/p&gt;
-
-&lt;h2 id=&quot;bot-id-app-id-app-password-をソースコード管理に含めないようにする&quot;&gt;「Bot ID」, 「App ID」, 「App Password」 をソースコード管理に含めないようにする&lt;/h2&gt;
-
-&lt;p&gt;たとえば、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://blogs.msdn.microsoft.com/bluesky/2016/11/15/5-step-tutorial-smilescorebot-bot-framework-cognitive-services-ja/&quot;&gt;5ステップでズバリ！笑顔判定BOT を作成しよう by Microsoft Bot Framework and Cognitive Services – 青い空の向こうへ&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;では、BotのIDやパスワードなどを、&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; の &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;app key=&quot;BotId&quot;&lt;/code&gt; などに設定するよう書かれています。&lt;br /&gt;
-実際プロジェクト作成直後の &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; を見ても “YourBotID” などと書かれており、「ここに書くのが当然」感を醸し出しています。これがよくない！&lt;/p&gt;
-
-&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.config --&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;appsettings&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- update these with your BotId, Microsoft App Id and your Microsoft App Password--&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;BotId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;YourBotID&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppPassword&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;nt&quot;&gt;&amp;lt;/appsettings&amp;gt;&lt;/span&gt;
-: (略)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; 及び &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.Debug.config&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.Release.config&lt;/code&gt; は、 ASP.NET の Webアプリケーションに関する設定を記述するもので、ソースコード管理に含めるべき情報です。&lt;br /&gt;
-&lt;strong&gt;ここにIDやパスワードを記述してはいけません&lt;/strong&gt;&lt;/p&gt;
-
-&lt;p&gt;ではどこに記述するかというと、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://devadjust.exblog.jp/20400427/&quot;&gt;ASP.NET Web アプリで、APIキーなどの “秘密のキー” をどこに保存するべきか? : @jsakamoto&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;で紹介されている方法を使って、別のファイルに逃します。&lt;/p&gt;
-
-&lt;p&gt;具体的には、&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;新たに &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; というファイル（ファイル名は何でもよい）をプロジェクトに追加し、秘匿情報を含む XML のブロックはそちらに記述する&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; に上記ファイルへの参照を記述する&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;とします。&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; は、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; などと同じディレクトリに追加し、ビルドアクションを「コンテンツ」とします。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/avoid_secrets_from_github_in_your_bot_application_project_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; の内容は以下です。&lt;/p&gt;
-
-&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.local.config --&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;BotId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あならのBOTID＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppId&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あなたのMicrosoftAppId＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;add&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;key=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;MicrosoftAppPassword&quot;&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;value=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;＜あなたのMicrosoftAppPassword＞&quot;&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;/&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;/appSettings&amp;gt;&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; に記述していた &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/code&gt; 要素を切り出してきた感じですね。&lt;/p&gt;
-
-&lt;p&gt;そして、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; を次のように修正します。&lt;/p&gt;
-
-&lt;div class=&quot;language-xml highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;&amp;lt;!-- Web.config --&amp;gt;&lt;/span&gt;
-&lt;span class=&quot;nt&quot;&gt;&amp;lt;configuration&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;appSettings&lt;/span&gt; &lt;span class=&quot;na&quot;&gt;file=&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Web.local.config&quot;&lt;/span&gt;&lt;span class=&quot;nt&quot;&gt;&amp;gt;&lt;/span&gt;
-    &lt;span class=&quot;c&quot;&gt;&amp;lt;!-- 秘匿でない設定情報があればここに書く --&amp;gt;&lt;/span&gt;
-  &lt;span class=&quot;nt&quot;&gt;&amp;lt;/appSettings&amp;gt;&lt;/span&gt;
-: (略)
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings file=&quot;Web.local.config&quot;&amp;gt;&lt;/code&gt; と記述することで、&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; の内容をここに注入できます。&lt;/p&gt;
-
-&lt;p&gt;あとは &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; を &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に追加するなどしてソースコード管理対象から除外します。&lt;br /&gt;
-&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; が存在しなくてもビルドや実行はできるようですが、初見の人には不親切なので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;README.md&lt;/code&gt; で補足説明をしておくのがよいでしょう。&lt;/p&gt;
-
-&lt;h2 id=&quot;開発用とプロダクト用で-bot-id-app-id-app-password-を切り替える&quot;&gt;開発用とプロダクト用で 「Bot ID」, 「App ID」, 「App Password」 を切り替える&lt;/h2&gt;
-
-&lt;p&gt;前の手順で設定したID、パスワードなどは「開発用」の情報です。&lt;br /&gt;
-Azureに配置した本番環境では、別のID、パスワードを使用したいケースは普通にあります。&lt;br /&gt;
-本番環境の設定はAzureポータルから行えます。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/avoid_secrets_from_github_in_your_bot_application_project_02.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;この図のように、&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;Azure ポータル（https://portal.azure.com/） で、配布した Bot Application（App Service） を開き、さらに「アプリケーション設定」を開きます&lt;/li&gt;
-  &lt;li&gt;「アプリ設定」で、 本番用の「Bot ID」, 「App ID」, 「App Password」を追加します&lt;/li&gt;
-  &lt;li&gt;最後に「保存」を押します&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;ここで設定した内容は、配布した &lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; にある &lt;code class=&quot;highlighter-rouge&quot;&gt;&amp;lt;appSettings&amp;gt;&lt;/code&gt; の内容を上書きします。&lt;/p&gt;
-
-&lt;h2 id=&quot;azure-へ発行する際の設定情報をソースコード管理に含めないようにする&quot;&gt;Azure へ発行する際の設定情報をソースコード管理に含めないようにする&lt;/h2&gt;
-
-&lt;p&gt;Visual Studio 2017 は、IDE から Azure への発行ができてとても便利なのですが、発行のための情報も保持してしまうので、その際の情報もソースコード管理に含めるべきではありません。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/avoid_secrets_from_github_in_your_bot_application_project_03.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;これらの情報はプロジェクトのディレクトリの &lt;code class=&quot;highlighter-rouge&quot;&gt;Properties\PublishProfiles&lt;/code&gt; というサブディレクトリに、 &lt;code class=&quot;highlighter-rouge&quot;&gt;*.pubxml&lt;/code&gt;, &lt;code class=&quot;highlighter-rouge&quot;&gt;*.pubxml.user&lt;/code&gt; というファイル名で保存されるようなので、このディレクトリ毎、あるいは個別のファイルを &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に追加すればよいです。&lt;/p&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.config&lt;/code&gt; には秘匿情報を書かない&lt;/li&gt;
-  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Web.local.config&lt;/code&gt; を作って、そちらに書く、このファイルはソースコード管理しない&lt;/li&gt;
-  &lt;li&gt;本番用のIDやパスワードはAzureポータルで設定する&lt;/li&gt;
-  &lt;li&gt;Azureへ発行する際の設定情報もソースコード管理しない&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;結果、 &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; に次の２行を追加するとよいです。&lt;/p&gt;
-
-&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;# .gitignore&lt;/span&gt;
-＜省略＞
-
-&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;.local.config
-PublishProfiles/
-&lt;/code&gt;&lt;/pre&gt;
-&lt;/div&gt;
-
-&lt;p&gt;手前味噌ですが、上記以外の &lt;code class=&quot;highlighter-rouge&quot;&gt;.gitignore&lt;/code&gt; の設定は https://www.gitignore.io/ で “VisualStudio” と検索して生成されるものを使用すると便利です（上の2行が含まれているわけではありません）。&lt;/p&gt;
-</description>
-        <pubDate>Sat, 15 Jul 2017 23:59:00 +0900</pubDate>
-        <link>https://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/</link>
-        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/</guid>
-        
-        
-        <category>BotFramework</category>
-        
-        <category>C#</category>
-        
-        <category>.NET</category>
-        
-        <category>ASP.NET</category>
-        
-        <category>VisualStudio</category>
         
       </item>
     
