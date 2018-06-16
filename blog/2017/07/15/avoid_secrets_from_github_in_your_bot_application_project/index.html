@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2017/07/15/avoid_secrets_from_github_in_your_bot_application_project/",
   "headline": "Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法",
-  "datePublished": "2017-07-15T23:59:00+09:00",
-  "dateModified": "2017-07-15T23:59:00+09:00",
+  "datePublished": "2017-07-15T14:59:00+00:00",
+  "dateModified": "2017-07-15T14:59:00+00:00",
   "description": "別に Bot Application に限った話ではないのですけどね。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -873,7 +875,7 @@ img {
 <p>では、BotのIDやパスワードなどを、<code class="highlighter-rouge">Web.config</code> の <code class="highlighter-rouge">&lt;app key="BotId"</code> などに設定するよう書かれています。<br />
 実際プロジェクト作成直後の <code class="highlighter-rouge">Web.config</code> を見ても “YourBotID” などと書かれており、「ここに書くのが当然」感を醸し出しています。これがよくない！</p>
 
-<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
 <span class="nt">&lt;configuration&gt;</span>
     <span class="nt">&lt;appsettings&gt;</span>
     <span class="c">&lt;!-- update these with your BotId, Microsoft App Id and your Microsoft App Password--&gt;</span>
@@ -882,8 +884,7 @@ img {
     <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppPassword"</span> <span class="na">value=</span><span class="s">""</span> <span class="nt">/&gt;</span>
     <span class="nt">&lt;/appsettings&gt;</span>
 : (略)
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">Web.config</code> 及び <code class="highlighter-rouge">Web.Debug.config</code>, <code class="highlighter-rouge">Web.Release.config</code> は、 ASP.NET の Webアプリケーションに関する設定を記述するもので、ソースコード管理に含めるべき情報です。<br />
 <strong>ここにIDやパスワードを記述してはいけません</strong></p>
@@ -911,27 +912,25 @@ img {
 
 <p><code class="highlighter-rouge">Web.local.config</code> の内容は以下です。</p>
 
-<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.local.config --&gt;</span>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- Web.local.config --&gt;</span>
 <span class="nt">&lt;appSettings&gt;</span>
   <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"BotId"</span> <span class="na">value=</span><span class="s">"＜あならのBOTID＞"</span> <span class="nt">/&gt;</span>
   <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppId"</span> <span class="na">value=</span><span class="s">"＜あなたのMicrosoftAppId＞"</span> <span class="nt">/&gt;</span>
   <span class="nt">&lt;add</span> <span class="na">key=</span><span class="s">"MicrosoftAppPassword"</span> <span class="na">value=</span><span class="s">"＜あなたのMicrosoftAppPassword＞"</span> <span class="nt">/&gt;</span>
 <span class="nt">&lt;/appSettings&gt;</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">Web.config</code> に記述していた <code class="highlighter-rouge">&lt;appSettings&gt;</code> 要素を切り出してきた感じですね。</p>
 
 <p>そして、 <code class="highlighter-rouge">Web.config</code> を次のように修正します。</p>
 
-<div class="language-xml highlighter-rouge"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c">&lt;!-- Web.config --&gt;</span>
 <span class="nt">&lt;configuration&gt;</span>
   <span class="nt">&lt;appSettings</span> <span class="na">file=</span><span class="s">"Web.local.config"</span><span class="nt">&gt;</span>
     <span class="c">&lt;!-- 秘匿でない設定情報があればここに書く --&gt;</span>
   <span class="nt">&lt;/appSettings&gt;</span>
 : (略)
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">&lt;appSettings file="Web.local.config"&gt;</code> と記述することで、<code class="highlighter-rouge">Web.local.config</code> の内容をここに注入できます。</p>
 
@@ -975,13 +974,12 @@ Azureに配置した本番環境では、別のID、パスワードを使用し�
 
 <p>結果、 <code class="highlighter-rouge">.gitignore</code> に次の２行を追加するとよいです。</p>
 
-<div class="language-bash highlighter-rouge"><pre class="highlight"><code><span class="c"># .gitignore</span>
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c"># .gitignore</span>
 ＜省略＞
 
 <span class="k">*</span>.local.config
 PublishProfiles/
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>手前味噌ですが、上記以外の <code class="highlighter-rouge">.gitignore</code> の設定は https://www.gitignore.io/ で “VisualStudio” と検索して生成されるものを使用すると便利です（上の2行が含まれているわけではありません）。</p>
 
@@ -1000,7 +998,7 @@ PublishProfiles/
         
         <div class="category">VisualStudio</div>
         
-        <p class="published">published <time datetime="2017-07-15 23:59">15 Jul 2017</time></p>
+        <p class="published">published <time datetime="2017-07-15 14:59">15 Jul 2017</time></p>
       </section>
       
       <section class="share">
@@ -1070,7 +1068,7 @@ PublishProfiles/
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

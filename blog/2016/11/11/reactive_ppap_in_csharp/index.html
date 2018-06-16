@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2016/11/11/reactive_ppap_in_csharp/",
   "headline": "C# で Reactive PPAP",
-  "datePublished": "2016-11-11T23:59:59+09:00",
-  "dateModified": "2016-11-11T23:59:59+09:00",
+  "datePublished": "2016-11-11T14:59:59+00:00",
+  "dateModified": "2016-11-11T14:59:59+00:00",
   "description": "エンジニア立ち居振舞いには乗らないが、こういうのには乗ってしまうｗ",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -859,8 +861,8 @@ img {
 
 <p>C# と Reactice Extension で。<a href="http://qiita.com/amay077/items/85dfc4bd194f57c52c57">以前の</a> をちょっと改造しただけだが。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//PPAPClass.cs
-</span><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//PPAPClass.cs</span>
+<span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
 <span class="k">using</span> <span class="nn">System.Collections.Generic</span><span class="p">;</span>
 <span class="k">using</span> <span class="nn">System.Linq</span><span class="p">;</span>
 <span class="k">using</span> <span class="nn">System.Reactive.Linq</span><span class="p">;</span>
@@ -879,18 +881,18 @@ img {
             <span class="kt">var</span> <span class="n">WORDS</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">"ペン"</span><span class="p">,</span> <span class="s">"パイナッポー"</span><span class="p">,</span> <span class="s">"アッポー"</span> <span class="p">};</span>
 
             <span class="kt">var</span> <span class="n">ppapObservable</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">Interval</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromMilliseconds</span><span class="p">(</span><span class="m">100</span><span class="p">))</span>
-                <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="n">WORDS</span><span class="p">[</span><span class="n">random</span><span class="p">.</span><span class="nf">Next</span><span class="p">(</span><span class="n">WORDS</span><span class="p">.</span><span class="n">Length</span><span class="p">)])</span> <span class="c1">// ランダムに
-</span>                <span class="p">.</span><span class="nf">Buffer</span><span class="p">(</span><span class="n">PPAP</span><span class="p">.</span><span class="n">Length</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="c1">// 要素数4のBufferを1ずつズラしてく
-</span>                <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">queue</span> <span class="p">=&gt;</span> <span class="n">queue</span><span class="p">.</span><span class="nf">SequenceEqual</span><span class="p">(</span><span class="n">PPAP</span><span class="p">)</span> <span class="p">?</span> <span class="c1">// パターンと一致したら…
-</span>                    <span class="n">Observable</span><span class="p">.</span><span class="nf">Concat</span><span class="p">(</span>
-                        <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Last</span><span class="p">()),</span>   <span class="c1">// Queueの最後
-</span>                        <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">))</span> <span class="p">:</span> <span class="c1">// + 空文字(終了判定用)
-</span>                    <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Last</span><span class="p">()))</span>
-                    <span class="p">.</span><span class="nf">TakeWhile</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="kt">string</span><span class="p">.</span><span class="nf">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>  <span class="c1">// 空文字になるまで繰り返す
-</span>
-            <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="s">"PPAP"</span><span class="p">)</span> <span class="c1">// 最初に言うので
-</span>                <span class="p">.</span><span class="nf">Concat</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">)).</span><span class="nf">ToObservable</span><span class="p">()</span> <span class="c1">// なんとなく待つ
-</span>                <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">ppapObservable</span><span class="p">))</span>
+                <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="n">WORDS</span><span class="p">[</span><span class="n">random</span><span class="p">.</span><span class="nf">Next</span><span class="p">(</span><span class="n">WORDS</span><span class="p">.</span><span class="n">Length</span><span class="p">)])</span> <span class="c1">// ランダムに</span>
+                <span class="p">.</span><span class="nf">Buffer</span><span class="p">(</span><span class="n">PPAP</span><span class="p">.</span><span class="n">Length</span><span class="p">,</span> <span class="m">1</span><span class="p">)</span> <span class="c1">// 要素数4のBufferを1ずつズラしてく</span>
+                <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">queue</span> <span class="p">=&gt;</span> <span class="n">queue</span><span class="p">.</span><span class="nf">SequenceEqual</span><span class="p">(</span><span class="n">PPAP</span><span class="p">)</span> <span class="p">?</span> <span class="c1">// パターンと一致したら…</span>
+                    <span class="n">Observable</span><span class="p">.</span><span class="nf">Concat</span><span class="p">(</span>
+                        <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Last</span><span class="p">()),</span>   <span class="c1">// Queueの最後</span>
+                        <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="kt">string</span><span class="p">.</span><span class="n">Empty</span><span class="p">))</span> <span class="p">:</span> <span class="c1">// + 空文字(終了判定用)</span>
+                    <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">queue</span><span class="p">.</span><span class="nf">Last</span><span class="p">()))</span>
+                    <span class="p">.</span><span class="nf">TakeWhile</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="kt">string</span><span class="p">.</span><span class="nf">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">));</span>  <span class="c1">// 空文字になるまで繰り返す</span>
+
+            <span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="s">"PPAP"</span><span class="p">)</span> <span class="c1">// 最初に言うので</span>
+                <span class="p">.</span><span class="nf">Concat</span><span class="p">(</span><span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromMilliseconds</span><span class="p">(</span><span class="m">1000</span><span class="p">)).</span><span class="nf">ToObservable</span><span class="p">()</span> <span class="c1">// なんとなく待つ</span>
+                <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">ppapObservable</span><span class="p">))</span>
                 <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
                     <span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">x</span><span class="p">),</span>
                     <span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">FIN</span><span class="p">));</span>
@@ -899,8 +901,7 @@ img {
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h4 id="結果">結果</h4>
 
@@ -940,7 +941,7 @@ Pen-Pineapple-Apple-Pen</p>
         
         <div class="category">ReactiveExtensions</div>
         
-        <p class="published">published <time datetime="2016-11-11 23:59">11 Nov 2016</time></p>
+        <p class="published">published <time datetime="2016-11-11 14:59">11 Nov 2016</time></p>
       </section>
       
       <section class="share">
@@ -1010,7 +1011,7 @@ Pen-Pineapple-Apple-Pen</p>
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2016/01/16/misunderstood-task-to-observable-conversion/",
   "headline": "Task→Observable 変換でハマったこと",
-  "datePublished": "2016-01-16T23:59:59+09:00",
-  "dateModified": "2016-01-16T23:59:59+09:00",
+  "datePublished": "2016-01-16T14:59:59+00:00",
+  "dateModified": "2016-01-16T14:59:59+00:00",
   "description": ".NET の Task&lt;T&gt; は、Reactive Extensions が提供する拡張メソッド ToObservable() で IObservable&lt;T&gt; に変換できます。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -859,25 +861,24 @@ img {
 
 <p>ダメなコード。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
 <span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Run</span> <span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
 	<span class="n">i</span><span class="p">++;</span>
-	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"increment! - {i}"</span><span class="p">);</span>
+	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"increment! - </span><span class="p">{</span><span class="n">i</span><span class="p">}</span><span class="s">"</span><span class="p">);</span>
 	<span class="k">return</span> <span class="n">i</span><span class="p">;</span>
 <span class="p">})</span>
 <span class="p">.</span><span class="nf">ToObservable</span> <span class="p">();</span>
 
 <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Ready..."</span><span class="p">);</span>
 
-<span class="n">incrementObservable</span> <span class="c1">// インクリメント
-</span>	<span class="p">.</span><span class="nf">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す
-</span>	<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
-		<span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"OnNext({x})"</span><span class="p">),</span>
-		<span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"OnError({ex.ToString()})"</span><span class="p">),</span>
+<span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
+	<span class="p">.</span><span class="nf">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
+	<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
+		<span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"OnNext(</span><span class="p">{</span><span class="n">x</span><span class="p">}</span><span class="s">)"</span><span class="p">),</span>
+		<span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"OnError(</span><span class="p">{</span><span class="n">ex</span><span class="p">.</span><span class="nf">ToString</span><span class="p">()}</span><span class="s">)"</span><span class="p">),</span>
 		<span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"OnCompleted"</span><span class="p">));</span>
 
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code class="highlighter-rouge">IObservable&lt;int&gt;</code> です。<br />
 　これを <code class="highlighter-rouge">.Repeat(3)</code> して <code class="highlighter-rouge">.Subscribe</code> してますから、<br />
@@ -913,24 +914,23 @@ OnCompleted</p>
 
 <p>期待通り動くのはこう↓。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
 <span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementObservable</span> <span class="p">=</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">FromAsync</span><span class="p">(()=&gt;</span><span class="n">Task</span><span class="p">.</span><span class="nf">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
 	<span class="n">i</span><span class="p">++;</span>
-	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"increment! - {i}"</span><span class="p">);</span>
+	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"increment! - </span><span class="p">{</span><span class="n">i</span><span class="p">}</span><span class="s">"</span><span class="p">);</span>
 	<span class="k">return</span> <span class="n">i</span><span class="p">;</span>
 <span class="p">}));</span>
 
 <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Ready..."</span><span class="p">);</span>
 
-<span class="n">incrementObservable</span> <span class="c1">// インクリメント
-</span>	<span class="p">.</span><span class="nf">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す
-</span>	<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
-		<span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"OnNext({x})"</span><span class="p">),</span>
-		<span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"OnError({ex.ToString()})"</span><span class="p">),</span>
+<span class="n">incrementObservable</span> <span class="c1">// インクリメント</span>
+	<span class="p">.</span><span class="nf">Repeat</span><span class="p">(</span><span class="m">3</span><span class="p">)</span> <span class="c1">// ３回繰り返す</span>
+	<span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span>
+		<span class="n">x</span>  <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"OnNext(</span><span class="p">{</span><span class="n">x</span><span class="p">}</span><span class="s">)"</span><span class="p">),</span>
+		<span class="n">ex</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"OnError(</span><span class="p">{</span><span class="n">ex</span><span class="p">.</span><span class="nf">ToString</span><span class="p">()}</span><span class="s">)"</span><span class="p">),</span>
 		<span class="p">()</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"OnCompleted"</span><span class="p">));</span>
 
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。<br />
 これの結果は正しくこう↓なりました。</p>
@@ -950,17 +950,16 @@ OnCompleted</p>
 
 <p>ところで、 <code class="highlighter-rouge">Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kt">var</span> <span class="n">i</span> <span class="p">=</span> <span class="m">0</span><span class="p">;</span>
 <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;</span> <span class="n">incrementTask</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Task</span><span class="p">&lt;</span><span class="kt">int</span><span class="p">&gt;(()</span> <span class="p">=&gt;</span> <span class="p">{</span>
 	<span class="n">i</span><span class="p">++;</span>
-	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="err">$</span><span class="s">"increment! - {i}"</span><span class="p">);</span>
+	<span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">$"increment! - </span><span class="p">{</span><span class="n">i</span><span class="p">}</span><span class="s">"</span><span class="p">);</span>
 	<span class="k">return</span> <span class="n">i</span><span class="p">;</span>
 <span class="p">});</span>
 
 <span class="n">incrementTask</span><span class="p">.</span><span class="nf">RunSynchronously</span><span class="p">();</span>
 <span class="n">incrementTask</span><span class="p">.</span><span class="nf">RunSynchronously</span><span class="p">();</span> 
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>このコードは２回目の <code class="highlighter-rouge">RunSynchronously()</code> で例外がでます。</p>
 
@@ -978,7 +977,7 @@ OnCompleted</p>
         
         <div class="category">C#</div>
         
-        <p class="published">published <time datetime="2016-01-16 23:59">16 Jan 2016</time></p>
+        <p class="published">published <time datetime="2016-01-16 14:59">16 Jan 2016</time></p>
       </section>
       
       <section class="share">
@@ -1048,7 +1047,7 @@ OnCompleted</p>
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

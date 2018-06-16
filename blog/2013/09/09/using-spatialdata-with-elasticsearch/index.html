@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2013/09/09/using-spatialdata-with-elasticsearch/",
   "headline": "Elasticsearch で位置情報を検索する手順",
-  "datePublished": "2013-09-09T21:08:00+09:00",
-  "dateModified": "2013-09-09T21:08:00+09:00",
+  "datePublished": "2013-09-09T21:08:00+00:00",
+  "dateModified": "2013-09-09T21:08:00+00:00",
   "description": "Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -884,7 +886,7 @@ img {
         }<br />
     }<br />
 }</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 ### 1. スキーマを登録する
 
 Elasticsearch は基本的にはスキーマレスで動くのですが、位置情報を表す項目は、明確にスキーマを定義する必要があるようです。
@@ -902,8 +904,7 @@ curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
         }
     }
 }'
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>ここでは、<code class="highlighter-rouge">venue</code> のプロパティ群の内の <code class="highlighter-rouge">pin</code> 項目は、位置情報(geo_point)だよ、と定義しています。</p>
 
@@ -911,7 +912,7 @@ curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
 
 <p>2件ほど、テストデータを投入します。</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code>curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/1'</span> -d <span class="s1">'{
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-XPUT</span> <span class="s1">'http://localhost:9200/myvenues/venue/1'</span> <span class="nt">-d</span> <span class="s1">'{
     "name" : "Tokyo St",
     "tag" : ["station", "train"],
     "pin" : {
@@ -922,7 +923,7 @@ curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
     }
 }'</span>
 
-curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <span class="s1">'{
+curl <span class="nt">-XPUT</span> <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> <span class="nt">-d</span> <span class="s1">'{
     "name" : "Nagoya St",
     "tag" : ["station", "train"],
     "pin" : {
@@ -932,8 +933,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         }
     }
 }'</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="3-位置情報で検索する">3. 位置情報で検索する</h3>
 
@@ -941,7 +941,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
 
 <p>緯度/経度:35.6/139.8 から 20km 周囲にあるデータを検索します。</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code>curl -XPOST <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> -d <span class="s1">'{
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> <span class="nt">-d</span> <span class="s1">'{
     "query": {
         "filtered" : {
             "query" : {
@@ -959,14 +959,13 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         }
     }
 }'</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h5 id="結果">結果</h5>
 
 <p>Tokyo St だけがヒットしました。</p>
 
-<div class="language-javascript highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="err">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="err">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="err">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="err">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"1"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="p">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="p">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="p">:[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"1"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
     <span class="s2">"name"</span> <span class="p">:</span> <span class="s2">"Tokyo St"</span><span class="p">,</span>
     <span class="s2">"pin"</span> <span class="p">:</span> <span class="p">{</span>
         <span class="s2">"location"</span> <span class="p">:</span> <span class="p">{</span>
@@ -975,14 +974,13 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}}]}}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h4 id="範囲矩形">範囲(矩形)</h4>
 
 <p>左上:35.2/136.8 〜 右下:35.1/136.9 にあるデータを検索します。緯度は上(北)の方が値が大きくなるので、上下関係に注意が必要です。</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code>curl -XPOST <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> -d <span class="s1">'{
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> <span class="nt">-d</span> <span class="s1">'{
     "query": {
         "filtered" : {
             "query" : {
@@ -1005,14 +1003,13 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         }
     }
 }'</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h5 id="結果-1">結果</h5>
 
 <p>Nagoya St だけがヒットしました。</p>
 
-<div class="language-javascript highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="err">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="err">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="err">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="err">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"2"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="p">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="p">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="p">:[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"2"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
     <span class="s2">"name"</span> <span class="p">:</span> <span class="s2">"Nagoya St"</span><span class="p">,</span>
     <span class="s2">"pin"</span> <span class="p">:</span> <span class="p">{</span>
         <span class="s2">"location"</span> <span class="p">:</span> <span class="p">{</span>
@@ -1021,8 +1018,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}}]}}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h4 id="範囲多角形">範囲(多角形)</h4>
 
@@ -1031,7 +1027,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
 <p>ここでは GeoJSON 互換の記述方式で書いてます。経度が先なので注意。<br />
 今までのような lat: lon: の配列でもかけますが、 GeoJSON 便利なので。</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code>curl -XPOST <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> -d <span class="s1">'{
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/myvenues/venue/_search'</span> <span class="nt">-d</span> <span class="s1">'{
     "query": {
         "filtered" : {
             "query" : {
@@ -1053,14 +1049,13 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         }
     }
 }'</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h5 id="結果-2">結果</h5>
 
 <p>Tokyo St だけがヒットしました。</p>
 
-<div class="language-javascript highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="err">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="err">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="err">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="err">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">{</span><span class="s2">"total"</span><span class="err">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="err">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="err">:</span><span class="p">[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"1"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
+<div class="language-javascript highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="s2">"took"</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s2">"timed_out"</span><span class="p">:</span><span class="kc">false</span><span class="p">,</span><span class="s2">"_shards"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"successful"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="s2">"failed"</span><span class="p">:</span><span class="mi">0</span><span class="p">},</span><span class="s2">"hits"</span><span class="p">:{</span><span class="s2">"total"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="s2">"max_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="s2">"hits"</span><span class="p">:[{</span><span class="s2">"_index"</span><span class="p">:</span><span class="s2">"myvenues"</span><span class="p">,</span><span class="s2">"_type"</span><span class="p">:</span><span class="s2">"venue"</span><span class="p">,</span><span class="s2">"_id"</span><span class="p">:</span><span class="s2">"1"</span><span class="p">,</span><span class="s2">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span> <span class="s2">"_source"</span> <span class="p">:</span> <span class="p">{</span>
     <span class="s2">"name"</span> <span class="p">:</span> <span class="s2">"Tokyo St"</span><span class="p">,</span>
     <span class="s2">"pin"</span> <span class="p">:</span> <span class="p">{</span>
         <span class="s2">"location"</span> <span class="p">:</span> <span class="p">{</span>
@@ -1069,8 +1064,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
         <span class="p">}</span>
     <span class="p">}</span>
 <span class="p">}}]}}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>(ポリゴンの座標群が、右回りじゃないとダメかな？と思って恐る恐る左回りにしてみたら、問題なく検索できました！)</p>
 
@@ -1176,7 +1170,7 @@ curl -XPUT <span class="s1">'http://localhost:9200/myvenues/venue/2'</span> -d <
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

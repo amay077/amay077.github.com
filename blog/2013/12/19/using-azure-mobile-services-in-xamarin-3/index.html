@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2013/12/19/using-azure-mobile-services-in-xamarin-3/",
   "headline": "Xamarin で Windows Azure モバイルサービスを使う(その3:プッシュ通知編)",
-  "datePublished": "2013-12-19T00:00:00+09:00",
-  "dateModified": "2013-12-19T00:00:00+09:00",
+  "datePublished": "2013-12-19T00:00:00+00:00",
+  "dateModified": "2013-12-19T00:00:00+00:00",
   "description": "たぶん最終回です。前回 は、OAuth認証を実装しました。今回は、前回のサンプルの続きとして、Xamarin.iOS + Azure Mobile Service によるプッシュ通知を実装してみます。プッシュ通知を組み込むためのチュートリアルはこちら",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -911,7 +913,7 @@ img {
 
 <p>```csharp AppDelegate.cs<br />
 public string DeviceToken { get; set; }</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 ``ToDoItem.cs`` にも同じく DeviceToken を追加します。
 が、説明にある ``[DataMember…`` は間違いです。正しくは ``[JsonProperty…`` です。
 
@@ -919,8 +921,7 @@ public string DeviceToken { get; set; }</p>
 ×[DataMember(Name = "deviceToken")]
 [JsonProperty(PropertyName = "deviceToken")]
 public string DeviceToken { get; set; }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>再び <code class="highlighter-rouge">AppDelegate.cs</code> に戻って、アプリが起動完了した時に、APNS サーバにアプリを登録するコードを追加します。</p>
 
@@ -931,9 +932,8 @@ public override bool FinishedLaunching(UIApplication application, NSDictionary l
         UIRemoteNotificationType.Badge | UIRemoteNotificationType.Sound;<br />
     UIApplication.SharedApplication.RegisterForRemoteNotificationTypes(notificationTypes);</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>return true; } ```
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>return true; } ```
+</code></pre></div></div>
 
 <p>次に同じく  <code class="highlighter-rouge">AppDelegate.cs</code> に、アプリ登録完了時にデバイストークンを受け取るコールバックを実装します。</p>
 
@@ -952,7 +952,7 @@ public override void RegisteredForRemoteNotifications(UIApplication application,
     }<br />
     DeviceToken = trimmedDeviceToken;<br />
 }</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 そして、``AppDelegate.cs`` に、プッシュ通知受信時のコードを書きます。
 
 ```csharp AppDelegate.cs
@@ -969,8 +969,7 @@ public override void ReceivedRemoteNotification(UIApplication application, NSDic
         alert.Show();
     }
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>最後に <code class="highlighter-rouge">QSTodoListViewController.cs</code> の <code class="highlighter-rouge">OnAdd</code> を次のように変更して、追加するデータに DeviceToken を含めるようにします。この値を使って、Azure 側でプッシュ通知を送ります。</p>
 
@@ -983,7 +982,7 @@ var deviceToken = ((AppDelegate)UIApplication.SharedApplication.Delegate).Device
     Complete = false,<br />
     DeviceToken = deviceToken<br />
 };</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 コードの記述はこれで終わりですが、Xamarin Studio から、iOS アプリを実機で動かしたことがない人は、iOS Developer Account の設定をしておきましょう。
 
 システムメニュー → Preferences、Environment → Developer Accounts から追加しておきます。
@@ -1020,8 +1019,7 @@ function insert(item, user, request) {
         });
     }, 2500);
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>これにより、データの追加から 2.5秒後に、APNS にプッシュ通知のリクエストを投げます。</p>
 
@@ -1069,17 +1067,15 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 
 <p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="na">[DataMember(Name = "deviceToken")]</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">[DataMember(Name = "deviceToken")]</span>
 <span class="k">public</span> <span class="kt">string</span> <span class="n">DeviceToken</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>は間違いです。下記が正しいです。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="na">[JsonProperty(PropertyName = "deviceToken")]</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">[JsonProperty(PropertyName = "deviceToken")]</span>
 <span class="k">public</span> <span class="kt">string</span> <span class="n">DeviceToken</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="クライアントで追加してもプッシュ通知が来ません">クライアントで「追加」しても、プッシュ通知が来ません</h3>
 
@@ -1094,7 +1090,7 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
 
 <p><a href="http://www.windowsazure.com/en-us/develop/mobile/tutorials/get-started-with-push-xamarin-ios/?fb=ja-jp">チュートリアル</a>にある、</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">RegisteredForRemoteNotifications</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSData</span> <span class="n">deviceToken</span><span class="p">)</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">RegisteredForRemoteNotifications</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSData</span> <span class="n">deviceToken</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="kt">string</span> <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">deviceToken</span><span class="p">.</span><span class="n">Description</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(!</span><span class="kt">string</span><span class="p">.</span><span class="nf">IsNullOrWhiteSpace</span><span class="p">(</span><span class="n">trimmedDeviceToken</span><span class="p">))</span>
@@ -1104,24 +1100,22 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
     <span class="p">}</span>
     <span class="n">DeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">;</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>は、コードが足りません。これでは <code class="highlighter-rouge">trimmedDeviceToken</code> の文字列内に空白が含まれてしまい、正しい DeviceToken にならないようです。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">RegisteredForRemoteNotifications</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSData</span> <span class="n">deviceToken</span><span class="p">)</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">RegisteredForRemoteNotifications</span><span class="p">(</span><span class="n">UIApplication</span> <span class="n">application</span><span class="p">,</span> <span class="n">NSData</span> <span class="n">deviceToken</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="kt">string</span> <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">deviceToken</span><span class="p">.</span><span class="n">Description</span><span class="p">;</span>
     <span class="k">if</span> <span class="p">(!</span><span class="kt">string</span><span class="p">.</span><span class="nf">IsNullOrWhiteSpace</span><span class="p">(</span><span class="n">trimmedDeviceToken</span><span class="p">))</span>
     <span class="p">{</span>
         <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Trim</span><span class="p">(</span><span class="sc">'&lt;'</span><span class="p">);</span>
         <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Trim</span><span class="p">(</span><span class="sc">'&gt;'</span><span class="p">);</span>
-        <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Replcae</span><span class="p">(</span><span class="err">“</span> <span class="err">“</span><span class="p">,</span> <span class="err">“”</span><span class="p">);</span> <span class="c1">// ←追加
-</span>    <span class="p">}</span>
+        <span class="n">trimmedDeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">.</span><span class="nf">Replcae</span><span class="p">(</span><span class="err">“</span> <span class="err">“</span><span class="p">,</span> <span class="err">“”</span><span class="p">);</span> <span class="c1">// ←追加</span>
+    <span class="p">}</span>
     <span class="n">DeviceToken</span> <span class="p">=</span> <span class="n">trimmedDeviceToken</span><span class="p">;</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>と、空白を除去する必要があります。</p>
 
@@ -1233,7 +1227,7 @@ Xamarin Studio のプロジェクト プロパティ → iOS Application で直�
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2014/05/13/chain-of-resposibility-using-rx/",
   "headline": "Rx で Chain of Responsibility",
-  "datePublished": "2014-05-13T15:24:00+09:00",
-  "dateModified": "2014-05-13T15:24:00+09:00",
+  "datePublished": "2014-05-13T15:24:00+00:00",
+  "dateModified": "2014-05-13T15:24:00+00:00",
   "description": "今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -853,7 +855,7 @@ img {
       <p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。<br />
 <!--more--></p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="k">void</span> <span class="nf">Main</span><span class="p">()</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">void</span> <span class="nf">Main</span><span class="p">()</span>
 <span class="p">{</span>
     <span class="kt">var</span> <span class="n">document</span> <span class="p">=</span> <span class="s">"有給届"</span><span class="p">;</span>
     
@@ -862,31 +864,30 @@ img {
     <span class="kt">var</span> <span class="n">buCho</span> <span class="p">=</span> <span class="nf">CreateManager</span><span class="p">(</span><span class="s">"部長"</span><span class="p">,</span> <span class="n">document</span><span class="p">,</span> <span class="n">d</span> <span class="p">=&gt;</span> <span class="n">String</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="n">document</span><span class="p">,</span> <span class="s">"退職届"</span><span class="p">));</span>
     
     <span class="n">Observable</span><span class="p">.</span><span class="nf">Concat</span><span class="p">(</span><span class="k">new</span> <span class="p">[]</span> <span class="p">{</span> 
-        <span class="n">kakariCho</span><span class="p">,</span>  <span class="c1">// 係長
-</span>        <span class="n">kaCho</span><span class="p">,</span>      <span class="c1">// 課長
-</span>        <span class="n">buCho</span>       <span class="c1">// 部長
-</span>    <span class="p">})</span>
-    <span class="p">.</span><span class="nf">FirstOrDefault</span><span class="p">()</span> <span class="c1">// 最初の１人に承認されたら終了
-</span>    <span class="p">.</span><span class="nf">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromDays</span><span class="p">(</span><span class="m">1</span><span class="p">))</span> <span class="c1">// 猶予１日
-</span>    <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="nf">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> 
+        <span class="n">kakariCho</span><span class="p">,</span>  <span class="c1">// 係長</span>
+        <span class="n">kaCho</span><span class="p">,</span>      <span class="c1">// 課長</span>
+        <span class="n">buCho</span>       <span class="c1">// 部長</span>
+    <span class="p">})</span>
+    <span class="p">.</span><span class="nf">FirstOrDefault</span><span class="p">()</span> <span class="c1">// 最初の１人に承認されたら終了</span>
+    <span class="p">.</span><span class="nf">Timeout</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromDays</span><span class="p">(</span><span class="m">1</span><span class="p">))</span> <span class="c1">// 猶予１日</span>
+    <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">Debug</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">String</span><span class="p">.</span><span class="nf">IsNullOrEmpty</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> 
         <span class="p">?</span> <span class="s">"あなたの届書は却下されました"</span> 
         <span class="p">:</span> <span class="n">x</span> <span class="p">+</span> <span class="s">"が承認しました"</span><span class="p">));</span>
 <span class="p">}</span>
 
-<span class="c1">/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）
-</span><span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="nf">CreateManager</span><span class="p">(</span><span class="kt">string</span> <span class="n">managerTitle</span><span class="p">,</span> <span class="kt">string</span> <span class="n">document</span><span class="p">,</span> <span class="n">Predicate</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">canIAccept</span><span class="p">)</span>
+<span class="c1">/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）</span>
+<span class="n">IObservable</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="nf">CreateManager</span><span class="p">(</span><span class="kt">string</span> <span class="n">managerTitle</span><span class="p">,</span> <span class="kt">string</span> <span class="n">document</span><span class="p">,</span> <span class="n">Predicate</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">canIAccept</span><span class="p">)</span>
 <span class="p">{</span>
     <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="n">Create</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="n">o</span> <span class="p">=&gt;</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Run</span><span class="p">(()</span> <span class="p">=&gt;</span> 
     <span class="p">{</span>
         <span class="k">if</span> <span class="p">(</span><span class="nf">canIAccept</span><span class="p">(</span><span class="n">document</span><span class="p">))</span> 
         <span class="p">{</span>
-            <span class="n">o</span><span class="p">.</span><span class="nf">OnNext</span><span class="p">(</span><span class="n">managerTitle</span><span class="p">);</span> <span class="c1">// 承認
-</span>        <span class="p">}</span>
+            <span class="n">o</span><span class="p">.</span><span class="nf">OnNext</span><span class="p">(</span><span class="n">managerTitle</span><span class="p">);</span> <span class="c1">// 承認</span>
+        <span class="p">}</span>
         <span class="n">o</span><span class="p">.</span><span class="nf">OnCompleted</span><span class="p">();</span>
     <span class="p">}));</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>管理職の人を <code class="highlighter-rouge">IObservable</code> に見立てて、自分が処理できるなら <code class="highlighter-rouge">OnNext</code> を呼ぶ、処理できないなら <code class="highlighter-rouge">OnNext</code> は呼ばずに <code class="highlighter-rouge">OnComplete</code> しちゃう。<br />
 で、係長・課長・部長の IObservable を <code class="highlighter-rouge">Concat</code> で役職の低い順につなげて、 <code class="highlighter-rouge">FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
@@ -976,7 +977,7 @@ img {
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

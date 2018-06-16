@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2016/07/09/gain_transient_in_xamarin_android/",
   "headline": "Xamarin.Android で音楽の音量を下げてから効果音を再生する",
-  "datePublished": "2016-07-09T23:59:59+09:00",
-  "dateModified": "2016-07-09T23:59:59+09:00",
+  "datePublished": "2016-07-09T14:59:59+00:00",
+  "dateModified": "2016-07-09T14:59:59+00:00",
   "description": "カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -860,8 +862,8 @@ img {
 
 <p>に回答したので、その関連でやってみた。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainActivity.cs
-</span><span class="na">[Activity(Label = "AudioFocusSample", MainLauncher = true, Icon = "@mipmap/icon")]</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//MainActivity.cs</span>
+<span class="na">[Activity(Label = "AudioFocusSample", MainLauncher = true, Icon = "@mipmap/icon")]</span>
 <span class="k">public</span> <span class="k">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">Activity</span><span class="p">,</span> <span class="n">AudioManager</span><span class="p">.</span><span class="n">IOnAudioFocusChangeListener</span>
 <span class="p">{</span>
     <span class="k">protected</span> <span class="k">override</span> <span class="k">void</span> <span class="nf">OnCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="p">)</span>
@@ -871,30 +873,30 @@ img {
 
         <span class="kt">var</span> <span class="n">audioManager</span> <span class="p">=</span> <span class="p">(</span><span class="n">AudioManager</span><span class="p">)</span><span class="nf">GetSystemService</span><span class="p">(</span><span class="n">Context</span><span class="p">.</span><span class="n">AudioService</span><span class="p">);</span>
 
-        <span class="c1">// 先に効果音を読み込んでおく
-</span>        <span class="kt">var</span> <span class="n">soundPool</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">SoundPool</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
+        <span class="c1">// 先に効果音を読み込んでおく</span>
+        <span class="kt">var</span> <span class="n">soundPool</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">SoundPool</span><span class="p">(</span><span class="m">1</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
         <span class="kt">var</span> <span class="n">soundId</span> <span class="p">=</span> <span class="n">soundPool</span><span class="p">.</span><span class="nf">Load</span><span class="p">(</span><span class="n">ApplicationContext</span><span class="p">,</span> <span class="n">Resource</span><span class="p">.</span><span class="n">Raw</span><span class="p">.</span><span class="n">cat</span><span class="p">,</span> <span class="m">0</span><span class="p">);</span>
-        <span class="c1">// SoundPool は再生完了のコールバックがないので、事前に長さを得ておく
-</span>        <span class="kt">var</span> <span class="n">duration</span> <span class="p">=</span> <span class="nf">GetSoundDuration</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Raw</span><span class="p">.</span><span class="n">cat</span><span class="p">);</span>
+        <span class="c1">// SoundPool は再生完了のコールバックがないので、事前に長さを得ておく</span>
+        <span class="kt">var</span> <span class="n">duration</span> <span class="p">=</span> <span class="nf">GetSoundDuration</span><span class="p">(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Raw</span><span class="p">.</span><span class="n">cat</span><span class="p">);</span>
 
         <span class="n">FindViewById</span><span class="p">&lt;</span><span class="n">Button</span><span class="p">&gt;(</span><span class="n">Resource</span><span class="p">.</span><span class="n">Id</span><span class="p">.</span><span class="n">buttonRequestFocus</span><span class="p">).</span><span class="n">Click</span> <span class="p">+=</span> <span class="k">async</span> <span class="p">(</span><span class="n">sender</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span> <span class="p">=&gt;</span> 
         <span class="p">{</span>
-            <span class="c1">// ダッキングを許可する AudioFocus を要求
-</span>            <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">audioManager</span><span class="p">.</span><span class="nf">RequestAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="n">AudioFocus</span><span class="p">.</span><span class="n">GainTransientMayDuck</span><span class="p">);</span>
+            <span class="c1">// ダッキングを許可する AudioFocus を要求</span>
+            <span class="kt">var</span> <span class="n">result</span> <span class="p">=</span> <span class="n">audioManager</span><span class="p">.</span><span class="nf">RequestAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Stream</span><span class="p">.</span><span class="n">Music</span><span class="p">,</span> <span class="n">AudioFocus</span><span class="p">.</span><span class="n">GainTransientMayDuck</span><span class="p">);</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">result</span> <span class="p">==</span> <span class="n">AudioFocusRequest</span><span class="p">.</span><span class="n">Granted</span><span class="p">)</span>
             <span class="p">{</span>
-                <span class="c1">// 効果音を再生する
-</span>                <span class="n">soundPool</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="n">soundId</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">);</span>
-                <span class="c1">// 再生完了まで待つ
-</span>                <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">duration</span><span class="p">);</span>
-                <span class="c1">// AudioFocus を開放
-</span>                <span class="n">audioManager</span><span class="p">.</span><span class="nf">AbandonAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
+                <span class="c1">// 効果音を再生する</span>
+                <span class="n">soundPool</span><span class="p">.</span><span class="nf">Play</span><span class="p">(</span><span class="n">soundId</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">0</span><span class="p">,</span> <span class="m">1.0f</span><span class="p">);</span>
+                <span class="c1">// 再生完了まで待つ</span>
+                <span class="k">await</span> <span class="n">Task</span><span class="p">.</span><span class="nf">Delay</span><span class="p">((</span><span class="kt">int</span><span class="p">)</span><span class="n">duration</span><span class="p">);</span>
+                <span class="c1">// AudioFocus を開放</span>
+                <span class="n">audioManager</span><span class="p">.</span><span class="nf">AbandonAudioFocus</span><span class="p">(</span><span class="k">this</span><span class="p">);</span>
             <span class="p">}</span>
         <span class="p">};</span>
     <span class="p">}</span>
 
-    <span class="c1">// 音声の再生長さを得る
-</span>    <span class="k">private</span> <span class="kt">long</span> <span class="nf">GetSoundDuration</span><span class="p">(</span><span class="kt">int</span> <span class="n">rawId</span><span class="p">)</span>
+    <span class="c1">// 音声の再生長さを得る</span>
+    <span class="k">private</span> <span class="kt">long</span> <span class="nf">GetSoundDuration</span><span class="p">(</span><span class="kt">int</span> <span class="n">rawId</span><span class="p">)</span>
     <span class="p">{</span>
         <span class="k">using</span> <span class="p">(</span><span class="kt">var</span> <span class="n">player</span> <span class="p">=</span> <span class="n">MediaPlayer</span><span class="p">.</span><span class="nf">Create</span><span class="p">(</span><span class="n">ApplicationContext</span><span class="p">,</span> <span class="n">rawId</span><span class="p">))</span>
         <span class="p">{</span>
@@ -902,14 +904,13 @@ img {
         <span class="p">}</span>
     <span class="p">}</span>
 
-    <span class="c1">// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）
-</span>    <span class="k">public</span> <span class="k">void</span> <span class="nf">OnAudioFocusChange</span><span class="p">([</span><span class="n">GeneratedEnum</span><span class="p">]</span> <span class="n">AudioFocus</span> <span class="n">focusChange</span><span class="p">)</span>
+    <span class="c1">// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）</span>
+    <span class="k">public</span> <span class="k">void</span> <span class="nf">OnAudioFocusChange</span><span class="p">([</span><span class="n">GeneratedEnum</span><span class="p">]</span> <span class="n">AudioFocus</span> <span class="n">focusChange</span><span class="p">)</span>
     <span class="p">{</span>
-       <span class="c1">// 今回は使用しない
-</span>    <span class="p">}</span>
+       <span class="c1">// 今回は使用しない</span>
+    <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>効果音 <code class="highlighter-rouge">Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
 
@@ -954,7 +955,7 @@ Android の音声再生は、他に <code class="highlighter-rouge">MediaPlayer<
         
         <div class="category">Xamarin</div>
         
-        <p class="published">published <time datetime="2016-07-09 23:59">09 Jul 2016</time></p>
+        <p class="published">published <time datetime="2016-07-09 14:59">09 Jul 2016</time></p>
       </section>
       
       <section class="share">
@@ -1024,7 +1025,7 @@ Android の音声再生は、他に <code class="highlighter-rouge">MediaPlayer<
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

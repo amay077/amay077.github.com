@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2016/12/20/best_practice_for_secret_key_management_in_xamarin_project/",
   "headline": "Xamarin プロジェクトにおける API key など秘密情報管理のベスト？プラクティス",
-  "datePublished": "2016-12-20T23:59:59+09:00",
-  "dateModified": "2016-12-20T23:59:59+09:00",
+  "datePublished": "2016-12-20T14:59:59+00:00",
+  "dateModified": "2016-12-20T14:59:59+00:00",
   "description": "Xamarin Advent Calendar 2016 19日目です。API key や SecretKey はハードコードダメ、git リポジトリでの管理もダメ、というわけでどうしたもんかと。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -875,20 +877,19 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p>まずは APIキーを Static なクラスに追い出します。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">// Variables.cs
-</span><span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">Variables</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Variables.cs</span>
+<span class="k">public</span> <span class="k">static</span> <span class="k">class</span> <span class="nc">Variables</span>
 <span class="p">{</span>
-    <span class="c1">// https://developers.google.com/maps/documentation/android-api/signup
-</span>    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">GOOGLE_MAPS_ANDROID_API_KEY</span> <span class="p">=</span> <span class="s">"your_google_maps_android_api_v2_api_key"</span><span class="p">;</span>
+    <span class="c1">// https://developers.google.com/maps/documentation/android-api/signup</span>
+    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">GOOGLE_MAPS_ANDROID_API_KEY</span> <span class="p">=</span> <span class="s">"your_google_maps_android_api_v2_api_key"</span><span class="p">;</span>
 
-    <span class="c1">// https://developers.google.com/maps/documentation/ios-sdk/start#step_4_get_an_api_key
-</span>    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">GOOGLE_MAPS_IOS_API_KEY</span> <span class="p">=</span> <span class="s">"your_google_maps_sdk_for_ios_api_key"</span><span class="p">;</span>
+    <span class="c1">// https://developers.google.com/maps/documentation/ios-sdk/start#step_4_get_an_api_key</span>
+    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">GOOGLE_MAPS_IOS_API_KEY</span> <span class="p">=</span> <span class="s">"your_google_maps_sdk_for_ios_api_key"</span><span class="p">;</span>
 
-    <span class="c1">// https://msdn.microsoft.com/windows/uwp/maps-and-location/authentication-key
-</span>    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">BING_MAPS_UWP_API_KEY</span> <span class="p">=</span> <span class="s">"your_bing_maps_apikey"</span><span class="p">;</span>
+    <span class="c1">// https://msdn.microsoft.com/windows/uwp/maps-and-location/authentication-key</span>
+    <span class="k">public</span> <span class="k">const</span> <span class="kt">string</span> <span class="n">BING_MAPS_UWP_API_KEY</span> <span class="p">=</span> <span class="s">"your_bing_maps_apikey"</span><span class="p">;</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">static readonly</code> なプロパティにせず <code class="highlighter-rouge">const</code> にしているのは、Android での <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/Droid/MyApp.cs#L8-L9">API Key の指定が属性になっている</a> からです。</p>
 
@@ -912,7 +913,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
 
 <p><code class="highlighter-rouge">.csproj</code> に次のように追加します。全ソースは <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/156bfc449e25c40d4455d677a761d9a7d6661253/XFGoogleMapSample/XFGoogleMapSample/XFGoogleMapSample.csproj">こちら</a> 。</p>
 
-<div class="language-xml highlighter-rouge"><pre class="highlight"><code>// XFGoogleMapSample.csproj
+<div class="language-xml highlighter-rouge"><div class="highlight"><pre class="highlight"><code>// XFGoogleMapSample.csproj
 （前略）
   <span class="nt">&lt;/ProjectExtensions&gt;</span>
   <span class="nt">&lt;PropertyGroup</span> <span class="na">Condition=</span><span class="s">" '$(OS)' == 'Windows_NT' "</span><span class="nt">&gt;</span>
@@ -922,8 +923,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
     <span class="nt">&lt;PreBuildEvent&gt;</span>rsync -u "$(ProjectDir)Variables_sample.cs" "$(ProjectDir)Variables.cs"<span class="nt">&lt;/PreBuildEvent&gt;</span>
   <span class="nt">&lt;/PropertyGroup&gt;</span>
 <span class="nt">&lt;/Project&gt;</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Windows と Mac 両方に対応しないといけないのが面倒な点１。<br />
 これは <code class="highlighter-rouge">Condition=" '$(OS)' == 'Windows_NT' "</code> と <code class="highlighter-rouge">Condition=" '$(OS)' != 'Windows_NT' "</code> で行っています。</p>
@@ -1009,7 +1009,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
         
         <div class="category">Git</div>
         
-        <p class="published">published <time datetime="2016-12-20 23:59">20 Dec 2016</time></p>
+        <p class="published">published <time datetime="2016-12-20 14:59">20 Dec 2016</time></p>
       </section>
       
       <section class="share">
@@ -1079,7 +1079,7 @@ API key や SecretKey はハードコードダメ、git リポジトリでの管
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

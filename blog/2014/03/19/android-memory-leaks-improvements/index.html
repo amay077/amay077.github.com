@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2014/03/19/android-memory-leaks-improvements/",
   "headline": "Activity がメモリリークしにくくなってる件",
-  "datePublished": "2014-03-19T15:12:00+09:00",
-  "dateModified": "2014-03-19T15:12:00+09:00",
+  "datePublished": "2014-03-19T15:12:00+00:00",
+  "dateModified": "2014-03-19T15:12:00+00:00",
   "description": "2009年の情報なんですけどね。  Avoiding memory leaks ｜ Android Developers Blog  Avoiding memory leaks （超訳） - Android Zaurusの日記  暇なメモ帳: Androidのソースコードレビュー(メモリリーク)",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -890,7 +892,7 @@ img {
 
 <p>ほぼ元コードのコピペだけど、クラスが破棄された(<code class="highlighter-rouge">finalize</code>)時にログ吐くようにしています。</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
     <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">"MainActivity"</span><span class="o">;</span>
     <span class="kd">private</span> <span class="kd">static</span> <span class="n">Drawable</span> <span class="n">sBackground</span><span class="o">;</span>
     
@@ -921,8 +923,7 @@ img {
     	<span class="kd">super</span><span class="o">.</span><span class="na">finalize</span><span class="o">();</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="確認手順">確認手順</h3>
 
@@ -938,12 +939,11 @@ img {
 
 <p>Logcat の出力結果はこう。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>03-19 21:28:09.539: D/MainActivity(382): onCreate:1079076320
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>03-19 21:28:09.539: D/MainActivity(382): onCreate:1079076320
 03-19 21:29:15.979: D/MainActivity(382): onDestroy:1079076320
 03-19 21:29:15.989: D/MainActivity(382): onCreate:1079106528 ←横画面のActivity
 03-19 21:29:33.939: D/MainActivity(382): finalize:1079076320
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>ちゃんと GC を走らせた後、 Activity の <code class="highlighter-rouge">finalize</code> が呼ばれています。<br />
 MAT でも確認したけど、リークは発見できませんでした。</p>
@@ -952,7 +952,7 @@ MAT でも確認したけど、リークは発見できませんでした。</p>
 
 <p>こんな実装は早々お目にかからないと思うけど、非static な Inner クラスのインスタンスを、Activity の static メンバにしちゃうぞ、と。</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">public</span> <span class="kd">class</span> <span class="nc">MainActivity</span> <span class="kd">extends</span> <span class="n">Activity</span> <span class="o">{</span>
     <span class="kd">private</span> <span class="kd">static</span> <span class="kd">final</span> <span class="n">String</span> <span class="n">TAG</span> <span class="o">=</span> <span class="s">"MainActivity"</span><span class="o">;</span>
 	<span class="kd">private</span> <span class="kd">static</span> <span class="n">SomeInnerClass</span> <span class="n">innerClass</span><span class="o">;</span>
 
@@ -983,8 +983,7 @@ MAT でも確認したけど、リークは発見できませんでした。</p>
         <span class="kd">public</span> <span class="kt">void</span> <span class="nf">doSomething</span><span class="o">()</span> <span class="o">{</span> <span class="o">}</span>
     <span class="o">}</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h3 id="確認手順-1">確認手順</h3>
 
@@ -992,11 +991,10 @@ MAT でも確認したけど、リークは発見できませんでした。</p>
 
 <p>Logcat の出力結果はこちら。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>03-19 21:42:55.289: D/MainActivity(476): onCreate
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>03-19 21:42:55.289: D/MainActivity(476): onCreate
 03-19 21:43:05.369: D/MainActivity(476): onDestroy
 03-19 21:43:05.549: D/MainActivity(476): onCreate
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>ご覧のとおり、<code class="highlighter-rouge">finalize</code> が呼ばれない、つまり Activity がリークしています。</p>
 
@@ -1087,7 +1085,7 @@ Activity への強参照を持ったオブジェクトを、static フィール�
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

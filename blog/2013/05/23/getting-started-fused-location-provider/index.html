@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2013/05/23/getting-started-fused-location-provider/",
   "headline": "Google I/O 2013 で発表された Fused Location Provider を使ってみる",
-  "datePublished": "2013-05-23T20:55:00+09:00",
-  "dateModified": "2013-05-23T20:55:00+09:00",
+  "datePublished": "2013-05-23T20:55:00+00:00",
+  "dateModified": "2013-05-23T20:55:00+00:00",
   "description": "Activity Recognition に続いて使ってみました。Fused Location Provider とは？",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -877,7 +879,7 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
 
 <p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
 
-<p>Ecplise の Import で <code class="highlighter-rouge"><span class="p">{</span><span class="err">your</span><span class="w"> </span><span class="err">sdk</span><span class="w"> </span><span class="err">location</span><span class="p">}</span><span class="err">/extras/google/google_play_services/libproject/google-play-services_lib</span></code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
+<p>Ecplise の Import で <code class="highlighter-rouge">{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
 
 <p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
 
@@ -910,139 +912,138 @@ Fragment も使いませんよ、古きよき、BlankActivity なプロジェク
     </application>
 
 </manifest>
-<div class="highlighter-rouge"><pre class="highlight"><code>
-## 5. Fused Location Provider を使う
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<span class="p">##</span> <span class="m">5.</span> <span class="n">Fused</span> <span class="n">Location</span> <span class="n">Provider</span> <span class="err">を使う</span>
 
-ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの ``LocationProvider`` が(も)使えるので、画面一つだけのシンプルなコードです。
+<span class="n">ActivityRecognition</span> <span class="err">は</span> <span class="n">IntentService</span> <span class="err">を使う必要があったために少々長いコードになりましたが、こちらは今までの</span> <span class="p">``</span><span class="n">LocationProvider</span><span class="p">``</span> <span class="err">が</span><span class="p">(</span><span class="err">も</span><span class="p">)</span><span class="err">使えるので、画面一つだけのシンプルなコードです。</span>
 
-FusedLocationProvider を使うには、[LocationClient](http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html) クラスを使います。
+<span class="n">FusedLocationProvider</span> <span class="err">を使うには、</span><span class="p">[</span><span class="n">LocationClient</span><span class="p">](</span><span class="n">http</span><span class="p">://</span><span class="n">developer</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">reference</span><span class="p">/</span><span class="n">com</span><span class="p">/</span><span class="n">google</span><span class="p">/</span><span class="n">android</span><span class="p">/</span><span class="n">gms</span><span class="p">/</span><span class="n">location</span><span class="p">/</span><span class="n">LocationClient</span><span class="p">.</span><span class="n">html</span><span class="p">)</span> <span class="err">クラスを使います。</span>
 
-大雑把な流れは:
+<span class="err">大雑把な流れは</span><span class="p">:</span>
 
-1. インスタンスを生成する
-connect を呼ぶ -&gt; ConnectionCallbacks.onConnected がコールバックされる
-2. [LocationRequest](http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html) を指定して、requestLocationUpdates を呼ぶ。 -&gt; LocationListener.onLocationChanged が呼ばれる
+<span class="m">1.</span> <span class="err">インスタンスを生成する</span>
+<span class="nf">connect</span> <span class="err">を呼ぶ</span> <span class="p">-&gt;</span> <span class="n">ConnectionCallbacks</span><span class="p">.</span><span class="n">onConnected</span> <span class="err">がコールバックされる</span>
+<span class="m">2.</span> <span class="p">[</span><span class="n">LocationRequest</span><span class="p">](</span><span class="n">http</span><span class="p">://</span><span class="n">developer</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">reference</span><span class="p">/</span><span class="n">com</span><span class="p">/</span><span class="n">google</span><span class="p">/</span><span class="n">android</span><span class="p">/</span><span class="n">gms</span><span class="p">/</span><span class="n">location</span><span class="p">/</span><span class="n">LocationRequest</span><span class="p">.</span><span class="n">html</span><span class="p">)</span> <span class="err">を指定して、</span><span class="n">requestLocationUpdates</span> <span class="err">を呼ぶ。</span> <span class="p">-&gt;</span> <span class="n">LocationListener</span><span class="p">.</span><span class="n">onLocationChanged</span> <span class="err">が呼ばれる</span>
 
-です。connect を呼んで onConnected を待つのと、位置取得条件が ``LocationRequest`` クラスになった以外は ``LocationManager`` と同じです。
+<span class="err">です。</span><span class="nf">connect</span> <span class="err">を呼んで</span> <span class="n">onConnected</span> <span class="err">を待つのと、位置取得条件が</span> <span class="p">``</span><span class="n">LocationRequest</span><span class="p">``</span> <span class="err">クラスになった以外は</span> <span class="p">``</span><span class="n">LocationManager</span><span class="p">``</span> <span class="err">と同じです。</span>
 
-では、全コードです。
+<span class="err">では、全コードです。</span>
 
-```java MainActivity.java
-package com.example.fusedlocationprovidersample;
+<span class="p">```</span><span class="n">java</span> <span class="n">MainActivity</span><span class="p">.</span><span class="n">java</span>
+<span class="k">package</span> <span class="n">com</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">fusedlocationprovidersample</span><span class="p">;</span>
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GooglePlayServicesClient.ConnectionCallbacks;
-import com.google.android.gms.common.GooglePlayServicesClient.OnConnectionFailedListener;
-import com.google.android.gms.location.LocationClient;
-import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import android.location.Location;
-import android.os.Bundle;
-import android.text.format.DateFormat;
-import android.view.View;
-import android.view.View.OnClickListener;
-import android.widget.Button;
-import android.widget.TextView;
-import android.app.Activity;
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">ConnectionResult</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">GooglePlayServicesClient</span><span class="p">.</span><span class="n">ConnectionCallbacks</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">GooglePlayServicesClient</span><span class="p">.</span><span class="n">OnConnectionFailedListener</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationClient</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationListener</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationRequest</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">os</span><span class="p">.</span><span class="n">Bundle</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">format</span><span class="p">.</span><span class="n">DateFormat</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">View</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">OnClickListener</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">widget</span><span class="p">.</span><span class="n">Button</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">widget</span><span class="p">.</span><span class="n">TextView</span><span class="p">;</span>
+<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">Activity</span><span class="p">;</span>
 
-public class MainActivity extends Activity {
+<span class="k">public</span> <span class="n">class</span> <span class="n">MainActivity</span> <span class="n">extends</span> <span class="n">Activity</span> <span class="p">{</span>
 	
-	// FusedLocationProvider 用の Client
-	private LocationClient _locationClient;
-	private TextView _textResult;
+	<span class="p">//</span> <span class="n">FusedLocationProvider</span> <span class="err">用の</span> <span class="n">Client</span>
+	<span class="n">private</span> <span class="n">LocationClient</span> <span class="n">_locationClient</span><span class="p">;</span>
+	<span class="n">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="p">;</span>
 	
-	// 以前と変わらない LocationListener
-    private final LocationListener _locationListener = new LocationListener() {
+	<span class="p">//</span> <span class="err">以前と変わらない</span> <span class="n">LocationListener</span>
+    <span class="n">private</span> <span class="n">final</span> <span class="n">LocationListener</span> <span class="n">_locationListener</span> <span class="p">=</span> <span class="n">new</span> <span class="n">LocationListener</span><span class="p">()</span> <span class="p">{</span>
 		
-		@Override
-		public void onLocationChanged(final Location location) {
-			MainActivity.this.runOnUiThread(new Runnable() {
-				@Override
-				public void run() {
-					String text = _textResult.getText().toString();
-		            text = DateFormat.format("hh:mm:ss.sss", location.getTime()) + " - " 
-		                    + location.getLatitude() + "/" +
-		                    + location.getLongitude() + "/" +
-		                    + location.getAccuracy() + 
-		                    "\n" + text;
+		<span class="p">@</span><span class="n">Override</span>
+		<span class="k">public</span> <span class="n">void</span> <span class="n">onLocationChanged</span><span class="p">(</span><span class="n">final</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span> <span class="p">{</span>
+			<span class="n">MainActivity</span><span class="p">.</span><span class="n">this</span><span class="p">.</span><span class="n">runOnUiThread</span><span class="p">(</span><span class="n">new</span> <span class="n">Runnable</span><span class="p">()</span> <span class="p">{</span>
+				<span class="p">@</span><span class="n">Override</span>
+				<span class="k">public</span> <span class="n">void</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{</span>
+					<span class="k">String</span> <span class="n">text</span> <span class="p">=</span> <span class="n">_textResult</span><span class="p">.</span><span class="n">getText</span><span class="p">().</span><span class="n">toString</span><span class="p">();</span>
+		            <span class="n">text</span> <span class="p">=</span> <span class="n">DateFormat</span><span class="p">.</span><span class="n">format</span><span class="p">(</span><span class="s2">"hh:mm:ss.sss"</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="nf">getTime</span><span class="p">())</span> <span class="p">+</span> <span class="s2">" - "</span> 
+		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getLatitude</span><span class="p">()</span> <span class="p">+</span> <span class="s2">"/"</span> <span class="p">+</span>
+		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getLongitude</span><span class="p">()</span> <span class="p">+</span> <span class="s2">"/"</span> <span class="p">+</span>
+		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getAccuracy</span><span class="p">()</span> <span class="p">+</span> 
+		                    <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="p">+</span> <span class="n">text</span><span class="p">;</span>
 
-		            _textResult.setText(text);
-				}
-			});
-		}
-	};
+		            <span class="n">_textResult</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
+				<span class="p">}</span>
+			<span class="p">});</span>
+		<span class="p">}</span>
+	<span class="p">};</span>
 	
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_main);
+	<span class="p">@</span><span class="n">Override</span>
+	<span class="n">protected</span> <span class="n">void</span> <span class="n">onCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="p">)</span> <span class="p">{</span>
+		<span class="n">super</span><span class="p">.</span><span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">);</span>
+		<span class="n">setContentView</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">layout</span><span class="p">.</span><span class="n">activity_main</span><span class="p">);</span>
 		
-		_textResult = (TextView)findViewById(R.id.text_result);
+		<span class="n">_textResult</span> <span class="p">=</span> <span class="p">(</span><span class="n">TextView</span><span class="p">)</span><span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">text_result</span><span class="p">);</span>
 		
-		final Button buttonLocate = (Button)findViewById(R.id.button_locate);
-		buttonLocate.setOnClickListener(new OnClickListener() {
-			private boolean _isStarted = false;
+		<span class="n">final</span> <span class="n">Button</span> <span class="n">buttonLocate</span> <span class="p">=</span> <span class="p">(</span><span class="n">Button</span><span class="p">)</span><span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">button_locate</span><span class="p">);</span>
+		<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setOnClickListener</span><span class="p">(</span><span class="n">new</span> <span class="n">OnClickListener</span><span class="p">()</span> <span class="p">{</span>
+			<span class="n">private</span> <span class="k">boolean</span> <span class="n">_isStarted</span> <span class="p">=</span> <span class="nb">false</span><span class="p">;</span>
 			
-			@Override
-			public void onClick(View v) {
-				if (!_isStarted) {
-					startLocate();
-					buttonLocate.setText("Stop");
-				} else {
-					stopLocate();
-					buttonLocate.setText("Start");
-				}
+			<span class="p">@</span><span class="n">Override</span>
+			<span class="k">public</span> <span class="n">void</span> <span class="n">onClick</span><span class="p">(</span><span class="n">View</span> <span class="n">v</span><span class="p">)</span> <span class="p">{</span>
+				<span class="k">if</span> <span class="p">(</span><span class="c1">!_isStarted) {
+</span>					<span class="n">startLocate</span><span class="p">();</span>
+					<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">"Stop"</span><span class="p">);</span>
+				<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+					<span class="n">stopLocate</span><span class="p">();</span>
+					<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">"Start"</span><span class="p">);</span>
+				<span class="p">}</span>
 				
-				_isStarted = !_isStarted;
-			}
-		});
-	}
+				<span class="n">_isStarted</span> <span class="p">=</span> <span class="c1">!_isStarted;
+</span>			<span class="p">}</span>
+		<span class="p">});</span>
+	<span class="p">}</span>
 	
-	@Override
-	protected void onDestroy() {
-		stopLocate();
-		super.onDestroy();
-	}
+	<span class="p">@</span><span class="n">Override</span>
+	<span class="n">protected</span> <span class="n">void</span> <span class="n">onDestroy</span><span class="p">()</span> <span class="p">{</span>
+		<span class="n">stopLocate</span><span class="p">();</span>
+		<span class="n">super</span><span class="p">.</span><span class="n">onDestroy</span><span class="p">();</span>
+	<span class="p">}</span>
 	
-	private void startLocate() {
-		_locationClient = new LocationClient(this, new ConnectionCallbacks() {
+	<span class="n">private</span> <span class="n">void</span> <span class="n">startLocate</span><span class="p">()</span> <span class="p">{</span>
+		<span class="n">_locationClient</span> <span class="p">=</span> <span class="n">new</span> <span class="n">LocationClient</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="n">new</span> <span class="n">ConnectionCallbacks</span><span class="p">()</span> <span class="p">{</span>
 
-			@Override
-            public void onConnected(Bundle bundle) {
-				// 2. 位置の取得開始！
-				LocationRequest request = LocationRequest.create()
-				.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-				.setInterval(5000); // 5秒おき
-            	_locationClient.requestLocationUpdates(request, _locationListener);
-            }
+			<span class="p">@</span><span class="n">Override</span>
+            <span class="k">public</span> <span class="n">void</span> <span class="n">onConnected</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span> <span class="p">{</span>
+				<span class="p">//</span> <span class="m">2.</span> <span class="err">位置の取得開始！</span>
+				<span class="n">LocationRequest</span> <span class="n">request</span> <span class="p">=</span> <span class="n">LocationRequest</span><span class="p">.</span><span class="nb">create</span><span class="p">()</span>
+				<span class="p">.</span><span class="n">setPriority</span><span class="p">(</span><span class="n">LocationRequest</span><span class="p">.</span><span class="n">PRIORITY_HIGH_ACCURACY</span><span class="p">)</span>
+				<span class="p">.</span><span class="n">setInterval</span><span class="p">(</span><span class="m">5000</span><span class="p">);</span> <span class="p">//</span> <span class="m">5</span><span class="err">秒おき</span>
+            	<span class="n">_locationClient</span><span class="p">.</span><span class="n">requestLocationUpdates</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">_locationListener</span><span class="p">);</span>
+            <span class="p">}</span>
 
-            @Override
-            public void onDisconnected() {
-            	_locationClient = null;
-            }
+            <span class="p">@</span><span class="n">Override</span>
+            <span class="k">public</span> <span class="n">void</span> <span class="n">onDisconnected</span><span class="p">()</span> <span class="p">{</span>
+            	<span class="n">_locationClient</span> <span class="p">=</span> <span class="n">null</span><span class="p">;</span>
+            <span class="p">}</span>
 
-        }, new OnConnectionFailedListener() {
-            @Override
-            public void onConnectionFailed(ConnectionResult result) {
-            }
-        });
+        <span class="p">},</span> <span class="n">new</span> <span class="n">OnConnectionFailedListener</span><span class="p">()</span> <span class="p">{</span>
+            <span class="p">@</span><span class="n">Override</span>
+            <span class="k">public</span> <span class="n">void</span> <span class="n">onConnectionFailed</span><span class="p">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="p">)</span> <span class="p">{</span>
+            <span class="p">}</span>
+        <span class="p">});</span>
 		
-		// 1. 位置取得サービスに接続！
-		_locationClient.connect();
-	}
+		<span class="p">//</span> <span class="m">1.</span> <span class="err">位置取得サービスに接続！</span>
+		<span class="n">_locationClient</span><span class="p">.</span><span class="nf">connect</span><span class="p">();</span>
+	<span class="p">}</span>
 
-	private void stopLocate() {
-		if (_locationClient == null || !_locationClient.isConnected()) {
-			return;
-		}
+	<span class="n">private</span> <span class="n">void</span> <span class="n">stopLocate</span><span class="p">()</span> <span class="p">{</span>
+		<span class="k">if</span> <span class="p">(</span><span class="n">_locationClient</span> <span class="p">==</span> <span class="n">null</span> <span class="p">||</span> <span class="c1">!_locationClient.isConnected()) {
+</span>			<span class="n">return</span><span class="p">;</span>
+		<span class="p">}</span>
 		
-		_locationClient.removeLocationUpdates(_locationListener);
-		_locationClient.disconnect();
-		// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする
-	}
-}
-</code></pre>
-</div>
+		<span class="n">_locationClient</span><span class="p">.</span><span class="n">removeLocationUpdates</span><span class="p">(</span><span class="n">_locationListener</span><span class="p">);</span>
+		<span class="n">_locationClient</span><span class="p">.</span><span class="nf">disconnect</span><span class="p">();</span>
+		<span class="p">//</span> <span class="n">ConnectionCallbacks</span><span class="p">.</span><span class="n">onDisconnected</span> <span class="err">が呼ばれるまで待った方がいい気がする</span>
+	<span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
 
 <h2 id="6-動くのか">6. 動くのか！？</h2>
 
@@ -1177,7 +1178,7 @@ public class MainActivity extends Activity {
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

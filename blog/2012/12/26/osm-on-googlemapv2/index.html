@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2012/12/26/osm-on-googlemapv2/",
   "headline": "Google Maps Android API v2 で OpenStreetMap を表示する",
-  "datePublished": "2012-12-26T00:18:00+09:00",
-  "dateModified": "2012-12-26T00:18:00+09:00",
+  "datePublished": "2012-12-26T00:18:00+00:00",
+  "dateModified": "2012-12-26T00:18:00+00:00",
   "description": "この記事は FOSS4G Advent Calendar 2012 の 12/26 の記事です。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -872,7 +874,7 @@ private static final String MOON_MAP_URL_FORMAT =<br />
 <p>private void setUpMap() {<br />
     mMap.setMapType(GoogleMap.MAP_TYPE_NONE);</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>TileProvider tileProvider = new UrlTileProvider(256, 256) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TileProvider tileProvider = new UrlTileProvider(256, 256) {
     @Override
     public synchronized URL getTileUrl(int x, int y, int zoom) {
         // The moon tile coordinate system is reversed.  This is not normal.
@@ -888,8 +890,7 @@ private static final String MOON_MAP_URL_FORMAT =<br />
     }
 };
 mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider)); } ``` 修正前のコードは、Google Moon のタイル画像を使用しています。
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>これを OpenStreetMap を使用するように改造します。</p>
 
@@ -903,7 +904,7 @@ private static final String OSM_MAP_URL_FORMAT =<br />
 <p>private void setUpMap() {<br />
     mMap.setMapType(GoogleMap.MAP_TYPE_NONE);</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>TileProvider tileProvider = new UrlTileProvider(256, 256) {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>TileProvider tileProvider = new UrlTileProvider(256, 256) {
     @Override
     public synchronized URL getTileUrl(int x, int y, int zoom) {
         String s = String.format(Locale.US, OSM_MAP_URL_FORMAT, zoom, x, y);
@@ -917,8 +918,7 @@ private static final String OSM_MAP_URL_FORMAT =<br />
     }
 };
 mMap.addTileOverlay(new TileOverlayOptions().tileProvider(tileProvider)); } ```
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>できました。うーん、簡単すぎる。<br />
 URL は OpenStreetMap のものを使います。y軸の値は、Google Moon では逆順となっていたのを正順のまま使用するだけです。</p>
@@ -962,7 +962,7 @@ URL は OpenStreetMap のものを使います。y軸の値は、Google Moon で
 public class TransparencyUrlTileProvider implements TileProvider {<br />
 	private static final String OSM_MAP_URL_FORMAT = “http://tile.openstreetmap.org/%d/%d/%d.png”;</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>private int _transparency; // 透過率(0〜255)
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>private int _transparency; // 透過率(0〜255)
 private UrlTileProvider _osmTileProv; // 内包する TileProvider
 
 public TransparencyUrlTileProvider(int width, int height, int transparency) {
@@ -991,11 +991,10 @@ public Tile getTile(int x, int y, int zoom) {
 	
 	return tile;
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>}</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 使う側は、こんな感じになります。
 
 ``` java OsmTileOverlayDemoActivity.java
@@ -1009,8 +1008,7 @@ private void setUpMap() {
         .tileProvider(
             new TransparencyUrlTileProvider(256, 256, 100)));
 }
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>ここまでで改造前と同じく OpenStreetMap が「非透過で」表示されるのは確認できます。</p>
 
@@ -1029,9 +1027,8 @@ private void setUpMap() {
 
 <p>Tile.bM の byte[] から Bitmap インスタンスを生成します。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>Bitmap bitmap = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Bitmap bitmap = BitmapFactory.decodeByteArray(tile.bM, 0, tile.bM.length);
+</code></pre></div></div>
 
 <p>次に透過処理ですが、Android ではちょっと面倒なようです。<br />
 以下のサイトを参考にさせて頂いて、関数を作成しました。</p>
@@ -1046,7 +1043,7 @@ private static Bitmap makeTransparentBmp(final Bitmap bmp, int transparency) {<b
      int height = bmp.getHeight(); <br />
      int[] pixels = new int[width * height];</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code> Bitmap bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888 );
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> Bitmap bitmap = Bitmap.createBitmap(width,height,Bitmap.Config.ARGB_8888 );
  bmp.getPixels(pixels, 0, width, 0, 0, width, height); 
  for (int y = 0; y &lt; height; y++) { 
    for (int x = 0; x &lt; width; x++) { 
@@ -1059,15 +1056,14 @@ private static Bitmap makeTransparentBmp(final Bitmap bmp, int transparency) {<b
  bitmap.setPixels(pixels, 0, width, 0, 0, width, height); 
  
  return bitmap; } ```
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>では TODO の所に組み込みます。</p>
 
 <p>```java TransparencyUrlTileProvider.java<br />
 public class TransparencyUrlTileProvider implements TileProvider {</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>&lt;前略&gt;
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>&lt;前略&gt;
 
 @Override
 public Tile getTile(int x, int y, int zoom) {
@@ -1086,8 +1082,7 @@ public Tile getTile(int x, int y, int zoom) {
 }
 
 &lt;以下略&gt; } ```
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>動かしてみます。</p>
 
@@ -1194,7 +1189,7 @@ public Tile getTile(int x, int y, int zoom) {
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

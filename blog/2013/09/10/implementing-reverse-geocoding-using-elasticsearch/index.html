@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2013/09/10/implementing-reverse-geocoding-using-elasticsearch/",
   "headline": "総務省のデータを Elasticsearch にぶち込んで、緯度経度から市区町村の何丁目までを取り出す",
-  "datePublished": "2013-09-10T21:13:00+09:00",
-  "dateModified": "2013-09-10T21:13:00+09:00",
+  "datePublished": "2013-09-10T21:13:00+00:00",
+  "dateModified": "2013-09-10T21:13:00+00:00",
   "description": "いわゆる「逆ジオコーディング」と呼ばれる機能ですが、きっかけはこれら２つの記事です。  PHP - 総務省のデータを使って、緯度経度から市区町村の何丁目までを取り出す  PostgreSQL - 国土交通省のデータを使って、緯度経度から市区町村までを取り出す",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -932,7 +934,7 @@ img {
         ]<br />
     }<br />
 }</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 これは「愛知県名古屋市中区本丸」のデータですね。
 ``properties`` 以下は、この住所エリアの属性情報を示しています。
 ``geometry`` 以下が、この住所エリアの位置情報（ポリゴン）を示しています。
@@ -971,8 +973,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
         }
     }
 }'
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">properties.geometry</code> は、「geo_shape」 として扱う事を宣言しています。他の２つの設定は、インデックスの種類と精度を意味しますが、よく分かってません。</p>
 
@@ -989,7 +990,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
 
 <p>1行のデータを投入するコマンドは次のようになります。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>curl -XPUT 'http://localhost:9200/towns/town/1' -d '{
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -XPUT 'http://localhost:9200/towns/town/1' -d '{
     "type": "Feature",
     "properties": {
         "KEN_NAME": "愛知県", 
@@ -1008,8 +1009,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
         ]
     }
 }'
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">towns/town/1</code> の最後の「1」のところは、連番にする必要があります。(オートインクリメントとかないのかな？)</p>
 
@@ -1030,7 +1030,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
 
 <p>例えば、<a href="http://yahoo.jp/zsXYL2">大須観音駅</a> らへんの緯度経度(35.1613077,136.898282)の住所で検索する場合は、次のようにします。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>curl -XPOST 'http://localhost:9200/towns/town/_search' -d '{
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -XPOST 'http://localhost:9200/towns/town/_search' -d '{
     "query": {
         "filtered" : {
             "query" : {
@@ -1049,8 +1049,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
         }
     }
 }'
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">geo_shape</code> フィルタを使い、条件に envelople(左上〜右下の領域) を指定します。今は「点」での検索をしたいので、左上、右下に同じ座標を指定します。<br />
 注意点は、 <strong>「経度, 緯度」</strong> の順であることです。</p>
@@ -1059,32 +1058,31 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
 
 <p>さて、上のコマンドを実行すると、下のような結果が得られます。(整形、省略済)</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code><span class="p">{</span><span class="w">
-  </span><span class="nt">"took"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"timed_out"</span><span class="p">:</span><span class="kc">false</span><span class="p">,</span><span class="w">
-  </span><span class="nt">"_shards"</span><span class="p">:{</span><span class="w">
-    </span><span class="nt">"total"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"successful"</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"failed"</span><span class="p">:</span><span class="mi">0</span><span class="w">
-  </span><span class="p">},</span><span class="w">
-  </span><span class="nt">"hits"</span><span class="p">:{</span><span class="w">
-    </span><span class="nt">"total"</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"max_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="w">
-    </span><span class="nt">"hits"</span><span class="p">:[{</span><span class="w">
-      </span><span class="nt">"_index"</span><span class="p">:</span><span class="s2">"towns"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"_type"</span><span class="p">:</span><span class="s2">"town"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"_id"</span><span class="p">:</span><span class="s2">"29"</span><span class="p">,</span><span class="w">
-      </span><span class="nt">"_score"</span><span class="p">:</span><span class="mf">1.0</span><span class="p">,</span><span class="w"> 
-      </span><span class="nt">"_source"</span><span class="w"> </span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> 
-        </span><span class="nt">"type"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Feature"</span><span class="p">,</span><span class="w"> 
-        </span><span class="nt">"properties"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="w"> 
-          </span><span class="nt">"KEN_NAME"</span><span class="p">:</span><span class="w"> </span><span class="s2">"愛知県"</span><span class="p">,</span><span class="w"> 
-          </span><span class="nt">"GST_NAME"</span><span class="p">:</span><span class="w"> </span><span class="s2">"名古屋市"</span><span class="p">,</span><span class="w"> 
-          </span><span class="nt">"CSS_NAME"</span><span class="p">:</span><span class="w"> </span><span class="s2">"中区"</span><span class="p">,</span><span class="w"> 
-          </span><span class="nt">"MOJI"</span><span class="p">:</span><span class="w"> </span><span class="s2">"大須２丁目"</span><span class="p">,</span><span class="w"> 
-          </span><span class="err">…以下省略…</span><span class="w">
-</span></code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+  "took":1,
+  "timed_out":false,
+  "_shards":{
+    "total":5,
+    "successful":5,
+    "failed":0
+  },
+  "hits":{
+    "total":1,
+    "max_score":1.0,
+    "hits":[{
+      "_index":"towns",
+      "_type":"town",
+      "_id":"29",
+      "_score":1.0, 
+      "_source" : { 
+        "type": "Feature", 
+        "properties": { 
+          "KEN_NAME": "愛知県", 
+          "GST_NAME": "名古屋市", 
+          "CSS_NAME": "中区", 
+          "MOJI": "大須２丁目", 
+          …以下省略…
+</code></pre></div></div>
 
 <p>はい、「緯度経度(35.1613077,136.898282)」の住所は「愛知県名古屋市中区大須２丁目」であることが取得できました。</p>
 
@@ -1197,7 +1195,7 @@ curl -XPUT 'http://localhost:9200/towns/town/_mapping' -d '
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

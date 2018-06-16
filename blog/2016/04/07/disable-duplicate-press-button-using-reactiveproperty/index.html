@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2016/04/07/disable-duplicate-press-button-using-reactiveproperty/",
   "headline": "ReactiveProperty で2度押し防止(Using使ったやつ)",
-  "datePublished": "2016-04-07T23:59:59+09:00",
-  "dateModified": "2016-04-07T23:59:59+09:00",
+  "datePublished": "2016-04-07T14:59:59+00:00",
+  "dateModified": "2016-04-07T14:59:59+00:00",
   "description": "  ReactivePropertyで2度押し防止 - 眠いしお腹すいたし(´・ω・`)",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -860,8 +862,8 @@ img {
 
 <p>ReactiveCommand は <code class="highlighter-rouge">IObservable&lt;T&gt;</code>、そしてロジックの方も <code class="highlighter-rouge">IObservable&lt;T&gt;</code> で作ることが多いのですが、その場合「ボタンをクリックした時に、ロジックを実行する」というコードは大抵以下のようになります。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainViewModel.cs 
-</span><span class="k">public</span> <span class="k">class</span> <span class="nc">MainViewModel</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//MainViewModel.cs </span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MainViewModel</span>
 <span class="p">{</span>
     <span class="k">public</span> <span class="n">ReactiveCommand</span> <span class="n">TestCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
     <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;</span> <span class="n">IsBusy</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;(</span><span class="k">false</span><span class="p">);</span>
@@ -871,25 +873,24 @@ img {
         <span class="n">TestCommand</span> <span class="p">=</span> <span class="n">IsBusy</span><span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="p">!</span><span class="n">x</span><span class="p">).</span><span class="nf">ToReactiveCommand</span><span class="p">();</span>
         <span class="n">TestCommand</span><span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span>
         <span class="p">{</span>
-            <span class="c1">// log("ボタンが押されたよ");
-</span>            <span class="n">IsBusy</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
+            <span class="c1">// log("ボタンが押されたよ");</span>
+            <span class="n">IsBusy</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="k">true</span><span class="p">;</span>
             <span class="n">SomeLogicAsObservable</span><span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">__</span> <span class="p">=&gt;</span>
             <span class="p">{</span>
-                <span class="c1">// log("処理が実行されたよ");
-</span>                <span class="n">IsBusy</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// ほんとは OnCompleted と OnError でやるべき
-</span>            <span class="p">};</span>
+                <span class="c1">// log("処理が実行されたよ");</span>
+                <span class="n">IsBusy</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="k">false</span><span class="p">;</span> <span class="c1">// ほんとは OnCompleted と OnError でやるべき</span>
+            <span class="p">};</span>
         <span class="p">});</span>
     <span class="p">}</span>
     
-    <span class="c1">// なんか重い非同期な処理
-</span>    <span class="k">private</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">Unit</span><span class="p">&gt;</span> <span class="nf">SomeLogicAsObservable</span><span class="p">()</span>
+    <span class="c1">// なんか重い非同期な処理</span>
+    <span class="k">private</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">Unit</span><span class="p">&gt;</span> <span class="nf">SomeLogicAsObservable</span><span class="p">()</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">Unit</span><span class="p">.</span><span class="n">Default</span><span class="p">),</span> 
                 <span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromSeconds</span><span class="p">(</span><span class="m">3</span><span class="p">));</span>
     <span class="p">}</span>    
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>こういうコードを書いていていつも「なんかカッコ悪いなー」と思っていました。<br />
 そう思う点は、<code class="highlighter-rouge">Subscribe</code> を2回書いていること。ボタンがクリックされた事の購読の中でさらにロジックが実行された事を購読している点です。<br />
@@ -899,8 +900,8 @@ img {
 
 <p>はい、</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="c1">//MainViewModel.cs
-</span><span class="k">public</span> <span class="k">class</span> <span class="nc">MainViewModel</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">//MainViewModel.cs</span>
+<span class="k">public</span> <span class="k">class</span> <span class="nc">MainViewModel</span>
 <span class="p">{</span>
     <span class="k">public</span> <span class="n">ReactiveCommand</span> <span class="n">TestCommand</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span>
     <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;</span> <span class="n">IsBusy</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="p">}</span> <span class="p">=</span> <span class="k">new</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">bool</span><span class="p">&gt;(</span><span class="k">false</span><span class="p">);</span>
@@ -912,8 +913,8 @@ img {
         <span class="n">TestCommand</span>
             <span class="p">.</span><span class="nf">SelectMany</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="nf">UsingIsBusy</span><span class="p">(</span><span class="nf">SomeLogicAsObservable</span><span class="p">()))</span>
             <span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="p">{</span> <span class="cm">/* log("ボタンが押されてロジックが実行されたよ") ※ */</span> <span class="p">});</span>
-            <span class="c1">// ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意
-</span>    <span class="p">}</span>
+            <span class="c1">// ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意</span>
+    <span class="p">}</span>
 
     <span class="k">private</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">UsingIsBusy</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;(</span><span class="n">IObservable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">observable</span><span class="p">)</span>
     <span class="p">{</span>
@@ -926,15 +927,14 @@ img {
             <span class="n">_</span> <span class="p">=&gt;</span> <span class="n">observable</span><span class="p">);</span>
     <span class="p">}</span>
 
-    <span class="c1">// なんか重い非同期な処理
-</span>    <span class="k">private</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">Unit</span><span class="p">&gt;</span> <span class="nf">SomeLogicAsObservable</span><span class="p">()</span>
+    <span class="c1">// なんか重い非同期な処理</span>
+    <span class="k">private</span> <span class="n">IObservable</span><span class="p">&lt;</span><span class="n">Unit</span><span class="p">&gt;</span> <span class="nf">SomeLogicAsObservable</span><span class="p">()</span>
     <span class="p">{</span>
         <span class="k">return</span> <span class="n">Observable</span><span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="n">Observable</span><span class="p">.</span><span class="nf">Return</span><span class="p">(</span><span class="n">Unit</span><span class="p">.</span><span class="n">Default</span><span class="p">),</span>
                                 <span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromSeconds</span><span class="p">(</span><span class="m">3</span><span class="p">));</span>
     <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p><code class="highlighter-rouge">IsBusy</code> の ON/OFF を <code class="highlighter-rouge">Observable.Using</code> に任せるようにしました。これは、第2引数に指定した <code class="highlighter-rouge">IObservable&lt;T&gt;</code> が完了または失敗した時にリソースを解放してくれる C# の <code class="highlighter-rouge">using 句</code> のようなもので、ここでは第2引数にロジックの <code class="highlighter-rouge">IObservable&lt;T&gt;</code> を渡すことで、ロジックが完了したら自動的に <code class="highlighter-rouge">IsBusy.Value = false</code> が実行されます。</p>
 
@@ -955,7 +955,7 @@ img {
         
         <div class="category">ReactiveX</div>
         
-        <p class="published">published <time datetime="2016-04-07 23:59">07 Apr 2016</time></p>
+        <p class="published">published <time datetime="2016-04-07 14:59">07 Apr 2016</time></p>
       </section>
       
       <section class="share">
@@ -1025,7 +1025,7 @@ img {
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

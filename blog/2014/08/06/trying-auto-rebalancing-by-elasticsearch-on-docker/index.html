@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2014/08/06/trying-auto-rebalancing-by-elasticsearch-on-docker/",
   "headline": "Elasticsearch の Auto-Rebalancing を Docker で試す",
-  "datePublished": "2014-08-06T23:39:51+09:00",
-  "dateModified": "2014-08-06T23:39:51+09:00",
+  "datePublished": "2014-08-06T14:39:51+00:00",
+  "dateModified": "2014-08-06T14:39:51+00:00",
   "description": "Linuxど素人の Docker 入門第二弾です。ちょっと Docker おもしろくなってきたかも。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -890,10 +892,9 @@ img {
 
 <p>インストールは、以下のコマンド一発です。(./ を付けないとうまく動いてくれなかった)</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span><span class="nb">cd </span>elasticsearch/bin
-<span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>./plugin -install mobz/elasticsearch-head
-</code></pre>
-</div>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span><span class="nb">cd </span>elasticsearch/bin
+<span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>./plugin <span class="nt">-install</span> mobz/elasticsearch-head
+</code></pre></div></div>
 
 <h2 id="elasticsearch-のクラスタの設定">Elasticsearch のクラスタの設定</h2>
 
@@ -901,13 +902,12 @@ img {
 
 <p><code class="highlighter-rouge">elasticsearch.yml</code> を編集して、グループ名を付けます。</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>[ root@bb638d1f825f:/ ]$ vim elasticsearch/config/elasticsearch.yml
-</code></pre>
-</div>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[ root@bb638d1f825f:/ ]$ vim elasticsearch/config/elasticsearch.yml
+</code></pre></div></div>
 
 <p>```json elasticsearch.yml<br />
 cluster.name: amaycluster</p>
-<div class="highlighter-rouge"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 Elasticsearch の分散環境での使用については、
 
 * [Cluster機能を使う – AWSで始めるElasticSearch(2) ｜ Developers.IO](http://dev.classmethod.jp/cloud/aws/use-elasticsearch-2-use-cluster/)
@@ -927,20 +927,18 @@ docker@boot2docker:~$ docker images
 REPOSITORY                 TAG                 IMAGE ID            CREATED             VIRTUAL SIZE
 amay077/es_cluster         latest              b9d05b77d71a        9 hours ago         1.075 GB
 ubuntu                     latest              ba5877dc9bec        2 weeks ago         192.7 MB
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <h2 id="複数の-docker-コンテナを起動しそれぞれで-elasticsearch-を起動する">複数の Docker コンテナを起動し、それぞれで Elasticsearch を起動する</h2>
 
 <p>下のようなコマンドで、コンテナを起動し、Elasticsearch を開始します。<br />
 （<code class="highlighter-rouge">/bin/bash</code> の代わりに直接 elasticsearch を開始してもよいと思いますが、後で直接コンソールに接続したいかなーと思いまして。）</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code><span class="gp">docker@boot2docker:~$ </span>docker run -i -t -p 9200:9200 -p 9300:9300 amay077/es_cluster /bin/bash
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker@boot2docker:~<span class="nv">$ </span>docker run <span class="nt">-i</span> <span class="nt">-t</span> <span class="nt">-p</span> 9200:9200 <span class="nt">-p</span> 9300:9300 amay077/es_cluster /bin/bash
 
-<span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
+<span class="o">[</span> root@bb638d1f825f:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch <span class="nt">-d</span>
 <span class="c">#Control+p, Control+q でデタッチ</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>1つ起動した時点で、ホストPC（Mac）のブラウザから http://localhost:9200/_plugin/head/ にアクセスします。<br />
 あ、その前に VirtualBox の設定で、9200と9300のポートフォワーディングを行う必要があります。</p>
@@ -956,12 +954,11 @@ ubuntu                     latest              ba5877dc9bec        2 weeks ago  
 
 <p>Elasticsearch へのデータ投入は、ホストPC（Mac）の Terminal から、</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code>curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test1" }'</span>
-curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test2" }'</span>
-curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test3" }'</span>
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/mytest/memo/'</span> <span class="nt">-d</span> <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test1" }'</span>
+curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/mytest/memo/'</span> <span class="nt">-d</span> <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test2" }'</span>
+curl <span class="nt">-XPOST</span> <span class="s1">'http://localhost:9200/mytest/memo/'</span> <span class="nt">-d</span> <span class="s1">'{ "name" : "kappa", "date" : "2013-09-07", "message" : "test3" }'</span>
 …続く
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>のような感じで、3万件ほど投入しました。</p>
 
@@ -976,12 +973,11 @@ curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <spa
 
 <p>５台目の Elasticsearh を追加してみます。</p>
 
-<div class="language-sh highlighter-rouge"><pre class="highlight"><code><span class="gp">docker@boot2docker:~$ </span>docker run -i -t -p 9204:9200 -p 9304:9300 amay077/es_cluster /bin/bash
+<div class="language-sh highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker@boot2docker:~<span class="nv">$ </span>docker run <span class="nt">-i</span> <span class="nt">-t</span> <span class="nt">-p</span> 9204:9200 <span class="nt">-p</span> 9304:9300 amay077/es_cluster /bin/bash
 
-<span class="o">[</span> root@de6d825fa34d:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch -d
+<span class="o">[</span> root@de6d825fa34d:/ <span class="o">]</span><span class="nv">$ </span>/elasticsearch/bin/elasticsearch <span class="nt">-d</span>
 <span class="c">#Control+p, Control+q でデタッチ</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>その後 elasticsearch-head を見ると、</p>
 
@@ -1006,7 +1002,7 @@ curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <spa
         
         <div class="category">Elasticsearch</div>
         
-        <p class="published">published <time datetime="2014-08-06 23:39">06 Aug 2014</time></p>
+        <p class="published">published <time datetime="2014-08-06 14:39">06 Aug 2014</time></p>
       </section>
       
       <section class="share">
@@ -1076,7 +1072,7 @@ curl -XPOST <span class="s1">'http://localhost:9200/mytest/memo/'</span> -d <spa
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

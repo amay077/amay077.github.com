@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2017/07/28/be_careful_because_googlemap_get_projection_is_not_singleton/",
   "headline": "Google Maps Android API の GoogleMap.getProjection はシングルトンじゃないから注意",
-  "datePublished": "2017-07-28T23:59:00+09:00",
-  "dateModified": "2017-07-28T23:59:00+09:00",
+  "datePublished": "2017-07-28T14:59:00+00:00",
+  "dateModified": "2017-07-28T14:59:00+00:00",
   "description": "Android で Google Maps を使用するときに使用する Google Maps Android API の話です。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -873,21 +875,20 @@ img {
 
 <p>この <code class="highlighter-rouge">GoogleMap.getProjection()</code> で取得できるインスタンス、シングルトンというか、いつ取得しても同じインスタンスな気がしませんか？ <code class="highlighter-rouge">GoogleMap.getUiSettings()</code> がそうであるように。 <code class="highlighter-rouge">map.getProjection().fromScreenLocation</code>と書くのはダルいので地図の生成時に一度だけ取得して使いまわしたいと思いませんか？</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">private</span> <span class="n">Projection</span> <span class="n">_proj</span><span class="o">;</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="n">Projection</span> <span class="n">_proj</span><span class="o">;</span>
 
 <span class="nd">@Override</span>
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onMapReady</span> <span class="o">(</span><span class="n">GoogleMap</span> <span class="n">map</span><span class="o">)</span> <span class="o">{</span>
     <span class="c1">// 最初に取得して使い回せばいいよねー、そう思っていた時期が私にもありました・・・</span>
     <span class="n">_proj</span> <span class="o">=</span> <span class="n">map</span><span class="o">.</span><span class="na">getProjection</span><span class="o">();</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>ところがこれが間違いです。</p>
 
 <p>ためしに「地図の位置が変わったら、画面の左上(0, 0)の緯度経度を得る」というのを書いてみます。</p>
 
-<div class="language-java highlighter-rouge"><pre class="highlight"><code><span class="kd">private</span> <span class="n">Projection</span> <span class="n">_proj</span><span class="o">;</span>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">private</span> <span class="n">Projection</span> <span class="n">_proj</span><span class="o">;</span>
 
 <span class="nd">@Override</span>
 <span class="kd">public</span> <span class="kt">void</span> <span class="nf">onMapReady</span> <span class="o">(</span><span class="n">GoogleMap</span> <span class="n">map</span><span class="o">)</span> <span class="o">{</span>
@@ -901,21 +902,19 @@ img {
         <span class="n">Log</span><span class="o">.</span><span class="na">d</span><span class="o">(</span><span class="s">"TEST"</span><span class="o">,</span> <span class="s">"lat:"</span> <span class="o">+</span> <span class="n">latlng</span><span class="o">.</span><span class="na">latitude</span> <span class="o">+</span> <span class="s">", long:"</span> <span class="o">+</span> <span class="n">latlng</span><span class="o">.</span><span class="na">longitude</span><span class="o">);</span> 
     <span class="o">});</span>
 <span class="o">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>地図をスクロールさせると <code class="highlighter-rouge">setOnCameraIdleListener</code> のハンドラが呼び出されますが、期待した結果が得られません。たぶんマイナスとかゼロに近い値になっていると思います。</p>
 
 <p>正しい結果を得るには、</p>
 
-<div class="highlighter-rouge"><pre class="highlight"><code>map.setOnCameraIdleListener(() -&gt; {
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>map.setOnCameraIdleListener(() -&gt; {
     // 画面原点の緯度経度を得る
     Projection prj = map.getProjection();
     LatLng latlng = prj.fromScreenLocation(new Point(0, 0));
     Log.d("TEST", "lat:" + latlng.latitude + ", long:" + latlng.longitude); 
 });
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>のように、「その時点での」 <code class="highlighter-rouge">Projection</code> インスタンスを得る必要があります。</p>
 
@@ -951,7 +950,7 @@ img {
         
         <div class="category">Java</div>
         
-        <p class="published">published <time datetime="2017-07-28 23:59">28 Jul 2017</time></p>
+        <p class="published">published <time datetime="2017-07-28 14:59">28 Jul 2017</time></p>
       </section>
       
       <section class="share">
@@ -1021,7 +1020,7 @@ img {
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

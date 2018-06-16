@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin/",
   "headline": "Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話",
-  "datePublished": "2017-07-24T23:59:00+09:00",
-  "dateModified": "2017-07-24T23:59:00+09:00",
+  "datePublished": "2017-07-24T14:59:00+00:00",
+  "dateModified": "2017-07-24T14:59:00+00:00",
   "description": "Android で「浮いてるように見える」アニメーションを実装する機会がありまして。次の画像のようなものなんですが。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -928,36 +930,35 @@ view.startAnimation(anim1);
 <p>まず、「アニメーションを実行して、アニメーションが終わったら次へ継続する関数」を作成します。<br />
 ここでは <code class="highlighter-rouge">View</code> の拡張関数として定義してみました。</p>
 
-<div class="language-kotlin highlighter-rouge"><pre class="highlight"><code><span class="k">package</span> <span class="nn">net.amay077.animsample</span>
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">package</span> <span class="nn">net.amay077.animsample</span>
 
 <span class="k">import</span> <span class="nn">android.view.View</span>
 <span class="k">import</span> <span class="nn">android.view.animation.Animation</span>
 <span class="k">import</span> <span class="nn">kotlin.coroutines.experimental.suspendCoroutine</span>
 
-<span class="n">suspend</span> <span class="k">fun</span> <span class="nf">View</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim</span><span class="p">:</span> <span class="n">Animation</span><span class="p">)</span> <span class="p">{</span>
+<span class="n">suspend</span> <span class="k">fun</span> <span class="n">View</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim</span><span class="p">:</span> <span class="n">Animation</span><span class="p">)</span> <span class="p">{</span>
 
     <span class="k">return</span> <span class="n">suspendCoroutine</span> <span class="p">{</span> <span class="n">continuation</span> <span class="p">-&gt;</span>
         <span class="n">anim</span><span class="p">.</span><span class="n">setAnimationListener</span><span class="p">(</span><span class="kd">object</span> <span class="err">: </span><span class="nc">Animation</span><span class="p">.</span><span class="n">AnimationListener</span> <span class="p">{</span>
-            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationStart</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
+            <span class="k">override</span> <span class="k">fun</span> <span class="n">onAnimationStart</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
 
-            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationEnd</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span>
+            <span class="k">override</span> <span class="k">fun</span> <span class="n">onAnimationEnd</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span>
                 <span class="n">continuation</span><span class="p">.</span><span class="n">resume</span><span class="p">(</span><span class="n">Unit</span><span class="p">)</span>
             <span class="p">}</span>
 
-            <span class="k">override</span> <span class="k">fun</span> <span class="nf">onAnimationRepeat</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
+            <span class="k">override</span> <span class="k">fun</span> <span class="n">onAnimationRepeat</span><span class="p">(</span><span class="n">animation</span><span class="p">:</span> <span class="n">Animation</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
         <span class="p">})</span>
 
         <span class="k">this</span><span class="p">.</span><span class="n">startAnimation</span><span class="p">(</span><span class="n">anim</span><span class="p">)</span>
     <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>呼び出し側は次のような感じ。<br />
 コールバック地獄の Java に比べて天国かよここは…。<br />
 アニメーションはUIスレッドから呼び出す必要があるので <code class="highlighter-rouge">async() { }</code> ではなく <code class="highlighter-rouge">launch(UI) { }</code> を使う必要があるようです。</p>
 
-<div class="language-kotlin highlighter-rouge"><pre class="highlight"><code><span class="kd">val</span> <span class="py">button1</span> <span class="p">=</span> <span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">button1</span><span class="p">)</span>
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">val</span> <span class="py">button1</span> <span class="p">=</span> <span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">button1</span><span class="p">)</span>
 
 <span class="kd">val</span> <span class="py">anim1</span> <span class="p">=</span> <span class="n">TranslateAnimation</span><span class="p">(</span>
         <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">,</span>
@@ -973,15 +974,14 @@ view.startAnimation(anim1);
         <span class="n">Animation</span><span class="p">.</span><span class="n">RELATIVE_TO_SELF</span><span class="p">,</span> <span class="m">0.0f</span><span class="p">)</span>
 <span class="n">anim2</span><span class="p">.</span><span class="n">duration</span> <span class="p">=</span> <span class="m">2000</span>
 
-<span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// メインスレッドから async するよ
-</span>    <span class="c1">// ずっとくりかえし
-</span>    <span class="k">while</span> <span class="p">(</span><span class="k">true</span><span class="p">)</span> <span class="p">{</span>
-        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim1</span><span class="p">)</span> <span class="c1">// 1. 2秒かけて上へ移動するアニメーションを実行
-</span>        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim2</span><span class="p">)</span> <span class="c1">// 2. 2秒かけて下へ移動するアニメーションを実行
-</span>    <span class="p">}</span>
+<span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// メインスレッドから async するよ</span>
+    <span class="c1">// ずっとくりかえし</span>
+    <span class="k">while</span> <span class="p">(</span><span class="k">true</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim1</span><span class="p">)</span> <span class="c1">// 1. 2秒かけて上へ移動するアニメーションを実行</span>
+        <span class="n">button1</span><span class="p">.</span><span class="n">startAnimationAsync</span><span class="p">(</span><span class="n">anim2</span><span class="p">)</span> <span class="c1">// 2. 2秒かけて下へ移動するアニメーションを実行</span>
+    <span class="p">}</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>Kotlin をまともに使うのが初めてなのでまだ改善できるかも。。<br />
 よいコードがありましたらご指摘ください。</p>
@@ -1056,7 +1056,7 @@ view.startAnimation(anim1);
         
         <div class="category">C#</div>
         
-        <p class="published">published <time datetime="2017-07-24 23:59">24 Jul 2017</time></p>
+        <p class="published">published <time datetime="2017-07-24 14:59">24 Jul 2017</time></p>
       </section>
       
       <section class="share">
@@ -1126,7 +1126,7 @@ view.startAnimation(anim1);
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>

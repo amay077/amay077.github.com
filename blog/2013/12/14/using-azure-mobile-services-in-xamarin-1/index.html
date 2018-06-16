@@ -35,8 +35,8 @@
   "@type": "NewsArticle",
   "mainEntityOfPage": "https://blog.amay077.net/blog/2013/12/14/using-azure-mobile-services-in-xamarin-1/",
   "headline": "Xamarin で Windows Azure モバイルサービスを使う(その１)",
-  "datePublished": "2013-12-14T00:00:00+09:00",
-  "dateModified": "2013-12-14T00:00:00+09:00",
+  "datePublished": "2013-12-14T00:00:00+00:00",
+  "dateModified": "2013-12-14T00:00:00+00:00",
   "description": "Xamarin で BaaS を使うことについて、 koji_yusa さんや kochizufan さん が、Parse の使用方法について書いてくれました。BaaS の中では Parse が一番知名度が高いでしょう。しかし！Microsoft も BaaS を提供しています。",
   "author": {
     "@type": "Person",
@@ -838,6 +838,8 @@ img {
     
       
     
+      
+    
   </div>
 </header>
 
@@ -958,9 +960,8 @@ BaaS の中では Parse が一番知名度が高いでしょう。しかし！Mi
 
 <p><code class="highlighter-rouge">QSTodoService.cs</code> を見てみると、まず NameSpace から。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="k">using</span> <span class="nn">Microsoft.WindowsAzure.MobileServices</span><span class="p">;</span>
-</code></pre>
-</div>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">Microsoft.WindowsAzure.MobileServices</span><span class="p">;</span>
+</code></pre></div></div>
 
 <p>次にコンストラクタなど。</p>
 
@@ -968,7 +969,7 @@ BaaS の中では Parse が一番知名度が高いでしょう。しかし！Mi
 
 <p>そして <code class="highlighter-rouge">MobileServiceClient.GetTable&lt;ToDoItem&gt;()</code> をすることで Azure 上のテーブルを取得しています。まだデータは読み込みません。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="n">MobileServiceClient</span> <span class="n">client</span><span class="p">;</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">MobileServiceClient</span> <span class="n">client</span><span class="p">;</span>
 <span class="n">IMobileServiceTable</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="n">todoTable</span><span class="p">;</span>
 
 <span class="cm">/**省略*/</span>
@@ -977,25 +978,24 @@ BaaS の中では Parse が一番知名度が高いでしょう。しかし！Mi
 <span class="p">{</span>
 	<span class="n">CurrentPlatform</span><span class="p">.</span><span class="nf">Init</span> <span class="p">();</span>
 
-	<span class="c1">// Initialize the Mobile Service client with your URL and key
-</span>	<span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MobileServiceClient</span> <span class="p">(</span><span class="n">applicationURL</span><span class="p">,</span> <span class="n">applicationKey</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
+	<span class="c1">// Initialize the Mobile Service client with your URL and key</span>
+	<span class="n">client</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">MobileServiceClient</span> <span class="p">(</span><span class="n">applicationURL</span><span class="p">,</span> <span class="n">applicationKey</span><span class="p">,</span> <span class="k">this</span><span class="p">);</span>
 
-	<span class="c1">// Create an MSTable instance to allow us to work with the TodoItem table
-</span>	<span class="n">todoTable</span> <span class="p">=</span> <span class="n">client</span><span class="p">.</span><span class="n">GetTable</span> <span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="p">();</span>
+	<span class="c1">// Create an MSTable instance to allow us to work with the TodoItem table</span>
+	<span class="n">todoTable</span> <span class="p">=</span> <span class="n">client</span><span class="p">.</span><span class="n">GetTable</span> <span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="p">();</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>データの読み込みは、<code class="highlighter-rouge">RefreshDataAsync</code> にて。さりげなく async で。</p>
 
-<div class="language-csharp highlighter-rouge"><pre class="highlight"><code><span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="n">Items</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;}</span>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="n">List</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;</span> <span class="n">Items</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;}</span>
 
 <span class="k">async</span> <span class="k">public</span> <span class="n">Task</span><span class="p">&lt;</span><span class="n">List</span><span class="p">&lt;</span><span class="n">ToDoItem</span><span class="p">&gt;&gt;</span> <span class="nf">RefreshDataAsync</span><span class="p">()</span>
 <span class="p">{</span>
 	<span class="k">try</span> <span class="p">{</span>
-		<span class="c1">// This code refreshes the entries in the list view by querying the TodoItems table.
-</span>		<span class="c1">// The query excludes completed TodoItems
-</span>		<span class="n">Items</span> <span class="p">=</span> <span class="k">await</span> <span class="n">todoTable</span>
+		<span class="c1">// This code refreshes the entries in the list view by querying the TodoItems table.</span>
+		<span class="c1">// The query excludes completed TodoItems</span>
+		<span class="n">Items</span> <span class="p">=</span> <span class="k">await</span> <span class="n">todoTable</span>
 			<span class="p">.</span><span class="nf">Where</span> <span class="p">(</span><span class="n">todoItem</span> <span class="p">=&gt;</span> <span class="n">todoItem</span><span class="p">.</span><span class="n">Complete</span> <span class="p">==</span> <span class="k">false</span><span class="p">).</span><span class="nf">ToListAsync</span> <span class="p">();</span>
 
 	<span class="p">}</span> <span class="k">catch</span> <span class="p">(</span><span class="n">MobileServiceInvalidOperationException</span> <span class="n">e</span><span class="p">)</span> <span class="p">{</span>
@@ -1005,8 +1005,7 @@ BaaS の中では Parse が一番知名度が高いでしょう。しかし！Mi
 
 	<span class="k">return</span> <span class="n">Items</span><span class="p">;</span>
 <span class="p">}</span>
-</code></pre>
-</div>
+</code></pre></div></div>
 
 <p>今回はこんなところで。</p>
 
@@ -1101,7 +1100,7 @@ BaaS の中では Parse が一番知名度が高いでしょう。しかし！Mi
           <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
           <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
           <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2017<br>All rights reserved.</section>
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
           </div>
         </footer>
       </div>
