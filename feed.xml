@@ -6,9 +6,472 @@
 </description>
     <link>https://blog.amay077.net/</link>
     <atom:link href="https://blog.amay077.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Tue, 19 Jun 2018 17:00:37 +0000</pubDate>
-    <lastBuildDate>Tue, 19 Jun 2018 17:00:37 +0000</lastBuildDate>
+    <pubDate>Sat, 23 Jun 2018 07:44:24 +0000</pubDate>
+    <lastBuildDate>Sat, 23 Jun 2018 07:44:24 +0000</lastBuildDate>
     <generator>Jekyll v3.8.3</generator>
+    
+      <item>
+        <title>Xamarin を使えば iPhone 端末が要らない、ワケがない</title>
+        <description>&lt;p&gt;今年も Advent Calendar 1番手、よろしくおねがいします。&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;さて、Windows + Visual Studio 2017 を使った iOS アプリの開発でも、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/guides/cross-platform/windows/ios-simulator/&quot;&gt;Remoted iOS Simulator&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://www.xamarin.com/live&quot;&gt;Xamarin Live Player&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;などの登場で、「おっ、これなら iPhone 端末なしで（Mac なしで) iOS アプリ開発できるんじゃね？」 という風説がチラホラ聞かれます。&lt;/p&gt;
+
+&lt;p&gt;私は「んなことはない」と考えているのですが、実際どの辺が「ほら iPhone 実機必要でしょ？」なのかを検証してみようと思います。&lt;/p&gt;
+
+&lt;p&gt;そして、 &lt;strong&gt;iPhone 実機が必要だということは Mac も必要だということになりますからね。Mac がないとアプリをビルドして実機に転送できないので。&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;今回は、 「iPhone 実機は必須」 → 「iPhone 実機がないと困ったことが起きる可能性がある」 → 「iPhone 実機でしか発生しないトラブルがある」 という観点で、「iPhone 実機でしか発生しないトラブル」は本当に実在するのかを調査しましょう。&lt;/p&gt;
+
+&lt;h2 id=&quot;xamarinios-アプリの動作の仕組み&quot;&gt;Xamarin.iOS アプリの動作の仕組み&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.buildinsider.net/mobile/insidexamarin/05&quot;&gt;Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Xamarin.iOS のアプリ開発について、最初に知っておくべきことは、 &lt;strong&gt;「iPhone 実機向けと、iOS シミュレータ向けで、配布されるアプリケーションはまったく違う」&lt;/strong&gt; ということです。&lt;/p&gt;
+
+&lt;p&gt;iPhone 実機向けのビルドでは、 AOT(Ahead-Of-Time) コンパイラによって、 &lt;strong&gt;事前に&lt;/strong&gt; プログラムをマシン語に変換されたものを配布します。Apple の制約で iOS 端末上では、動的なプログラムの実行が許可されていないためです。&lt;/p&gt;
+
+&lt;p&gt;一方、 iOS シミュレータ向けのビルドでは、AOT ではなく JIT でアプリが動作します。なので AOT で生じる特有の「制約」が iOS シミュレータでは適用されないのです。&lt;/p&gt;
+
+&lt;p&gt;しょせん、simulation は “ニセモノ、まがい物”、本物とは違うのです。&lt;br /&gt;
+普通の思考なら、この時点で 「あっ、iPhone 実機要るわ」 となります、はい終了ー。&lt;/p&gt;
+
+&lt;h2 id=&quot;xamarinios---aot-の制約を体験してみる&quot;&gt;Xamarin.iOS - AOT の制約を体験してみる&lt;/h2&gt;
+
+&lt;p&gt;これで終わってもアレなので、もうちょっと突っ込んでみましょう。&lt;br /&gt;
+じゃあ AOT で生じる特有の「制約」って具体的には何よ？ということで、それを体験してみましょう。&lt;/p&gt;
+
+&lt;p&gt;AOT での制限事項は次に書いてあります。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/guides/ios/advanced_topics/limitations/&quot;&gt;Limitations - Xamarin&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;ここに書いてある制限事項をトレースしてみましょう。&lt;/p&gt;
+
+&lt;h3 id=&quot;generic-subclasses-of-nsobjects-are-limited--実機だけで発生するかquestion&quot;&gt;Generic Subclasses of NSObjects are limited → 実機だけで発生するか？=:question:&lt;/h3&gt;
+
+&lt;p&gt;えーと、「&lt;code class=&quot;highlighter-rouge&quot;&gt;NSObjects&lt;/code&gt; を基底クラスにして Generic クラスを作るのには制限がある」と書いてありますかね。&lt;br /&gt;
+ん？ 続いて “While generic subclasses of NSObjects are possible, there are a few limitations. “ とあるので、なんかできるようになったっぽいです。わずかな制約はまだあるので油断は禁物、とも。&lt;/p&gt;
+
+&lt;p&gt;試しにここに書いてある &lt;code class=&quot;highlighter-rouge&quot;&gt;class Foo&amp;lt;T&amp;gt; : UIView { }&lt;/code&gt; というクラスを作って使ってみたのですが、実機でも特に問題なかったです。でも few limitations を確認してないので “実機だけで発生するか？” の評価は :question: で。&lt;/p&gt;
+
+&lt;h3 id=&quot;pinvokes-in-generic-types---実機だけで発生するかx&quot;&gt;P/Invokes in Generic Types - 実機だけで発生するか？=:x:&lt;/h3&gt;
+
+&lt;p&gt;「Generic なクラス内で &lt;code class=&quot;highlighter-rouge&quot;&gt;P/Invoke&lt;/code&gt; は使えない」と書いてありますね。&lt;/p&gt;
+
+&lt;p&gt;Xamarin.iOS プロジェクトで、&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;GenericType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;T&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;DllImport&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;System&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)]&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;extern&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;getpid&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;というクラスを定義すると、&lt;/p&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;The DllImport attribute cannot be applied to a method that is generic or contained in a generic type. (CS7042)&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;というエラーがビルド時に出て進めません。これはシミュレータ向けでも実機向けでも同じです。また PCL プロジェクトでは &lt;code class=&quot;highlighter-rouge&quot;&gt;DllImport&lt;/code&gt; 自体が使用できません。&lt;/p&gt;
+
+&lt;p&gt;よって、この件について「実機だけで発生するか？」の問いには “No” の回答、:x: です。&lt;/p&gt;
+
+&lt;h3 id=&quot;propertysetinfo-on-a-nullable-type-is-not-supported---評価できず&quot;&gt;Property.SetInfo on a Nullable Type is not supported - 評価できず&lt;/h3&gt;
+
+&lt;p&gt;Nullable Type どころか、Xamarin.iOS どころか、Xamarin.Android でも、普通のオブジェクトに対しても &lt;code class=&quot;highlighter-rouge&quot;&gt;Property.SetInfo&lt;/code&gt; を機能させることができませんでしたー。ちょっと時間切れで割愛。&lt;/p&gt;
+
+&lt;h3 id=&quot;value-types-as-dictionary-keys---実機だけで発生するか-question&quot;&gt;Value types as Dictionary Keys - 実機だけで発生するか？= :question:&lt;/h3&gt;
+
+&lt;p&gt;「値型を &lt;code class=&quot;highlighter-rouge&quot;&gt;Dictionary&lt;/code&gt; のキーにすると実機でクラッシュする」と書いてあるように見えます、ほうほう。&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ValueType&lt;/code&gt; から直接派生させる方法を知らないので、次のような struct を作って &lt;code class=&quot;highlighter-rouge&quot;&gt;Dictionary&lt;/code&gt; のキーに突っ込んでみました。&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;struct&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MyKey&lt;/span&gt; 
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;na&quot;&gt;[Register(&quot;AppDelegate&quot;)]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;partial&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;AppDelegate&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;global&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;::&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Xamarin&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Forms&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Platform&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;iOS&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;FormsApplicationDelegate&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;FinishedLaunching&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UIApplication&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSDictionary&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Dictionary&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;string&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;();&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;a&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;aaa&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;b&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;bbb&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Add&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;c&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;},&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;ccc&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ContainsKey&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;b&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}))&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Remove&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;MyKey&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;b&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+        &lt;span class=&quot;n&quot;&gt;Console&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;dic&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Count&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+        &lt;span class=&quot;err&quot;&gt;＜以下省略＞&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;特にクラッシュはしないですね、シミュレータでも実機でも。&lt;br /&gt;
+しかしこんな簡単なケースだったらもっと大事になってる気がするし、この症状の再現方法に不安があるので :question: で。&lt;/p&gt;
+
+&lt;p&gt;**2017/12/01 PM 追記 **&lt;/p&gt;
+
+&lt;p&gt;この制限、もうないそうですｗ&lt;/p&gt;
+
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;ja&quot; dir=&quot;ltr&quot;&gt;Dictionaryの制約はもう無いってさ &lt;a href=&quot;https://t.co/XSSsRAwUBo&quot;&gt;pic.twitter.com/XSSsRAwUBo&lt;/a&gt;&lt;/p&gt;&amp;mdash; Atsushi Eno (@atsushieno) &lt;a href=&quot;https://twitter.com/atsushieno/status/936421845527646208?ref_src=twsrc%5Etfw&quot;&gt;2017年12月1日&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;https://platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;h2 id=&quot;no-dynamic-code-generation&quot;&gt;No Dynamic Code Generation&lt;/h2&gt;
+
+&lt;p&gt;本題っぽくなってきました。&lt;br /&gt;
+&lt;code class=&quot;highlighter-rouge&quot;&gt;Reflection.Emit&lt;/code&gt; とか動的言語ランタイム(DLR)、Remoting は動きませんよー、と書いてあります。Remoting は調査してませんのであしからず。&lt;/p&gt;
+
+&lt;h3 id=&quot;refrectionemit---実機だけで発生するか-x&quot;&gt;Refrection.Emit - 実機だけで発生するか？= :x:&lt;/h3&gt;
+
+&lt;p&gt;実は使ったことないので、精鋭が書いたネットのコピペを元にやってみたんですが、どうも必要なクラスやメンバが Xamarin.iOS では公開されてない（あるいは実装されてない）っぽくて、シミュレータでも実機でも動作しませんでした。&lt;/p&gt;
+
+&lt;h3 id=&quot;dynamic-型---実機だけで発生するか-x&quot;&gt;dynamic 型 - 実機だけで発生するか？= :x:&lt;/h3&gt;
+
+&lt;p&gt;DLR が提供する代表的な機能である &lt;code class=&quot;highlighter-rouge&quot;&gt;dynamic&lt;/code&gt; 型はどうでしょう？&lt;/p&gt;
+
+&lt;p&gt;DLR を使用するには &lt;code class=&quot;highlighter-rouge&quot;&gt;Microsoft.CSharp&lt;/code&gt; を nuget や参照の追加で Xamarin.iOS プロジェクトに追加する必要があります。&lt;/p&gt;
+
+&lt;p&gt;その上で、次のような(&lt;a href=&quot;http://ufcpp.net/study/csharp/sp4_dynamic.html&quot;&gt;“C# でぐぐれ！”の人のサイトからの&lt;/a&gt;)コードを実行してみました。&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;dynamic&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;GetX&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;dynamic&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;obj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;obj&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;bool&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;FinishedLaunching&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UIApplication&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;NSDictionary&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;options&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ret&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;GetX&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Drawing&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Point&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;X&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;999&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;});&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;Console&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ret&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ToString&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+
+    &lt;span class=&quot;err&quot;&gt;＜以下省略＞&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;このコードも、シミュレータでは当然動作しますが、なんと実機で動作します。どうなっとるんじゃい。&lt;br /&gt;
+というわけでこれも :x:&lt;/p&gt;
+
+&lt;p&gt;これについては、2014年にリリースされた Mono 3.2.7 で、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;table&gt;
+      &lt;tbody&gt;
+        &lt;tr&gt;
+          &lt;td&gt;[New in Mono 3.2.7&lt;/td&gt;
+          &lt;td&gt;Mono](http://www.mono-project.com/docs/about-mono/releases/3.2.7/)&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;blockquote&gt;
+  &lt;p&gt;System.Core now has an interpreter for LINQ expressions and dynamic statements that can be used by FullAOT runtimes.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;と書かれているので、それの恩恵かなと推測されます。&lt;br /&gt;
+また、最近でも、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;
+    &lt;table&gt;
+      &lt;tbody&gt;
+        &lt;tr&gt;
+          &lt;td&gt;[Mono’s New .NET Interpreter&lt;/td&gt;
+          &lt;td&gt;Mono](http://www.mono-project.com/news/2017/11/13/mono-interpreter/)&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;という話題があり、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Reflection.Emit&lt;/code&gt; もイケちゃうかもみたいな記述もあります。この辺りが好きな方は是非「&lt;a href=&quot;https://qiita.com/advent-calendar/2017/aot&quot;&gt;AOT技術 Advent Calendar 2017&lt;/a&gt;」へ投稿をお願いします。 :pray:&lt;/p&gt;
+
+&lt;h3 id=&quot;reverse-callbacks&quot;&gt;Reverse Callbacks&lt;/h3&gt;
+
+&lt;p&gt;よくわからないので、割愛 :bow:&lt;/p&gt;
+
+&lt;h2 id=&quot;ここまでのまとめ&quot;&gt;ここまでのまとめ&lt;/h2&gt;
+
+&lt;p&gt;さて &lt;a href=&quot;https://developer.xamarin.com/guides/ios/advanced_topics/limitations/&quot;&gt;Limitations - Xamarin&lt;/a&gt; を辿ってきましたが、明確に 「iPhone実機でのみ動作しないという制限」 は確認できませんでした。&lt;/p&gt;
+
+&lt;p&gt;しかし、制限そのものが確認できなかったり、細かい制約はあるので、安心して「実機のみ動作しないことはない」とは言い切れません。&lt;/p&gt;
+
+&lt;h2 id=&quot;リンカーのお仕事---みなさんがaot-のせいと普段言ってるのはたぶんこっち&quot;&gt;リンカーのお仕事 - みなさんが「AOT のせい」と普段言ってるのはたぶんこっち&lt;/h2&gt;
+
+&lt;p&gt;とは言え、iPhone 実機でのみ動作しないコードに遭遇するという体験は確かにあります。&lt;/p&gt;
+
+&lt;p&gt;例えば次のコード&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;typeName&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;System.Net.WebClient, System, Version=2.0.5.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;type&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;GetType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;typeName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;client&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Activator&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;CreateInstance&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;type&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+&lt;span class=&quot;n&quot;&gt;Debug&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WriteLine&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;client&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;GetType&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;().&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AssemblyQualifiedName&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;厳密名で指定してるから長いけど、要は「型を示す文字列からインスタンスを生成する」という処理。できる限り実装を外部から注入できるようにするとどこかで使うやつですね。&lt;/p&gt;
+
+&lt;p&gt;このコード、iOSシミュレータでは動作しますが、iPhone 実機では動作しません（&lt;code class=&quot;highlighter-rouge&quot;&gt;type&lt;/code&gt; が &lt;code class=&quot;highlighter-rouge&quot;&gt;null&lt;/code&gt;、つまりそんな型はない、と言われます）。&lt;/p&gt;
+
+&lt;p&gt;.NETフレームワークのクラスのひとつである「System.Net.WebClient」は確かに存在しているはずなのに、「ない」と言われる、なぜか？&lt;br /&gt;
+そこで気にすべき存在が「リンカー」です。&lt;/p&gt;
+
+&lt;h3 id=&quot;xamarinios-におけるリンカーとはなにか&quot;&gt;「Xamarin.iOS におけるリンカー」とはなにか？&lt;/h3&gt;
+
+&lt;p&gt;リンカー(linker)とは、ソースコードを最終的に実行可能プログラムにするまでに登場するツールの一つですが、その辺のはなしは「compiler, linker」などとググればたくさん出てくるのでそちらで。&lt;/p&gt;
+
+&lt;p&gt;Xamarin.iOS の文脈での「リンカー」のお仕事は、&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;アプリケーションには不要な（=使用されないと判断した)クラスやメンバーを削除すること&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;だと思っておけばよいでしょう。 Android だと ProGuard、.NET だと DotFuscator などの「難読化ツール」が持つ副次的な機能に「&lt;a href=&quot;https://www.agtech.co.jp/products/preemptive/dotfuscator/featuresinfo.html#fet05&quot;&gt;不要コードの除去&lt;/a&gt;」がありますが、それと同じようなものだと理解できます。&lt;/p&gt;
+
+&lt;p&gt;つまり、先のコードに出てきた &lt;code class=&quot;highlighter-rouge&quot;&gt;System.Net.WebClient&lt;/code&gt; は、静的なソースコード解析によって「不要だと判断されて」削除されてしまいました。文字列の中に記述されているとはリンカーは知る由もありません。&lt;/p&gt;
+
+&lt;p&gt;では、なぜ iOSシミュレータでは動作するのでしょう？&lt;br /&gt;
+とここで Xamarin.iOS プロジェクトの設定を見てみましょう。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;実機向けビルドの設定&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/7e56bf75-0b66-7987-0376-f8b0757d3f4a.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;iOSシミュレータ向けビルドの設定&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/c6b363ef-dcfb-2eeb-8e30-849c48381915.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;はい、このように&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;実機向けの場合は「フレームワークSDKのみをリンクする」&lt;/li&gt;
+  &lt;li&gt;シミュレータ向けの場合は「リンクしない」&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;となっていました。つまりシミュレータ向けのアプリは「不要なコードを削除する処理が行われていない」ということになり、すべてのクラスが使用できていました。&lt;/p&gt;
+
+&lt;p&gt;逆に言えば、 &lt;strong&gt;シミュレータ向けのビルド設定を「フレームワークSDKのみをリンクする」にすれば、実機と同じように上記コードは動作しなくなります&lt;/strong&gt; 。&lt;/p&gt;
+
+&lt;p&gt;シミュレータでは AOT は使用されないのに、実機と同じ症状を発生させられるのだから、これは 「AOT のせい」ではないことがわかります。&lt;/p&gt;
+
+&lt;p&gt;おそらく一般的に「AOT のせいで iOS 実機で動作しない」と言われている事象のほとんどは「実はリンカーのせい」だと思われます。&lt;/p&gt;
+
+&lt;p&gt;例えばこれ↓とか&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://qiita.com/amay077/items/3a6f50cede3425fc9f3f&quot;&gt;Xamarin.iOS の AOT に気をつけろ！Rx の FromEventPattern を使うときの注意点&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;書いたのオマエかよw&lt;/p&gt;
+
+&lt;p&gt;なので、このトラブルは、iOSシミュレータ向けのビルド設定を「リンクする」に変更することで発見可能です。あれ、ここでも iPhone 実機必要なくなっちゃった。:sweat_smile:&lt;/p&gt;
+
+&lt;p&gt;（実機向けのビルド設定を「リンクしない」にしても同様に動作しますが、配布する &lt;code class=&quot;highlighter-rouge&quot;&gt;.ipa&lt;/code&gt; にデータサイズが巨大になってしまうので現実解ではないです。）&lt;/p&gt;
+
+&lt;h3 id=&quot;リンカーに消されないようにするには&quot;&gt;リンカーに消されないようにするには？&lt;/h3&gt;
+
+&lt;p&gt;次の３つの方法があります。&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;どこか1箇所でいいから、型を明示的にソースコード中に書く&lt;/li&gt;
+  &lt;li&gt;消されたくないクラスに &lt;code class=&quot;highlighter-rouge&quot;&gt;Preserve&lt;/code&gt; 属性を付ける&lt;/li&gt;
+  &lt;li&gt;ビルド設定で「除外するアセンブリ」を指定する&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;1 が一番よく行う方法です。アプリの static コンストラクタに&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;static&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;AppDelegate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;dummy&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Net&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WebClient&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;などと書いておくだけでOKです。デメリットは、使用する実装クラスが予めわかっている必要があること、インスタンス生成のコストが発生することです。&lt;/p&gt;
+
+&lt;p&gt;ライブラリでも、「とりあえずアプリ起動時に &lt;code class=&quot;highlighter-rouge&quot;&gt;MyLib.Init()&lt;/code&gt; を呼べ」みたいなものがありますが、それもリンカー対策のために必須としていると思ってもよいでしょう。&lt;/p&gt;
+
+&lt;p&gt;2 はライブラリ開発者側の話で、これは、消されるとまずいぞとわかっているクラスやメンバに &lt;code class=&quot;highlighter-rouge&quot;&gt;[Preserve]&lt;/code&gt; という属性を付けておくと、リンカーさんは、それがついているクラスを無視してくれるというものです。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/guides/ios/advanced_topics/linker/#Preserving_Code&quot;&gt;Preserving Code ｜ Linking on iOS - Xamarin&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;デメリットは、ライブラリ開発者しか使えないということです。ライブラリ使用者つまりアプリ開発者は、問題が発生したライブラリに対して、この方法は適用できません。&lt;/p&gt;
+
+&lt;p&gt;3 はビルド設定で、リンカーの対象外にするアセンブリを指定する、というものです。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://developer.xamarin.com/guides/ios/advanced_topics/linker/#Skipping_Assemblies&quot;&gt;Skipping Assemblies ｜ Linking on iOS - Xamarin&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;デメリットというか、どこに何を設定すれば機能するのか分からないんですよね、IDEでは。。。&lt;/p&gt;
+
+&lt;h2 id=&quot;さいごのまとめ&quot;&gt;さいごのまとめ&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;AOT の制限 -&amp;gt; 実機でのみ再現する事象は確認できなかった(未確認な制限あり)&lt;/li&gt;
+  &lt;li&gt;リンカーによるトラブル -&amp;gt; iOSシミュレータでもビルド設定を「リンクする」に変えれば未然に防げる&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;あれ？ iOSシミュレータだけでも結構イケる？？？&lt;/p&gt;
+
+&lt;p&gt;ままま、まあシミュレータは所詮シミュレータなんで！いつも実機で開発してないと、いざデプロイするときに絶対問題起こるんで！！:cold_sweat::sweat_drops:&lt;/p&gt;
+
+&lt;p&gt;しかし会社の方針？とかでiPhone実機が提供されず、シミュレータしか使えない環境の人は、せめてビルド設定だけは変えておきましょう。&lt;/p&gt;
+
+&lt;p&gt;ただし「Xamarin Live Playerだけ使えばOK」その考えはダメ。なぜならこれは「あなたのコードを、iOS アプリっぽい画面にインタラクティブに表示させるアプリ」だからです。&lt;/p&gt;
+
+&lt;h3 id=&quot;そこで-visual-studio-app-center-ですよですか&quot;&gt;そこで Visual Studio App Center ですよ（ですか？）&lt;/h3&gt;
+
+&lt;p&gt;Visual Studio Mobile Center から名称変更して正式リリースとなった &lt;a href=&quot;https://azure.microsoft.com/ja-jp/services/app-center/&quot;&gt;Visual Studio App Center&lt;/a&gt; は、 &lt;a href=&quot;https://www.xamarin.com/test-cloud&quot;&gt;Xamarin Test cloud&lt;/a&gt; のサブセット？を内包しており、雲の向こう側にある「実際の端末」を使ってテストができます。継続的に実機でテストが実施できるとしたら、それはとても恵まれた環境でしょう。けど、開発時に常時使うもんじゃないよね。&lt;/p&gt;
+</description>
+        <pubDate>Fri, 01 Dec 2017 14:59:00 +0000</pubDate>
+        <link>https://blog.amay077.net/blog/2017/12/01/6a6d5855b3d0c46de126/</link>
+        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/12/01/6a6d5855b3d0c46de126/</guid>
+        
+        
+        <category>C#</category>
+        
+        <category>iOS</category>
+        
+        <category>Xamarin</category>
+        
+      </item>
+    
+      <item>
+        <title>RxJava の combineLatest のコード例</title>
+        <description>&lt;p&gt;RxJava の combineLatest、overload がたくさんあって一発で書けた試しがないので、うまく書けた例を置いておきます。&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;name&lt;/code&gt; と &lt;code class=&quot;highlighter-rouge&quot;&gt;age&lt;/code&gt; のいずれかの &lt;code class=&quot;highlighter-rouge&quot;&gt;Observable&amp;lt;T&amp;gt;&lt;/code&gt; が変化したときに、 “name - 歳:age” な文字列を push するというものです。&lt;/p&gt;
+
+&lt;div class=&quot;language-kotlin highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;name&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PublishSubject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;create&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;()&lt;/span&gt;
+&lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;age&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;PublishSubject&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;create&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;()&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// 型引数指定と BiFunction は省略できないみたい&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Observable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;combineLatest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;age&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;BiFunction&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;$n - 歳:${a}&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;subscribe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;combineLatest&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;onNext - ${it}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// RxKotlin を導入すると型推論が効くとコメントで教えてもらいました&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Observables&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;combineLatest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;age&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&amp;gt;&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;$n - 歳:${a}&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;subscribe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;combineLatest&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;onNext - ${it}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+
+&lt;span class=&quot;c1&quot;&gt;// Observable&amp;lt;T&amp;gt; を配列で渡せるけど、第2引数の combiner が Any な配列になっちゃう&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;Observable&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;combineLatest&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;arrayOf&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;age&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;),&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;n&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;String&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;as&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Int&lt;/span&gt;
+    &lt;span class=&quot;s&quot;&gt;&quot;$n - age:${a}&quot;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;subscribe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt;
+            &lt;span class=&quot;n&quot;&gt;Log&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;d&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;combineLatest&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&quot;onNext - ${it}&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+
+
+&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;onNext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;saito&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;age&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;onNext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;24&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;name&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;onNext&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;yoshida&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+</description>
+        <pubDate>Thu, 30 Nov 2017 14:59:00 +0000</pubDate>
+        <link>https://blog.amay077.net/blog/2017/11/30/b04427aeab4f10ec24f6/</link>
+        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/11/30/b04427aeab4f10ec24f6/</guid>
+        
+        
+        <category>Android</category>
+        
+        <category>Kotlin</category>
+        
+        <category>RxJava</category>
+        
+      </item>
+    
+      <item>
+        <title>C# + ReactiveProperty vs Kotlin + RxProperty : Command 編</title>
+        <description>&lt;p&gt;ボタンを押したら、数値が１ずつ加算されていく、というやつの ViewModel 側&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;c--reactiveproperty-の場合&quot;&gt;C# + ReactiveProperty の場合&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Counter&lt;/code&gt; がラベルにバインドする数値、 &lt;code class=&quot;highlighter-rouge&quot;&gt;Increment&lt;/code&gt; がボタンにバインドするコマンド。&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MainViewModel&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ReactiveProperty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ReactiveProperty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;kt&quot;&gt;int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;ReactiveCommand&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Increment&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt; 
+
+    &lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;MainViewModel&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Increment コマンドは、 Counter が 10 未満の間、使用可能&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Increment&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Select&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ToReactiveCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Increment コマンドが実行されたら Counter を +1 してく&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;Increment&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Subscribe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;x&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Value&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;kotlin--rxproperty-の場合&quot;&gt;Kotlin + RxProperty の場合&lt;/h2&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;counter&lt;/code&gt; がラベルにバインドする数値、 &lt;code class=&quot;highlighter-rouge&quot;&gt;increment&lt;/code&gt; がボタンにバインドするコマンド。&lt;/p&gt;
+
+&lt;div class=&quot;language-kotlin highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MainViewModel&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;counter&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RxProperty&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Int&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;c1&quot;&gt;// Increment コマンドは、 Counter が 10 未満の間、使用可能&lt;/span&gt;
+    &lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;increment&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;RxCommand&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;map&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;it&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;apply&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+        &lt;span class=&quot;c1&quot;&gt;// Increment コマンドが実行されたら Counter を +1 してく&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;subscribe&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;({&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;set&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;counter&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;get&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;!!&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;+&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
+    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;C# は言語の仕様？で、読み取り専用プロパティの定義のなかで他のプロパティを参照できない。のでコンストラクタに書く。&lt;/p&gt;
+
+&lt;p&gt;Kotlin はその辺のしがらみが少ないので、思った通りに書ける感じ。&lt;br /&gt;
+さらに &lt;code class=&quot;highlighter-rouge&quot;&gt;.apply&lt;/code&gt; 関数で Command の subscribe 処理も定義できるので、結果コンストラクタに書くことがなくなりました、スッキリ。&lt;/p&gt;
+
+&lt;p&gt;Android + Kotlin な人は、 RxProperty もっと使っていきましょー&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://qiita.com/k-kagurazaka@github/items/3fc1fc19ea608cac9913&quot;&gt;RxPropertyでRxJavaとAndroid Data Bindingを連携する - Qiita&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;コードの短さだと Kotlin だし、この C# の &lt;code class=&quot;highlighter-rouge&quot;&gt;MainViewModel.cs&lt;/code&gt; は、Xamarin(Android, iOS, Mac) や Windows など全部共通実装でいけちゃう。&lt;/p&gt;
+
+&lt;p&gt;どちらも良い。&lt;/p&gt;
+</description>
+        <pubDate>Tue, 28 Nov 2017 14:59:00 +0000</pubDate>
+        <link>https://blog.amay077.net/blog/2017/11/28/37e1032f2a8f30138284/</link>
+        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/11/28/37e1032f2a8f30138284/</guid>
+        
+        
+        <category>Android</category>
+        
+        <category>C#</category>
+        
+        <category>iOS</category>
+        
+        <category>Kotlin</category>
+        
+      </item>
     
       <item>
         <title>2017年冬から始める ReactiveProperty + Xamarin.Forms</title>
@@ -763,590 +1226,6 @@ day2 も day3 もレベルが高すぎた。登壇者の方、通常セッショ
         <category>GoogleMapsAPI</category>
         
         <category>Java</category>
-        
-      </item>
-    
-      <item>
-        <title>Androidでアニメーションを連続で実行するのが面倒なのを Kotlin で便利にした話</title>
-        <description>&lt;p&gt;Android で「浮いてるように見える」アニメーションを実装する機会がありまして。次の画像のようなものなんですが。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/concat_animations_with_kotlin_01.gif&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;このアニメーションは、&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;2秒かけて上へ少し移動する&lt;/li&gt;
-  &lt;li&gt;2秒かけて下へ少し移動する&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;を「連続で」「繰り返し」実行させることで実現しています。&lt;br /&gt;
-「連続で」とは、 1. のアニメーションが終わったら 2. のアニメーションを開始する、という意味です。&lt;/p&gt;
-
-&lt;h2 id=&quot;java-android-では&quot;&gt;Java-Android では…&lt;/h2&gt;
-
-&lt;p&gt;これを Android の View のアニメーションAPI で実現すると、普通にひどいコードになります。次がそれ。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-Java&quot;&gt;// 2秒かけて上へ移動するアニメーション
-final TranslateAnimation anim1 = new TranslateAnimation(
-        Animation.RELATIVE_TO_SELF,  0.0f,
-        Animation.RELATIVE_TO_SELF,  0.0f,
-        Animation.RELATIVE_TO_SELF,  0.0f,
-        Animation.RELATIVE_TO_SELF, -0.1f);
-anim1.setDuration(2000);
-
-// 2秒かけて下へ移動するアニメーション
-final TranslateAnimation anim2 = new TranslateAnimation(
-        Animation.RELATIVE_TO_SELF,  0.0f,
-        Animation.RELATIVE_TO_SELF,  0.0f,
-        Animation.RELATIVE_TO_SELF, -0.1f,
-        Animation.RELATIVE_TO_SELF,  0.0f);
-anim2.setDuration(2000);
-
-anim1.setAnimationListener(new Animation.AnimationListener() {
-    @Override
-    public void onAnimationStart(Animation animation) { }
-
-    @Override
-    public void onAnimationEnd(Animation animation) {
-        anim2.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) { }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                // 3. 下へのアニメーションが終わったら、上へ移動するアニメーションをまた開始
-                view.startAnimation(anim1);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) { }
-        });
-
-        // 2. 上へのアニメーションが終わったら、下へ移動するアニメーションを開始
-        view.startAnimation(anim2);
-    }
-
-    @Override
-    public void onAnimationRepeat(Animation animation) { }
-});
-
-// 1. 上へ移動するアニメーションを開始
-view.startAnimation(anim1);
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;コールバックのネストに、行いたい処理とコードの記述順が逆という二重苦、これはやってられません。&lt;/p&gt;
-
-&lt;p&gt;これだけで Kotlin を使いたい案件です（Java でも Deferred が使えるライブラリ&lt;RxJava でも可=&quot;&quot;&gt;を使えばマシにはなります）。&lt;/RxJava&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;これが-kotlin-だと&quot;&gt;これが Kotlin だと…&lt;/h2&gt;
-
-&lt;p&gt;というわけで Kotlin でやってみました。&lt;/p&gt;
-
-&lt;p&gt;まず、「アニメーションを実行して、アニメーションが終わったら次へ継続する関数」を作成します。&lt;br /&gt;
-ここでは &lt;code class=&quot;highlighter-rouge&quot;&gt;View&lt;/code&gt; の拡張関数として定義してみました。&lt;/p&gt;
-
-&lt;div class=&quot;language-kotlin highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;package&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;net.amay077.animsample&lt;/span&gt;
-
-&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;android.view.View&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;android.view.animation.Animation&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;import&lt;/span&gt; &lt;span class=&quot;nn&quot;&gt;kotlin.coroutines.experimental.suspendCoroutine&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;suspend&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;View&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;startAnimationAsync&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;anim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-
-    &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;suspendCoroutine&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;continuation&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&amp;gt;&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;anim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;setAnimationListener&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;kd&quot;&gt;object&lt;/span&gt; &lt;span class=&quot;err&quot;&gt;: &lt;/span&gt;&lt;span class=&quot;nc&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;AnimationListener&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-            &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;onAnimationStart&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-            &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;onAnimationEnd&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-                &lt;span class=&quot;n&quot;&gt;continuation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;resume&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Unit&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-            &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-
-            &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;fun&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;onAnimationRepeat&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;?)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-        &lt;span class=&quot;p&quot;&gt;})&lt;/span&gt;
-
-        &lt;span class=&quot;k&quot;&gt;this&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;startAnimation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;anim&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;呼び出し側は次のような感じ。&lt;br /&gt;
-コールバック地獄の Java に比べて天国かよここは…。&lt;br /&gt;
-アニメーションはUIスレッドから呼び出す必要があるので &lt;code class=&quot;highlighter-rouge&quot;&gt;async() { }&lt;/code&gt; ではなく &lt;code class=&quot;highlighter-rouge&quot;&gt;launch(UI) { }&lt;/code&gt; を使う必要があるようです。&lt;/p&gt;
-
-&lt;div class=&quot;language-kotlin highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;button1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;findViewById&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;R&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;button1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-
-&lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;anim1&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TranslateAnimation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.5f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;anim1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;duration&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2000&lt;/span&gt;
-
-&lt;span class=&quot;kd&quot;&gt;val&lt;/span&gt; &lt;span class=&quot;py&quot;&gt;anim2&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;TranslateAnimation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;m&quot;&gt;0.5f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;Animation&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;RELATIVE_TO_SELF&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0.0f&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-&lt;span class=&quot;n&quot;&gt;anim2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;duration&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;2000&lt;/span&gt;
-
-&lt;span class=&quot;n&quot;&gt;launch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;UI&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// メインスレッドから async するよ&lt;/span&gt;
-    &lt;span class=&quot;c1&quot;&gt;// ずっとくりかえし&lt;/span&gt;
-    &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;true&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;button1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;startAnimationAsync&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;anim1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 1. 2秒かけて上へ移動するアニメーションを実行&lt;/span&gt;
-        &lt;span class=&quot;n&quot;&gt;button1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;startAnimationAsync&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;anim2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;c1&quot;&gt;// 2. 2秒かけて下へ移動するアニメーションを実行&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;Kotlin をまともに使うのが初めてなのでまだ改善できるかも。。&lt;br /&gt;
-よいコードがありましたらご指摘ください。&lt;/p&gt;
-
-&lt;p&gt;※Kotlin の coroutine(async/await) は 2017年7月現在、正式リリースされていません(experimental 版です)。&lt;/p&gt;
-
-&lt;p&gt;Kotlin での実装には、次のサイトを参考にさせていただきました&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://qiita.com/Kogarasi/items/4bd0a37763b057e9d796&quot;&gt;Android開発ではじめるKotlin - Qiita&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://qiita.com/ke__kyukyun1828/items/c4c321650d888765140e&quot;&gt;Kotlin覚書-環境構築 - Qiita&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;http://qiita.com/k-kagurazaka@github/items/702c92bc3381af36db12&quot;&gt;Kotlin+Androidでasync/await - Qiita&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://stackoverflow.com/questions/37805860/how-to-instantiate-an-anonymous-class-that-implements-an-interface-in-kotlin&quot;&gt;How to instantiate an anonymous class that implements an interface in Kotlin - Stack Overflow&lt;/a&gt;&lt;/li&gt;
-  &lt;li&gt;&lt;a href=&quot;https://github.com/gildor/kotlin-coroutines-retrofit&quot;&gt;gildor/kotlin-coroutines-retrofit: Kotlin Coroutines await() extension for Retrofit Call&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;ちなみに-c-でもできます&quot;&gt;ちなみに C# でもできます&lt;/h2&gt;
-
-&lt;p&gt;C#（つまり Xamarin.Android）でも &lt;code class=&quot;highlighter-rouge&quot;&gt;async/await(つまり Task)&lt;/code&gt; と &lt;code class=&quot;highlighter-rouge&quot;&gt;TaskCompletionSource&lt;/code&gt; を組み合わせて実現できます。&lt;/p&gt;
-
-&lt;p&gt;C# にも拡張メソッドがあり、次のように定義することができます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-C#&quot;&gt;public static class ViewAnimationExtensions
-{
-    public static Task&amp;lt;bool&amp;gt; StartAnimationAsync(this View view, Animation anim)
-    {
-        var source = new TaskCompletionSource&amp;lt;bool&amp;gt;();
-        EventHandler&amp;lt;Animation.AnimationEndEventArgs&amp;gt; handler = null;
-
-        handler = (sender, e) =&amp;gt;
-        {
-            anim.AnimationEnd -= handler; // 購読解除を忘れずに
-            source.SetResult(true); // kotlin の continuation.resume(Unit) にあたるトコ
-        };
-        anim.AnimationEnd += handler; // イベントを購読
-
-        view.StartAnimation(anim);
-        return source.Task;
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;よびだし側はこう。&lt;br /&gt;
-呼び出し時に &lt;code class=&quot;highlighter-rouge&quot;&gt;await&lt;/code&gt; キーワードをつけ、それが含まれるメソッド(ここでは &lt;code class=&quot;highlighter-rouge&quot;&gt;OnCreate&lt;/code&gt;)に &lt;code class=&quot;highlighter-rouge&quot;&gt;async&lt;/code&gt; キーワードをつけます。&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&quot;language-C#&quot;&gt;protected async override void OnCreate(Bundle savedInstanceState)
-{
-    /* 省略 */
-
-    while (true)
-    {
-        await button1.StartAnimationAsync(anim1);
-        await button1.StartAnimationAsync(anim2);
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Kotlin は同一プロジェクト内に Java と混ぜて使うことができるのがよいですね。&lt;/p&gt;
-</description>
-        <pubDate>Mon, 24 Jul 2017 14:59:00 +0000</pubDate>
-        <link>https://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin/</link>
-        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/07/24/concat_animations_with_kotlin/</guid>
-        
-        
-        <category>Kotlin</category>
-        
-        <category>Android</category>
-        
-        <category>Java</category>
-        
-        <category>Xamarin</category>
-        
-        <category>C#</category>
-        
-      </item>
-    
-      <item>
-        <title>Nintendo Switch Online アプリは Xamarin(Xamarin.Forms)製です</title>
-        <description>&lt;p&gt;&lt;a href=&quot;https://www.nintendo.co.jp/hardware/switch/onlineservice/&quot;&gt;ニンテンドースイッチのオンラインサービス&lt;/a&gt;用のアプリ「Nintendo Switch Online」が、なんと &lt;strong&gt;Xamarin 製&lt;/strong&gt; でした。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;ja&quot; dir=&quot;ltr&quot;&gt;きたな！ Nintendo Switch Online アプリ(Android/iOS) は Xamarin(Xamarin.Forms)製です！ &lt;a href=&quot;https://t.co/lJX5CBckgt&quot;&gt;pic.twitter.com/lJX5CBckgt&lt;/a&gt;&lt;/p&gt;&amp;mdash; あめい@バレル待ち (@amay077) &lt;a href=&quot;https://twitter.com/amay077/status/887610194947067904&quot;&gt;2017年7月19日&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-&lt;p&gt;Android アプリと iOS アプリの権利表記の画面から使用されているライブラリを整理してみました。使用されているライブラリを見るとアプリは Xamarin.Forms 製のようです。&lt;/p&gt;
-
-&lt;h2 id=&quot;xamarin-とか-androidiosnet-とか関係なさそうなやつ&quot;&gt;Xamarin とか Android/iOS/.NET とか関係なさそうなやつ&lt;/h2&gt;
-
-&lt;h3 id=&quot;echo-cancellation-program-by-nippon-telegraph-and-telecom-corp&quot;&gt;Echo Cancellation Program by Nippon Telegraph and Telecom Corp&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;NTT やん&lt;/li&gt;
-  &lt;li&gt;ボイスチャットのエコーキャンセラっぽいですね&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;libsrtp-by-cisco-systems-inc&quot;&gt;libSRTP by Cisco Systems, Inc&lt;/h2&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/cisco/libsrtp&lt;/li&gt;
-  &lt;li&gt;Secure Realtime Transport Protocol とのこと、これもボイチャ関連ですかね&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;opus-by-xiphorg-skype-limited&quot;&gt;Opus by Xiph.Org, Skype Limited&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;http://opus-codec.org/&lt;/li&gt;
-  &lt;li&gt;音声コーデックでした&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;webrtc-audioprocessing-by-google-inc&quot;&gt;WebRTC AudioProcessing by Google Inc&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://webrtc.org/&lt;/li&gt;
-  &lt;li&gt;WebRTC で音声関連ですねー&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;breakpad-by-google-inc&quot;&gt;BreakPad by Google Inc&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://chromium.googlesource.com/breakpad/breakpad/&lt;/li&gt;
-  &lt;li&gt;クラッシュレポーティングシステムらしいです&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;curl-by-deniel-stenberg&quot;&gt;Curl by Deniel Stenberg&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://ja.wikipedia.org/wiki/CURL&lt;/li&gt;
-  &lt;li&gt;cURL のことですよね？&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;libdisasm&quot;&gt;Libdisasm&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;http://bastard.sourceforge.net/libdisasm.html ？&lt;/li&gt;
-  &lt;li&gt;ディスアセンブラ？よくわかりません&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;gflags-by-google-inc&quot;&gt;gflags by Google Inc&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://gflags.github.io/gflags/&lt;/li&gt;
-  &lt;li&gt;コマンドラインツール？&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;linux-syscall-support-by-google-inc&quot;&gt;Linux Syscall Support by Google Inc&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://chromium.googlesource.com/linux-syscall-support/ ？&lt;/li&gt;
-  &lt;li&gt;わかりません&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;musl-by-rich-felker&quot;&gt;musl by Rich Felker&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://www.musl-libc.org/&lt;/li&gt;
-  &lt;li&gt;C++ 関連はわからんなー&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;android-関連のやつ&quot;&gt;Android 関連のやつ&lt;/h2&gt;
-
-&lt;h3 id=&quot;lottie-by-airbnb&quot;&gt;Lottie by AirBnB&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://airbnb.design/lottie/&lt;/li&gt;
-  &lt;li&gt;アニメーションライブラリですね。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;square-bindings&quot;&gt;square-bindings&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/mattleibow/square-bindings&lt;/li&gt;
-  &lt;li&gt;Androidアプリ開発者の御用達、Square社のAndroid向けライブラリをXamarin.Androidから呼べるようにしたラッパーです&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;okio&quot;&gt;Okio&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/square/okio&lt;/li&gt;
-  &lt;li&gt;これも Square の。通信ライブラリですね。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;ios-関連のやつ&quot;&gt;iOS 関連のやつ&lt;/h2&gt;
-
-&lt;h3 id=&quot;lottie-by-airbnb-1&quot;&gt;Lottie by AirBnB&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Android と同じ〜&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;webptouch&quot;&gt;WebP.Touch&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/luberda-molinet/WebP.Touch&lt;/li&gt;
-  &lt;li&gt;画像フォーマット「WebP」のデコーダです&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;xamarinforms-関連のやつ&quot;&gt;Xamarin.Forms 関連のやつ&lt;/h2&gt;
-
-&lt;h3 id=&quot;xamarin-sdk&quot;&gt;Xamarin SDK&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://www.xamarin.com/&lt;/li&gt;
-  &lt;li&gt;はい出ました&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;plugins-for-xamarin-by-james-montemagno--refractored-llc&quot;&gt;Plugins for Xamarin by James Montemagno / Refractored LLC&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/xamarin/XamarinComponents&lt;/li&gt;
-  &lt;li&gt;Xamarin の機能を拡張するライブラリ群です&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;share-plugin-by-jakob-gurtl&quot;&gt;Share Plugin by Jakob Gurtl&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;http://guertl.me/post/136407883480/share-plugin-for-xamarin-and-windows&lt;/li&gt;
-  &lt;li&gt;「他のアプリで開く」的な機能を提供するやつ&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;hockey-sdk&quot;&gt;Hockey SDK&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://hockeyapp.net/&lt;/li&gt;
-  &lt;li&gt;クラッシュレポートとか配布自動化とかユーザーメトリクス収集とか（被ってるライブラリがあるけど）&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;carouselviewformsplugin-by-alexrainman&quot;&gt;CarouselView.FormsPlugin by alexrainman&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/alexrainman/CarouselView&lt;/li&gt;
-  &lt;li&gt;横にスワイプして画面切り替えるやつ&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;xamarin-forms-lab&quot;&gt;Xamarin Forms Lab&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/XLabs/Xamarin-Forms-Labs&lt;/li&gt;
-  &lt;li&gt;Xamarin.Forms の機能を拡張するライブラリ（もうメンテ終了してて、作者は Xamarin に JOIN したけど）&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;current-activity-plugin-by-james-montemagno&quot;&gt;Current Activity Plugin by James Montemagno&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/jamesmontemagno/CurrentActivityPlugin&lt;/li&gt;
-  &lt;li&gt;Android 向けと思われるが…&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;ffimageloading-by-fabien-molinet&quot;&gt;FFImageLoading by Fabien Molinet&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/luberda-molinet/FFImageLoading&lt;/li&gt;
-  &lt;li&gt;画像読み込みライブラリ。まあ Picasso や Glide みたいなやつですわ。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;skiasharp&quot;&gt;SkiaSharp&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/mono/SkiaSharp&lt;/li&gt;
-  &lt;li&gt;出ました、クロスプラットフォームの２Dグラフィックス描画ライブラリ&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;net-関連のやつ&quot;&gt;.NET 関連のやつ&lt;/h2&gt;
-
-&lt;h3 id=&quot;modernhttpclient-by-paul-betts&quot;&gt;ModernHttpClient by Paul Betts&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/paulcbetts/ModernHttpClient&lt;/li&gt;
-  &lt;li&gt;各プラットフォームの通信ライブラリと .NET の HttpClient の橋渡しをします&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;jsonnet-by-james-newton-king&quot;&gt;Json.NET by James Newton-King&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;http://www.newtonsoft.com/json&lt;/li&gt;
-  &lt;li&gt;いわずとしれた Json を扱うライブラリ&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;pclcrypto&quot;&gt;PCLCrypto&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/AArnott/PCLCrypto&lt;/li&gt;
-  &lt;li&gt;暗号化ライブラリです&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;mathnet-numerics-by-mathnet&quot;&gt;Math.NET Numerics by Math.NET&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://numerics.mathdotnet.com/&lt;/li&gt;
-  &lt;li&gt;Math というくらいなので数学系のライブラリなのでしょう&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;pinvoke-by-andrew-arnott-and-more&quot;&gt;P/Invoke by Andrew Arnott and more&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/AArnott/pinvoke&lt;/li&gt;
-  &lt;li&gt;Win32DLLを簡単に呼び出せるようにするライブラリっぽいですが、一体何のために？&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h3 id=&quot;validation&quot;&gt;Validation&lt;/h3&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;https://github.com/aarnott/Validation&lt;/li&gt;
-  &lt;li&gt;メソッドでバリデーションして例外投げるのを簡単にしてくれるっぽい&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;p&gt;Xamarin の事例としては久しぶりのビッグネームじゃあないでしょうか、しかもワールドクラス(Microsoft がプレスリリースだせば良いのに)。&lt;/p&gt;
-
-&lt;p&gt;Xamarin.Forms製のようなので、Windows 10 や macOS 向けのアプリも(Nintendo にやる気があれば)開発できる気がしますね！&lt;/p&gt;
-
-&lt;p&gt;とはいえ推測ですが、WebRTCでボイスチャットみたいなコアな機能は C/C++ でやってるだろうし、ゲームの紹介的な画面は HTML だろうし、いろんな「クロスプラットフォームアプリ開発技法」を組み合わせて使っているのでしょうね。&lt;/p&gt;
-
-&lt;p&gt;権利表記に &lt;a href=&quot;https://github.com/amay077/Xamarin.Forms.GoogleMaps&quot;&gt;自作ライブラリ&lt;/a&gt; が載るの、ワンチャンあるで！&lt;/p&gt;
-</description>
-        <pubDate>Wed, 19 Jul 2017 14:59:00 +0000</pubDate>
-        <link>https://blog.amay077.net/blog/2017/07/19/nintendo_switch_online_is_made_by_xamarin_forms/</link>
-        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/07/19/nintendo_switch_online_is_made_by_xamarin_forms/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>C#</category>
-        
-        <category>Android</category>
-        
-        <category>iOS</category>
-        
-      </item>
-    
-      <item>
-        <title>Xamarin を使用したアプリ開発での、問題解決の方法</title>
-        <description>&lt;p&gt;Xamarin はクロスプラットフォームアプリ開発ツールで、しかも「ネイティブAPI をラップするだけ」のタイプなので、トラブルの解決方法は、ネイティブアプリ開発の情報やノウハウの中にある場合が多いです。&lt;/p&gt;
-
-&lt;!--more--&gt;
-
-&lt;p&gt;&lt;img src=&quot;/assets/images/posts/how_to_troubleshoots_about_xamarin_programming_01.png&quot; alt=&quot;&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;私が Xamarin.Forms でアプリ開発をしていて、書いたコードが期待通り動作しない場合、以下のような手順で問題解決を試みていますよーというのを紹介します（環境面のトラブルではなく書いたコードの問題についてです）。&lt;/p&gt;
-
-&lt;p&gt;ひとつ最初に言いたいのは、問題が発生したときにまず行うことは、 &lt;strong&gt;問題が発生する最小の環境を作り出す&lt;/strong&gt; ことです。修正のためにコードを書き換えたり、人に聞いたりするのはその後です。これは Xamarin に限らず、いやプログラミングに限らず、問題解決する際にはいつも心がけている事です。&lt;/p&gt;
-
-&lt;h2 id=&quot;1-それはネイティブjava-android-や-swift-iosでも起こり得る事象か切り分ける&quot;&gt;1. それはネイティブ（Java-Android や Swift-iOS）でも起こり得る事象か切り分ける&lt;/h2&gt;
-
-&lt;p&gt;まずは、直面している問題は Java での Android アプリ開発や Swift での iOS アプリ開発でも起こり得るかを考えてみましょう。とりあえず「Android + Java + あなたが直面している問題」をキーワードにググってみても良いかもしれません。&lt;/p&gt;
-
-&lt;p&gt;画面のUIパーツの挙動、GPSなどセンサー類の使い方、通知や課金周りのトラブルなどは、ここに該当する場合が多いです。&lt;/p&gt;
-
-&lt;p&gt;もっと大雑把に言うと、 Xamarin.Forms を使っている人は、何か問題が起こったら、Xamarin.Forms ではなく、Xamarin.Android や Xamarin.iOS で試しにアプリを作ってみて、同様の問題に直面するか切り分けてみてください(Java や Swift で再現コードを書くなら、それがベストです)。&lt;/p&gt;
-
-&lt;p&gt;もしそれが Xamarin.Android や Xamarin.iOS でも起こる問題ならば、解決方法はネイティブ（Java-Android や Swift-iOS）アプリ開発の情報の中にあります。ネイティブアプリ開発に詳しい人に聞くのもよいでしょう（逆に Xamarin.Forms のソースコードを Java や Swift でのアプリ開発に詳しい人に見せても、お互いよい結果にはならないでしょう）。&lt;/p&gt;
-
-&lt;h2 id=&quot;2-それは-xamarin固有の事象かnet全般で起こりえるか切り分ける&quot;&gt;2. それは Xamarin固有の事象か、.NET全般で起こりえるか切り分ける&lt;/h2&gt;
-
-&lt;p&gt;ネイティブが原因である可能性を排除できたら、次は Xamarin 固有の事象かどうかを切り分けます。&lt;/p&gt;
-
-&lt;p&gt;Xamarin 固有とは、言い換えればほとんど &lt;a href=&quot;https://developer.xamarin.com/guides/xamarin-forms/&quot;&gt;Xamarin.Forms&lt;/a&gt; の機能に関する問題かどうかです。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Xamarin.Forms の画面レイアウト(ContentPage, MasterDetailPage, ContentView, …)&lt;/li&gt;
-  &lt;li&gt;Xamarin.Forms の画面ナビゲーション(NavigationPage, PushAsync, PushModalAsync, …)&lt;/li&gt;
-  &lt;li&gt;(Xamarin.Forms の)XAML&lt;/li&gt;
-  &lt;li&gt;(Xamarin.Forms の)データバインディング&lt;/li&gt;
-  &lt;li&gt;カスタムレンダラー&lt;/li&gt;
-  &lt;li&gt;Effects, Behavior&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;などはここに該当するでしょう。&lt;/p&gt;
-
-&lt;p&gt;解決方法を探るには Xamarin.Forms + あなたが直面している問題 をキーワードにググる（英語の方が見つかりやすい）、 &lt;a href=&quot;https://teratail.com/&quot;&gt;teratail&lt;/a&gt; や &lt;a href=&quot;https://www.facebook.com/groups/xm.jxug/&quot;&gt;JXUG の Facebook ページ&lt;/a&gt;に、 Xamarin.Forms のタグを付けて、聞いてみるのもよいです。&lt;/p&gt;
-
-&lt;p&gt;ちなみに現在日本で発売されている Xamarin に関する書籍は、マイクロソフト公式である&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://amzn.to/2vcXNGb&quot;&gt;プログラミングXamarin 上 Xamarin.FormsとC#によるクロスプラットフォームモバイルアプリ開発&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を筆頭に、ほとんどが Xamarin.Forms に関するものです。書籍から解決方法が得られるかも知れません。&lt;br /&gt;
-日本で発売済、または発売予定の書籍一覧は&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;http://qiita.com/amay077/items/38ee79b3e3e88cf751b9#%E6%9B%B8%E7%B1%8D&quot;&gt;Xamarin(ザマリン) とはなんぞや - 日本語情報について - 書籍&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;でも紹介しています。&lt;/p&gt;
-
-&lt;p&gt;Xamarin.Forms 向けと誤解されやすいのですが &lt;a href=&quot;https://github.com/xamarin/XamarinComponents&quot;&gt;Plugins for Xamarin（Xamarin Plugins）&lt;/a&gt; と呼ばれるライブラリ群があります。&lt;br /&gt;
-ここでトラブルに遭遇した場合、それは Xamarin固有 ですが Xamarin.Forms には依存しません。つまり 1. に戻って「Xamarin.Android、Xamarin.iOS で試してみる」ことが可能になります。さらにこれらはオープンソースなので、デバッグも可能です。ソースコードを追えば、Xamarin Plugins は各ネイティブのAPIを使った実装に対して、共通なインターフェースを与えているだけであることが分かると思います。&lt;/p&gt;
-
-&lt;h2 id=&quot;3-net全般で起こりえる問題であればnet系の情報源から解決方法を探す&quot;&gt;3. .NET全般で起こりえる問題であれば、.NET系の情報源から解決方法を探す&lt;/h2&gt;
-
-&lt;p&gt;ここまで来ると、「Android/iOSネイティブが原因ではない」「Xamarin固有の機能(≒Xamarin.Forms)が原因でもない」となっているはずです。&lt;/p&gt;
-
-&lt;p&gt;ここであり得る問題は、&lt;/p&gt;
-
-&lt;ol&gt;
-  &lt;li&gt;C# の言語機能に関すること&lt;/li&gt;
-  &lt;li&gt;.NET Framework(や Mono)クラスライブラリの使い方や仕様に関すること&lt;/li&gt;
-  &lt;li&gt;.NETプラットフォームを対象とした有償やOSSのライブラリに関すること&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;くらいしか想定される原因がないと思います。&lt;/p&gt;
-
-&lt;p&gt;1 は言語の知識を得れば解決すると思いますが、言語の最新バージョンが使用できるか否かに関わるトラブルはあり得ます。&lt;/p&gt;
-
-&lt;p&gt;2 も、.NET Framework のクラスライブラリの使い方の（新しめの）情報を当たれば、単純な How to であれば解決します。&lt;/p&gt;
-
-&lt;p&gt;ちょっと複雑な問題である場合もあります。&lt;br /&gt;
-例えば 「.NET Framework のクラスを使用した通信処理が Android では正しく動作しない、使い方は正しいはずである。」という問題が起こった場合、次のように切り分けていく必要があります。&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;そのコードは iOS でも動作するか？&lt;/li&gt;
-  &lt;li&gt;そのコードは Windows(コンソールアプリ) でも動作するか？&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;.NET Framework は、プラットフォームによって実装が異なるため、同じコードでも「あるプラットフォームだけ動作しない」可能性はあり得ます。そのような場合、動作させたい全てのプラットフォームで期待通り動作するコードに辿りつければよいですが、そうでない場合、プラットフォーム固有の回避（ワークアラウンド）コードを埋め込む必要があるかもしれません。&lt;/p&gt;
-
-&lt;p&gt;AOT(Ahead Of Time)コンパイルを使用するiOS固有の事象として「iOSシミュレータでは動作するが、端末では動作しない」というものがあります。&lt;a href=&quot;https://developer.xamarin.com/guides/ios/advanced_topics/limitations/&quot;&gt;Limitations - Xamarin&lt;/a&gt; に引っかかってないか確認しましょう（Android でも端末による挙動の違いはありますが、主旨がズレるので割愛します）。&lt;/p&gt;
-
-&lt;p&gt;3 は、有名どころだと &lt;a href=&quot;http://www.newtonsoft.com/json&quot;&gt;Json.NET&lt;/a&gt; のような、主に nuget で配布されているライブラリです。これらに関する問題であれば、発生している事象と、再現に必要な最小限の情報を突き止めて、 GitHub の issue や開発元へコンタクトを取るなどを行いましょう。ソースコードが公開されているので、大抵の場合、自分でデバッグして問題点を特定し、修正のパッチを投げることも可能です。&lt;/p&gt;
-
-&lt;p&gt;中には（&lt;a href=&quot;https://github.com/PrismLibrary/Prism&quot;&gt;Prism.Forms&lt;/a&gt; のように）、Xamarin.Forms を対象としたライブラリもあります(Prism はその他のプラットフォームにも対応していますが)。そのような場合でも、まずは問題が Xamarin.Forms にあるのか Prism.Forms にあるのかを切り分けて、適切な質問をしましょう。&lt;/p&gt;
-
-&lt;h1 id=&quot;まとめ&quot;&gt;まとめ&lt;/h1&gt;
-
-&lt;p&gt;もう一度言います。&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;問題が発生する最小の環境を作り出し&lt;/strong&gt; てから、解決方法を探ったり、人に聞きましょう。&lt;/p&gt;
-
-&lt;p&gt;【おまけ】&lt;br /&gt;
-他のクロスプラットフォーム開発ツールに比べて Xamarin が秀でているのは 1. の&lt;br /&gt;
-「ネイティブ（Java-Android や Swift-iOS）でも起こり得る事象かの切り分けが簡単」&lt;br /&gt;
-なことです。なぜなら Xamarin は「ネイティブAPI をラップするだけ」だから。&lt;br /&gt;
-ここで紹介したトラブルシューティングの手間が面倒だ(＝メリットよりデメリットの方が大きい)と感じるのであれば、Xamarin は使わない方がよいでしょう。&lt;/p&gt;
-</description>
-        <pubDate>Tue, 18 Jul 2017 14:59:00 +0000</pubDate>
-        <link>https://blog.amay077.net/blog/2017/07/18/how_to_troubleshoots_about_xamarin_programming/</link>
-        <guid isPermaLink="true">https://blog.amay077.net/blog/2017/07/18/how_to_troubleshoots_about_xamarin_programming/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>C#</category>
-        
-        <category>Android</category>
-        
-        <category>iOS</category>
-        
-        <category>.NET</category>
         
       </item>
     
