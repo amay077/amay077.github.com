@@ -1,0 +1,1145 @@
+<!doctype html>
+<html ⚡ lang="ja">
+  <head>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
+  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+
+  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
+  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
+  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,minimum-scale=1">
+
+  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
+
+  <title>RxJava の Observable と LiveData と ObservableField をいい感じで使おう</title>
+  <meta name="description" content="LiveData について勘違いしていたことをいくつか からの続きです。">
+
+  <link rel="canonical" href="https://blog.amay077.net/blog/2017/12/05/58e589780ccea6fd5470/">
+  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay077.net/feed.xml">
+
+  <!--ogp-->
+  <meta property="og:title" content="RxJava の Observable と LiveData と ObservableField をいい感じで使おう">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://blog.amay077.net/blog/2017/12/05/58e589780ccea6fd5470">
+  <meta property="og:site_name" content="amay077">
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:site" content="@amay077" />
+
+  <script type="application/ld+json">
+  
+{
+  "@context": "http://schema.org",
+  "@type": "NewsArticle",
+  "mainEntityOfPage": "https://blog.amay077.net/blog/2017/12/05/58e589780ccea6fd5470/",
+  "headline": "RxJava の Observable と LiveData と ObservableField をいい感じで使おう",
+  "datePublished": "2017-12-05T14:59:00+00:00",
+  "dateModified": "2017-12-05T14:59:00+00:00",
+  "description": "LiveData について勘違いしていたことをいくつか からの続きです。",
+  "author": {
+    "@type": "Person",
+    "name": "amay077"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Experiments Never Fail",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "https://blog.amay077.net/assets/images/logo.svg",
+      "width": "60",
+      "height": "60"
+    }
+  },
+  "image": {
+    "@type": "ImageObject",
+    "url": "https://blog.amay077.net/assets/images/logo.svg",
+    "height": "60",
+    "width": "60"
+  }
+}
+
+  </script>
+  
+  <style amp-custom>
+  
+  .icon > svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  vertical-align: middle; }
+  .icon > svg path {
+    fill: #828282; }
+
+amp-img {
+  background-color: grey; }
+
+.cf:after {
+  content: "";
+  display: table;
+  clear: both; }
+
+main {
+  display: block; }
+
+body {
+  background-color: #fff;
+  font-family: Arial, YuGothic;
+  margin: 0;
+  padding: 0;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased; }
+
+.site-header {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  margin: 16px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .site-header {
+      padding: 0 16px; } }
+  .site-header .page-links {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 16px;
+    font-weight: 200;
+    font-style: normal;
+    font-size: 18px;
+    line-height: 30px; }
+    .site-header .page-links a {
+      text-decoration: none;
+      color: #999999; }
+      .site-header .page-links a:hover {
+        color: #333333; }
+
+.blog-header {
+  width: 100%;
+  max-width: 700px;
+  margin: 0 auto;
+  position: relative;
+  padding: 0;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  .blog-header .blog-title {
+    margin-bottom: 8px;
+    font-size: 50px;
+    font-weight: 700;
+    letter-spacing: -2px;
+    outline: 0;
+    line-height: 50px;
+    word-break: break-word;
+    color: #333333; }
+  .blog-header .blog-description {
+    font-size: 28px;
+    margin: 0 0 20px;
+    padding: 0;
+    line-height: 1.2;
+    color: #666666;
+    font-weight: 300; }
+
+.content {
+  width: 100%;
+  max-width: 700px;
+  margin: 25px auto 0 auto;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box; }
+  @media only screen and (max-width: 800px) {
+    .content {
+      padding: 0 16px; } }
+  .content article {
+    padding: 20px 0;
+    border-bottom: 1px solid #f2f2f0; }
+    .content article:last-child {
+      border-bottom: 0px; }
+    .content article .post-title {
+      letter-spacing: -0.02em;
+      font-weight: 700;
+      font-style: normal;
+      display: block;
+      font-size: 36px;
+      line-height: 1.15;
+      margin: 0 0; }
+      .content article .post-title a {
+        text-decoration: none;
+        color: #333332; }
+        .content article .post-title a:hover {
+          text-decoration: none; }
+    .content article .post-excerpt {
+      letter-spacing: -0.02em;
+      font-weight: 300;
+      font-style: normal;
+      font-size: 20px;
+      line-height: 1.59;
+      color: #666665; }
+    .content article .post-meta {
+      font-size: 14px;
+      color: #b3b3b1;
+      line-height: 30px; }
+      .content article .post-meta a {
+        color: #b3b3b1;
+        text-decoration: none; }
+        .content article .post-meta a:hover {
+          text-decoration: underline; }
+
+.post-template .content {
+  max-width: 700px; }
+
+.index-headline {
+  border-top: 1px solid #dededc;
+  margin: 0;
+  padding: 16px 0; }
+  .index-headline span {
+    color: #b3b3b1;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px; }
+
+.pagination {
+  text-align: center;
+  padding: 16px 0 0;
+  font-size: 12px; }
+  .pagination a {
+    color: #999999;
+    text-decoration: none; }
+    .pagination a:hover {
+      color: #333333; }
+
+.site-footer {
+  margin: 0 auto;
+  padding: 48px 0;
+  width: 100%;
+  max-width: 700px;
+  font-size: 12px;
+  text-align: center;
+  color: #999999;
+  line-height: 17.6px; }
+  .site-footer a {
+    color: #666666;
+    text-decoration: none; }
+    .site-footer a:hover {
+      color: #333333; }
+
+.post .post-meta {
+  font-family: Arial, YuGothic; }
+.post .post-title {
+  font-weight: 700;
+  font-style: normal;
+  letter-spacing: -0.04em;
+  font-size: 50px;
+  line-height: 1.1;
+  color: #333332;
+  margin-bottom: 50px; }
+.post .author-image {
+  background-image: url(/assets/images/author.svg);
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  margin-right: 8px;
+  margin-bottom: -10px;
+  float: left;
+  background-size: cover;
+  border-radius: 100%;
+  text-indent: -9999px; }
+.post .post-meta-text {
+  color: #b3b3b1;
+  letter-spacing: -0.02em;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 14px;
+  overflow: hidden;
+  font-family: Arial, YuGothic;
+  white-space: nowrap;
+  text-overflow: ellipsis; }
+.post .post-content {
+  width: 100%;
+  font-family: Verdana, YuGothic;
+  color: #333333; }
+  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
+    font-family: Arial, YuGothic; }
+  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1.3;
+    margin-top: 50px;
+    margin-bottom: 0px;
+    font-family: Arial, YuGothic; }
+  .post .post-content h3 {
+    font-size: 36px; }
+  .post .post-content h2, .post .post-content h1 {
+    letter-spacing: -0.02em;
+    font-weight: 700;
+    font-style: normal;
+    font-size: 42px;
+    line-height: 1.2;
+    margin-top: 50px;
+    margin-bottom: 0px; }
+  .post .post-content table {
+    border-collapse: collapse; }
+  .post .post-content .highlight {
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+    background-color: #f8f8f8; }
+    .post .post-content .highlight table {
+      line-height: 20px;
+      border: 1px solid transparent; }
+  .post .post-content table::not(".highlight"), .post .post-content th, .post .post-content td {
+    border: 1px solid black;
+    padding: 5px;
+    text-align: left; }
+  .post .post-content p {
+    font-weight: 400;
+    font-style: normal;
+    font-size: 22px;
+    line-height: 1.59;
+    letter-spacing: -.002em;
+    margin-top: 30px;
+    margin-bottom: 0;
+    color: #333333;
+    -webkit-hyphens: auto;
+    -moz-hyphens: auto;
+    hyphens: auto; }
+  .post .post-content a {
+    color: #469af6;
+    text-decoration: none; }
+  .post .post-content amp-img, .post .post-content amp-youtube {
+    margin-top: 30px; }
+  .post .post-content figure {
+    margin: 0;
+    padding: 0 0 30px; }
+  .post .post-content figcaption {
+    font-weight: 400;
+    font-style: italic;
+    font-size: 16px;
+    line-height: 1.3;
+    color: #666665;
+    outline: 0;
+    z-index: 300;
+    text-align: center; }
+  .post .post-content hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 90%;
+    margin: 30px auto;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .post-content blockquote {
+    margin: 0 0 30px;
+    margin-left: -26px;
+    border-left: 3px solid #57ad68;
+    padding-left: 20px; }
+    .post .post-content blockquote p {
+      letter-spacing: 0.01rem;
+      font-weight: 400;
+      mborder-left: 3px solid #57ad68;
+      mpadding-left: 20px;
+      mmargin-left: -26px;
+      padding-bottom: 3px; }
+  .post .post-content ul, .post .post-content ol {
+    padding: 30px 0 30px;
+    margin: 0; }
+  .post .post-content li {
+    padding: 0;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 23px;
+    line-height: 30px;
+    margin-left: 30px;
+    margin-bottom: 12px;
+    padding-top: 2px; }
+    .post .post-content li p {
+      padding: 0 0 1.618rem; }
+  .post .post-content ol li {
+    list-style-type: decimal; }
+.post .bottom-teaser {
+  padding: 50px 0 0 0;
+  font-family: Arial, YuGothic; }
+  .post .bottom-teaser hr {
+    border: 0;
+    padding: 0;
+    display: block;
+    width: 15%;
+    margin: 16px 0 16px 100px;
+    border: 0px solid #dddddd;
+    border-top: 1px solid #dddddd; }
+  .post .bottom-teaser .isLeft {
+    float: left;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isLeft {
+        width: 100%;
+        padding-bottom: 32px; } }
+    .post .bottom-teaser .isLeft .bio {
+      margin-top: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .username {
+      margin-left: 4px;
+      margin-right: 18px;
+      margin-bottom: 18px; }
+    .post .bottom-teaser .isLeft .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isLeft a {
+      color: black;
+      text-decoration: none; }
+      .post .bottom-teaser .isLeft a:hover {
+        color: #333333;
+        text-decoration: underline; }
+    .post .bottom-teaser .isLeft .author-image {
+      display: block;
+      width: 80px;
+      height: 80px;
+      float: left;
+      background-size: cover;
+      border-radius: 100%;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft .mvp-image {
+      background-image: url(/assets/images/mvp_logo_v.svg);
+      display: block;
+      width: 80px;
+      height: 127px;
+      float: left;
+      background-size: cover;
+      text-indent: -9999px; }
+    .post .bottom-teaser .isLeft h4 {
+      font-size: 18px;
+      line-height: 1.1;
+      font-weight: 700;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+    .post .bottom-teaser .isLeft p {
+      font-size: 14px;
+      line-height: 1.3;
+      font-weight: 400;
+      padding: 0;
+      margin: 0;
+      padding-left: 100px; }
+      .post .bottom-teaser .isLeft p.published {
+        color: #999999; }
+  .post .bottom-teaser .isRight {
+    float: right;
+    width: 47%;
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box; }
+    @media only screen and (max-width: 800px) {
+      .post .bottom-teaser .isRight {
+        width: 100%; } }
+    .post .bottom-teaser .isRight .index-headline {
+      padding-bottom: 32px; }
+    .post .bottom-teaser .isRight .site-footer {
+      margin: 0;
+      padding: 0;
+      color: #333333;
+      text-align: left;
+      font-size: 14px;
+      line-height: 1.3;
+      color: #999999; }
+      .post .bottom-teaser .isRight .site-footer a {
+        color: #333333;
+        text-decoration: none; }
+        .post .bottom-teaser .isRight .site-footer a:hover {
+          text-decoration: underline; }
+      .post .bottom-teaser .isRight .site-footer .poweredby {
+        display: block;
+        padding-bottom: 18px;
+        font-weight: 700;
+        color: #333333; }
+
+.share {
+  text-align: right;
+  padding: 0; }
+  .share a {
+    text-decoration: none;
+    color: #bbbbbb;
+    padding-left: 12px; }
+    .share a .hidden {
+      display: none; }
+    .share a:hover {
+      color: #333333; }
+
+pre,
+code {
+  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
+  font-size: 15px;
+  border: 1px solid #d8d8d8;
+  border-radius: 5px;
+  background-color: #f8f8f8; }
+
+code {
+  padding: 1px 5px; }
+
+pre {
+  padding: 8px 12px;
+  overflow-x: scroll; }
+  pre > code {
+    border: 0;
+    padding-right: 0;
+    padding-left: 0; }
+
+.pagination .disabled {
+  opacity: 0; }
+
+.categories {
+  overflow: hidden;
+  padding: 20px 0 0 0; }
+
+.category {
+  float: left;
+  border: 1px;
+  border-radius: 3px;
+  background-color: #eeeeee;
+  border-style: solid;
+  border-width: 1px 1px 1px 1px;
+  border-color: #dddddd;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+#disqus_thread a {
+  color: #333333;
+  text-decoration: none; }
+
+.published {
+  float: left;
+  padding: 0px 3px;
+  margin: 1px 4px 1px 0px;
+  line-height: 30px;
+  color: #777777; }
+
+img {
+  height: auto;
+  max-width: 100%;
+  vertical-align: middle;
+  border: 0;
+  -ms-interpolation-mode: bicubic; }
+
+.amazon-ads {
+  padding: 0 0 20px 0; }
+
+
+  .highlight table td { padding: 5px; }
+.highlight table pre { margin: 0; }
+.highlight .cm {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cp {
+  color: #999999;
+  font-weight: bold;
+}
+.highlight .c1 {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .cs {
+  color: #999999;
+  font-weight: bold;
+  font-style: italic;
+}
+.highlight .c, .highlight .cd {
+  color: #999988;
+  font-style: italic;
+}
+.highlight .err {
+  color: #a61717;
+  background-color: #e3d2d2;
+}
+.highlight .gd {
+  color: #000000;
+  background-color: #ffdddd;
+}
+.highlight .ge {
+  color: #000000;
+  font-style: italic;
+}
+.highlight .gr {
+  color: #aa0000;
+}
+.highlight .gh {
+  color: #999999;
+}
+.highlight .gi {
+  color: #000000;
+  background-color: #ddffdd;
+}
+.highlight .go {
+  color: #888888;
+}
+.highlight .gp {
+  color: #555555;
+}
+.highlight .gs {
+  font-weight: bold;
+}
+.highlight .gu {
+  color: #aaaaaa;
+}
+.highlight .gt {
+  color: #aa0000;
+}
+.highlight .kc {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kd {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kn {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kp {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kr {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .kt {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .k, .highlight .kv {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .mf {
+  color: #009999;
+}
+.highlight .mh {
+  color: #009999;
+}
+.highlight .il {
+  color: #009999;
+}
+.highlight .mi {
+  color: #009999;
+}
+.highlight .mo {
+  color: #009999;
+}
+.highlight .m, .highlight .mb, .highlight .mx {
+  color: #009999;
+}
+.highlight .sb {
+  color: #d14;
+}
+.highlight .sc {
+  color: #d14;
+}
+.highlight .sd {
+  color: #d14;
+}
+.highlight .s2 {
+  color: #d14;
+}
+.highlight .se {
+  color: #d14;
+}
+.highlight .sh {
+  color: #d14;
+}
+.highlight .si {
+  color: #d14;
+}
+.highlight .sx {
+  color: #d14;
+}
+.highlight .sr {
+  color: #009926;
+}
+.highlight .s1 {
+  color: #d14;
+}
+.highlight .ss {
+  color: #990073;
+}
+.highlight .s {
+  color: #d14;
+}
+.highlight .na {
+  color: #008080;
+}
+.highlight .bp {
+  color: #999999;
+}
+.highlight .nb {
+  color: #0086B3;
+}
+.highlight .nc {
+  color: #445588;
+  font-weight: bold;
+}
+.highlight .no {
+  color: #008080;
+}
+.highlight .nd {
+  color: #3c5d5d;
+  font-weight: bold;
+}
+.highlight .ni {
+  color: #800080;
+}
+.highlight .ne {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nf {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nl {
+  color: #990000;
+  font-weight: bold;
+}
+.highlight .nn {
+  color: #555555;
+}
+.highlight .nt {
+  color: #000080;
+}
+.highlight .vc {
+  color: #008080;
+}
+.highlight .vg {
+  color: #008080;
+}
+.highlight .vi {
+  color: #008080;
+}
+.highlight .nv {
+  color: #008080;
+}
+.highlight .ow {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .o {
+  color: #000000;
+  font-weight: bold;
+}
+.highlight .w {
+  color: #bbbbbb;
+}
+.highlight {
+  background-color: #f8f8f8;
+}
+  
+  </style>
+
+  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
+  <script async src="https://cdn.ampproject.org/v0.js"></script>
+</head>
+
+  <body>
+    
+  <amp-analytics type="googleanalytics" id="analytics1">
+  <script type="application/json">
+  {
+    "vars": {
+      "account": "UA-224332-7"
+    },
+    "triggers": {
+      "trackPageview": {
+        "on": "visible",
+        "request": "pageview"
+      }
+    }
+  }
+  </script>
+  </amp-analytics>
+
+
+    <header class="site-header">
+  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+
+  <div class="page-links">
+    <a class="page-link" href="/">Home</a>
+     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay077.net" target="_blank">Search</a>
+    
+      
+      • <a class="page-link" href="/about/">About</a>
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+      
+    
+  </div>
+</header>
+
+
+    <main class="content" role="main">
+  <article class="post">
+    <div class="post-meta">
+      <h1 class="post-title">RxJava の Observable と LiveData と ObservableField をいい感じで使おう</h1>
+    </div>
+
+    <section class="post-content">
+      <a name="topofpage"></a>
+      <p><a href="./6e1c94305420a41ff7ed/">LiveData について勘違いしていたことをいくつか</a> からの続きです。</p>
+
+<!--more-->
+
+<p>前記事では LiveData は、</p>
+
+<ul>
+  <li>購読解除を自動でやってくれるので便利</li>
+  <li>DataBinding(=ObservableField)としては使えない</li>
+  <li>最低限の合成しかできないので物足りない</li>
+</ul>
+
+<p>という事を書きました。</p>
+
+<p>今回の記事では、上で挙げた微妙な３つの点を解消すべく、RxJava と LiveData と DataBinding をいい感じで併用してみたいと思います。今回もコードは Kotlin です。</p>
+
+<h2 id="rxjava-with-android-databinding">RxJava with Android DataBinding</h2>
+
+<p>RxProperty を使おう！</p>
+
+<ul>
+  <li><a href="https://qiita.com/k-kagurazaka@github/items/3fc1fc19ea608cac9913">RxPropertyでRxJavaとAndroid Data Bindingを連携する - Qiita</a></li>
+</ul>
+
+<p>はい終了。</p>
+
+<p>RxProperty について書くの何度目なんだ、自分。<br />
+作者の @k-kagurazaka@github さんにもお世話になりっぱなしだし、サイコーです、大好きです <a href="https://github.com/k-kagurazaka/rx-property-android">RxProperty</a>、もっと :star2: を！！</p>
+
+<p><code class="highlighter-rouge">RxProperty&lt;T&gt;</code> は基本的には <code class="highlighter-rouge">Observable&lt;T&gt;</code>(というか <code class="highlighter-rouge">Subject&lt;T&gt;</code>)なのですが、 <code class="highlighter-rouge">.value</code> プロパティで <code class="highlighter-rouge">ObservableField&lt;T&gt;</code> に変換できます。</p>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// MainViewModel.kt</span>
+<span class="kd">class</span> <span class="nc">MainViewModel</span> <span class="p">:</span> <span class="n">ViewModel</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="c1">// GitHub ユーザー名。EditText.text から双方向(TwoWay)バインドされる。</span>
+    <span class="kd">val</span> <span class="py">user</span> <span class="p">=</span> <span class="n">RxProperty</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;()</span>
+
+    <span class="n">init</span> <span class="p">{</span>
+        <span class="n">user</span><span class="p">.</span><span class="k">set</span><span class="p">(</span><span class="s">"hogehoge"</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<pre><code class="language-xml:activity_main.xml">&lt;?xml version="1.0" encoding="utf-8"?&gt;
+&lt;layout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"&gt;
+
+    &lt;LinearLayout
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="net.amay077.livedatasample.view.MainActivity"
+        android:orientation="vertical"&gt;
+
+        &lt;EditText
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="GitHub user name"
+            android:text="@={viewModel.user.value}"/&gt;  ←-- user.value とすることで ObservableField に！
+    &lt;/LinearLayout&gt;
+&lt;/layout&gt;
+</code></pre>
+
+<p>このように レイアウトXMLに、<code class="highlighter-rouge">viewModel.user.value</code> と記述するとデータバインディングできちゃいます。上記例ではちゃんと双方向バインディングも効きます。</p>
+
+<h2 id="rxjava-with-livedata">RxJava with LiveData</h2>
+
+<p>これは 「RxJava の <code class="highlighter-rouge">Observable&lt;T&gt;</code> から <code class="highlighter-rouge">LiveData&lt;T&gt;</code> に変換する拡張メソッド」を作ってやりましょう。</p>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// ObservableExtensions.kt</span>
+
+<span class="cm">/**
+ * Observable&lt;T&gt; を LiveData&lt;T&gt; に変換
+ */</span>
+<span class="k">fun</span> <span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">Observable</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;.</span><span class="n">toLiveData</span><span class="p">()</span> <span class="p">:</span> <span class="n">LiveData</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">{</span>
+
+    <span class="k">return</span> <span class="kd">object</span> <span class="err">: </span><span class="nc">MutableLiveData</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;()</span> <span class="p">{</span>
+        <span class="kd">var</span> <span class="py">disposable</span> <span class="p">:</span> <span class="n">Disposable</span><span class="p">?</span> <span class="p">=</span> <span class="k">null</span><span class="p">;</span>
+
+        <span class="c1">// ライフサイクルがActiveになったときに購読開始</span>
+        <span class="k">override</span> <span class="k">fun</span> <span class="n">onActive</span><span class="p">()</span> <span class="p">{</span>
+            <span class="k">super</span><span class="p">.</span><span class="n">onActive</span><span class="p">()</span>
+
+            <span class="c1">// Observable -&gt; LiveData</span>
+            <span class="n">disposable</span> <span class="p">=</span> <span class="k">this</span><span class="n">@toLiveData</span><span class="p">.</span><span class="n">subscribe</span><span class="p">({</span>
+                <span class="k">this</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+            <span class="p">})</span>
+        <span class="p">}</span>
+
+        <span class="c1">// ライフサイクルが非Activeになったら購読停止</span>
+        <span class="k">override</span> <span class="k">fun</span> <span class="n">onInactive</span><span class="p">()</span> <span class="p">{</span>
+            <span class="n">disposable</span><span class="o">?.</span><span class="n">dispose</span><span class="p">();</span>
+            <span class="k">super</span><span class="p">.</span><span class="n">onInactive</span><span class="p">()</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>ライフサイクルが非アクティブ(具体的には onPause)になったときに購読停止してあげればきっと大丈夫なはず。</p>
+
+<p>次のような感じで使えます。</p>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// MainActivity.kt</span>
+<span class="kd">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AppCompatActivity</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">override</span> <span class="k">fun</span> <span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">:</span> <span class="n">Bundle</span><span class="p">?)</span> <span class="p">{</span>
+        <span class="k">super</span><span class="p">.</span><span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">)</span>
+
+        <span class="err">＜いろいろ省略＞</span>
+
+        <span class="c1">// RxProperty を LiveData に変換。</span>
+        <span class="kd">val</span> <span class="py">liveDataUser</span> <span class="p">=</span> <span class="n">viewModel</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">toLiveData</span><span class="p">()</span>
+
+        <span class="c1">// LiveData を購読</span>
+        <span class="n">liveDataUser</span><span class="p">.</span><span class="n">observe</span><span class="p">(</span><span class="n">lifecycleOwner</span><span class="p">,</span> <span class="n">Observer</span> <span class="p">{</span> 
+            <span class="n">editUserName</span><span class="p">.</span><span class="n">setTextKeepState</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
+        <span class="p">})</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>通常は <code class="highlighter-rouge">RxProperty.value</code> で、DataBinding すればよいと思うんですが、 BindingAdapter を作るのが面倒とか、View側でちょっと手の込んだことをしたい場合には <code class="highlighter-rouge">.toLiveData()</code> で LiveData に変換して、安全な購読管理を享受できます。</p>
+
+<h2 id="livedata-を直接使った方がよいケース">LiveData を直接使った方がよいケース</h2>
+
+<p>RxProperty -&gt; LiveData する時の注意点として、値が変更時しか通知されない、というものがあります。<br />
+<a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed">昨日書いた</a> ように、 LiveData の特性は、同値チェックは特になく値が設定されれば <code class="highlighter-rouge">onChanged</code> を通知するのですが、 RxProperty は「<strong>変更</strong>通知プロパティ」なので(<code class="highlighter-rouge">RxJava 風に言うと distinctUntilChanged なので</code>)、同じ値を連続で設定しても最初しか通知されません。</p>
+
+<p>そのため、Model-&gt;ViewModel-&gt;Viewの方向へ、値をただ垂れ流して、View側で受信して何かしたい場合は、LiveData をそのまま使うのがよいでしょう。これは EventBus(Messenger) 的な使い方です。</p>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// MainViewModel.kt</span>
+<span class="kd">class</span> <span class="nc">MainViewModel</span> <span class="p">:</span> <span class="n">ViewModel</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="c1">// View 側から購読して Toast を表示するための LiveData。</span>
+    <span class="c1">// 変更通知が必要ない(=EventBus的に使う)なら、LiveData をそのまま使うのがいいんじゃなイカ。</span>
+    <span class="k">private</span> <span class="kd">val</span> <span class="py">_toast</span> <span class="p">=</span> <span class="n">MutableLiveData</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;()</span>
+    <span class="kd">val</span> <span class="py">toast</span> <span class="p">:</span> <span class="n">LiveData</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;</span> <span class="p">=</span> <span class="n">_toast</span>
+
+    <span class="k">fun</span> <span class="n">showToast</span><span class="p">(</span><span class="n">view</span><span class="p">:</span><span class="n">View</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">toast</span><span class="p">.</span><span class="k">set</span><span class="p">(</span><span class="s">"トーストだよ"</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// MainActivity.kt</span>
+<span class="kd">class</span> <span class="nc">MainActivity</span> <span class="p">:</span> <span class="n">AppCompatActivity</span><span class="p">()</span> <span class="p">{</span>
+
+    <span class="k">override</span> <span class="k">fun</span> <span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">:</span> <span class="n">Bundle</span><span class="p">?)</span> <span class="p">{</span>
+        <span class="k">super</span><span class="p">.</span><span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">)</span>
+
+        <span class="err">＜いろいろ省略＞</span>
+
+        <span class="c1">// Toast を表示するために、 toast:LiveData を購読する。</span>
+        <span class="n">viewModel</span><span class="p">.</span><span class="n">toast</span><span class="p">.</span><span class="n">observe</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Observer</span> <span class="p">{</span> <span class="n">message</span> <span class="p">-&gt;</span>
+            <span class="n">Toast</span><span class="p">.</span><span class="n">makeText</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">Toast</span><span class="p">.</span><span class="n">LENGTH_SHORT</span><span class="p">).</span><span class="n">show</span><span class="p">()</span>
+        <span class="p">})</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p>上記の例は、トーストを表示するために <code class="highlighter-rouge">LiveData&lt;String&gt;</code> を使用しています。<br />
+他にはダイアログボックスの表示や、画面遷移の要求メッセージを View 側に通知するためには LiveData をそのまま使うのが良いと思います（というかそこを Observable にする必要を感じない）。</p>
+
+<h2 id="完成系">完成系</h2>
+
+<p><a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed#%E4%BD%9C%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA">前回</a>、サンプルとして GitHub のリポジトリ一覧を検索するアプリを作っていたんでしたね。</p>
+
+<p>それを、</p>
+
+<ul>
+  <li>DataBinding</li>
+  <li>LiveData</li>
+  <li>RxJava</li>
+  <li>RxProperty</li>
+</ul>
+
+<p>全部使って書いてみたコードがこちら↓です。</p>
+
+<ul>
+  <li><a href="https://github.com/amay077/LiveDataSample">amay077/LiveDataSample: ViewModel, DataBinding, LiveData, RxJava, RxProperty 全部使ってみたサンプル</a></li>
+</ul>
+
+<p>スクリーンショットはこんなの。</p>
+
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/579172f5-898c-7dac-e8ac-52dd545f1f07.gif" alt="Untitled.gif" /></p>
+
+<p>AAC 時代でも Observable centric な考えでいいんじゃないでしょうか。<br />
+図にまとめるとこんな感じです。</p>
+
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/1bf05d3f-d884-4f56-d56a-3dedc7961a0c.png" alt="snap.png" /></p>
+
+<p>RxProperty が流行らない理由が分からないのです。みなさん使ってみてくださいね！</p>
+
+    </section>
+    <footer class="post-footer">
+
+      <section class="categories">
+        
+        <div class="category">Android</div>
+        
+        <div class="category">Kotlin</div>
+        
+        <div class="category">MVVM</div>
+        
+        <div class="category">RxJava</div>
+        
+        <p class="published">published <time datetime="2017-12-05 14:59">05 Dec 2017</time></p>
+      </section>
+      
+      <section class="share">
+          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2017-12-05-58e589780ccea6fd5470.markdown" target="_blank">Edit on GitHub</a>
+          &nbsp;
+          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay077.net/blog/2017/12/05/58e589780ccea6fd5470&text=RxJava+%E3%81%AE+Observable+%E3%81%A8+LiveData+%E3%81%A8+ObservableField+%E3%82%92%E3%81%84%E3%81%84%E6%84%9F%E3%81%98%E3%81%A7%E4%BD%BF%E3%81%8A%E3%81%86&via=amay077" target="_blank">
+          Share on
+          
+<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span>
+
+
+        </a>
+      </section>
+
+      <div class="amazon-ads">
+        <h4>Ads</h4>
+        <amp-iframe src="https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&o=9&p=48&l=st1&mode=books-jp&search=Android%7CKotlin%7CMVVM%7CRxJava&lt1=_blank&lc1=469AF6&bg1=FFFFFF&f=ifr" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
+      </div>
+      
+      <section class="disqus">
+        <div id="disqus_thread"></div>
+        <amp-iframe
+          height="300"
+          sandbox="allow-forms allow-modals allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+          resizable
+          frameborder="0"
+          src="https://s3.amazonaws.com/dangoldin.com/amp-disqus.html?url=https%3A%2F%2Fblog.amay077.net%2Fblog%2F2017%2F12%2F05%2F58e589780ccea6fd5470&disqus_name=https%3A%2F%2Fexperimentsneverfail.disqus.com%2Fembed.js">
+          <div overflow tabindex="0" role="button" aria-label="Read more">Read more!</div>
+        </amp-iframe>
+      </section>
+
+    </footer>
+    <div class="bottom-teaser cf">
+      <div class="isLeft">
+        <h5 class="index-headline featured"><span>Written by</span></h5>
+        <section class="author">
+          <a href="/about/" class="mvp-image"></a>
+          <a href="/about/"><h4>amay077</h4></a>
+          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
+</p>
+
+          <p>
+            <span>
+              
+                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
+</span><span class="username">amay077</span></a>
+
+              
+            </span>
+
+            <span>
+              
+                
+<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
+</span><span class="username">amay077</span></a>
+
+
+              
+            </span>
+          </p>
+        </section>
+      </div>
+      
+
+      <div class="isRight">
+        <h5 class="index-headline featured"><span>Supported by</span></h5>
+        <footer class="site-footer">
+          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
+          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
+          <div class="inner">
+            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2018<br>All rights reserved.</section>
+          </div>
+        </footer>
+      </div>
+    </div>
+  </article>
+</main>
+
+  </body>
+</html>
