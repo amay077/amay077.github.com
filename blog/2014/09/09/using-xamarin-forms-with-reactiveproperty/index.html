@@ -1,4 +1,4 @@
-﻿<!doctype html>
+<!doctype html>
 <html ⚡ lang="ja">
   <head>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
@@ -883,13 +883,13 @@ img {
 
 <p>　作成されたソリューションの一番上にあるプロジェクト(.Android とか .iOS が付いていないやつ)のプロジェクト設定を開いて Profile を <strong>PCL 4.5 - Profile49</strong> に変更します。元々の Profile78 では ReactiveProperty が Nuget からインストールできないためです。最近のプラットフォームを対象にするなら、あまり影響はなさそうです。</p>
 
-<p><amp-img width="832" height="549" layout="responsive" src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
+<p><img src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_01.png" alt="" /></p>
 
 <h3 id="nuget-で-reactive-extensions-と-reactiveproperty-を追加">Nuget で Reactive Extensions と ReactiveProperty を追加</h3>
 
 <p>　メニューの［プロジェクト］ー［Add Packages］で Nuget のダイアログを開き、図のように 「Reactive Extensions - Main Library」と「ReactiveProperty Portable」を追加します。</p>
 
-<p><amp-img width="820" height="542" layout="responsive" src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
+<p><img src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_02.png" alt="" /></p>
 
 <p>（Reactive Extensions の追加の際、なにやらWarningが出るようですが、とりあえず進めます。）</p>
 
@@ -906,49 +906,51 @@ img {
 
 <p>これらの実装が下のようになります。</p>
 
-<p>```csharp FirstViewModel.cs<br />
-using System;<br />
-using Codeplex.Reactive;<br />
-using System.Reactive.Linq;</p>
+<p><strong>FirstViewModel.cs</strong></p>
 
-<p>namespace FormsWithRxProperty.ViewModels<br />
-{<br />
-    public class FirstViewModel<br />
-    {<br />
-        private readonly ReactiveProperty<string> _inputText = 
-            new ReactiveProperty<string>("Hoge");
-        public ReactiveProperty<string> InputText 
-        { 
-            get { return _inputText; }
-        }</string></string></string></p>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Codeplex.Reactive</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">System.Reactive.Linq</span><span class="p">;</span>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>    public ReactiveProperty&lt;string&gt; DisplayText
-    {
-        get; private set;
-    }
+<span class="k">namespace</span> <span class="nn">FormsWithRxProperty.ViewModels</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstViewModel</span>
+    <span class="p">{</span>
+        <span class="k">private</span> <span class="k">readonly</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">_inputText</span> <span class="p">=</span> 
+            <span class="k">new</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;(</span><span class="s">"Hoge"</span><span class="p">);</span>
+        <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">InputText</span> 
+        <span class="p">{</span> 
+            <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_inputText</span><span class="p">;</span> <span class="p">}</span>
+        <span class="p">}</span>
 
-    public ReactiveCommand Clear
-    {
-        get; private set;
-    }
+        <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">DisplayText</span>
+        <span class="p">{</span>
+            <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span>
+        <span class="p">}</span>
 
-    public FirstViewModel()
-    {
-        // DisplayText は、InputText の変更から1秒後に大文字にして更新
-        this.DisplayText = _inputText
-            .Delay(TimeSpan.FromSeconds(1))
-            .Select(x =&gt; x.ToUpper())
-            .ToReactiveProperty();
+        <span class="k">public</span> <span class="n">ReactiveCommand</span> <span class="n">Clear</span>
+        <span class="p">{</span>
+            <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span>
+        <span class="p">}</span>
 
-        // InputText が `clear` の時に実装可能
-        this.Clear = _inputText
-            .Select(x =&gt; x.Equals("clear"))
-            .ToReactiveCommand();
-        // 実行されたら、InputText を空にする
-        this.Clear.Subscribe(_ =&gt; _inputText.Value = String.Empty);
-    }
-    
-} } ```
+        <span class="k">public</span> <span class="nf">FirstViewModel</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="c1">// DisplayText は、InputText の変更から1秒後に大文字にして更新</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">DisplayText</span> <span class="p">=</span> <span class="n">_inputText</span>
+                <span class="p">.</span><span class="nf">Delay</span><span class="p">(</span><span class="n">TimeSpan</span><span class="p">.</span><span class="nf">FromSeconds</span><span class="p">(</span><span class="m">1</span><span class="p">))</span>
+                <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="nf">ToUpper</span><span class="p">())</span>
+                <span class="p">.</span><span class="nf">ToReactiveProperty</span><span class="p">();</span>
+
+            <span class="c1">// InputText が `clear` の時に実装可能</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Clear</span> <span class="p">=</span> <span class="n">_inputText</span>
+                <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="nf">Equals</span><span class="p">(</span><span class="s">"clear"</span><span class="p">))</span>
+                <span class="p">.</span><span class="nf">ToReactiveCommand</span><span class="p">();</span>
+            <span class="c1">// 実行されたら、InputText を空にする</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">Clear</span><span class="p">.</span><span class="nf">Subscribe</span><span class="p">(</span><span class="n">_</span> <span class="p">=&gt;</span> <span class="n">_inputText</span><span class="p">.</span><span class="n">Value</span> <span class="p">=</span> <span class="n">String</span><span class="p">.</span><span class="n">Empty</span><span class="p">);</span>
+        <span class="p">}</span>
+        
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div></div>
 
 <p>　面倒な <code class="highlighter-rouge">INotifyPropertyChanged</code> の実装が必要なく、すっきりと記述できます。<br />
@@ -960,59 +962,61 @@ using System.Reactive.Linq;</p>
 
 <p>　PCL のプロジェクトに、 <code class="highlighter-rouge">FirstPage.cs</code> を作成し、以下のように実装します。</p>
 
-<p>```csharp FirstPage.cs<br />
-using System;<br />
-using Xamarin.Forms;<br />
-using FormsWithRxProperty.ViewModels;</p>
+<p><strong>FirstPage.cs</strong></p>
 
-<p>namespace FormsWithRxProperty.Pages<br />
-{<br />
-    public class FirstPage : ContentPage<br />
-    {<br />
-        public FirstPage()<br />
-        {<br />
-            // UI<br />
-            var entry = new Entry<br />
-            {<br />
-                Text = “Hello, Forms!”,<br />
-                VerticalOptions = LayoutOptions.Center,<br />
-                HorizontalOptions = LayoutOptions.FillAndExpand,<br />
-            };</p>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">FormsWithRxProperty.ViewModels</span><span class="p">;</span>
 
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>        var label = new Label
-        {
-            VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.CenterAndExpand,
-        };
+<span class="k">namespace</span> <span class="nn">FormsWithRxProperty.Pages</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">FirstPage</span> <span class="p">:</span> <span class="n">ContentPage</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="nf">FirstPage</span><span class="p">()</span>
+        <span class="p">{</span>
+            <span class="c1">// UI</span>
+            <span class="kt">var</span> <span class="n">entry</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Entry</span>
+            <span class="p">{</span>
+                <span class="n">Text</span> <span class="p">=</span> <span class="s">"Hello, Forms!"</span><span class="p">,</span>
+                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+            <span class="p">};</span>
 
-        var button = new Button
-        {
-            Text = "Clear (type 'clear' to enable)",
-            VerticalOptions = LayoutOptions.Center,
-            HorizontalOptions = LayoutOptions.FillAndExpand,
-        };
+            <span class="kt">var</span> <span class="n">label</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Label</span>
+            <span class="p">{</span>
+                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">CenterAndExpand</span><span class="p">,</span>
+            <span class="p">};</span>
 
-        this.Content = new StackLayout
-        {
-            Padding = new Thickness(50f),
-            VerticalOptions = LayoutOptions.Start,
-            HorizontalOptions = LayoutOptions.Fill,
-            Orientation = StackOrientation.Vertical,
-            Children =
-            {
-                entry,
-                label,
-                button
-            }
-        };
+            <span class="kt">var</span> <span class="n">button</span> <span class="p">=</span> <span class="k">new</span> <span class="n">Button</span>
+            <span class="p">{</span>
+                <span class="n">Text</span> <span class="p">=</span> <span class="s">"Clear (type 'clear' to enable)"</span><span class="p">,</span>
+                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Center</span><span class="p">,</span>
+                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">FillAndExpand</span><span class="p">,</span>
+            <span class="p">};</span>
 
-        // ViewModel との Binding
-        this.BindingContext = new FirstViewModel();
-        entry.SetBinding&lt;FirstViewModel&gt;(Entry.TextProperty, vm=&gt;vm.InputText.Value);
-        label.SetBinding&lt;FirstViewModel&gt;(Label.TextProperty, vm=&gt;vm.DisplayText.Value);
-        button.SetBinding&lt;FirstViewModel&gt;(Button.CommandProperty, vm=&gt;vm.Clear);
-    }
-} } ```
+            <span class="k">this</span><span class="p">.</span><span class="n">Content</span> <span class="p">=</span> <span class="k">new</span> <span class="n">StackLayout</span>
+            <span class="p">{</span>
+                <span class="n">Padding</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">Thickness</span><span class="p">(</span><span class="m">50f</span><span class="p">),</span>
+                <span class="n">VerticalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Start</span><span class="p">,</span>
+                <span class="n">HorizontalOptions</span> <span class="p">=</span> <span class="n">LayoutOptions</span><span class="p">.</span><span class="n">Fill</span><span class="p">,</span>
+                <span class="n">Orientation</span> <span class="p">=</span> <span class="n">StackOrientation</span><span class="p">.</span><span class="n">Vertical</span><span class="p">,</span>
+                <span class="n">Children</span> <span class="p">=</span>
+                <span class="p">{</span>
+                    <span class="n">entry</span><span class="p">,</span>
+                    <span class="n">label</span><span class="p">,</span>
+                    <span class="n">button</span>
+                <span class="p">}</span>
+            <span class="p">};</span>
+
+            <span class="c1">// ViewModel との Binding</span>
+            <span class="k">this</span><span class="p">.</span><span class="n">BindingContext</span> <span class="p">=</span> <span class="k">new</span> <span class="nf">FirstViewModel</span><span class="p">();</span>
+            <span class="n">entry</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Entry</span><span class="p">.</span><span class="n">TextProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">InputText</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+            <span class="n">label</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Label</span><span class="p">.</span><span class="n">TextProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">DisplayText</span><span class="p">.</span><span class="n">Value</span><span class="p">);</span>
+            <span class="n">button</span><span class="p">.</span><span class="n">SetBinding</span><span class="p">&lt;</span><span class="n">FirstViewModel</span><span class="p">&gt;(</span><span class="n">Button</span><span class="p">.</span><span class="n">CommandProperty</span><span class="p">,</span> <span class="n">vm</span><span class="p">=&gt;</span><span class="n">vm</span><span class="p">.</span><span class="n">Clear</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div></div>
 
 <p>　ちょっと長いですが、画面に「エディットボックス」「ラベル」「ボタン」が縦に並んでいるだけです。</p>
@@ -1021,79 +1025,81 @@ using FormsWithRxProperty.ViewModels;</p>
 
 <p>　もともとあった <code class="highlighter-rouge">App.cs</code> は、<code class="highlighter-rouge">FirstPage</code> を生成するだけにします。</p>
 
-<p>```csharp App.cs<br />
-using System;<br />
-using Xamarin.Forms;<br />
-using FormsWithRxProperty.Pages;</p>
+<p><strong>App.cs</strong></p>
 
-<p>namespace FormsWithRxProperty<br />
-{<br />
-    public class App<br />
-    {<br />
-        public static Page GetMainPage()<br />
-        {	<br />
-            return new FirstPage();<br />
-        }<br />
-    }<br />
-}</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">using</span> <span class="nn">System</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">Xamarin.Forms</span><span class="p">;</span>
+<span class="k">using</span> <span class="nn">FormsWithRxProperty.Pages</span><span class="p">;</span>
 
-## 動かす！
-
- .Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。
-
-![](/assets/images/posts/using_xamarin_forms_with_reactiveproperty_03.gif)
-
-### 追記 2014.9.10
-
-実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。
-実機でも問題なく動作しました！
-
-## 追記 2014.9.11 INotifyPropertyChanged の利用
-
-ViewModel は ``INotifyPropertyChanged`` を実装して作成するのが一般的です。既にそのようにして作られた ViewModel でも ``IObservable`` 化して、ReactiveProperty で利用できます。
-
-```csharp SecondViewModel.cs
-public class SecondViewModel : INotifyPropertyChanged
-{
-    public ReactiveProperty&lt;string&gt; ValidationAttr { get; private set; }
-    public event PropertyChangedEventHandler PropertyChanged;
-
-    private string _myName = "HoGe";
-    public string MyName 
-    {
-        get { return _myName; }
-        set 
-        { 
-            if (_myName == value) return;
-
-            _myName = value;
-            PropertyChanged(this, new PropertyChangedEventArgs("MyName"));
-        }
-    }
-
-    public ReactiveProperty&lt;string&gt; LowerText { get; private set; }
-
-    private ICommand _resetCommand;
-    public ICommand ResetCommand
-    {
-        get
-        {
-            return _resetCommand ?? (_resetCommand = 
-                new Xamarin.Forms.Command(() =&gt; MyName = "XAAAAMAAARIN!!"));
-        }
-    }
-
-    public SecondViewModel()
-    {
-        this.LowerText = this.ObserveProperty(x =&gt; x.MyName)
-            .Select(x =&gt; x.ToLower())
-            .ToReactiveProperty();
-    }
-}
+<span class="k">namespace</span> <span class="nn">FormsWithRxProperty</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="k">class</span> <span class="nc">App</span>
+    <span class="p">{</span>
+        <span class="k">public</span> <span class="k">static</span> <span class="n">Page</span> <span class="nf">GetMainPage</span><span class="p">()</span>
+        <span class="p">{</span>	
+            <span class="k">return</span> <span class="k">new</span> <span class="nf">FirstPage</span><span class="p">();</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
 </code></pre></div></div>
 
-<p><amp-img width="342" height="527" layout="responsive" src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_04.png" alt="" /></p>
+<h2 id="動かす">動かす！</h2>
+
+<p>.Android か .iOS の付いたプロジェクトをスタートアップにして、実行します。</p>
+
+<p><img src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_03.gif" alt="" /></p>
+
+<h3 id="追記-2014910">追記 2014.9.10</h3>
+
+<p>実機で動作確認するの忘れてました（実機はAOTなのに対してiOSシミュレータはJITなのでリフレクションとかが普通に動いてしまう）。<br />
+実機でも問題なく動作しました！</p>
+
+<h2 id="追記-2014911-inotifypropertychanged-の利用">追記 2014.9.11 INotifyPropertyChanged の利用</h2>
+
+<p>ViewModel は <code class="highlighter-rouge">INotifyPropertyChanged</code> を実装して作成するのが一般的です。既にそのようにして作られた ViewModel でも <code class="highlighter-rouge">IObservable</code> 化して、ReactiveProperty で利用できます。</p>
+
+<p><strong>SecondViewModel.cs</strong></p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">public</span> <span class="k">class</span> <span class="nc">SecondViewModel</span> <span class="p">:</span> <span class="n">INotifyPropertyChanged</span>
+<span class="p">{</span>
+    <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">ValidationAttr</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+    <span class="k">public</span> <span class="k">event</span> <span class="n">PropertyChangedEventHandler</span> <span class="n">PropertyChanged</span><span class="p">;</span>
+
+    <span class="k">private</span> <span class="kt">string</span> <span class="n">_myName</span> <span class="p">=</span> <span class="s">"HoGe"</span><span class="p">;</span>
+    <span class="k">public</span> <span class="kt">string</span> <span class="n">MyName</span> 
+    <span class="p">{</span>
+        <span class="k">get</span> <span class="p">{</span> <span class="k">return</span> <span class="n">_myName</span><span class="p">;</span> <span class="p">}</span>
+        <span class="k">set</span> 
+        <span class="p">{</span> 
+            <span class="k">if</span> <span class="p">(</span><span class="n">_myName</span> <span class="p">==</span> <span class="k">value</span><span class="p">)</span> <span class="k">return</span><span class="p">;</span>
+
+            <span class="n">_myName</span> <span class="p">=</span> <span class="k">value</span><span class="p">;</span>
+            <span class="nf">PropertyChanged</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="k">new</span> <span class="nf">PropertyChangedEventArgs</span><span class="p">(</span><span class="s">"MyName"</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="n">ReactiveProperty</span><span class="p">&lt;</span><span class="kt">string</span><span class="p">&gt;</span> <span class="n">LowerText</span> <span class="p">{</span> <span class="k">get</span><span class="p">;</span> <span class="k">private</span> <span class="k">set</span><span class="p">;</span> <span class="p">}</span>
+
+    <span class="k">private</span> <span class="n">ICommand</span> <span class="n">_resetCommand</span><span class="p">;</span>
+    <span class="k">public</span> <span class="n">ICommand</span> <span class="n">ResetCommand</span>
+    <span class="p">{</span>
+        <span class="k">get</span>
+        <span class="p">{</span>
+            <span class="k">return</span> <span class="n">_resetCommand</span> <span class="p">??</span> <span class="p">(</span><span class="n">_resetCommand</span> <span class="p">=</span> 
+                <span class="k">new</span> <span class="n">Xamarin</span><span class="p">.</span><span class="n">Forms</span><span class="p">.</span><span class="nf">Command</span><span class="p">(()</span> <span class="p">=&gt;</span> <span class="n">MyName</span> <span class="p">=</span> <span class="s">"XAAAAMAAARIN!!"</span><span class="p">));</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+
+    <span class="k">public</span> <span class="nf">SecondViewModel</span><span class="p">()</span>
+    <span class="p">{</span>
+        <span class="k">this</span><span class="p">.</span><span class="n">LowerText</span> <span class="p">=</span> <span class="k">this</span><span class="p">.</span><span class="nf">ObserveProperty</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="n">MyName</span><span class="p">)</span>
+            <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">.</span><span class="nf">ToLower</span><span class="p">())</span>
+            <span class="p">.</span><span class="nf">ToReactiveProperty</span><span class="p">();</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre></div></div>
+
+<p><img src="/assets/images/posts/using_xamarin_forms_with_reactiveproperty_04.png" alt="" /></p>
 
 <h2 id="まとめ">まとめ</h2>
 

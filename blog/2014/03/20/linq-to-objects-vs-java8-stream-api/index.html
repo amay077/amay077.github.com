@@ -1141,392 +1141,404 @@ img {
 
 <p>0〜9 を、偶数値だけ抽出して、降順にソートして、値を10倍して、出力。</p>
 
-<p>```csharp C#<br />
-Enumerable.Range(0, 10)<br />
-  .Where(x =&gt; x % 2 == 0)<br />
-  .OrderByDescending(x =&gt; x)<br />
-  .Select(x =&gt; x * 10)<br />
-  .ToList().ForEach(Console.WriteLine);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-```java Java
-Arrays.asList(0,1,2,3,4,5,6,7,8,9).stream()
-  .filter(x -&gt; x % 2 == 0)
-  .sorted((x, y) -&gt; y - x)
-  .map(x -&gt; x * 10)
-  .forEach(System.out::println);
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>80 60 40 20 0
-</code></pre></div></div>
-
-<h3 id="平坦化して射影selectmany">平坦化して射影(SelectMany)</h3>
-
-<p>1〜5のリストから、「n×10から始まるn件」のリストを生成。(結果見たほうが分かりやすいな（^_^;)</p>
-
-<p>```csharp C#<br />
-Enumerable.Range(1, 5)<br />
-  .SelectMany(x =&gt; Enumerable.Range(10 * x, x))<br />
-  .ToList().ForEach(Console.WriteLine);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-```java Java
-Arrays.asList(1,2,3,4,5).stream()
-  .flatMap(x -&gt; IntStream.range(x * 10, x * 10 + x).boxed())
-  .forEach(System.out::println);
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>10 
-20 21 
-30 31 32 
-40 41 42 43 
-50 51 52 53 54
-</code></pre></div></div>
-
-<h3 id="抽出系take-skip">抽出系(Take, Skip)</h3>
-
-<p>1〜10のリストの3件飛ばして、5件取得。</p>
-
-<p>```csharp C#<br />
-Enumerable.Range(1, 10)<br />
-  .Skip(3)<br />
-  .Take(5)<br />
-  .ToList().ForEach(Console.WriteLine);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-```java Java
-// 無限リストでも limit あるから大丈夫
-Stream.iterate(1, x-&gt; x++)
-  .skip(3)
-  .limit(5)
-  .forEach(System.out::println);
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>4 5 6 7 8
-</code></pre></div></div>
-
-<p>LINQ には件数でなく条件を指定できる <code class="highlighter-rouge">TakeWhile</code> <code class="highlighter-rouge">SkipWhile</code> がありますが、Java にはなさそうなので <code class="highlighter-rouge">filter</code> で代用しないといけなさそう。</p>
-
-<p>```csharp C#<br />
-Enumerable.Range(1, 10)<br />
-  .SkipWhile(x =&gt; x &lt; 4)<br />
-  .TakeWhile(x =&gt; x &lt; 9)<br />
-  .ToList().ForEach(Console.WriteLine);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 連結(Concat)
-
-2つのリストをつなげる
-
-```csharp C#
-new int[] { 1, 2, 3 }.Concat(new int[]{ 30, 20, 10 })
-.ToList().ForEach(Console.WriteLine);
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="n">Enumerable</span><span class="p">.</span><span class="nf">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">Where</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">OrderByDescending</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">*</span> <span class="m">10</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
 </code></pre></div></div>
 
 <p>```java Java<br />
-Stream.concat(<br />
-  Arrays.asList(1,2,3).stream(), <br />
-  Arrays.asList(30,20,10).stream())<br />
-.forEach(System.out::println);</p>
+Arrays.asList(0,1,2,3,4,5,6,7,8,9).stream()<br />
+  .filter(x -&gt; x % 2 == 0)<br />
+  .sorted((x, y) -&gt; y - x)<br />
+  .map(x -&gt; x * 10)<br />
+  .forEach(System.out::println);</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-なんで static メソッドやねん…。
-
 </code></pre></div></div>
-<p>1 2 3 30 20 10</p>
+<p>80 60 40 20 0</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 積集合(Intersect)、和集合(Union)、差集合(Except)
+### 平坦化して射影(SelectMany)
 
-積集合：2つのリストから重複をなくす。
-和集合：2つのリストをマージする。
-差集合：リスト1を基準にリスト2との差分を得る。
+1〜5のリストから、「n×10から始まるn件」のリストを生成。(結果見たほうが分かりやすいな（^_^;)
 
-```csharp C#
-var list1 = new int[]{1,2,3,4,5,6};
-var list2 = new int[]{8,7,6,5,4};
-
-list1.Intersect(list2)
-  .ToList().ForEach(Console.WriteLine);
-            
-list1.Union(list2)
-  .ToList().ForEach(Console.WriteLine);
-            
-list1.Except(list2)
+```csharp
+//C#
+Enumerable.Range(1, 5)
+  .SelectMany(x =&gt; Enumerable.Range(10 * x, x))
   .ToList().ForEach(Console.WriteLine);
 </code></pre></div></div>
 
 <p>```java Java<br />
-// 自力で実現かよｗ<br />
-list1.stream().filter(x -&gt; list2.stream().anyMatch(y -&gt; y == x))<br />
-  .forEach(System.out::println);</p>
-
-<p>Stream.concat(list1.stream(), <br />
-  list2.stream().filter(x -&gt; list1.stream().noneMatch(y -&gt; y == x)))<br />
-  .forEach(System.out::println);</p>
-
-<p>list1.stream().filter(x -&gt; list2.stream().noneMatch(y -&gt; y == x))<br />
+Arrays.asList(1,2,3,4,5).stream()<br />
+  .flatMap(x -&gt; IntStream.range(x * 10, x * 10 + x).boxed())<br />
   .forEach(System.out::println);</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 </code></pre></div></div>
-<p>4 5 6 // 積<br />
-1 2 3 4 5 6 8 7 // 和<br />
-1 2 3 // 差</p>
+<p>10 <br />
+20 21 <br />
+30 31 32 <br />
+40 41 42 43 <br />
+50 51 52 53 54</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 内部結合(Join)
+### 抽出系(Take, Skip)
 
-商品マスタと売上テーブルを INNER JOIN する的な。
+1〜10のリストの3件飛ばして、5件取得。
 
-```csharp C#
-var master = new [] {
-    new { Id = 1, Name = "Apple" },
-    new { Id = 2, Name = "Grape" }
-}; 
-
-var sales = new [] { 
-    new { Id = 1, Sales = 100 },
-    new { Id = 2, Sales = 200 },
-    new { Id = 2, Sales = 300 },
-    new { Id = 3, Sales = 400 },
-};
-            
-master.Join(sales, 
-  outer=&gt;outer.Id, 
-  inner=&gt;inner.Id, 
-  (o, i) =&gt; new { o.Name, i.Sales })
-.ToList().ForEach(Console.WriteLine);
+```csharp
+// C#
+Enumerable.Range(1, 10)
+  .Skip(3)
+  .Take(5)
+  .ToList().ForEach(Console.WriteLine);
 </code></pre></div></div>
 
 <p>```java Java<br />
-// 自力<br />
-List&lt;Pair&lt;Integer, String» master = Arrays.asList(<br />
-  new Pair&lt;&gt;(1, “Apple”),<br />
-  new Pair&lt;&gt;(2, “Grape”)<br />
-);</p>
-
-<p>List&lt;Pair&lt;Integer, Integer» sales = Arrays.asList(<br />
-  new Pair&lt;&gt;(1, 100),<br />
-  new Pair&lt;&gt;(2, 200),<br />
-  new Pair&lt;&gt;(2, 300),<br />
-  new Pair&lt;&gt;(3, 400)<br />
-);</p>
-
-<p>master.stream()<br />
-  .flatMap(outer -&gt; sales.stream()<br />
-    .filter(inner -&gt; outer.getKey() == inner.getKey())<br />
-    .map(z-&gt; new Pair&lt;String, Integer&gt;(outer.getValue(), z.getValue())))<br />
+// 無限リストでも limit あるから大丈夫<br />
+Stream.iterate(1, x-&gt; x++)<br />
+  .skip(3)<br />
+  .limit(5)<br />
   .forEach(System.out::println);</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
 </code></pre></div></div>
-<p>{ Name = Apple, Sales = 100 }<br />
-{ Name = Grape, Sales = 200 }<br />
-{ Name = Grape, Sales = 300 }</p>
+<p>4 5 6 7 8</p>
 <div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 外部結合(GroupJoin)
+LINQ には件数でなく条件を指定できる ``TakeWhile`` ``SkipWhile`` がありますが、Java にはなさそうなので ``filter`` で代用しないといけなさそう。
 
-商品マスタと売上テーブルを OUTER JOIN する的な。結合先のテーブルに行が見つからなかったものは null になる。
+```csharp
+// C#
+Enumerable.Range(1, 10)
+  .SkipWhile(x =&gt; x &lt; 4)
+  .TakeWhile(x =&gt; x &lt; 9)
+  .ToList().ForEach(Console.WriteLine);
+</code></pre></div></div>
 
-```csharp C#
-var master = new [] {
-    new { Id = 1, Name = "Apple" },
-    new { Id = 2, Name = "Grape" },
-    new { Id = 5, Name = "Orange" },
-}; 
+<h3 id="連結concat">連結(Concat)</h3>
 
-var sales = new [] {  // Orange は無い
-    new { Id = 1, Sales = 100},
-    new { Id = 2, Sales = 200},
-    new { Id = 3, Sales = 400},
-};
+<p>2つのリストをつなげる</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span> <span class="p">}.</span><span class="nf">Concat</span><span class="p">(</span><span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span> <span class="m">30</span><span class="p">,</span> <span class="m">20</span><span class="p">,</span> <span class="m">10</span> <span class="p">})</span>
+<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
+  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">).</span><span class="na">stream</span><span class="o">(),</span> 
+  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">30</span><span class="o">,</span><span class="mi">20</span><span class="o">,</span><span class="mi">10</span><span class="o">).</span><span class="na">stream</span><span class="o">())</span>
+<span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div></div>
+
+<p>なんで static メソッドやねん…。</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 2 3 30 20 10
+</code></pre></div></div>
+
+<h3 id="積集合intersect和集合union差集合except">積集合(Intersect)、和集合(Union)、差集合(Except)</h3>
+
+<p>積集合：2つのリストから重複をなくす。<br />
+和集合：2つのリストをマージする。<br />
+差集合：リスト1を基準にリスト2との差分を得る。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">};</span>
+<span class="kt">var</span> <span class="n">list2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">8</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">6</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">};</span>
+
+<span class="n">list1</span><span class="p">.</span><span class="nf">Intersect</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
             
-master.GroupJoin(sales, 
-  outer=&gt;outer.Id, 
-  inner=&gt;inner.Id, 
-  (o, i) =&gt; new { o.Name, FirstOfSales = i.Select(
-    x=&gt;(int?)x.Sales).FirstOrDefault() }) // 無かったら null にしたいので null許容型にしてから FirstOrDefault
-.ToList().ForEach(Console.WriteLine);
+<span class="n">list1</span><span class="p">.</span><span class="nf">Union</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+            
+<span class="n">list1</span><span class="p">.</span><span class="nf">Except</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="c1">// 自力で実現かよｗ</span>
+<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">(),</span> 
+  <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">)))</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+
+<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>4 5 6 // 積
+1 2 3 4 5 6 8 7 // 和
+1 2 3 // 差
+</code></pre></div></div>
+
+<h3 id="内部結合join">内部結合(Join)</h3>
+
+<p>商品マスタと売上テーブルを INNER JOIN する的な。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Apple"</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Grape"</span> <span class="p">}</span>
+<span class="p">};</span> 
+
+<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span> 
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
+<span class="p">};</span>
+            
+<span class="n">master</span><span class="p">.</span><span class="nf">Join</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span> 
+  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
+  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
+  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">Sales</span> <span class="p">})</span>
+<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="c1">// 自力</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">"Apple"</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">"Grape"</span><span class="o">)</span>
+<span class="o">);</span>
+
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
+<span class="o">);</span>
+
+<span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+  <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">outer</span> <span class="o">-&gt;</span> <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span> <span class="o">-&gt;</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span>
+    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">z</span><span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="n">z</span><span class="o">.</span><span class="na">getValue</span><span class="o">())))</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ Name = Apple, Sales = 100 }
+{ Name = Grape, Sales = 200 }
+{ Name = Grape, Sales = 300 }
+</code></pre></div></div>
+
+<h3 id="外部結合groupjoin">外部結合(GroupJoin)</h3>
+
+<p>商品マスタと売上テーブルを OUTER JOIN する的な。結合先のテーブルに行が見つからなかったものは null になる。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Apple"</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Grape"</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Orange"</span> <span class="p">},</span>
+<span class="p">};</span> 
+
+<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>  <span class="c1">// Orange は無い</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span><span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span><span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span><span class="p">},</span>
+<span class="p">};</span>
+            
+<span class="n">master</span><span class="p">.</span><span class="nf">GroupJoin</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span> 
+  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
+  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
+  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">FirstOfSales</span> <span class="p">=</span> <span class="n">i</span><span class="p">.</span><span class="nf">Select</span><span class="p">(</span>
+    <span class="n">x</span><span class="p">=&gt;(</span><span class="kt">int</span><span class="p">?)</span><span class="n">x</span><span class="p">.</span><span class="n">Sales</span><span class="p">).</span><span class="nf">FirstOrDefault</span><span class="p">()</span> <span class="p">})</span> <span class="c1">// 無かったら null にしたいので null許容型にしてから FirstOrDefault</span>
+<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
 </code></pre></div></div>
 
 <p>たぶん普通は First じゃなくて Sum とか使うんだろう。</p>
 
-<p>```java Java<br />
-// これも自力<br />
-List&lt;Pair&lt;Integer, String» master = Arrays.asList(<br />
-  new Pair&lt;&gt;(1, “Apple”),<br />
-  new Pair&lt;&gt;(2, “Grape”),<br />
-  new Pair&lt;&gt;(5, “Orange”)<br />
-);</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="c1">// これも自力</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">"Apple"</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">"Grape"</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">5</span><span class="o">,</span> <span class="s">"Orange"</span><span class="o">)</span>
+<span class="o">);</span>
 
-<p>List&lt;Pair&lt;Integer, Integer» sales = Arrays.asList(<br />
-  new Pair&lt;&gt;(1, 100),<br />
-  new Pair&lt;&gt;(2, 200),<br />
-  new Pair&lt;&gt;(2, 300),<br />
-  new Pair&lt;&gt;(3, 400)<br />
-);</p>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
+<span class="o">);</span>
 
-<p>master.stream().map(outer-&gt;new Pair&lt;String, Optional<Integer>&gt;(outer.getValue(), 
-  sales.stream()
-    .filter(inner-&gt;inner.getKey() == outer.getKey()) // Id でフィルタ
-      .map(x-&gt;x.getValue()) // Sales だけに射影
-      .findFirst())) // 同一Id中の先頭
-  .forEach(System.out::println);</Integer></p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>[.NET]<br />
-{ Name = Apple, FirstOfSales = 100 }<br />
-{ Name = Grape, FirstOfSales = 200 }<br />
-{ Name = Orange, FirstOfSales = } // 相手が居ないやつは null になる</p>
-
-<p>[Java]<br />
-Apple=Optional[100]<br />
-Grape=Optional[200]<br />
-Orange=Optional.empty // Option だから empty になるのは良い</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 2つの値を揃えて流す(Zip)
-
-２つのリストの値をひとつずつセットにして流す。
-
-```csharp C#
-var arr1 = new int[] { 1, 2, 3, 4, 5 };
-var arr2 = new string[] { "hoge", "fuga", "piyo" };
-
-arr1.Zip(arr2, (x, y) =&gt;  new {x, y})
-    .ToList()
-    .ForEach(Console.WriteLine);
+<span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">map</span><span class="o">(</span><span class="n">outer</span><span class="o">-&gt;</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Optional</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> 
+  <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
+    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span><span class="o">-&gt;</span><span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span> <span class="c1">// Id でフィルタ</span>
+      <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span><span class="o">-&gt;</span><span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">())</span> <span class="c1">// Sales だけに射影</span>
+      <span class="o">.</span><span class="na">findFirst</span><span class="o">()))</span> <span class="c1">// 同一Id中の先頭</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
 </code></pre></div></div>
 
-<p>```java Java<br />
-// FIXME どうやるの？ Streams.zip はどこいった？</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>{ x = 1, y = hoge }<br />
-{ x = 2, y = fuga }<br />
-{ x = 3, y = piyo }</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 重複を無くす(Distinct)
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[.NET]
+{ Name = Apple, FirstOfSales = 100 }
+{ Name = Grape, FirstOfSales = 200 }
+{ Name = Orange, FirstOfSales = } // 相手が居ないやつは null になる
 
-重複する数値リストから重複をなくす。
-
-```csharp C#
-new int[]{1,3,4,3,2,4}
-  .Distinct()
-  .ToList().ForEach(Console.WriteLine);
+[Java]
+Apple=Optional[100]
+Grape=Optional[200]
+Orange=Optional.empty // Option だから empty になるのは良い
 </code></pre></div></div>
 
-<p>```java Java<br />
-Arrays.asList(1,3,4,3,2,4).stream()<br />
-  .distinct()<br />
-  .forEach(System.out::println);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>1 3 4 2</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 畳み込み
+<h3 id="2つの値を揃えて流すzip">2つの値を揃えて流す(Zip)</h3>
 
-いろいろな集計の素、畳み込み。言語により fold とか reduce とか aggregate とか、いろいろな呼び名がありますね。
-よい例が浮かなかったので Max を実装してみました。
+<p>２つのリストの値をひとつずつセットにして流す。</p>
 
-```csharp C#
-var max = new int[]{1,5,3,7,2,4}
-    .Aggregate(Int32.MinValue, (x, y) =&gt; Math.Max(x, y));
-Console.WriteLine(max);
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">arr1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="m">5</span> <span class="p">};</span>
+<span class="kt">var</span> <span class="n">arr2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">"hoge"</span><span class="p">,</span> <span class="s">"fuga"</span><span class="p">,</span> <span class="s">"piyo"</span> <span class="p">};</span>
+
+<span class="n">arr1</span><span class="p">.</span><span class="nf">Zip</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span>  <span class="k">new</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">})</span>
+    <span class="p">.</span><span class="nf">ToList</span><span class="p">()</span>
+    <span class="p">.</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
 </code></pre></div></div>
 
-<p>```java Java<br />
-int max = Arrays.asList(1,5,3,7,2,4).stream()<br />
-  .reduce(Integer.MIN_VALUE, (x, y) -&gt; Math.max(x, y));<br />
-System.out.println(max);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="c1">// FIXME どうやるの？ Streams.zip はどこいった？</span>
 </code></pre></div></div>
-<p>7</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### グループ化
 
-リストの要素をキーにしてグループ化する。Salesは合計を計算する。
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ x = 1, y = hoge }
+{ x = 2, y = fuga }
+{ x = 3, y = piyo }
+</code></pre></div></div>
 
-```csharp C#
-var sales = new [] { 
-    new { Id = 1, Sales = 100 },
-    new { Id = 2, Sales = 200 },
-    new { Id = 2, Sales = 300 },
-    new { Id = 3, Sales = 400 },
-};
+<h3 id="重複を無くすdistinct">重複を無くす(Distinct)</h3>
+
+<p>重複する数値リストから重複をなくす。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
+  <span class="p">.</span><span class="nf">Distinct</span><span class="p">()</span>
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
+  <span class="o">.</span><span class="na">distinct</span><span class="o">()</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 3 4 2
+</code></pre></div></div>
+
+<h3 id="畳み込み">畳み込み</h3>
+
+<p>いろいろな集計の素、畳み込み。言語により fold とか reduce とか aggregate とか、いろいろな呼び名がありますね。<br />
+よい例が浮かなかったので Max を実装してみました。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">max</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
+    <span class="p">.</span><span class="nf">Aggregate</span><span class="p">(</span><span class="n">Int32</span><span class="p">.</span><span class="n">MinValue</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Math</span><span class="p">.</span><span class="nf">Max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">));</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">max</span><span class="p">);</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
+  <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MIN_VALUE</span><span class="o">,</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Math</span><span class="o">.</span><span class="na">max</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">));</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">max</span><span class="o">);</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>7
+</code></pre></div></div>
+
+<h3 id="グループ化">グループ化</h3>
+
+<p>リストの要素をキーにしてグループ化する。Salesは合計を計算する。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span> 
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
+    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
+<span class="p">};</span>
             
-sales.GroupBy(x=&gt;x.Id, (Id, groupedSales) =&gt; new {Id, 
-    SumOfSales = groupedSales.Sum( element =&gt; element.Sales) // Sales は合計する
-  }) 
-  .ToList().ForEach(Console.WriteLine);
+<span class="n">sales</span><span class="p">.</span><span class="nf">GroupBy</span><span class="p">(</span><span class="n">x</span><span class="p">=&gt;</span><span class="n">x</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> <span class="p">(</span><span class="n">Id</span><span class="p">,</span> <span class="n">groupedSales</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span><span class="n">Id</span><span class="p">,</span> 
+    <span class="n">SumOfSales</span> <span class="p">=</span> <span class="n">groupedSales</span><span class="p">.</span><span class="nf">Sum</span><span class="p">(</span> <span class="n">element</span> <span class="p">=&gt;</span> <span class="n">element</span><span class="p">.</span><span class="n">Sales</span><span class="p">)</span> <span class="c1">// Sales は合計する</span>
+  <span class="p">})</span> 
+  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
 </code></pre></div></div>
 
 <p>（LINQ ではありませんが、 <code class="highlighter-rouge">List.LookUp</code> を使って実現することもできるようです → <a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302#comment-82388821b902ad7999b0">コメント:2014/03/22 00:29</a>）</p>
 
-<p>```java Java<br />
-// javafx に Pair があったので Tuple 代わりに使っちゃった<br />
-List&lt;Pair&lt;Integer, Integer» list1 = Arrays.asList(<br />
-  new Pair&lt;&gt;(1, 100),<br />
-  new Pair&lt;&gt;(2, 200),<br />
-  new Pair&lt;&gt;(2, 300),<br />
-  new Pair&lt;&gt;(3, 400)<br />
-);</p>
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="c1">// javafx に Pair があったので Tuple 代わりに使っちゃった</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
+  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
+<span class="o">);</span>
 
-<p>list1.stream().collect(Collectors.groupingBy(x -&gt; x.getKey()))<br />
-  .entrySet().stream() // group化の結果が Map なので、エントリを Stream 化<br />
-  .map(x -&gt; new Pair&lt;Integer, Integer&gt;(<br />
-    x.getKey(), // Key が Id に相当<br />
-    x.getValue().stream().collect(Collectors.summingInt(y-&gt;y.getValue())))) // Value が List なのでまた Stream 化して合計を得る<br />
-  .forEach(System.out::println);</p>
+<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">groupingBy</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">()))</span>
+  <span class="o">.</span><span class="na">entrySet</span><span class="o">().</span><span class="na">stream</span><span class="o">()</span> <span class="c1">// group化の結果が Map なので、エントリを Stream 化</span>
+  <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span>
+    <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="c1">// Key が Id に相当</span>
+    <span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">().</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summingInt</span><span class="o">(</span><span class="n">y</span><span class="o">-&gt;</span><span class="n">y</span><span class="o">.</span><span class="na">getValue</span><span class="o">()))))</span> <span class="c1">// Value が List なのでまた Stream 化して合計を得る</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
 
-<p>// Collectors.groupingBy 使わずに Map.merge を使ったほうが分かりやすい気も。。。<br />
-list1.stream().collect(<br />
-  () -&gt; new HashMap&lt;Integer, Integer&gt;(),<br />
-  (map, item) -&gt; map.merge(item.getKey(), item.getValue(), (x, y) -&gt; x + y), // 同じキーの値を加算してく<br />
-  (left, right) -&gt; left.putAll(right))<br />
-  .forEach((k, v) -&gt; System.out.println(k + “:” + v));</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-Java の方、カオスすぎる…。.NET の ``IGrouping`` を Map でやってるからだな。
-
-</code></pre></div></div>
-<p>[.NET]<br />
-{ Id = 1, SumOfSales = 100 }<br />
-{ Id = 2, SumOfSales = 500 } // ID=2 の Sales が合計されている<br />
-{ Id = 3, SumOfSales = 400 }</p>
-
-<p>[Java]<br />
-1=100<br />
-2=500<br />
-3=400</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 合計(Sum)、最大(Max)、最小(Min)、平均(Average)、件数(Count)、先頭(First)、終端(Last)
-
-集計いろいろ。
-
-```csharp C#
-var list1 = Enumerable.Range(0, 10);
-Console.WriteLine("Sum={0}", list1.Sum());
-Console.WriteLine("Max={0}", list1.Max());
-Console.WriteLine("Min={0}", list1.Min());
-Console.WriteLine("Count={0}", list1.Count());
-Console.WriteLine("First={0}", list1.First());
-Console.WriteLine("Last={0}", list1.Last());
-Console.WriteLine("Average={0}", list1.Average());
+<span class="c1">// Collectors.groupingBy 使わずに Map.merge を使ったほうが分かりやすい気も。。。</span>
+<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span>
+  <span class="o">()</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(),</span>
+  <span class="o">(</span><span class="n">map</span><span class="o">,</span> <span class="n">item</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="n">item</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="n">item</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">),</span> <span class="c1">// 同じキーの値を加算してく</span>
+  <span class="o">(</span><span class="n">left</span><span class="o">,</span> <span class="n">right</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">left</span><span class="o">.</span><span class="na">putAll</span><span class="o">(</span><span class="n">right</span><span class="o">))</span>
+  <span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">k</span><span class="o">,</span> <span class="n">v</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">k</span> <span class="o">+</span> <span class="s">":"</span> <span class="o">+</span> <span class="n">v</span><span class="o">));</span>
 </code></pre></div></div>
 
-<p>```java Java<br />
-List<Integer> list1 = Arrays.asList(0,1,2,3,4,5,6,7,8,9);
-IntSummaryStatistics stats = list1.stream().collect(Collectors.summarizingInt(x -&gt; x)); // Max,Min,Count,Average が取得できる
-System.out.println("Sum=" + stats.getSum());
-System.out.println("Max=" + stats.getMax());
-System.out.println("Min=" + stats.getMin());
-System.out.println("Count=" + stats.getCount());
-System.out.println("First=" + list1.stream().findFirst().orElse(-1)); // summarizing では取れない
-System.out.println("Last=" + list1.stream().sorted((x,y) -&gt; y-x).findFirst().orElse(-1)); // 微妙
-System.out.println("Average=" + stats.getAverage());</Integer></p>
+<p>Java の方、カオスすぎる…。.NET の <code class="highlighter-rouge">IGrouping</code> を Map でやってるからだな。</p>
 
-<p>System.out.println(“Average=” + IntStream.range(0, 10).average()); // 型指定 Stream なら average, sum がある（結果は Option に包まれる）</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[.NET]
+{ Id = 1, SumOfSales = 100 }
+{ Id = 2, SumOfSales = 500 } // ID=2 の Sales が合計されている
+{ Id = 3, SumOfSales = 400 }
+
+[Java]
+1=100
+2=500
+3=400
 </code></pre></div></div>
-<p>Sum=45<br />
-Max=9<br />
-Min=0<br />
-Count=10<br />
-First=0<br />
-Last=9<br />
-Average=4.5<br />
-```</p>
+
+<h3 id="合計sum最大max最小min平均average件数count先頭first終端last">合計(Sum)、最大(Max)、最小(Min)、平均(Average)、件数(Count)、先頭(First)、終端(Last)</h3>
+
+<p>集計いろいろ。</p>
+
+<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
+<span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="nf">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">);</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Sum={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Sum</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Max={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Max</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Min={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Min</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Count={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Count</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"First={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">First</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Last={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Last</span><span class="p">());</span>
+<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Average={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Average</span><span class="p">());</span>
+</code></pre></div></div>
+
+<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
+<span class="n">List</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">6</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">8</span><span class="o">,</span><span class="mi">9</span><span class="o">);</span>
+<span class="n">IntSummaryStatistics</span> <span class="n">stats</span> <span class="o">=</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summarizingInt</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">));</span> <span class="c1">// Max,Min,Count,Average が取得できる</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Sum="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getSum</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Max="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMax</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Min="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMin</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Count="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getCount</span><span class="o">());</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"First="</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// summarizing では取れない</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Last="</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">sorted</span><span class="o">((</span><span class="n">x</span><span class="o">,</span><span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">y</span><span class="o">-</span><span class="n">x</span><span class="o">).</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// 微妙</span>
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Average="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getAverage</span><span class="o">());</span>
+
+<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Average="</span> <span class="o">+</span> <span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">).</span><span class="na">average</span><span class="o">());</span> <span class="c1">// 型指定 Stream なら average, sum がある（結果は Option に包まれる）</span>
+</code></pre></div></div>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Sum=45
+Max=9
+Min=0
+Count=10
+First=0
+Last=9
+Average=4.5
+</code></pre></div></div>
 
 <p>…疲れた。。。</p>
 
