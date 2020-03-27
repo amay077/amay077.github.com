@@ -6,8 +6,8 @@
 </description>
     <link>https://blog.amay0777.net/</link>
     <atom:link href="https://blog.amay0777.net/feed.xml" rel="self" type="application/rss+xml"/>
-    <pubDate>Thu, 26 Mar 2020 06:09:19 -0500</pubDate>
-    <lastBuildDate>Thu, 26 Mar 2020 06:09:19 -0500</lastBuildDate>
+    <pubDate>Thu, 26 Mar 2020 21:40:30 -0500</pubDate>
+    <lastBuildDate>Thu, 26 Mar 2020 21:40:30 -0500</lastBuildDate>
     <generator>Jekyll v3.8.4</generator>
     
       <item>
@@ -103,6 +103,227 @@
         <category>UI</category>
         
         <category>UX</category>
+        
+      </item>
+    
+      <item>
+        <title>Docker で AngularアプリをビルドしてAWS S3へデプロイする</title>
+        <description>&lt;h2 id=&quot;やりたい事&quot;&gt;やりたい事&lt;/h2&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git repo からソースを clone する（複数の repo を clone する必要がある)&lt;/li&gt;
+  &lt;li&gt;それは Angular のアプリなので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;ng --prod build&lt;/code&gt; する&lt;/li&gt;
+  &lt;li&gt;ビルドされたアプリのファイル群を aws cli を使って S3 にアップロードする&lt;br /&gt;
+&lt;!--more--&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;dockerfile&quot;&gt;Dockerfile&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://qiita.com/ABCompany1/items/c92ac5087519c103f056&quot;&gt;AWS CLIをDocker環境で実行する&lt;/a&gt; で紹介されていた Dockerfile に、 node と Angular をインストールするスクリプトを追加したものです。&lt;/p&gt;
+
+&lt;div class=&quot;language-dockerfile highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;k&quot;&gt;FROM&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; python:3.6&lt;/span&gt;
+
+&lt;span class=&quot;k&quot;&gt;ARG&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; pip_installer=&quot;https://bootstrap.pypa.io/get-pip.py&quot;&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;ARG&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; awscli_version=&quot;1.16.76&quot;&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Install awscli&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;awscli&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;==&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;${&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;awscli_version&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;}&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Install sam&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;pip &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--user&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;--upgrade&lt;/span&gt; aws-sam-cli
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;mkdir&lt;/span&gt; /data
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;chmod&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-x&lt;/span&gt; /data
+
+&lt;span class=&quot;c&quot;&gt;# Install nodejs&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get update 
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;curl software-properties-common &lt;span class=&quot;nt&quot;&gt;-y&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;curl &lt;span class=&quot;nt&quot;&gt;-sL&lt;/span&gt; https://deb.nodesource.com/setup_10.x | bash -
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;apt-get &lt;span class=&quot;nb&quot;&gt;install &lt;/span&gt;nodejs
+
+&lt;span class=&quot;c&quot;&gt;# Install angular&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;RUN &lt;/span&gt;npm &lt;span class=&quot;nb&quot;&gt;install&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-g&lt;/span&gt; @angular/cli@7.3.6
+
+&lt;span class=&quot;k&quot;&gt;ENV&lt;/span&gt;&lt;span class=&quot;s&quot;&gt; PATH $PATH:/root/.local/bin&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;h2 id=&quot;実行スクリプト&quot;&gt;実行スクリプト&lt;/h2&gt;
+
+&lt;p&gt;次に Docker 内で実行するスクリプトです。&lt;br /&gt;
+ファイル名は &lt;code class=&quot;highlighter-rouge&quot;&gt;Deploy.sh&lt;/code&gt; としておきます。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;c&quot;&gt;#!/bin/sh&lt;/span&gt;
+
+&lt;span class=&quot;c&quot;&gt;# Setup git user/password&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;machine &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$GIT_DOMAIN&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;login &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$GIT_USER&lt;/span&gt;&lt;span class=&quot;se&quot;&gt;\n&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;password &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$GIT_PW&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;&lt;/span&gt; ~/.netrc
+
+&lt;span class=&quot;c&quot;&gt;# Create work directory&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;mkdir &lt;/span&gt;work
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;work
+
+&lt;span class=&quot;c&quot;&gt;# Clone projects&lt;/span&gt;
+git clone &lt;span class=&quot;nt&quot;&gt;-b&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$GIT_BRANCH&lt;/span&gt; https://xxxx/my-awesome-lib.git
+git clone &lt;span class=&quot;nt&quot;&gt;-b&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;$GIT_BRANCH&lt;/span&gt; https://xxxx/my-awesome-app.git
+
+&lt;span class=&quot;c&quot;&gt;# Restore node_modules&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;my-awesome-lib
+npm ci
+&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ..
+
+&lt;span class=&quot;c&quot;&gt;# Build angular prod&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;my-awesome-app
+npm ci
+ng &lt;span class=&quot;nt&quot;&gt;--base-href&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;./ &lt;span class=&quot;nt&quot;&gt;--prod&lt;/span&gt; build
+
+&lt;span class=&quot;c&quot;&gt;# Deploy to S3&lt;/span&gt;
+aws s3 &lt;span class=&quot;nb&quot;&gt;sync&lt;/span&gt; ./dist/my-awesome-app/ s3://my-awesome-bucket/www &lt;span class=&quot;nt&quot;&gt;--acl&lt;/span&gt; public-read
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;冒頭で言ったように、複数のリポジトリから Clone する必要があるプロジェクトです。&lt;br /&gt;
+また Private なので user/password が必要ですが、どうせ docker コンテナは使い捨てだし &lt;code class=&quot;highlighter-rouge&quot;&gt;.netrc&lt;/code&gt; でいっか、と思ってますがどうなんでしょう？&lt;/p&gt;
+
+&lt;p&gt;clone した後、それぞれのディレクトリに移動して &lt;code class=&quot;highlighter-rouge&quot;&gt;npm ci&lt;/code&gt; をして node_modules を復元します。&lt;/p&gt;
+
+&lt;p&gt;その後、Angular アプリをビルド (&lt;code class=&quot;highlighter-rouge&quot;&gt;ng --prod build&lt;/code&gt;)します。&lt;/p&gt;
+
+&lt;p&gt;最後に、 &lt;code class=&quot;highlighter-rouge&quot;&gt;s3 sync&lt;/code&gt; で AWS S3 の指定バケットにアップロードしています。&lt;code class=&quot;highlighter-rouge&quot;&gt;--acl public-read&lt;/code&gt; は、誰でも閲覧できるサイトにするために付けています。&lt;/p&gt;
+
+&lt;h3 id=&quot;必要な環境変数&quot;&gt;必要な環境変数&lt;/h3&gt;
+
+&lt;p&gt;Dockerコンテナ内で、次の環境変数が必要です。&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;Git アクセス
+    &lt;ul&gt;
+      &lt;li&gt;GIT_DOMAIN - git リポジトリのドメイン&lt;/li&gt;
+      &lt;li&gt;GIT_USER - git ユーザー&lt;/li&gt;
+      &lt;li&gt;GIT_PW - ↑のパスワード&lt;/li&gt;
+      &lt;li&gt;GIT_BRANCH - 取得する branch 名&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+  &lt;li&gt;AWS S3 アクセス
+    &lt;ul&gt;
+      &lt;li&gt;AWS_ACCESS_KEY_ID - S3 への書込権限を持った IAMユーザーのアクセスキー&lt;/li&gt;
+      &lt;li&gt;AWS_SECRET_ACCESS_KEY - ↑のシークレットキー&lt;/li&gt;
+      &lt;li&gt;AWS_DEFAULT_REGION - リージョン（S3 だから要らないかも）&lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;これらの値は、後述の &lt;code class=&quot;highlighter-rouge&quot;&gt;docker run&lt;/code&gt; する時に渡します。&lt;/p&gt;
+
+&lt;h2 id=&quot;docker-イメージのビルドとコンテナの実行&quot;&gt;Docker イメージのビルドとコンテナの実行&lt;/h2&gt;
+
+&lt;h3 id=&quot;docker-イメージのビルド&quot;&gt;Docker イメージのビルド&lt;/h3&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Dockerfile&lt;/code&gt; のあるディレクトリで、以下のコマンドを実行します。&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker build -t aws-angular .
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;docker images&lt;/code&gt; で aws-angular が作成されていれば成功です。&lt;/p&gt;
+
+&lt;h3 id=&quot;コンテナ実行スクリプト&quot;&gt;コンテナ実行スクリプト&lt;/h3&gt;
+
+&lt;p&gt;実行スクリプトファイル &lt;code class=&quot;highlighter-rouge&quot;&gt;Deploy.sh&lt;/code&gt; があるディレクトリで、以下のコマンドを実行します。&lt;br /&gt;
+環境変数に入れる値はそれぞれ準備してください。&lt;/p&gt;
+
+&lt;div class=&quot;language-bash highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;docker run &lt;span class=&quot;nt&quot;&gt;-it&lt;/span&gt; &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;AWS_ACCESS_KEY_ID&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;xxxx &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;AWS_SECRET_ACCESS_KEY&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;xxxxxxx &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;AWS_DEFAULT_REGION&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;ap-northeast-1 &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;GIT_DOMAIN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;your.repo.com &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;GIT_USER&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;your_user_id &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;GIT_PW&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;your_password &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-e&lt;/span&gt; &lt;span class=&quot;nv&quot;&gt;GIT_BRANCH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;master &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ &lt;span class=&quot;nt&quot;&gt;-v&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;$(&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;pwd&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;)&lt;/span&gt;:/data &lt;span class=&quot;se&quot;&gt;\&lt;/span&gt;
+ aws-angular sh /data/deploy.sh
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;これを実行すると、&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;git repo からソースを clone する（複数の repo を clone する必要がある)&lt;/li&gt;
+  &lt;li&gt;それは Angular のアプリなので、 &lt;code class=&quot;highlighter-rouge&quot;&gt;ng --prod build&lt;/code&gt; する&lt;/li&gt;
+  &lt;li&gt;ビルドされたアプリのファイル群を aws cli を使って S3 にアップロードする&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;が順次実行されます。&lt;/p&gt;
+
+&lt;h2 id=&quot;参考&quot;&gt;参考&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://qiita.com/ABCompany1/items/c92ac5087519c103f056&quot;&gt;AWS CLIをDocker環境で実行する - Qiita&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;http://www.codebind.com/linux-tutorials/install-latest-nodejs-npm-ubuntu-18-04-linux/&quot;&gt;How to Install Latest Nodejs with Npm on Ubuntu 18.04 (Linux)&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://qiita.com/azusanakano/items/8dc1d7e384b00239d4d9#1-netrc%E3%81%AB%E3%83%A6%E3%83%BC%E3%82%B6%E5%90%8D%E3%83%91%E3%82%B9%E3%83%AF%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F&quot;&gt;GitHubでユーザ名・パスワード省略（push, pull） - Qiita&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a href=&quot;https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html&quot;&gt;Using High-Level (s3) Commands with the AWS CLI - AWS Command Line Interface&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+        <pubDate>Wed, 27 Mar 2019 08:30:00 -0500</pubDate>
+        <link>https://blog.amay0777.net/blog/2019/03/27/0955097fe1d210b1b655/</link>
+        <guid isPermaLink="true">https://blog.amay0777.net/blog/2019/03/27/0955097fe1d210b1b655/</guid>
+        
+        
+        <category>Docker</category>
+        
+        <category>AWS</category>
+        
+        <category>angular-cli</category>
+        
+      </item>
+    
+      <item>
+        <title>Xamarin.UITest が HttpRequestException で失敗する場合の対処</title>
+        <description>&lt;h2 id=&quot;症状&quot;&gt;症状&lt;/h2&gt;
+
+&lt;p&gt;Xamarin.Forms の新規ソリューションを UITest 付きで作成して、すぐに Android 側の UITest を実行してみたところ、&lt;br /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;SetUp : System.Net.Http.HttpRequestException : An error occurred while sending the request
+  ----&amp;gt; System.IO.IOException : Unable to write data to the transport connection: The socket has been shut down.
+  ----&amp;gt; System.Net.Sockets.SocketException : The socket has been shut down
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;という例外が発生して、テストが成功しませんでした。&lt;/p&gt;
+
+&lt;p&gt;テンプレで作成されるテストケースは&lt;/p&gt;
+
+&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;[Test]&lt;/span&gt;
+&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;WelcomeTextIsDisplayed&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;AppResult&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[]&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;results&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;WaitForElement&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;c&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;c&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Marked&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Welcome to Xamarin.Forms!&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;));&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;app&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Screenshot&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&quot;Welcome screen.&quot;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
+
+    &lt;span class=&quot;n&quot;&gt;Assert&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;IsTrue&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;results&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Any&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;());&lt;/span&gt;
+&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
+
+&lt;p&gt;というもので、画面に “Welcome to Xamarin.Forms” が表示されたら成功ですが、&lt;br /&gt;
+そもそもテスト対象アプリが起動せず終了しています。&lt;/p&gt;
+
+&lt;h2 id=&quot;原因と対処&quot;&gt;原因と対処&lt;/h2&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;a href=&quot;https://github.com/xamarin/xamarin-android/issues/1817&quot;&gt;VS 4 Mac beta - Socket error on UITest tests · Issue #1817 · xamarin/xamarin-android&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;UITest のプロジェクトが参照している Xamarin.UITest パッケージのバージョンが古い(2.24以下?)と発生するようです。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/024bc5c7-2ad4-2258-e06b-1fc5a4aa85ec.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;パッケージをアップデート(この時点では 2.2.7 になりました)してテストを実行しなおすと、無事アプリが起動してテストが成功するようになりました。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/9bf64824-8c99-0aed-d08e-baab4c2fe9eb.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Visual Studio for Mac 7.7.3 での事でしたが、理由はともかく、いきなり動かんのはおかんむりです。&lt;/p&gt;
+</description>
+        <pubDate>Wed, 13 Mar 2019 08:30:00 -0500</pubDate>
+        <link>https://blog.amay0777.net/blog/2019/03/13/57dc477fcec9192aa7e0/</link>
+        <guid isPermaLink="true">https://blog.amay0777.net/blog/2019/03/13/57dc477fcec9192aa7e0/</guid>
+        
+        
+        <category>Xamarin</category>
+        
+        <category>UITest</category>
         
       </item>
     
@@ -1116,237 +1337,6 @@ Microsoft 系のサービスだと App Center にアプリ配布機能がある�
         <category>Azure</category>
         
         <category>DeployGate</category>
-        
-      </item>
-    
-      <item>
-        <title>Azure Pipelines で Xamarin.Android の AOT Compile を使う</title>
-        <description>&lt;p&gt;Xamarin.Forms で簡単なアプリを作って、その Android 版を社内向けに配布しようとしたんですけど、 .apk のサイズが 60Mbyte超 もあって、「仕方ないよね…」と思いながら、 モバイル回線でそれをダウンロードさせるのかー、と思うと良心の呵責を感じてしまい、可能な限りで apk のサイズを縮小することを試みました。&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;h2 id=&quot;xamarinandroid-アプリのビルドオプションを調整して-apk-サイズを減らす&quot;&gt;Xamarin.Android アプリのビルドオプションを調整して apk サイズを減らす&lt;/h2&gt;
-
-&lt;p&gt;apk サイズの削減については、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://qiita.com/conduits/items/cd7338329c3b7c22dc9c&quot;&gt;Xamarin.Android 起動速度改善の記録 (追記あり) - Qiita&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を参考にさせていただきました。当該記事は「起動時間」にフィーチャーしていますが、サイズ縮小についても十分に有用です。&lt;/p&gt;
-
-&lt;p&gt;最終的に落ち着いたコンパイルオプションは、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;Android Build - Enable AOT&lt;/li&gt;
-  &lt;li&gt;Linker - Link SDK assemblies only&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;で、これも上記記事と同じです(LLVM は使ってません)。&lt;br /&gt;
-この結果 apk のサイズは 60Mbyte超 → 33Mbyte になりました。&lt;/p&gt;
-
-&lt;p&gt;（上記に比べてさらに、「Linker - Link all assemblies」 とすれば 25Mbyte にまで削減できましたが、このアプリは起動せず、「リンクしたらマズそうなアセンブリ」を Ignore assemblies に追加していったら起動するようにはなったものの apk は 29Mbyte になったので、かけるコストに対して効果は薄そうだと判断してやめました。）&lt;/p&gt;
-
-&lt;p&gt;ここまではアプリのビルドの話で、次からが本題です。&lt;/p&gt;
-
-&lt;h2 id=&quot;azure-pipelines-で-xamarinformsandroid-アプリをビルドする&quot;&gt;Azure Pipelines で Xamarin.Forms(Android) アプリをビルドする&lt;/h2&gt;
-
-&lt;p&gt;&lt;a href=&quot;https://azure.microsoft.com/ja-jp/services/devops/pipelines/&quot;&gt;Azure Pipelines&lt;/a&gt; は Azure DevOps というサービスに含まれるサブサービスの一つで、CI/CD の機能を提供します。&lt;/p&gt;
-
-&lt;p&gt;Android, iOS, Linux, macOS, Windows 用のアプリをビルド・デプロイできます。&lt;br /&gt;
-OSS向けならビルド時間は無制限、個人プライベート向けでも1800分/月&lt;sup id=&quot;fnref:a&quot;&gt;&lt;a href=&quot;#fn:a&quot; class=&quot;footnote&quot;&gt;1&lt;/a&gt;&lt;/sup&gt; まで無料で使うことができます。&lt;/p&gt;
-
-&lt;p&gt;Azure Pipelines で Xamarin.Android 向けのプリセットを選択すると、ほぼそのままアプリのビルドが行える状態になります。このプリセットで使用されるビルドエージェントは “Hosted VS2017” で、つまり 「Visual Studio 2017 がインストールされた Windows マシン」 です。&lt;/p&gt;
-
-&lt;p&gt;が、上記の 「Enable AOT」 を有効にしたプロジェクトで CI ビルドさせると、以下のエラーが出ます。&lt;/p&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;XA5101: Missing Android NDK toolchains directory ‘\toolchains’. Please install the Android NDK.&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;どうやら Android NDK がインストールされていない様子。 Agent の Pool information を見ても Android NDK は記載されていません。&lt;/p&gt;
-
-&lt;p&gt;そこで &lt;a href=&quot;https://twitter.com/AzureDevOps&quot;&gt;公式Twitter&lt;/a&gt; に凸! すると、&lt;/p&gt;
-
-&lt;blockquote class=&quot;twitter-tweet&quot; data-conversation=&quot;none&quot; data-lang=&quot;ja&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;Thanks for reaching out! We rely on Visual Studio to install the Android NDK. This thread with a similar scenario might come in handy: &lt;a href=&quot;https://t.co/rSqfEaoLhS&quot;&gt;https://t.co/rSqfEaoLhS&lt;/a&gt;.&lt;/p&gt;&amp;mdash; Azure DevOps (@AzureDevOps) &lt;a href=&quot;https://twitter.com/AzureDevOps/status/1068128192685375488?ref_src=twsrc%5Etfw&quot;&gt;2018年11月29日&lt;/a&gt;&lt;/blockquote&gt;
-&lt;script async=&quot;&quot; src=&quot;https://platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
-
-&lt;p&gt;「Android NDK は Visual Studio が入れちゃんだわ、NDK は &lt;code class=&quot;highlighter-rouge&quot;&gt;C:\Microsoft\AndroidNDK64\android-ndk-r15c&lt;/code&gt; に入ってるよ(超意訳)。」とのこと。&lt;br /&gt;
-これを手がかりにさらに調べると、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://stackoverflow.com/questions/36940896/missing-android-ndk-toolchains-directory-toolchains-when-building-xamarin-and/47338287#47338287&quot;&gt;Missing Android NDK toolchains directory ‘\toolchains’ when building Xamarin.Android with hosted tfs build server - Stack Overflow&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;blockquote&gt;
-  &lt;p&gt;in the MSBuild Options, provide the following Additional Argument:&lt;/p&gt;
-
-  &lt;p&gt;VS2017 Hosted agent: &lt;br /&gt;
-/p:AndroidNdkDirectory=”C:\ProgramData\Microsoft\AndroidNDK64\android-ndk-r13b”&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;これだね。&lt;/p&gt;
-
-&lt;p&gt;というわけでビルドタスクのオプションに、&lt;/p&gt;
-
-&lt;div class=&quot;highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;/p:AndroidNdkDirectory=&quot;C:\Microsoft\AndroidNDK64\android-ndk-r15c&quot;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;を追加します。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/1025aa90-0845-16c6-2578-a4db3949904d.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;これで AOT を有効にした状態の Xamarin.Android プロジェクトがビルドできるようになりました。&lt;/p&gt;
-
-&lt;p&gt;そういえば AOT はまだ Experimental ですね。&lt;br /&gt;
-あと Enterprise Edition でしか使えないということだったような？ まあ見なかったことにしよう。&lt;/p&gt;
-&lt;div class=&quot;footnotes&quot;&gt;
-  &lt;ol&gt;
-    &lt;li id=&quot;fn:a&quot;&gt;
-      &lt;p&gt;サイトには「並列ジョブ (1 か月あたり最大 1,800 分)」 とあるので、単一のジョブなら無制限なのかもしれません。 &lt;a href=&quot;#fnref:a&quot; class=&quot;reversefootnote&quot;&gt;&amp;#8617;&lt;/a&gt;&lt;/p&gt;
-    &lt;/li&gt;
-  &lt;/ol&gt;
-&lt;/div&gt;
-</description>
-        <pubDate>Fri, 30 Nov 2018 08:59:00 -0600</pubDate>
-        <link>https://blog.amay0777.net/blog/2018/11/30/694b6d5929c71bb00308/</link>
-        <guid isPermaLink="true">https://blog.amay0777.net/blog/2018/11/30/694b6d5929c71bb00308/</guid>
-        
-        
-        <category>Xamarin</category>
-        
-        <category>Azure</category>
-        
-        <category>Android</category>
-        
-      </item>
-    
-      <item>
-        <title>Xamarin Profiler と Android Profiler を併用して Xamarin Android アプリのメモリ使用量を測定する</title>
-        <description>&lt;p&gt;Xamarin 製アプリのメモリのプロファイリングは、&lt;br /&gt;
-&lt;!--more--&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;.NET(mono ランタイム) が管理するオブジェクト&lt;/li&gt;
-  &lt;li&gt;Java(Dalvik) が管理するオブジェクト&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を意識する必要があります。&lt;/p&gt;
-
-&lt;h2 id=&quot;使用するツール&quot;&gt;使用するツール&lt;/h2&gt;
-
-&lt;p&gt;.NET(mono ランタイム) が管理するオブジェクトのメモリ測定には、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://docs.microsoft.com/ja-jp/xamarin/tools/profiler/?tabs=vsmac&quot;&gt;Xamarin Profiler - Xamarin ｜ Microsoft Docs&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を使用します。これは Visual Studio と連携するアプリで、IDE から Run&lt;/p&gt;
-&lt;blockquote&gt;
-  &lt;p&gt;Start Profiling とすると起動できるものです。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;Java(Dalvik) が管理するオブジェクトのメモリ測定には、&lt;/p&gt;
-
-&lt;ul&gt;
-  &lt;li&gt;&lt;a href=&quot;https://developer.android.com/studio/profile/android-profiler?hl=ja&quot;&gt;Android Profiler でアプリのパフォーマンスを測定する  ｜  Android Developers&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;を使用します。こちらは Android Studio をインストールすれば一緒に入っています。&lt;/p&gt;
-
-&lt;h2 id=&quot;試してみた&quot;&gt;試してみた&lt;/h2&gt;
-
-&lt;h3 id=&quot;xamarin-profiler&quot;&gt;Xamarin Profiler&lt;/h3&gt;
-
-&lt;p&gt;Xamarin Android で、画面に2つのボタンを配置し、それぞれ次のような処理を行うコードを書きます。&lt;/p&gt;
-
-&lt;div class=&quot;language-csharp highlighter-rouge&quot;&gt;&lt;div class=&quot;highlight&quot;&gt;&lt;pre class=&quot;highlight&quot;&gt;&lt;code&gt;&lt;span class=&quot;na&quot;&gt;[Activity(Label = &quot;LeakSample&quot;, MainLauncher = true, Icon = &quot;@mipmap/icon&quot;)]&lt;/span&gt;
-&lt;span class=&quot;k&quot;&gt;public&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;MainActivity&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;:&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Activity&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;MemoryStream&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;netStream&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;System&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;MemoryStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-    &lt;span class=&quot;n&quot;&gt;Java&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;ByteArrayOutputStream&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;javaStream&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;Java&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;IO&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;ByteArrayOutputStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;();&lt;/span&gt;
-
-    &lt;span class=&quot;k&quot;&gt;protected&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;override&lt;/span&gt; &lt;span class=&quot;k&quot;&gt;void&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;OnCreate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Bundle&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;savedInstanceState&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-        &lt;span class=&quot;k&quot;&gt;base&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;OnCreate&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;savedInstanceState&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-        &lt;span class=&quot;c1&quot;&gt;// Set our view from the &quot;main&quot; layout resource&lt;/span&gt;
-        &lt;span class=&quot;nf&quot;&gt;SetContentView&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Layout&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Main&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-
-        &lt;span class=&quot;n&quot;&gt;FindViewById&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Button&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton1&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Click&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt;
-        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-            &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1024&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;netStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Write&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;byte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;],&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;0&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;);&lt;/span&gt;
-        &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
-
-        &lt;span class=&quot;n&quot;&gt;FindViewById&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;lt;&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Button&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;&amp;gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Resource&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Id&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;myButton2&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;).&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;Click&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&amp;gt;&lt;/span&gt;
-        &lt;span class=&quot;p&quot;&gt;{&lt;/span&gt;
-            &lt;span class=&quot;kt&quot;&gt;var&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;size&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;10&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1024&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;m&quot;&gt;1024&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;;&lt;/span&gt;
-            &lt;span class=&quot;n&quot;&gt;javaStream&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nf&quot;&gt;Write&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;k&quot;&gt;new&lt;/span&gt; &lt;span class=&quot;kt&quot;&gt;byte&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;size&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;]);&lt;/span&gt;
-        &lt;span class=&quot;p&quot;&gt;};&lt;/span&gt;
-    &lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;span class=&quot;p&quot;&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;/div&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;myButton1&lt;/code&gt; を押したときには、 .NET のクラスである &lt;code class=&quot;highlighter-rouge&quot;&gt;System.IO.MemoryStream&lt;/code&gt; にデータ追加します。&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;myButton2&lt;/code&gt; を押したときには、 Java のクラスである &lt;code class=&quot;highlighter-rouge&quot;&gt;Java.IO.ByteArrayOutputStream&lt;/code&gt; にデータ追加します。&lt;/p&gt;
-
-&lt;p&gt;こんなプログラムを Run &amp;gt; Start Profiling で起動してみます。&lt;br /&gt;
-アプリが起動する前に Xamarin Profiler が起動します。Choose target は既に起動したい Android アプリが設定されているので、「割り当て」を選択して「Next」します。&lt;/p&gt;
-
-&lt;p&gt;次の画面の「Enable automatic snapshots」をチェックすると自動的(一定間隔で)にメモリのスナップショットを記録しますがこれはお好みで。&lt;/p&gt;
-
-&lt;p&gt;「プリファイリングの開始」を押すとアプリが起動します。&lt;br /&gt;
-Xamarin Profiler の上部にある カメラアイコン を押すと任意のタイミングでメモリ状態を記録できます。&lt;/p&gt;
-
-&lt;p&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;myButton1&lt;/code&gt; を数回押してから カメラアイコン を押してみましょう。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/83830c8c-486f-e9da-5a1b-89b11e96c88f.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;上図のように、追加した byte データが記録されています。&lt;/p&gt;
-
-&lt;p&gt;次に、&lt;code class=&quot;highlighter-rouge&quot;&gt;myButton2&lt;/code&gt; を数回押してから カメラアイコン を押してみましょう。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/a82fb1e1-f810-c511-ec10-260e941676eb.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;今度は Dalvik 管轄のオブジェクトへデータを追加したので Xamarin Profiler ではそのクラスは観測できません。（ワーキングセットは増えてるのでそれは観測できる？）&lt;/p&gt;
-
-&lt;h3 id=&quot;android-profiler-with-xamarinandroid-apps&quot;&gt;Android Profiler with Xamarin.Android apps&lt;/h3&gt;
-
-&lt;p&gt;Dalvik が管理している領域のプロファイリングは Android Profiler を使います。&lt;br /&gt;
-Xamarin であっても「それは Android/Java API をラップしただけ」の実体はネイティブ Android アプリなので、Android SDK のツールは使えるのです。&lt;/p&gt;
-
-&lt;p&gt;Android Studio を起動して適当な Android Apps のプロジェクトを開くか作ります（これはダミーです）。&lt;br /&gt;
-次に メニュー &amp;gt; View &amp;gt; Tool Windows &amp;gt; Profiler で下部に Profiler ペインが開きます。&lt;br /&gt;
-SESSIONS の横の「＋」を押して、対象の端末 &amp;gt; Other processes &amp;gt; 対象のアプリID を選択すると、プロファイリングが始まります。&lt;/p&gt;
-
-&lt;p&gt;この状態で、アプリの &lt;code class=&quot;highlighter-rouge&quot;&gt;myButton2&lt;/code&gt; を何度か押すと、下図のようになります。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&quot;https://qiita-image-store.s3.amazonaws.com/0/8227/ac764a06-0947-a4e1-b579-75cde686d392.png&quot; alt=&quot;image.png&quot; /&gt;&lt;/p&gt;
-
-&lt;p&gt;ボタンを押すたびにメモリ使用量が増えているのが確認できます。&lt;br /&gt;
-（実は &lt;code class=&quot;highlighter-rouge&quot;&gt;myButton1&lt;/code&gt; を押すと、最初の1回はメモリ使用量が増えます。”.NET だけ” には留まらないなにか、があるのでしょうか、おそらく。）&lt;/p&gt;
-
-&lt;h2 id=&quot;まとめ&quot;&gt;まとめ&lt;/h2&gt;
-
-&lt;p&gt;このように Xamarin(.NET)側のプロファイリングには Xamarin Profiler が、Java/Android API使用部のプロファイリングには Android Profiler がそれぞれ使用でき、同時利用あるいは併用することで、 Xamarin Android アプリの計測ができます。&lt;/p&gt;
-
-&lt;p&gt;これは Xamarin.Forms アプリでも同様です。その場合、Custom Renderer やライブラリの Android 依存な箇所の計測は Android Profiler に頼ることがでてくるでしょう。&lt;/p&gt;
-
-&lt;p&gt;また、Xamarin Profiler は Xamarin.iOS アプリの計測もできます。というか Xamarin Profiler の Look&amp;amp;Feel は Xcode - Instruments にとても似ていますね。&lt;/p&gt;
-
-&lt;p&gt;各種プロファイラ自体の使い方や機能については、私も全然把握できてないので、知見が溜まったらまた何か書きます。&lt;/p&gt;
-</description>
-        <pubDate>Mon, 29 Oct 2018 09:59:01 -0500</pubDate>
-        <link>https://blog.amay0777.net/blog/2018/10/29/d774613ccab4e7517201/</link>
-        <guid isPermaLink="true">https://blog.amay0777.net/blog/2018/10/29/d774613ccab4e7517201/</guid>
-        
-        
-        <category>Android</category>
-        
-        <category>.NET</category>
-        
-        <category>Xamarin</category>
         
       </item>
     
