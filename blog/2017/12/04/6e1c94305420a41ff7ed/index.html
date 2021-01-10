@@ -1,1121 +1,146 @@
-﻿<!doctype html>
-<html ⚡ lang="ja">
+<!doctype html>
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveData について勘違いしていたことをいくつか</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>LiveData について勘違いしていたことをいくつか</title>
-  <meta name="description" content="Android Architecture Components(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>LiveData について勘違いしていたことをいくつか | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="LiveData について勘違いしていたことをいくつか" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="Android Architecture Components(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。" />
-<meta property="og:description" content="Android Architecture Components(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2017-12-04T08:59:00-06:00" />
-<script type="application/ld+json">
-{"headline":"LiveData について勘違いしていたことをいくつか","dateModified":"2017-12-04T08:59:00-06:00","datePublished":"2017-12-04T08:59:00-06:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed/"},"url":"https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"Android Architecture Components(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed/",
-  "headline": "LiveData について勘違いしていたことをいくつか",
-  "datePublished": "2017-12-04T08:59:00-06:00",
-  "dateModified": "2017-12-04T08:59:00-06:00",
-  "description": "Android Architecture Components(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>LiveData について勘違いしていたことをいくつか</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">LiveData について勘違いしていたことをいくつか</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p><a href="https://developer.android.com/topic/libraries/architecture/index.html">Android Architecture Components</a>(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。<br />
-<!--more--></p>
-
-<h2 id="livedata-とは">LiveData とは</h2>
-
+<p><a href="https://developer.android.com/topic/libraries/architecture/index.html">Android Architecture Components</a>(以下 AAC) に含まれる 「LiveData」 のサンプルを Kotlin で書いてみました。</p>
+<!--more-->
+<h2 id="livedata-%E3%81%A8%E3%81%AF">LiveData とは <a class="direct-link" href="#livedata-%E3%81%A8%E3%81%AF">#</a></h2>
 <p><a href="https://developer.android.com/topic/libraries/architecture/livedata.html">LiveData</a> とは、「ライフサイクルに応じて自動的に購読解除してくれる通知プロパティ」です。</p>
-
-<p>モダン(と呼ぶにはもはや古い？)なUIパターンでは、UI側はデータの変更を検知して自身を書き換えます。<br />
+<p>モダン(と呼ぶにはもはや古い？)なUIパターンでは、UI側はデータの変更を検知して自身を書き換えます。<br>
 すなわちUI側では、「データを購読する」というコードを書くわけですが、「購読をやめる」というコードも合わせて考えなければなりません。しかし Android の Activity や Fragment はライフサイクルが複雑で、購読を管理するのも一苦労であり、不具合の温床になりがちです。</p>
-
 <p>LiveData は AAC に含まれる Lifecycle と深く結びつき、この「購読解除」をほとんど自動的に行なってくれます。</p>
-
-<h2 id="作ってみたアプリ">作ってみたアプリ</h2>
-
+<h2 id="%E4%BD%9C%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA">作ってみたアプリ <a class="direct-link" href="#%E4%BD%9C%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA">#</a></h2>
 <p>いったい何人が、何回つくったのだろうと思われる GitHub のレポジトリ一覧を表示するやつです。</p>
-
-<p><amp-img width="394" height="700" layout="responsive" src="https://qiita-image-store.s3.amazonaws.com/0/8227/d7c89507-94b6-b618-49ec-f90d83f353e1.png" alt="Screenshot_1509709626.png" /></p>
-
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/d7c89507-94b6-b618-49ec-f90d83f353e1.png" alt="Screenshot_1509709626.png"></p>
 <p>主な要素は次の通りです。</p>
-
 <ul>
-  <li>依存関係は MainActivity -&gt; MainViewModel -&gt; GithubRepository -&gt; GithubService(Retrofit)</li>
-  <li>MainViewModel は「ユーザー名」と「リポジトリリスト」を LiveData として公開。あと load メソッドも。</li>
-  <li>MainActivity は自身の EditText や ListView と、MainViewModel の LiveData をデータバインド(自作)</li>
-  <li>MainViewModel は load が呼ばれたら、GithubRepository を使用してリポジトリ一覧を <strong>非同期で</strong> 要求し、取得できたら自身の LiveData を更新する。</li>
-  <li>GithubRepository では、 Retrofit を使ってるだけ。 <strong>コールバックをUIスレッドで受けないように</strong> <code class="highlighter-rouge">callbackExecutor</code> を設定してます。</li>
-  <li>coroutine(async/await) や RxJava、 DataBinding は使ってないです。なるべく LiveData のみのシンプルな方針で。</li>
+<li>依存関係は MainActivity -&gt; MainViewModel -&gt; GithubRepository -&gt; GithubService(Retrofit)</li>
+<li>MainViewModel は「ユーザー名」と「リポジトリリスト」を LiveData として公開。あと load メソッドも。</li>
+<li>MainActivity は自身の EditText や ListView と、MainViewModel の LiveData をデータバインド(自作)</li>
+<li>MainViewModel は load が呼ばれたら、GithubRepository を使用してリポジトリ一覧を <strong>非同期で</strong> 要求し、取得できたら自身の LiveData を更新する。</li>
+<li>GithubRepository では、 Retrofit を使ってるだけ。 <strong>コールバックをUIスレッドで受けないように</strong> <code>callbackExecutor</code> を設定してます。</li>
+<li>coroutine(async/await) や RxJava、 DataBinding は使ってないです。なるべく LiveData のみのシンプルな方針で。</li>
 </ul>
-
 <p>LiveData はライフサイクルと結びついて購読管理をしてくれるモノ、ということは ViewModel で使うのが自然かなと。Google のサンプルもそうなってたし。</p>
-
-<h2 id="livedata-で勘違いしてたこと">LiveData で勘違いしてたこと</h2>
-
+<h2 id="livedata-%E3%81%A7%E5%8B%98%E9%81%95%E3%81%84%E3%81%97%E3%81%A6%E3%81%9F%E3%81%93%E3%81%A8">LiveData で勘違いしてたこと <a class="direct-link" href="#livedata-%E3%81%A7%E5%8B%98%E9%81%95%E3%81%84%E3%81%97%E3%81%A6%E3%81%9F%E3%81%93%E3%81%A8">#</a></h2>
 <p>さて、 LiveData を実際に使ってみたところ「マジか・・・」と思った点がいくつかあったので挙げてみます。</p>
-
-<h3 id="変更通知じゃなくてただの垂れ流しだった">「変更通知」じゃなくて、ただの「垂れ流し」だった</h3>
-
+<h3 id="%E3%80%8C%E5%A4%89%E6%9B%B4%E9%80%9A%E7%9F%A5%E3%80%8D%E3%81%98%E3%82%83%E3%81%AA%E3%81%8F%E3%81%A6%E3%80%81%E3%81%9F%E3%81%A0%E3%81%AE%E3%80%8C%E5%9E%82%E3%82%8C%E6%B5%81%E3%81%97%E3%80%8D%E3%81%A0%E3%81%A3%E3%81%9F">「変更通知」じゃなくて、ただの「垂れ流し」だった <a class="direct-link" href="#%E3%80%8C%E5%A4%89%E6%9B%B4%E9%80%9A%E7%9F%A5%E3%80%8D%E3%81%98%E3%82%83%E3%81%AA%E3%81%8F%E3%81%A6%E3%80%81%E3%81%9F%E3%81%A0%E3%81%AE%E3%80%8C%E5%9E%82%E3%82%8C%E6%B5%81%E3%81%97%E3%80%8D%E3%81%A0%E3%81%A3%E3%81%9F">#</a></h3>
 <p>私が期待していたのは「DataBinding の ObservableFieldのように使える、且つ、購読管理が楽」というモノだったんですけど、ObservableField と決定的に違うのがここでした。</p>
-
-<p>ObservableField は、値が <strong>変更された時</strong> に通知を行います。<br />
+<p>ObservableField は、値が <strong>変更された時</strong> に通知を行います。<br>
 LiveData は、値が <strong>変更されていなくても設定されれば</strong> 通知を行います。</p>
-
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kd">val</span> <span class="py">observableFld</span> <span class="p">=</span> <span class="n">ObservableField</span><span class="p">&lt;</span><span class="n">Int</span><span class="p">&gt;()</span>
-<span class="n">observableFld</span><span class="p">.</span><span class="k">set</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">observableFld</span><span class="p">.</span><span class="k">set</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">observableFld</span><span class="p">.</span><span class="k">set</span><span class="p">(</span><span class="m">5</span><span class="p">)</span> <span class="c1">// 最初の１回しか通知されない(=onChangedは呼ばれない)</span>
-
-<span class="kd">val</span> <span class="py">liveData</span> <span class="p">=</span> <span class="n">MutableLiveData</span><span class="p">&lt;</span><span class="n">Int</span><span class="p">&gt;()</span>
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span><span class="c1">// 3回とも通知される(=onChangedが呼ばれる)</span>
-</code></pre></div></div>
-
-<p>ViewModel が持つプロパティは、値が変わった時に通知し、View側はそれを検知して更新する。<br />
-が常識なので、LiveData もてっきりそうなってるのかと思ってましたが、違いました（だって on <code class="highlighter-rouge">Changed</code> だったし…）。</p>
-
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">val</span> observableFld <span class="token operator">=</span> ObservableField<span class="token operator">&lt;</span>Int<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>observableFld<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>observableFld<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>observableFld<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span> <span class="token comment">// 最初の１回しか通知されない(=onChangedは呼ばれない)</span><br><br><span class="token keyword">val</span> liveData <span class="token operator">=</span> MutableLiveData<span class="token operator">&lt;</span>Int<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token comment">// 3回とも通知される(=onChangedが呼ばれる)</span></code></pre>
+<p>ViewModel が持つプロパティは、値が変わった時に通知し、View側はそれを検知して更新する。<br>
+が常識なので、LiveData もてっきりそうなってるのかと思ってましたが、違いました（だって on <code>Changed</code> だったし…）。</p>
 <p>この事を知っておかないと、以下のようなリスクがあります。</p>
-
 <ul>
-  <li>ムダな画面の更新が発生する</li>
-  <li>TwoWay バインディングを何も考えずに作ると無限ループで死ぬ</li>
+<li>ムダな画面の更新が発生する</li>
+<li>TwoWay バインディングを何も考えずに作ると無限ループで死ぬ</li>
 </ul>
-
-<p>後者は、このサンプル作成で体験しました。<br />
-画面の EditText と ViewModel の <code class="highlighter-rouge">LiveData&lt;String&gt;</code> の TwoWay バインディングを次のように「何も考えず」実装しました。</p>
-
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// viewModel.user の TwoWay バインド</span>
-<span class="c1">// EditText -&gt; LiveData</span>
-<span class="n">editUserName</span><span class="p">.</span><span class="n">addTextChangedListener</span><span class="p">(</span><span class="kd">object</span> <span class="err">: </span><span class="nc">TextWatcher</span> <span class="p">{</span>
-    <span class="k">override</span> <span class="k">fun</span> <span class="n">onTextChanged</span><span class="p">(</span><span class="n">p0</span><span class="p">:</span> <span class="n">CharSequence</span><span class="p">?,</span> <span class="n">p1</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span> <span class="n">p3</span><span class="p">:</span> <span class="n">Int</span><span class="p">)</span> <span class="p">{</span>
-        <span class="kd">val</span> <span class="py">userName</span> <span class="p">=</span> <span class="n">editUserName</span><span class="p">.</span><span class="n">text</span><span class="p">;</span>
-        <span class="n">viewModel</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="n">userName</span><span class="p">.</span><span class="n">toString</span><span class="p">())</span>
-    <span class="p">}</span>
-
-    <span class="k">override</span> <span class="k">fun</span> <span class="n">beforeTextChanged</span><span class="p">(</span><span class="n">p0</span><span class="p">:</span> <span class="n">CharSequence</span><span class="p">?,</span> <span class="n">p1</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span> <span class="n">p2</span><span class="p">:</span> <span class="n">Int</span><span class="p">,</span> <span class="n">p3</span><span class="p">:</span> <span class="n">Int</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-    <span class="k">override</span> <span class="k">fun</span> <span class="n">afterTextChanged</span><span class="p">(</span><span class="n">p0</span><span class="p">:</span> <span class="n">Editable</span><span class="p">?)</span> <span class="p">{</span> <span class="p">}</span>
-<span class="p">})</span>
-
-<span class="c1">// LiveData -&gt; EditText</span>
-<span class="n">viewModel</span><span class="p">.</span><span class="n">user</span><span class="p">.</span><span class="n">observe</span><span class="p">(</span><span class="k">this</span><span class="p">,</span> <span class="n">Observer</span> <span class="p">{</span> <span class="n">userName</span> <span class="p">-&gt;</span>
-    <span class="n">editUserName</span><span class="p">.</span><span class="n">setTextKeepState</span><span class="p">(</span><span class="n">userName</span> <span class="o">?:</span> <span class="s">""</span><span class="p">)</span>
-<span class="p">})</span>
-<span class="n">editUserName</span><span class="p">.</span><span class="n">setTextKeepState</span><span class="p">(</span><span class="n">viewModel</span><span class="p">.</span><span class="n">user</span><span class="o">?.</span><span class="n">value</span> <span class="o">?:</span> <span class="s">""</span><span class="p">)</span>
-</code></pre></div></div>
-
-<p>このコードは、初回の <code class="highlighter-rouge">editUserName.setTextKeepState</code> をトリガーに、TextWatcher.onTextChanged と  LiveData.observe が無限に繰り返されます。</p>
-
+<p>後者は、このサンプル作成で体験しました。<br>
+画面の EditText と ViewModel の <code>LiveData&lt;String&gt;</code> の TwoWay バインディングを次のように「何も考えず」実装しました。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// viewModel.user の TwoWay バインド</span><br><span class="token comment">// EditText -> LiveData</span><br>editUserName<span class="token punctuation">.</span><span class="token function">addTextChangedListener</span><span class="token punctuation">(</span><span class="token keyword">object</span> <span class="token operator">:</span> TextWatcher <span class="token punctuation">{</span><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onTextChanged</span><span class="token punctuation">(</span>p0<span class="token operator">:</span> CharSequence<span class="token operator">?</span><span class="token punctuation">,</span> p1<span class="token operator">:</span> Int<span class="token punctuation">,</span> p2<span class="token operator">:</span> Int<span class="token punctuation">,</span> p3<span class="token operator">:</span> Int<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> userName <span class="token operator">=</span> editUserName<span class="token punctuation">.</span>text<span class="token punctuation">;</span><br>        viewModel<span class="token punctuation">.</span>user<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span>userName<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">beforeTextChanged</span><span class="token punctuation">(</span>p0<span class="token operator">:</span> CharSequence<span class="token operator">?</span><span class="token punctuation">,</span> p1<span class="token operator">:</span> Int<span class="token punctuation">,</span> p2<span class="token operator">:</span> Int<span class="token punctuation">,</span> p3<span class="token operator">:</span> Int<span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token punctuation">}</span><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">afterTextChanged</span><span class="token punctuation">(</span>p0<span class="token operator">:</span> Editable<span class="token operator">?</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><br><br><span class="token comment">// LiveData -> EditText</span><br>viewModel<span class="token punctuation">.</span>user<span class="token punctuation">.</span><span class="token function">observe</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> Observer <span class="token punctuation">{</span> userName <span class="token operator">-></span><br>    editUserName<span class="token punctuation">.</span><span class="token function">setTextKeepState</span><span class="token punctuation">(</span>userName <span class="token operator">?:</span> <span class="token string">""</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><br>editUserName<span class="token punctuation">.</span><span class="token function">setTextKeepState</span><span class="token punctuation">(</span>viewModel<span class="token punctuation">.</span>user<span class="token operator">?</span><span class="token punctuation">.</span>value <span class="token operator">?:</span> <span class="token string">""</span><span class="token punctuation">)</span></code></pre>
+<p>このコードは、初回の <code>editUserName.setTextKeepState</code> をトリガーに、TextWatcher.onTextChanged と  LiveData.observe が無限に繰り返されます。</p>
 <p>今回は、TextWatcher.onTextChanged で同値チェックを行って回避しましたが、予期せぬトラブルの元になりそうです。</p>
-
-<h3 id="setvalue-はuiスレッドで呼び出さないといけないpostvalue-を使おう">setValue はUIスレッドで呼び出さないといけない(postValue を使おう)</h3>
-
-<p><code class="highlighter-rouge">LiveData&lt;T&gt;</code> の実際に値を設定できるクラスである <code class="highlighter-rouge">MutableLiveData&lt;T&gt;</code> には、 <code class="highlighter-rouge">setValue()</code> と <code class="highlighter-rouge">postValue()</code> の２つの値更新メソッドがあります。</p>
-
-<p>はじめは <code class="highlighter-rouge">setValue()</code> しか知らなくてそれを使っていたのですが、非UIスレッドで（Retrofitのコールバックスレッドで） <code class="highlighter-rouge">setValue()</code> を使用したら IllegalなんとかException が出ました。<br />
+<h3 id="setvalue-%E3%81%AFui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%A7%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%81%AA%E3%81%84%E3%81%A8%E3%81%84%E3%81%91%E3%81%AA%E3%81%84(postvalue-%E3%82%92%E4%BD%BF%E3%81%8A%E3%81%86)">setValue はUIスレッドで呼び出さないといけない(postValue を使おう) <a class="direct-link" href="#setvalue-%E3%81%AFui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%A7%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%81%AA%E3%81%84%E3%81%A8%E3%81%84%E3%81%91%E3%81%AA%E3%81%84(postvalue-%E3%82%92%E4%BD%BF%E3%81%8A%E3%81%86)">#</a></h3>
+<p><code>LiveData&lt;T&gt;</code> の実際に値を設定できるクラスである <code>MutableLiveData&lt;T&gt;</code> には、 <code>setValue()</code> と <code>postValue()</code> の２つの値更新メソッドがあります。</p>
+<p>はじめは <code>setValue()</code> しか知らなくてそれを使っていたのですが、非UIスレッドで（Retrofitのコールバックスレッドで） <code>setValue()</code> を使用したら IllegalなんとかException が出ました。<br>
 LiveData のコードを追ってみると、次図のようにUIスレッドかどうかをチェックして例外を出していました。</p>
-
-<amp-twitter data-tweetid="926055527997566977?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- えー、 LiveData の setValue、 メインスレッドから呼ばないとエラーなのかー。それは observe 側（つまりView−Binding側）でマネージするもんじゃ・・・。 ReactiveProperty みてくれー。 <a href="https://t.co/jSkXT4LK8w">pic.twitter.com/jSkXT4LK8w</a> by @amay077 -->
-
-<p>しかしその後、 @kkagurazaka さんに <code class="highlighter-rouge">postValue()</code> もあるよ！ と教えてもらいました。</p>
-
-<amp-twitter data-tweetid="926338659539853312?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- MutableLiveData#postValueじゃだめですかね？ by @kkagurazaka -->
-
-<p><a href="https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)"><code class="highlighter-rouge">postVata</code></a> は、値の更新と通知をUIスレッド上で行ってくれるメソッドです。</p>
-
-<p>モデル側の処理は大抵は非同期すなわち非UIスレッドで行われることを前提にすると思うので、<code class="highlighter-rouge">setValue</code> は事実上使えないでしょう。</p>
-
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">えー、 LiveData の setValue、 メインスレッドから呼ばないとエラーなのかー。それは observe 側（つまりView−Binding側）でマネージするもんじゃ・・・。 ReactiveProperty みてくれー。 <a href="https://t.co/jSkXT4LK8w">pic.twitter.com/jSkXT4LK8w</a></p>&mdash; あめい@ハイドラ待ち (@amay077) <a href="https://twitter.com/amay077/status/926055527997566977?ref_src=twsrc%5Etfw">2017年11月2日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>しかしその後、 @kkagurazaka さんに <code>postValue()</code> もあるよ！ と教えてもらいました。</p>
+<blockquote class="twitter-tweet" data-conversation="none" data-lang="ja"><p lang="ja" dir="ltr">MutableLiveData#postValueじゃだめですかね？</p>&mdash; Keita Kagurazaka (@kkagurazaka) <a href="https://twitter.com/kkagurazaka/status/926338659539853312?ref_src=twsrc%5Etfw">2017年11月3日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p><a href="https://developer.android.com/reference/android/arch/lifecycle/MutableLiveData.html#postValue(T)"><code>postVata</code></a> は、値の更新と通知をUIスレッド上で行ってくれるメソッドです。</p>
+<p>モデル側の処理は大抵は非同期すなわち非UIスレッドで行われることを前提にすると思うので、<code>setValue</code> は事実上使えないでしょう。</p>
 <p>そして、LiveData は UIスレッドに強く依存しているので、ViewModel から「向こう側」では使うべきではないでしょう。</p>
-
-<p>逆に <code class="highlighter-rouge">LiveData</code> の <code class="highlighter-rouge">observe</code> は、UIスレッドで行われることが保証されているので、わざわざ <code class="highlighter-rouge">runOnUiThread</code> などをする必要はなさそうです。</p>
-
-<h3 id="observablefield-と併用不可">ObservableField と併用不可？</h3>
-
-<p>さて DataBinding には <code class="highlighter-rouge">BaseObservale</code> の基底クラスまたは <code class="highlighter-rouge">ObservavleField</code> が必要です。 AAC を使う＝ <code class="highlighter-rouge">ViewModel</code> を基底クラスにすることが多いと想定されるので前者は実質死亡。となれば DataBinding したければ ObservableField を使うしかありません。しかし ObservableField と LiveData は現在はなんの関係もないクラスなので、</p>
-
+<p>逆に <code>LiveData</code> の <code>observe</code> は、UIスレッドで行われることが保証されているので、わざわざ <code>runOnUiThread</code> などをする必要はなさそうです。</p>
+<h3 id="observablefield-%E3%81%A8%E4%BD%B5%E7%94%A8%E4%B8%8D%E5%8F%AF%EF%BC%9F">ObservableField と併用不可？ <a class="direct-link" href="#observablefield-%E3%81%A8%E4%BD%B5%E7%94%A8%E4%B8%8D%E5%8F%AF%EF%BC%9F">#</a></h3>
+<p>さて DataBinding には <code>BaseObservale</code> の基底クラスまたは <code>ObservavleField</code> が必要です。 AAC を使う＝ <code>ViewModel</code> を基底クラスにすることが多いと想定されるので前者は実質死亡。となれば DataBinding したければ ObservableField を使うしかありません。しかし ObservableField と LiveData は現在はなんの関係もないクラスなので、</p>
 <ul>
-  <li>DataBinding したいなら ObservableField</li>
-  <li>Lifecycle aware なコードを書きたいなら LiveData</li>
+<li>DataBinding したいなら ObservableField</li>
+<li>Lifecycle aware なコードを書きたいなら LiveData</li>
 </ul>
-
 <p>という使い分けをしなければなりません。目的が違うとは言え、なんだか微妙です。</p>
-
-<h3 id="20171221-追記">2017/12/21 追記</h3>
-
-<p>なんと LiveData が DataBinding に対応するようです。つまり <code class="highlighter-rouge">ObservableField&lt;T&gt;</code> は要らない子になる可能性？</p>
-
+<h3 id="2017%2F12%2F21-%E8%BF%BD%E8%A8%98">2017/12/21 追記 <a class="direct-link" href="#2017%2F12%2F21-%E8%BF%BD%E8%A8%98">#</a></h3>
+<p>なんと LiveData が DataBinding に対応するようです。つまり <code>ObservableField&lt;T&gt;</code> は要らない子になる可能性？</p>
 <ul>
-  <li><a href="https://medium.com/@star_zero/databinding%E3%81%A7livedata%E3%81%8C%E4%BD%BF%E3%81%88%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%AA%E3%81%A3%E3%81%9F-d74b3d267ad2">DataBindingでLiveDataが使えるようになった – Kenji Abe – Medium</a></li>
-  <li><a href="https://androidstudio.googleblog.com/2017/12/android-studio-31-canary-6-is-now.html">Android Studio Release Updates: Android Studio 3.1 Canary 6 is now available</a></li>
+<li><a href="https://medium.com/@star_zero/databinding%E3%81%A7livedata%E3%81%8C%E4%BD%BF%E3%81%88%E3%82%8B%E3%82%88%E3%81%86%E3%81%AB%E3%81%AA%E3%81%A3%E3%81%9F-d74b3d267ad2">DataBindingでLiveDataが使えるようになった – Kenji Abe – Medium</a></li>
+<li><a href="https://androidstudio.googleblog.com/2017/12/android-studio-31-canary-6-is-now.html">Android Studio Release Updates: Android Studio 3.1 Canary 6 is now available</a></li>
 </ul>
-
 <blockquote>
-  <p>You can now use a LiveData object as an observable field in data binding expressions.(続く)</p>
+<p>You can now use a LiveData object as an observable field in data binding expressions.(続く)</p>
 </blockquote>
-
 <p>変更通知でなく「値を垂れ流すだけ」である LiveData をデータバインディングできるって、どうなっちゃうのか、すごく興味ありますね。続報を追っかけましょう。</p>
-
-<h2 id="solutions">Solutions？</h2>
-
-<p>文句言ってるだけでは何の解決にもならないので、現状打てる手を模索してみます。<br />
+<h2 id="solutions%EF%BC%9F">Solutions？ <a class="direct-link" href="#solutions%EF%BC%9F">#</a></h2>
+<p>文句言ってるだけでは何の解決にもならないので、現状打てる手を模索してみます。<br>
 Kotlin ならば拡張メソッドが使えるので、便利な拡張メソッドを作って使えばいいんじゃないかと。</p>
-
-<h3 id="値が変わった時だけ通知を行う-livedata-の拡張メソッドを作る">「値が変わった時だけ」通知を行う LiveData の拡張メソッドを作る</h3>
-
+<h3 id="%E3%80%8C%E5%80%A4%E3%81%8C%E5%A4%89%E3%82%8F%E3%81%A3%E3%81%9F%E6%99%82%E3%81%A0%E3%81%91%E3%80%8D%E9%80%9A%E7%9F%A5%E3%82%92%E8%A1%8C%E3%81%86-livedata-%E3%81%AE%E6%8B%A1%E5%BC%B5%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%9C%E3%82%8B">「値が変わった時だけ」通知を行う LiveData の拡張メソッドを作る <a class="direct-link" href="#%E3%80%8C%E5%80%A4%E3%81%8C%E5%A4%89%E3%82%8F%E3%81%A3%E3%81%9F%E6%99%82%E3%81%A0%E3%81%91%E3%80%8D%E9%80%9A%E7%9F%A5%E3%82%92%E8%A1%8C%E3%81%86-livedata-%E3%81%AE%E6%8B%A1%E5%BC%B5%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%9C%E3%82%8B">#</a></h3>
 <p>まず、「LiveData は値の変更に関係なく通知されてしまう」については、値が変わったかをチェックして、変わっていた時だけ通知を行うような拡張メソッドを作ってみました。</p>
-
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">fun</span> <span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="n">LiveData</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;.</span><span class="n">observeOnChanged</span><span class="p">(</span><span class="n">owner</span><span class="p">:</span> <span class="n">LifecycleOwner</span><span class="p">,</span> <span class="n">observer</span><span class="p">:</span> <span class="n">Observer</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;)</span> <span class="p">:</span> <span class="n">Unit</span> <span class="p">{</span>
-    <span class="kd">var</span> <span class="py">prev</span> <span class="p">:</span> <span class="n">T</span><span class="p">?</span> <span class="p">=</span> <span class="k">null</span>
-    <span class="k">this</span><span class="p">.</span><span class="n">observe</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">Observer</span><span class="p">&lt;</span><span class="n">T</span><span class="p">&gt;</span> <span class="p">{</span>
-        <span class="k">if</span> <span class="p">(!(</span><span class="n">prev</span><span class="o">?.</span><span class="n">equals</span><span class="p">(</span><span class="n">it</span><span class="p">)</span> <span class="o">?:</span> <span class="k">false</span><span class="p">))</span> <span class="p">{</span>
-            <span class="n">observer</span><span class="p">.</span><span class="n">onChanged</span><span class="p">(</span><span class="n">it</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="n">prev</span> <span class="p">=</span> <span class="n">it</span>
-    <span class="p">})</span>
-<span class="p">}</span>
-
-<span class="c1">// 使う方</span>
-<span class="kd">val</span> <span class="py">liveData</span> <span class="p">=</span> <span class="n">MutableLiveData</span><span class="p">&lt;</span><span class="n">Int</span><span class="p">&gt;()</span>
-
-<span class="n">liveData</span><span class="p">.</span><span class="n">observeOnChanged</span><span class="p">(</span><span class="n">owner</span><span class="p">,</span> <span class="n">Observer</span> <span class="p">{</span>
-    <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="n">TAG</span><span class="p">,</span> <span class="s">"$it"</span><span class="p">)</span>
-<span class="p">});</span>
-
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span>
-<span class="n">liveData</span><span class="p">.</span><span class="n">postValue</span><span class="p">(</span><span class="m">5</span><span class="p">)</span><span class="c1">// 最初の1回しか onChanged は呼ばれない</span>
-</code></pre></div></div>
-
-<h2 id="やっぱり-observablet-がイイ">やっぱり <code class="highlighter-rouge">Observable&lt;T&gt;</code> がイイ！</h2>
-
-<p>LiveData の購読管理が楽になるところは良いんですけど、 <code class="highlighter-rouge">map</code> や <code class="highlighter-rouge">switchMap(flatMap かな)</code> など最低限の合成メソッドしかない点や、DataBinding との併用が面倒そうな点は微妙です。</p>
-
-<p>ViewModel の向こう側(Usecase層や Repository層)からの I/F は <code class="highlighter-rouge">Observable&lt;T&gt;</code> あるいは、それと相互変換可能なモノにしたいと考えると、ViewModel でも <code class="highlighter-rouge">Observable&lt;T&gt;</code> を使いたいものです。</p>
-
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">fun</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> LiveData<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token punctuation">.</span><span class="token function">observeOnChanged</span><span class="token punctuation">(</span>owner<span class="token operator">:</span> LifecycleOwner<span class="token punctuation">,</span> observer<span class="token operator">:</span> Observer<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token punctuation">)</span> <span class="token operator">:</span> Unit <span class="token punctuation">{</span><br>    <span class="token keyword">var</span> prev <span class="token operator">:</span> T<span class="token operator">?</span> <span class="token operator">=</span> <span class="token keyword">null</span><br>    <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">observe</span><span class="token punctuation">(</span>owner<span class="token punctuation">,</span> Observer<span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token punctuation">{</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span><span class="token punctuation">(</span>prev<span class="token operator">?</span><span class="token punctuation">.</span><span class="token function">equals</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span> <span class="token operator">?:</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            observer<span class="token punctuation">.</span><span class="token function">onChanged</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        prev <span class="token operator">=</span> it<br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><br><br><span class="token comment">// 使う方</span><br><span class="token keyword">val</span> liveData <span class="token operator">=</span> MutableLiveData<span class="token operator">&lt;</span>Int<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>liveData<span class="token punctuation">.</span><span class="token function">observeOnChanged</span><span class="token punctuation">(</span>owner<span class="token punctuation">,</span> Observer <span class="token punctuation">{</span><br>    Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"<span class="token interpolation variable">$it</span>"</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>liveData<span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token comment">// 最初の1回しか onChanged は呼ばれない</span></code></pre>
+<h2 id="%E3%82%84%E3%81%A3%E3%81%B1%E3%82%8A-observable%3Ct%3E-%E3%81%8C%E3%82%A4%E3%82%A4%EF%BC%81">やっぱり <code>Observable&lt;T&gt;</code> がイイ！ <a class="direct-link" href="#%E3%82%84%E3%81%A3%E3%81%B1%E3%82%8A-observable%3Ct%3E-%E3%81%8C%E3%82%A4%E3%82%A4%EF%BC%81">#</a></h2>
+<p>LiveData の購読管理が楽になるところは良いんですけど、 <code>map</code> や <code>switchMap(flatMap かな)</code> など最低限の合成メソッドしかない点や、DataBinding との併用が面倒そうな点は微妙です。</p>
+<p>ViewModel の向こう側(Usecase層や Repository層)からの I/F は <code>Observable&lt;T&gt;</code> あるいは、それと相互変換可能なモノにしたいと考えると、ViewModel でも <code>Observable&lt;T&gt;</code> を使いたいものです。</p>
 <p>ということで、ObservableField と LiveData と RxJava をイイ感じで一緒に使う方法を考えてみたので、明日の 「<a href="https://qiita.com/advent-calendar/2017/rxjava">RxJava Advent Calendar 2017 day 5</a>」 に書きます！</p>
 
-    </section>
-    <footer class="post-footer">
 
-      <section class="categories">
-        
-        <div class="category">Android</div>
-        
-        <div class="category">Kotlin</div>
-        
-        <p class="published">published <time datetime="2017-12-04 08:59">04 Dec 2017</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2017-12-04-6e1c94305420a41ff7ed.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2017/12/04/6e1c94305420a41ff7ed&text=LiveData+%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6%E5%8B%98%E9%81%95%E3%81%84%E3%81%97%E3%81%A6%E3%81%84%E3%81%9F%E3%81%93%E3%81%A8%E3%82%92%E3%81%84%E3%81%8F%E3%81%A4%E3%81%8B&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
+published at <time class="postlist-date" datetime="2017-12-04">04 Dec 2017</time>
 
+tags: 
 
-        </a>
-      </section>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
 
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
+<hr>
+<ul><li>Next: <a href="/blog/2017/12/05/58e589780ccea6fd5470/">RxJava の Observable と LiveData と ObservableField をいい感じで使おう</a></li><li>Previous: <a href="/blog/2017/12/01/6a6d5855b3d0c46de126/">Xamarin を使えば iPhone 端末が要らない、ワケがない</a></li>
+</ul>
 
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
+    </main>
 
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
+    <footer></footer>
 
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2017/12/04/6e1c94305420a41ff7ed/ -->
   </body>
 </html>

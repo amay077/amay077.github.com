@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android の app/build.gradle に kapt databinding:compiler の定義は要らなくなった(というか書いちゃダメ)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Android の app/build.gradle に kapt databinding:compiler の定義は要らなくなった(というか書いちゃダメ)</h1>
+
+<p>3ヶ月ぶりにメンテすることになった Android アプリのプロジェクトを現在(2018年10月)最新の Android Studio で開いてビルドしたらエラーになった。</p>
+<!--more-->
+<p>その解決事例を記録しておく。</p>
+<p>結論だけ言うと <strong>「app/build.gradle の app/build.gradle の <code>kapt '*.databinding:compiler:x.x.x'</code> の行は消せ」</strong> です。</p>
+<h2 id="0.-%E4%BF%AE%E6%AD%A3%E5%89%8D%E3%81%AE-build.gradle">0. 修正前の build.gradle <a class="direct-link" href="#0.-%E4%BF%AE%E6%AD%A3%E5%89%8D%E3%81%AE-build.gradle">#</a></h2>
+<p>修正前の Project と app モジュールの build.gradle はこんな感じ。<br>
+3ヶ月前の時点で最新の Kotlin, Gradle, Support Libraries, ACC などを使っていた。</p>
+<p><strong>Project: build.gradle</strong></p>
+<pre><code>// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext.kotlin_version = '1.2.0'
+    repositories {
+        maven { url 'https://maven.google.com' }
+        jcenter()
+        google()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath &quot;org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version&quot;
+        classpath 'com.github.gfx.ribbonizer:ribbonizer-plugin:2.1.0'
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://maven.google.com' }
+        maven { url 'https://jitpack.io' }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
+
+ext {
+    playServicesVersion = &quot;11.6.2&quot;
+    supportLibVersion = &quot;26.1.0&quot;
+    runnerVersion = &quot;1.0.1&quot;
+    rulesVersion = &quot;1.0.1&quot;
+    espressoVersion = &quot;3.0.1&quot;
+    archLifecycleVersion = &quot;1.0.0&quot;
+    archRoomVersion = &quot;1.0.0&quot;
+}
+</code></pre>
+<p><strong>app: build.gradle</strong></p>
+<pre><code>apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
+apply plugin: 'com.github.gfx.ribbonizer'
+
+android {
+    compileSdkVersion 26
+    defaultConfig {
+        applicationId &quot;my.domain.awesomeapp&quot;
+        minSdkVersion 23
+        targetSdkVersion 26
+        versionCode 101
+        versionName &quot;1.0&quot;
+        testInstrumentationRunner &quot;android.support.test.runner.AndroidJUnitRunner&quot;
+        multiDexEnabled true
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix &quot;.debug&quot;
+        }
+
+        experiment {
+            applicationIdSuffix &quot;.exp&quot;
+            debuggable true
+        }
+
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    dataBinding {
+        enabled = true
+    }
+}
+
+dependencies {
+    kapt 'com.android.databinding:compiler:3.1.2'
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    androidTestImplementation('com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+
+
+    // Kotlin
+    implementation &quot;org.jetbrains.kotlin:kotlin-stdlib-jre7:$kotlin_version&quot;
+
+    def coroutines_version = '0.20'
+    implementation &quot;org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version&quot;
+    implementation &quot;org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version&quot;
+
+    // Android Support Libraries
+    implementation 'com.android.support:design:' + rootProject.supportLibVersion
+    implementation 'com.android.support:appcompat-v7:' + rootProject.supportLibVersion
+    implementation 'com.android.support:cardview-v7:' + rootProject.supportLibVersion
+    implementation 'com.android.support.constraint:constraint-layout:1.0.2'
+
+    // Google Play services
+    implementation 'com.google.android.gms:play-services-maps:' + rootProject.playServicesVersion
+    implementation 'com.google.android.gms:play-services-location:' + rootProject.playServicesVersion
+
+    // retrofit &amp; Gson
+    implementation 'com.squareup.retrofit2:retrofit:2.1.0'
+    implementation 'com.squareup.retrofit2:converter-gson:2.1.0'
+    implementation 'com.squareup.okhttp3:logging-interceptor:3.3.1'
+    implementation 'com.google.code.gson:gson:2.8.0'
+
+    // DeployGate
+    implementation 'com.deploygate:sdk:4.0.0'
+
+    // Others
+    implementation 'com.github.florent37:materialviewpager:1.2.3'
+    implementation 'com.vividsolutions:jts-core:1.14.0'
+    implementation 'com.annimon:stream:1.1.6'
+    implementation 'com.squareup.picasso:picasso:2.5.2'
+    implementation 'com.google.android:flexbox:0.3.1'
+
+    // AAC
+    implementation 'android.arch.lifecycle:extensions:' + rootProject.archLifecycleVersion
+    implementation 'android.arch.persistence.room:runtime:' + rootProject.archRoomVersion
+    annotationProcessor &quot;android.arch.lifecycle:compiler:&quot; + rootProject.archLifecycleVersion
+    annotationProcessor &quot;android.arch.persistence.room:compiler:&quot; + rootProject.archRoomVersion
+
+    // debot
+//    debugCompile 'com.tomoima.debot:debot:2.0.3'
+//    releaseCompile 'com.tomoima.debot:debot-no-op:2.0.3'
+    implementation 'com.tomoima.debot:debot:2.0.3'
+
+    // Rx, RxProperty
+    implementation 'io.reactivex.rxjava2:rxjava:2.0.7'
+    implementation 'io.reactivex.rxjava2:rxkotlin:2.1.0'
+    implementation 'com.github.k-kagurazaka.rx-property-android:rx-property:4.0.0'
+    implementation 'com.github.k-kagurazaka.rx-property-android:rx-property-kotlin:4.0.0'
+    implementation 'com.jakewharton.rxrelay2:rxrelay:2.0.0'
+
+    // Geo
+    implementation 'ch.hsr:geohash:1.3.0'
+
+    // Rutime permission
+    implementation 'net.taptappun.taku.kobayashi:runtimepermissionchecker:1.0.4'
+
+    testImplementation 'junit:junit:4.12'
+}
+repositories {
+    mavenCentral()
+    maven { url &quot;http://dl.bintray.com/kotlin/kotlin-eap-1.1&quot; }
+}
+
+//アイコン帯
+ribbonizer {
+    builder { variant, iconFile -&gt;
+        if (variant.buildType.name.equals(&quot;debug&quot;)) {
+            // debug は緑
+            return greenRibbonFilter(variant, iconFile)
+        }
+    }
+}
+</code></pre>
+<h2 id="1.-gradle-%E3%81%AE%E6%9B%B4%E6%96%B0">1. Gradle の更新 <a class="direct-link" href="#1.-gradle-%E3%81%AE%E6%9B%B4%E6%96%B0">#</a></h2>
+<p>現在最新の Android Studio(3.2.1) でこのプロジェクトを開いて <strong>Rebuild をしてみた</strong> 。</p>
+<p>するとビルドの途中で「Gradle Plugin を 3.2.1 に、Gradle 自体を 4.6 に上げろ」と言ってくるので Update を押す。</p>
+<p><code>Project: build.gradle</code> は次のように書き換えられる。</p>
+<pre><code>-        classpath 'com.android.tools.build:gradle:3.1.2'
++        classpath 'com.android.tools.build:gradle:3.2.1'
+</code></pre>
+<p>また、<code>gradle/wrapper/gradle-wrapper.properties</code> も次のように更新される。</p>
+<pre><code>-distributionUrl=https\://services.gradle.org/distributions/gradle-4.4-all.zip
++distributionUrl=https\://services.gradle.org/distributions/gradle-4.6-all.zip
+</code></pre>
+<h2 id="2.-kotlin-gradle-plugin-%E3%81%AE%E3%82%A8%E3%83%A9%E3%83%BC">2. Kotlin Gradle Plugin のエラー <a class="direct-link" href="#2.-kotlin-gradle-plugin-%E3%81%AE%E3%82%A8%E3%83%A9%E3%83%BC">#</a></h2>
+<ol>
+<li>でビルドエラーが出る。内容は、</li>
+</ol>
+<p><strong>The Android Gradle plugin supports only Kotlin Gradle plugin version 1.2.51 and higher. Project 'my_awesomeapp' is using version 1.2.0.</strong></p>
+<p>Kotlin Gradle Plugin のバージョンが古いので 1.2.51 以上に上げてよ、ということなので、<code>Project: build.gradle</code> を次のように更新する。現在の Plugin の最新は 1.2.71 だったのでそうした。</p>
+<pre><code>-    ext.kotlin_version = '1.2.0'
++    ext.kotlin_version = '1.2.71'
+</code></pre>
+<h2 id="3.-kapt-%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89(%E5%AE%9F%E8%A1%8C%E6%99%82%EF%BC%9F)%E3%82%A8%E3%83%A9%E3%83%BC">3. Kapt のビルド(実行時？)エラー <a class="direct-link" href="#3.-kapt-%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89(%E5%AE%9F%E8%A1%8C%E6%99%82%EF%BC%9F)%E3%82%A8%E3%83%A9%E3%83%BC">#</a></h2>
+<p>もう一度 <strong>Rebuild</strong> する → エラーはでない。ここで安心してはいけない。<br>
+じゃあアプリ動かそー、と Run をすると Build エラーになる。</p>
+<p>Run tasks &gt; app::kaptDebugKotlin には次のように記録されている。</p>
+<pre><code>org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:kaptDebugKotlin'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeActions(ExecuteActionsTaskExecuter.java:103)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:73)
+	at org.gradle.api.internal.tasks.execution.OutputDirectoryCreatingTaskExecuter.execute(OutputDirectoryCreatingTaskExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipUpToDateTaskExecuter.execute(SkipUpToDateTaskExecuter.java:59)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskOutputCachingStateExecuter.execute(ResolveTaskOutputCachingStateExecuter.java:54)
+	at org.gradle.api.internal.tasks.execution.ValidatingTaskExecuter.execute(ValidatingTaskExecuter.java:59)
+	at org.gradle.api.internal.tasks.execution.SkipEmptySourceFilesTaskExecuter.execute(SkipEmptySourceFilesTaskExecuter.java:101)
+	at org.gradle.api.internal.tasks.execution.FinalizeInputFilePropertiesTaskExecuter.execute(FinalizeInputFilePropertiesTaskExecuter.java:44)
+	at org.gradle.api.internal.tasks.execution.CleanupStaleOutputsExecuter.execute(CleanupStaleOutputsExecuter.java:91)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskArtifactStateTaskExecuter.execute(ResolveTaskArtifactStateTaskExecuter.java:62)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:59)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:54)
+	at org.gradle.api.internal.tasks.execution.ExecuteAtMostOnceTaskExecuter.execute(ExecuteAtMostOnceTaskExecuter.java:43)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:34)
+	at org.gradle.execution.taskgraph.DefaultTaskGraphExecuter$EventFiringTaskWorker$1.run(DefaultTaskGraphExecuter.java:256)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor$RunnableBuildOperationWorker.execute(DefaultBuildOperationExecutor.java:336)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor$RunnableBuildOperationWorker.execute(DefaultBuildOperationExecutor.java:328)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor.execute(DefaultBuildOperationExecutor.java:199)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor.run(DefaultBuildOperationExecutor.java:110)
+	at org.gradle.execution.taskgraph.DefaultTaskGraphExecuter$EventFiringTaskWorker.execute(DefaultTaskGraphExecuter.java:249)
+	at org.gradle.execution.taskgraph.DefaultTaskGraphExecuter$EventFiringTaskWorker.execute(DefaultTaskGraphExecuter.java:238)
+	at org.gradle.execution.taskgraph.DefaultTaskPlanExecutor$TaskExecutorWorker.processTask(DefaultTaskPlanExecutor.java:123)
+	at org.gradle.execution.taskgraph.DefaultTaskPlanExecutor$TaskExecutorWorker.access$200(DefaultTaskPlanExecutor.java:79)
+	at org.gradle.execution.taskgraph.DefaultTaskPlanExecutor$TaskExecutorWorker$1.execute(DefaultTaskPlanExecutor.java:104)
+	at org.gradle.execution.taskgraph.DefaultTaskPlanExecutor$TaskExecutorWorker$1.execute(DefaultTaskPlanExecutor.java:98)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionPlan.execute(DefaultTaskExecutionPlan.java:663)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionPlan.executeWithTask(DefaultTaskExecutionPlan.java:597)
+	at org.gradle.execution.taskgraph.DefaultTaskPlanExecutor$TaskExecutorWorker.run(DefaultTaskPlanExecutor.java:98)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:63)
+	at org.gradle.internal.concurrent.ManagedExecutorImpl$1.run(ManagedExecutorImpl.java:46)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1142)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:617)
+	at org.gradle.internal.concurrent.ThreadFactoryImpl$ManagedThreadRunnable.run(ThreadFactoryImpl.java:55)
+	at java.lang.Thread.run(Thread.java:745)
+Caused by: org.gradle.api.GradleException: Compilation error. See log for more details
+	at org.jetbrains.kotlin.gradle.tasks.TasksUtilsKt.throwGradleExceptionIfError(tasksUtils.kt:16)
+	at org.jetbrains.kotlin.gradle.internal.KaptWithKotlincTask.compile(KaptWithKotlincTask.kt:79)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:62)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.lang.reflect.Method.invoke(Method.java:498)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:73)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.doExecute(StandardTaskAction.java:46)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:39)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:26)
+	at org.gradle.api.internal.AbstractTask$TaskActionWrapper.execute(AbstractTask.java:788)
+	at org.gradle.api.internal.AbstractTask$TaskActionWrapper.execute(AbstractTask.java:755)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter$1.run(ExecuteActionsTaskExecuter.java:124)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor$RunnableBuildOperationWorker.execute(DefaultBuildOperationExecutor.java:336)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor$RunnableBuildOperationWorker.execute(DefaultBuildOperationExecutor.java:328)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor.execute(DefaultBuildOperationExecutor.java:199)
+	at org.gradle.internal.progress.DefaultBuildOperationExecutor.run(DefaultBuildOperationExecutor.java:110)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeAction(ExecuteActionsTaskExecuter.java:113)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeActions(ExecuteActionsTaskExecuter.java:95)
+	... 33 more
+
+</code></pre>
+<p>なるほどぜんぜんわからん。<br>
+次に Kotlin compiler のエラーには <code>ActivityXXXXBinding.java</code> 全般で</p>
+<pre><code>my_awesomeapp/app/build/generated/data_binding_base_class_source_out/debug/dataBindingGenBaseClassesDebug/out/my_awesomeapp/databinding/ActivityMainBinding.java:120: エラー: シンボルを見つけられません
+      @Nullable ViewGroup root, boolean attachToRoot, @Nullable DataBindingComponent component) {
+                                                                ^
+  シンボル:   クラス DataBindingComponent
+  場所: クラス ActivityMainBinding
+</code></pre>
+<p>というエラーが出ており、DataBinding 関連のエラーであることが推察できる。</p>
+<p>と、ここで</p>
+<ul>
+<li><a href="https://medium.com/@star_zero/databinding%E3%81%AEkapt%E3%82%92%E6%9B%B8%E3%81%8B%E3%81%AA%E3%81%8F%E3%81%A6%E3%82%82%E8%89%AF%E3%81%8F%E3%81%AA%E3%81%A3%E3%81%9F-3634a3ede080">DataBindingのkaptを書かなくても良くなった – Kenji Abe – Medium</a></li>
+</ul>
+<p>という情報があったことを思い出す。</p>
+<p>そこで <code>app: build.gradle</code> の dependencies に書かれている <code>kapt 'com.android.databinding:compiler:x.x.x'</code> の行を削除した。</p>
+<pre><code>dependencies {
+-    kapt 'com.android.databinding:compiler:3.1.2'
+</code></pre>
+<p>そして Rebuild &gt; Run してみたところ、無事アプリが起動できた。</p>
+<p>それにしても Kaptのビルドエラー群から「app/build.gradle に kapt <code>*.databinding:compiler:x.x.x</code> って書いちゃだめー」に辿り着くのは無理ゲー感がある。</p>
+<p>ちなみに <code>kapt 'com.android.databinding:compiler:3.1.2'</code> のバージョンが古いだけで現在最新の 3.1.4 に書き換えれば問題ないのでは？と思ってやってみたけどエラー解消しなかった、やっぱこの行は消さないとダメっぽい。</p>
+<p>この投稿もサラりと書いているが、アプリが起動できるようになるまで2時間以上を費やした。targetSdkVersion とか AAC や SupportLib, Playservices のバージョンが原因かと思っていろいろ弄り倒してたんだよね、 <strong>それらはすべて関係なかった</strong> という :sob:</p>
+
+
+published at <time class="postlist-date" datetime="2018-10-29">29 Oct 2018</time>
+
+tags: 
+
+  <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/gradle/" class="post-tag">gradle</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-10-29-d774613ccab4e7517201/">Xamarin Profiler と Android Profiler を併用して Xamarin Android アプリのメモリ使用量を測定する</a></li><li>Previous: <a href="/posts/2018-10-19-54deb0de587baae47732/">Firebase Firestore のデータを async/await で取得する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-10-29-4862dece31f3d83bf050/ -->
+  </body>
+</html>

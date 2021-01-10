@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firebase Functions + TypeScript を VSCode でデバッグする</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Firebase Functions + TypeScript を VSCode でデバッグする</h1>
+
+<p><a href="https://github.com/GoogleCloudPlatform/cloud-functions-emulator/wiki/Debugging-with-Visual-Studio-Code">Debugging with Visual Studio Code · GoogleCloudPlatform/cloud-functions-emulator Wiki</a></p>
+<p>の内容を少しアレンジして。</p>
+<!--more-->
+<h2 id="%E8%A9%A6%E3%81%97%E3%81%9F%E7%92%B0%E5%A2%83">試した環境 <a class="direct-link" href="#%E8%A9%A6%E3%81%97%E3%81%9F%E7%92%B0%E5%A2%83">#</a></h2>
+<ul>
+<li>macOS</li>
+<li>node - v6.11.5</li>
+<li>VSCode - 1.24.1</li>
+<li>Google Cloud Platform の任意のアカウント(ログインのみが必要で何もデプロイされません)</li>
+</ul>
+<p><code>firebase-tools</code> と <code>@google-cloud/functions-emulator</code> をインストールします。</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">npm</span> <span class="token function">install</span> -g firebase-tools<br><span class="token function">npm</span> <span class="token function">install</span> -g @google-cloud/functions-emulator</code></pre>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90">サンプルプロジェクトの作成 <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90">#</a></h2>
+<pre class="language-bash"><code class="language-bash"><span class="token function">mkdir</span> fb01<br><span class="token builtin class-name">cd</span> fb01<br>firebase login</code></pre>
+<p>ブラウザでログインして cli のアクセスを許可すると、コンソール側もログイン完了になります。</p>
+<pre class="language-bash"><code class="language-bash">firebase init functions</code></pre>
+<ul>
+<li>? Select a default Firebase... -&gt; create a new project</li>
+<li>? What language would you like... -&gt; TypeScript</li>
+<li>? Do you want to use TSLint... -&gt; Y</li>
+<li>? Do you want to install dependencies with npm now? -&gt; Y</li>
+</ul>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AE-helloworld-%E9%96%A2%E6%95%B0%E3%81%AE%E4%BD%9C%E6%88%90">サンプルの helloWorld 関数の作成 <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%81%AE-helloworld-%E9%96%A2%E6%95%B0%E3%81%AE%E4%BD%9C%E6%88%90">#</a></h2>
+<pre class="language-bash"><code class="language-bash">code <span class="token builtin class-name">.</span></code></pre>
+<p>で <code>fb01</code> ディレクトリを VSCode で開きます（普通にフォルダを開くでもok）。</p>
+<p><code>/functions/src/index.ts</code> を開いて、 <code>helloWorld</code> のコメントアウトを外します。</p>
+<pre class="language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token operator">*</span> <span class="token keyword">as</span> functions <span class="token keyword">from</span> <span class="token string">'firebase-functions'</span><span class="token punctuation">;</span><br><br><span class="token comment">// // Start writing Firebase Functions</span><br><span class="token comment">// // https://firebase.google.com/docs/functions/typescript</span><br><span class="token comment">//</span><br><span class="token keyword">export</span> <span class="token keyword">const</span> helloWorld <span class="token operator">=</span> functions<span class="token punctuation">.</span>https<span class="token punctuation">.</span><span class="token function">onRequest</span><span class="token punctuation">(</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> response<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br> response<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"Hello from Firebase!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>次に、 <code>/.vscode/launch.json</code> を作り、次のように記述します。<br>
+(VSCode のメニュー -&gt; デバッグ -&gt; 構成の追加 でもok)</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>    <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"0.2.0"</span><span class="token punctuation">,</span><br>    <span class="token property">"configurations"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>        <span class="token punctuation">{</span><br>            <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Inspect Function"</span><span class="token punctuation">,</span><br>            <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"node"</span><span class="token punctuation">,</span><br>            <span class="token property">"protocol"</span><span class="token operator">:</span> <span class="token string">"inspector"</span><span class="token punctuation">,</span><br>            <span class="token property">"request"</span><span class="token operator">:</span> <span class="token string">"attach"</span><span class="token punctuation">,</span><br>            <span class="token property">"port"</span><span class="token operator">:</span> <span class="token number">9229</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p>VSCode で メニュー -&gt; タスク -&gt; ビルドタスクの実行 -&gt; npm build - function を実行（ターミナルで <code>npm run build</code> でもok）。</p>
+<p><code>/functions/lib</code> ディレクトリに <code>index.js</code> が <code>index.js.map</code> ができます。</p>
+<h2 id="functions-%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%B8%E9%96%A2%E6%95%B0%E3%82%92%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4">Functions エミュレータへ関数をデプロイ <a class="direct-link" href="#functions-%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%B8%E9%96%A2%E6%95%B0%E3%82%92%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4">#</a></h2>
+<pre class="language-bash"><code class="language-bash"><span class="token builtin class-name">cd</span> functions<br>functions start</code></pre>
+<p>で Functions Emulator を起動し、</p>
+<pre class="language-bash"><code class="language-bash">functions deploy helloWorld --trigger-http</code></pre>
+<p>で、エミュレータに <code>helloWorld</code> 関数をデプロイします。<br>
+デプロイできれば次のような出力になります。</p>
+<pre class="language-bash"><code class="language-bash">Copying file:///var/folders/lv/5j48kqb146xdtt0dn65h_2480000gn/T/tmp-69998WgYjI25qtJ59.zip<span class="token punctuation">..</span>.<br>Waiting <span class="token keyword">for</span> operation to finish<span class="token punctuation">..</span>.done.<br>Deploying function<span class="token punctuation">..</span><span class="token punctuation">..</span><span class="token punctuation">..</span>.done.<br>Function helloWorld deployed.<br>┌────────────┬───────────────────────────────────────────────────────────────────────────────────┐<br>│ Property   │ Value                                                                             │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Name       │ helloWorld                                                                        │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Trigger    │ HTTP                                                                              │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Resource   │ http://localhost:8010/fb01/us-central1/helloWorld                             │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Timeout    │ <span class="token number">60</span> seconds                                                                        │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Local path │ /Users/xxx/dev/playground/fb01/functions                             │<br>├────────────┼───────────────────────────────────────────────────────────────────────────────────┤<br>│ Archive    │ file:///var/folders/lv/xxxxx_2480000gn/T/tmp-69998WgYjI25qtJ59.zip │<br>└────────────┴───────────────────────────────────────────────────────────────────────────────────┘</code></pre>
+<h2 id="%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%AE%E5%AE%9F%E8%A1%8C">デバッグの実行 <a class="direct-link" href="#%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%AE%E5%AE%9F%E8%A1%8C">#</a></h2>
+<p>ターミナル側で次のコマンドを実行します。</p>
+<pre class="language-bash"><code class="language-bash">functions inspect helloWorld</code></pre>
+<p><code>Debugger for helloWorld listening on port 9229</code> のような出力が得られます。<br>
+ポート番号がもし 9229 以外なら、 <code>/.vscode/launch.json</code> の <code>port:</code> を書き換えてください。</p>
+<p>VScode で、メニュー -&gt; デバッグ -&gt; デバッグの開始 を実行します(サイドメニューの虫みたいなアイコンから実行してもok)。</p>
+<p>次に <code>/functions/src/index.ts</code> を開いて 9行目 も行番号の左側あたりをクリックしてブレークポイントを追加します。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/6dfef1f5-5429-5a05-123c-87ce88f904d6.png" alt="image.png"></p>
+<p>ターミナルに戻って、次のコマンドを実行します。</p>
+<pre class="language-bash"><code class="language-bash">functions call helloWorld</code></pre>
+<p>すると、VSCode 側では、ブレークポイントを置いたところで処理が停止するのが確認できます。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/0c1ef1fc-f2dc-54b6-1364-5e37fb9c7236.png" alt="image.png"></p>
+<p>前の手順 <code>functions deploy</code> で出力された Resource に記述された URL にアクセスしても、ブレークポイントで止まることが確認できます。</p>
+<p>めでたしめでたし。</p>
+<h2 id="%E5%BE%8C%E7%89%87%E4%BB%98%E3%81%91">後片付け <a class="direct-link" href="#%E5%BE%8C%E7%89%87%E4%BB%98%E3%81%91">#</a></h2>
+<pre class="language-bash"><code class="language-bash">functions delete helloWorld</code></pre>
+<p>で deploy した関数を削除。</p>
+<pre class="language-bash"><code class="language-bash">functions <span class="token function">kill</span></code></pre>
+<p>で start した Functions エミュレータをシャットダウンできます。</p>
+<h2 id="%E3%81%82%E3%81%A8%E3%81%8C%E3%81%8D">あとがき <a class="direct-link" href="#%E3%81%82%E3%81%A8%E3%81%8C%E3%81%8D">#</a></h2>
+<ul>
+<li><a href="https://github.com/GoogleCloudPlatform/cloud-functions-emulator/wiki/Debugging-with-Visual-Studio-Code#v8-inspector-integration">Debugging with Visual Studio Code</a> には、２つのデバッグ手法（&quot;Standard Node.js Debugger&quot; と &quot;V8 Inspector Integration&quot;）が紹介されていますが、前者はうまく機能させられませんでした。なのでこの記事は後者の内容です。</li>
+<li><a href="https://github.com/GoogleCloudPlatform/cloud-functions-emulator/wiki/Debugging-with-Visual-Studio-Code#v8-inspector-integration">V8 Inspector Integration</a> で紹介されている <code>launch.json</code> は古いらしく <code>&quot;type&quot;: &quot;node2&quot;</code> で警告が出ます。それを修正したのが上記で示した <code>&quot;type&quot;: &quot;node&quot;, &quot;protocol&quot;: &quot;inspector&quot;</code> を使ったものです。</li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2018-06-26">26 Jun 2018</time>
+
+tags: 
+
+  <a href="/tags/Node.js/" class="post-tag">Node.js</a>
+  <a href="/tags/TypeScript/" class="post-tag">TypeScript</a>
+  <a href="/tags/Firebase/" class="post-tag">Firebase</a>
+  <a href="/tags/VSCode/" class="post-tag">VSCode</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-06-28-f81037f942d954452619/">Kotlin の Channel と Rx の Observable/Subject の対比</a></li><li>Previous: <a href="/posts/2018-06-23-6f9d97ea9b884111fc8a/">Firebase Functions + TypeScript で CORS を使用する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-06-26-829630273721fb7a615e/ -->
+  </body>
+</html>

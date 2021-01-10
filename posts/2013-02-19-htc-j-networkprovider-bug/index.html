@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>HTC J で NETWORK_PROVIDER で位置測位した時の機種依存バグ？</h1>
+
+<p>[Androidの機種依存問題を吸収するプロジェクトAndroid-Device-Compatibilityを公開したお話](mixi Engineers' Blog <a href="http://alpha.mixi.co.jp/2013/11572/">http://alpha.mixi.co.jp/2013/11572/</a>) を見て、あーそう言えばこんなんあったなーと思い出したのでメモ。</p>
+<h2 id="%E7%97%87%E7%8A%B6">症状 <a class="direct-link" href="#%E7%97%87%E7%8A%B6">#</a></h2>
+<p>下記条件を満たす時に、LocationManager.requestLocationUpdates すると、最新の位置が取得されず、<strong>前回測位した位置</strong> が返される。</p>
+<p>時刻は更新されてたか、、、あーどうだったかな。</p>
+<!-- more -->
+<h2 id="%E6%9D%A1%E4%BB%B6">条件 <a class="direct-link" href="#%E6%9D%A1%E4%BB%B6">#</a></h2>
+<ul>
+<li>NETWORK_PROVIDER で位置を取得した場合（GPS じゃない）</li>
+<li>WiFi が無効の場合（つまり携帯電話の基地局のみを使った測位の場合）</li>
+<li>スリープ中な場合</li>
+<li>HTC J である(IS03, Nexus S では発生してない。 HTC J Butterfly はわからない)</li>
+</ul>
+<h2 id="%E3%81%93%E3%82%93%E3%81%AA%E4%BA%8B%E3%81%97%E3%81%A6%E3%81%9F%E3%82%89%E8%A6%8B%E3%81%A4%E3%81%91%E3%81%9F">こんな事してたら見つけた <a class="direct-link" href="#%E3%81%93%E3%82%93%E3%81%AA%E4%BA%8B%E3%81%97%E3%81%A6%E3%81%9F%E3%82%89%E8%A6%8B%E3%81%A4%E3%81%91%E3%81%9F">#</a></h2>
+<p>早い話が HexRinger なんですが、このアプリは、AlarmManager で一定時間毎に WiFi/基地局から位置を取得しています。デバッグで移動中のログを取ってたら、「この時間帯、電車で寝てたのになんか位置変わってないんだけどｗ」となりました。</p>
+<h2 id="%E5%AF%BE%E7%AD%96">対策 <a class="direct-link" href="#%E5%AF%BE%E7%AD%96">#</a></h2>
+<p>WakeLock する。ただし PARTIAL_WAKE_LOCK だとダメで、画面も起こしてやらないとダメだった。<br>
+SCREEN あるいは FULL_WAKELOCK が必要な常駐アプリって、最悪やん。</p>
+<h2 id="%E3%81%84%E3%82%8D%E3%81%84%E3%82%8D%E8%A9%A6%E3%81%97%E3%81%9F%E4%BA%8B%E3%81%A8%E3%81%8B%E6%8E%A8%E6%B8%AC">いろいろ試した事とか推測 <a class="direct-link" href="#%E3%81%84%E3%82%8D%E3%81%84%E3%82%8D%E8%A9%A6%E3%81%97%E3%81%9F%E4%BA%8B%E3%81%A8%E3%81%8B%E6%8E%A8%E6%B8%AC">#</a></h2>
+<ul>
+<li>測位前に通信させればいけるか？と思ったけどダメだった。</li>
+<li>そもそも「最寄りの基地局情報」がスリープ状態だと更新されないんじゃないか説。</li>
+</ul>
+<p>設置場所が山奥過ぎてこの地雷を踏む人はそうはいないと思いますが、「HTC J だけど問題ないよ？」「Butterfly でもダメだったわー」とかの情報あったらコメントください。 m(_ _)m</p>
+
+
+published at <time class="postlist-date" datetime="2013-02-19">19 Feb 2013</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-02-25-static-contents-on-jetty/">jetty で静的コンテンツを有効にして起動するまで</a></li><li>Previous: <a href="/posts/2013-02-19-googlemap-v2-anchor/">Google Maps API v2 のマーカーの Anchor を探る</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-02-19-htc-j-networkprovider-bug/ -->
+  </body>
+</html>

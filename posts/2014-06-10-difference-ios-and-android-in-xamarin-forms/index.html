@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Forms でどうにかしたい iOS と Android の違い</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Forms でどうにかしたい iOS と Android の違い</h1>
+
+<p>Xamarin.Forms で簡単な iOS/Android 両対応アプリを作ってみてて、悩ましい点がいくつか見つかってるので、挙げてみる。</p>
+<!--more-->
+<h2 id="%E4%B8%8D%E5%8F%AF%E8%A6%96%E3%81%AE%E6%89%B1%E3%81%84"><s>不可視の扱い</s> <a class="direct-link" href="#%E4%B8%8D%E5%8F%AF%E8%A6%96%E3%81%AE%E6%89%B1%E3%81%84">#</a></h2>
+<p><s>Forms 側のパーツには <code>IsVisible = true | false</code> がある。<br>
+iOS は <code>true | false</code> なのでいいけど、Android の Visibility は、 <code>Visible | Invisible | Gone</code> の3つある。</s></p>
+<p><s>Forms 側での <code>IsVisible = false</code> は、Android では <code>Invisible</code> に相当するみたい。つまり StackLayout とかで「不可視なパーツが <strong>詰められない</strong>」。 iOS の <code>Visible = false</code> は <strong>詰められる</strong> 模様。</s></p>
+<p><code>IsVisible = false</code> は Android ではちゃんと <code>Gone</code> になってました、すいませんでした。</p>
+<h2 id="%E7%A9%BA%E6%96%87%E5%AD%97%E3%81%AE%E6%89%B1%E3%81%84">空文字の扱い <a class="direct-link" href="#%E7%A9%BA%E6%96%87%E5%AD%97%E3%81%AE%E6%89%B1%E3%81%84">#</a></h2>
+<p>IsVisible と勘違いしてたのはこっちだった。</p>
+<p>StackLayout に、Label を2つ積んで、上の Label を空文字にすると、iOSでは詰められるけど、Androidでは空白が空くみたい。こっちはちゃんと裏をとった(汗)</p>
+<p><a href="https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a">https://gist.github.com/amay077/cf0f4ca1aa14d54bac9a</a></p>
+<h2 id="%E7%94%BB%E9%9D%A2%E5%9B%9E%E8%BB%A2%E6%99%82%E3%81%AE%E5%86%8D%E6%A7%8B%E7%AF%89">画面回転時の再構築 <a class="direct-link" href="#%E7%94%BB%E9%9D%A2%E5%9B%9E%E8%BB%A2%E6%99%82%E3%81%AE%E5%86%8D%E6%A7%8B%E7%AF%89">#</a></h2>
+<p>Android だと、画面を回転させると <code>onCreate</code> からやり直しなのは常識。<br>
+Forms アプリを Android で動かして回転させると、なんと <strong>RootPage まで戻って</strong> しまう。なんじゃこりゃ。</p>
+<h2 id="%E5%9B%9E%E9%81%BF%E6%96%B9%E6%B3%95">回避方法 <a class="direct-link" href="#%E5%9B%9E%E9%81%BF%E6%96%B9%E6%B3%95">#</a></h2>
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/amay077">@amay077</a> あとAndroidの回転問題（バグです）はとりあえず ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation で回避するといいそうです（そりゃそうだ…）</p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/statuses/476645011602165760">2014, 6月 11</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>こんな感じっすね。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">Activity</span><span class="token attribute-arguments"><span class="token punctuation">(</span>MainLauncher <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <br>    ConfigurationChanges <span class="token operator">=</span> ConfigChanges<span class="token punctuation">.</span>ScreenSize <span class="token operator">|</span> ConfigChanges<span class="token punctuation">.</span>Orientation <span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">AndroidActivity</span></span><br><span class="token punctuation">{</span></code></pre>
+<h2 id="back%E3%82%AD%E3%83%BC%E3%81%AE%E6%89%B1%E3%81%84">BACKキーの扱い <a class="direct-link" href="#back%E3%82%AD%E3%83%BC%E3%81%AE%E6%89%B1%E3%81%84">#</a></h2>
+<p>iOS なら <code>NavigationPage.SetHasNavigationBar(page, false)</code> としてしまえば、ナビゲーションバーが表示されなくなるので、前の画面に戻ることはできなくなるが、Android の BACKキーを無効にするにはどうしたら。。。</p>
+<h3 id="%E8%87%AA%E5%B7%B1%E8%A7%A3%E6%B1%BA">自己解決 <a class="direct-link" href="#%E8%87%AA%E5%B7%B1%E8%A7%A3%E6%B1%BA">#</a></h3>
+<p><code>AndroidActivity</code> のサブクラスで、<code>OnBackPressed</code> を override して実装を潰してしまえばよい。けど画面毎に「戻る／戻れない／Confirm出す」とか細かい制御ができるのかは不明。</p>
+<h2 id="%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%B9%E3%82%BF%E3%82%A4%E3%83%AB">デフォルトスタイル <a class="direct-link" href="#%E3%83%87%E3%83%95%E3%82%A9%E3%83%AB%E3%83%88%E3%82%B9%E3%82%BF%E3%82%A4%E3%83%AB">#</a></h2>
+<p>iOS は白基調、Androidは黒基調なので、Forms側で <code>TextColor = Color.Black</code> などとすると、当たり前だが Android で見えない。<br>
+iOS はスタイル変えるのしんどいので、Android側の Theme を <code>Theme.Holo.Light</code> にしとく。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">Activity</span><span class="token attribute-arguments"><span class="token punctuation">(</span>Label <span class="token operator">=</span> <span class="token string">"MyApp"</span><span class="token punctuation">,</span>  <br> MainLauncher <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">,</span> <br> Theme <span class="token operator">=</span> <span class="token string">"@android:style/Theme.Holo.Light"</span><span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">AndroidActivity</span></span><br><span class="token punctuation">{</span><br>    <span class="token keyword">protected</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> bundle<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token comment">/* 以下省略 */</span></code></pre>
+<h2 id="%E8%B5%B7%E5%8B%95%E6%99%82">起動時 <a class="direct-link" href="#%E8%B5%B7%E5%8B%95%E6%99%82">#</a></h2>
+<p>Android 側の起動時に ActionBar の付いた空白画面が表示される時間が割とながくて気になる(Galaxy Nexus だけど)。Forms の画面をロードするのに時間がかかるのだろうか？<br>
+ActionBar だけでも消したくて Theme を <code>Theme.Holo.Light.NoActionBar</code> にしてみたら Page が表示されなくなった。。。</p>
+<p>NoActionBar な Theme を使うと Activity.ActionBar が null になるんだけど、Xamarin.Forms がそれに対応してない気がした（スタックトレース見ると UpdateActionBar で NullReferenceException だし）ので、<a href="https://bugzilla.xamarin.com/buglist.cgi?product=Forms&amp;component=Forms&amp;resolution=---&amp;list_id=92025">Bugzilla</a> に登録してみた、初めて。どうなるやら。</p>
+<h2 id="%E6%96%87%E5%AD%97%E3%81%AE%E8%87%AA%E5%8B%95%E7%B8%AE%E5%B0%8F">文字の自動縮小 <a class="direct-link" href="#%E6%96%87%E5%AD%97%E3%81%AE%E8%87%AA%E5%8B%95%E7%B8%AE%E5%B0%8F">#</a></h2>
+<p>iOS の <code>UITextField</code> は <code>adjustsFontSizeToFitWidth</code> を設定するとパーツのサイズに合わせて文字サイズを自動拡縮してくれる機能があったけど、Forms の <code>Label</code> にはそんなものはありません。<code>PageRenderer</code> を使って iOS 独自処理しないとダメ。</p>
+<h3 id="%E8%87%AA%E5%B7%B1%E8%A7%A3%E6%B1%BA-2">自己解決 <a class="direct-link" href="#%E8%87%AA%E5%B7%B1%E8%A7%A3%E6%B1%BA-2">#</a></h3>
+<p>やはり PageRenderer 使うとできた → <a href="http://qiita.com/amay077/items/8eaa595cc2fc88797b2f">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></p>
+<h2 id="iphone-%E3%81%A8-ipad">iPhone と iPad <a class="direct-link" href="#iphone-%E3%81%A8-ipad">#</a></h2>
+<p>StackLayout や RelativeLayout でUIを書けば、相対的な位置関係は iPhone と同じものが iPad でも再現されるが、サイズをリテラルで指定するところは、特にインテグレーションしてくれるわけでないので、プラットフォーム毎に調整が必要。例えば文字サイズは、iPad では iPhone より大きな値にしないと残念な感じに。</p>
+<p>他にも見つけたら書きます。</p>
+
+
+published at <time class="postlist-date" datetime="2014-06-10">10 Jun 2014</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2014-06-13-convert-xamarin-forms-label-to-native-uilabel/">Xamarin.Forms の Label から iOS の UILabel を取り出す</a></li><li>Previous: <a href="/posts/2014-06-08-xamarin-forms-is-not-windows-forms/">Xamarin.Forms は Windows.Forms じゃないよ</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2014-06-10-difference-ios-and-android-in-xamarin-forms/ -->
+  </body>
+</html>

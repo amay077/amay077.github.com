@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>moveCamera(CameraUpdateFactory.newLatLngBounds で落ちる</h1>
+
+<p>Google Map Android API v2 では、指定した範囲にいいかんじにズームしてくれるメソッドがあって（これを使うと下記事のようなことができる）、とても便利なのですが、普通に使ってたら落ちました（泣</p>
+<!--more-->
+<ul>
+<li><a href="http://tryworks-design.com/?p=1530">Android GooglMapを使い、現在値と目的地を（２点間）を表示させる。 ｜ App Camp</a></li>
+</ul>
+<p>その理由と、対策を記録しておきます。</p>
+<h2 id="%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89">エラーになるコード <a class="direct-link" href="#%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89">#</a></h2>
+<p>GoogleMap v2 を使ったよくあるコード。</p>
+<pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Override</span><br><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token function">setContentView</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>layout<span class="token punctuation">.</span>activity_main<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token class-name">SupportMapFragment</span> fragment <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">SupportMapFragment</span><span class="token punctuation">)</span><span class="token function">getSupportFragmentManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">findFragmentById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>map<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token class-name">GoogleMap</span> gmap <span class="token operator">=</span> fragment<span class="token punctuation">.</span><span class="token function">getMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token class-name">LatLngBounds</span> bounds <span class="token operator">=</span> <span class="token class-name">LatLngBounds</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">include</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">LatLng</span><span class="token punctuation">(</span><span class="token number">35.4433011</span><span class="token punctuation">,</span><span class="token number">139.646108</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 横浜</span><br>        <span class="token punctuation">.</span><span class="token function">include</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">LatLng</span><span class="token punctuation">(</span><span class="token number">35.6846001</span><span class="token punctuation">,</span><span class="token number">139.696919</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 東京</span><br>        <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    gmap<span class="token punctuation">.</span><span class="token function">moveCamera</span><span class="token punctuation">(</span><span class="token class-name">CameraUpdateFactory</span><span class="token punctuation">.</span><span class="token function">newLatLngBounds</span><span class="token punctuation">(</span>bounds<span class="token punctuation">,</span> <span class="token number">15</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>起動時に、横浜-東京 が画面内に入るようにズームする、つもりのコード。</p>
+<p>これは以下のエラーになる。</p>
+<blockquote>
+<p>09-29 20:22:58.508: E/AndroidRuntime(18904): FATAL EXCEPTION: main<br/><br>
+09-29 20:22:58.508: E/AndroidRuntime(18904): java.lang.RuntimeException: Unable to start activity ComponentInfo{com.amay077.<br/>android/com.amay077.android.mapsample.view.MainActivity}: java.lang.IllegalStateException: Map size should not be 0. Most likely, layout has not yet occured for the map view.</p>
+</blockquote>
+<h2 id="%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AE%E5%8E%9F%E5%9B%A0">エラーの原因 <a class="direct-link" href="#%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AE%E5%8E%9F%E5%9B%A0">#</a></h2>
+<p>StackOverflow さまに載ってた。</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/13692579/movecamera-with-cameraupdatefactory-newlatlngbounds-crashes">android - moveCamera with CameraUpdateFactory.newLatLngBounds crashes - Stack Overflow</a></li>
+</ul>
+<p>また、<a href="https://developers.google.com/maps/documentation/android/views#changing_camera_position">APIリファレンス</a> にも次のように記載がある。</p>
+<blockquote>
+<p>Note: Only use the simpler method newLatLngBounds(boundary, padding) to generate a CameraUpdate if it is going to be used to move the camera after the map has undergone layout. During layout, the API calculates the display boundaries of the map which are needed to correctly project the bounding box. In comparison, you can use the CameraUpdate returned by the more complex method newLatLngBounds(boundary, width, height, padding) at any time, even before the map has undergone layout, because the API calculates the display boundaries from the arguments that you pass.</p>
+</blockquote>
+<p>意訳すると <code>newLatLngBounds(boundary, padding)</code> は、レイアウトが完了した後で使ってね、そうでない場合は、<code>newLatLngBounds(boundary, width, height, padding)</code> を使ってね。ということらしい。</p>
+<p>確かに <code>onCreate</code> ではまだレイアウトされていないので納得。</p>
+<h2 id="%E5%AF%BE%E7%AD%96">対策 <a class="direct-link" href="#%E5%AF%BE%E7%AD%96">#</a></h2>
+<p>上の StackOverflow でも解決策として、<code>ViewTreeObserver.addOnGlobalLayoutListener</code> を使って、レイアウトが完了したタイミングで moveCamera する方法が紹介されているが、もうちっとシンプルにできないかなと思っていたところ、ちょうど別件で「ビューのサイズが確定(して Width/Height が取得できる)タイミング」を調べていて、同じく StackOverflow で以下の情報を発見。</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/4393612/when-can-i-first-measure-a-view/15301092#15301092">android - When Can I First Measure a View? - Stack Overflow</a></li>
+</ul>
+<p>これによると <code>view.post(new Runnable() { … })</code> のタイミングでも OK らしいので、今回はこれを使ってみる。</p>
+<pre class="language-java"><code class="language-java"><span class="token annotation punctuation">@Override</span><br><span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token function">setContentView</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>layout<span class="token punctuation">.</span>activity_main<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token class-name">SupportMapFragment</span> fragment <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token class-name">SupportMapFragment</span><span class="token punctuation">)</span><span class="token function">getSupportFragmentManager</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">findFragmentById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>map<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">final</span> <span class="token class-name">GoogleMap</span> gmap <span class="token operator">=</span> fragment<span class="token punctuation">.</span><span class="token function">getMap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token comment">// NOTE MainActivity.this.runOnUiThread(new Runnable() { ではダメだった</span><br>    fragment<span class="token punctuation">.</span><span class="token function">getView</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">post</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token annotation punctuation">@Override</span><br>        <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token class-name">LatLngBounds</span> bounds <span class="token operator">=</span> <span class="token class-name">LatLngBounds</span><span class="token punctuation">.</span><span class="token function">builder</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>                    <span class="token punctuation">.</span><span class="token function">include</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">LatLng</span><span class="token punctuation">(</span><span class="token number">35.4433011</span><span class="token punctuation">,</span><span class="token number">139.646108</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 横浜</span><br>                    <span class="token punctuation">.</span><span class="token function">include</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">LatLng</span><span class="token punctuation">(</span><span class="token number">35.6846001</span><span class="token punctuation">,</span><span class="token number">139.696919</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 東京</span><br>                    <span class="token punctuation">.</span><span class="token function">build</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <br>            gmap<span class="token punctuation">.</span><span class="token function">moveCamera</span><span class="token punctuation">(</span><span class="token class-name">CameraUpdateFactory</span><span class="token punctuation">.</span><span class="token function">newLatLngBounds</span><span class="token punctuation">(</span>bounds<span class="token punctuation">,</span> <span class="token number">15</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>としたところ、正常に地図がズームされました。</p>
+<p><img src="/img/posts/movecamera_with_cameraupdatefactory_newlatlngbounds_crashes_01.png" alt="img"></p>
+<p>ちなみに、処理をメインスレッド上で行う <code>Activity.runOnUiThread</code> や <code>Handler.post</code> では NG、冒頭と同じエラーでした。処理は UIスレッド上で行われるけど、Map はまだレイアウト未完了、という事だと思います。</p>
+<p>起動時の処理は、全ての View で post 内に書いておいた方がいいのかも。</p>
+
+
+published at <time class="postlist-date" datetime="2013-09-29">29 Sep 2013</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-10-02-bitcasa-when-failed-to-upload/">Bitcasa でアップロードに失敗したファイルが見つかった時の対処方法</a></li><li>Previous: <a href="/posts/2013-09-26-layout-widh-like-property-in-custom-view/">自作ビューで layout_width のマネをしたい時</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-09-29-movecamera-with-cameraupdatefactory-newlatlngbounds-crashes/ -->
+  </body>
+</html>

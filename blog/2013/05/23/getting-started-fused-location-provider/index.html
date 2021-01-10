@@ -1,1193 +1,133 @@
-﻿<!doctype html>
-<html ⚡ lang="ja">
+<!doctype html>
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google I/O 2013 で発表された Fused Location Provider を使ってみる</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>Google I/O 2013 で発表された Fused Location Provider を使ってみる</title>
-  <meta name="description" content="Activity Recognition に続いて使ってみました。Fused Location Provider とは？">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>Google I/O 2013 で発表された Fused Location Provider を使ってみる | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="Google I/O 2013 で発表された Fused Location Provider を使ってみる" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="Activity Recognition に続いて使ってみました。 Fused Location Provider とは？" />
-<meta property="og:description" content="Activity Recognition に続いて使ってみました。 Fused Location Provider とは？" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2013-05-23T20:55:00-05:00" />
-<script type="application/ld+json">
-{"headline":"Google I/O 2013 で発表された Fused Location Provider を使ってみる","dateModified":"2013-05-23T20:55:00-05:00","datePublished":"2013-05-23T20:55:00-05:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider/"},"url":"https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"Activity Recognition に続いて使ってみました。 Fused Location Provider とは？","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider/",
-  "headline": "Google I/O 2013 で発表された Fused Location Provider を使ってみる",
-  "datePublished": "2013-05-23T20:55:00-05:00",
-  "dateModified": "2013-05-23T20:55:00-05:00",
-  "description": "Activity Recognition に続いて使ってみました。Fused Location Provider とは？",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>Google I/O 2013 で発表された Fused Location Provider を使ってみる</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">Google I/O 2013 で発表された Fused Location Provider を使ってみる</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。<br />
-<!--more--></p>
-<h2 id="fused-location-provider-とは">Fused Location Provider とは？</h2>
-
+<p><a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">Activity Recognition</a> に続いて使ってみました。</p>
+<!--more-->
+<h2 id="fused-location-provider-%E3%81%A8%E3%81%AF%EF%BC%9F">Fused Location Provider とは？ <a class="direct-link" href="#fused-location-provider-%E3%81%A8%E3%81%AF%EF%BC%9F">#</a></h2>
 <p>GPS と WiFi とセンサー(加速度など) を組み合わせて、その状況に応じた最適な方法で位置を取得出来ます。今までよりも低消費電力で、精度のよい位置情報を。</p>
-
 <p>実際どんな感じかは、Google I/O 2013 のセッション動画にある <a href="http://www.youtube.com/watch?feature=player_detailpage&amp;v=URcVZybzMUI#t=733s">Fused Location Provider のデモ</a> を見てください。</p>
-
 <p>次から使い方です。</p>
-
-<h2 id="1-sdk-の-google-play-services-を更新する">1. SDK の Google Play Services を更新する</h2>
-
-<p><amp-img width="728" height="808" layout="responsive" src="/assets/images/posts/getting_started_activity_recognition1.png" alt="image1" /></p>
-
+<h2 id="1.-sdk-%E3%81%AE-google-play-services-%E3%82%92%E6%9B%B4%E6%96%B0%E3%81%99%E3%82%8B">1. SDK の Google Play Services を更新する <a class="direct-link" href="#1.-sdk-%E3%81%AE-google-play-services-%E3%82%92%E6%9B%B4%E6%96%B0%E3%81%99%E3%82%8B">#</a></h2>
+<p><img src="/img/posts/getting_started_activity_recognition1.png" alt="image1"></p>
 <p>Activity Recognition と同じく Google Play services として提供されているので、SDK Manager でライブラリを更新します。</p>
-
-<h2 id="2-eclipse-でプロジェクトを作る">2. Eclipse でプロジェクトを作る</h2>
-
-<p>Android Studio は使ってません(まだよくわからないので)<br />
-Eclipse で、いつもどおりに Android のプロジェクトを作ります。<br />
-Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。<br />
+<h2 id="2.-eclipse-%E3%81%A7%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E4%BD%9C%E3%82%8B">2. Eclipse でプロジェクトを作る <a class="direct-link" href="#2.-eclipse-%E3%81%A7%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%82%92%E4%BD%9C%E3%82%8B">#</a></h2>
+<p>Android Studio は使ってません(まだよくわからないので)<br>
+Eclipse で、いつもどおりに Android のプロジェクトを作ります。<br>
+Fragment も使いませんよ、古きよき、BlankActivity なプロジェクトです。<br>
 名前はここでは FusedLocationProviderSample とします。</p>
-
-<h2 id="3-プロジェクトに-google-play-services_lib-を追加する">3. プロジェクトに google-play-services_lib を追加する</h2>
-
+<h2 id="3.-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AB-google-play-services_lib-%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">3. プロジェクトに google-play-services_lib を追加する <a class="direct-link" href="#3.-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AB-google-play-services_lib-%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">#</a></h2>
 <p>Google Play services を使うために、SDK のフォルダにある google-play-services_lib が必要です。</p>
-
-<p>Ecplise の Import で <code class="highlighter-rouge">{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
-
+<p>Ecplise の Import で <code>{your sdk location}/extras/google/google_play_services/libproject/google-play-services_lib</code> を選択します。自分の Workspace に Copy しておいた方が無難でしょう。</p>
 <p>コピーしたら、FusedLocationProviderSample で、 google-play-services_lib をライブラリ参照します。</p>
-
-<p><amp-img width="784" height="437" layout="responsive" src="/assets/images/posts/getting_started_activity_recognition2.png" alt="image2" /></p>
-
+<p><img src="/img/posts/getting_started_activity_recognition2.png" alt="image2"></p>
 <p>次から FusedLocationProviderSample の実装です。</p>
-
-<h2 id="4-androidmanifestxml-の編集">4. AndroidManifest.xml の編集</h2>
-
-<p>Fused Location Provider を使うのには今まで通り、<code class="highlighter-rouge">ACCESS_FINE_LOCATION</code> と <code class="highlighter-rouge">ACCESS_COARSE_LOCATION</code> を設定します。</p>
-
+<h2 id="4.-androidmanifest.xml-%E3%81%AE%E7%B7%A8%E9%9B%86">4. AndroidManifest.xml の編集 <a class="direct-link" href="#4.-androidmanifest.xml-%E3%81%AE%E7%B7%A8%E9%9B%86">#</a></h2>
+<p>Fused Location Provider を使うのには今まで通り、<code>ACCESS_FINE_LOCATION</code> と <code>ACCESS_COARSE_LOCATION</code> を設定します。</p>
 <p>LocationClient は、指定した PERMISSION に応じてよしなに動いてくれるそうです。</p>
-
-<p>```xml AndroidManifest.xml<br />
-<?xml version="1.0" encoding="utf-8"?></p>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.example.fusedlocationprovidersample" android:versionCode="1" android:versionName="1.0">
-
-    <uses-sdk android:minSdkVersion="8" android:targetSdkVersion="17" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-
-    <application android:allowBackup="true" android:icon="@drawable/ic_launcher" android:label="@string/app_name" android:theme="@style/AppTheme">
-        <activity android:name="com.example.fusedlocationprovidersample.MainActivity" android:screenOrientation="portrait" android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
-    </application>
-
-</manifest>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-<span class="p">##</span> <span class="m">5.</span> <span class="n">Fused</span> <span class="n">Location</span> <span class="n">Provider</span> <span class="err">を使う</span>
-
-<span class="n">ActivityRecognition</span> <span class="err">は</span> <span class="n">IntentService</span> <span class="err">を使う必要があったために少々長いコードになりましたが、こちらは今までの</span> <span class="p">``</span><span class="n">LocationProvider</span><span class="p">``</span> <span class="err">が</span><span class="p">(</span><span class="err">も</span><span class="p">)</span><span class="err">使えるので、画面一つだけのシンプルなコードです。</span>
-
-<span class="n">FusedLocationProvider</span> <span class="err">を使うには、</span><span class="p">[</span><span class="n">LocationClient</span><span class="p">](</span><span class="n">http</span><span class="p">://</span><span class="n">developer</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">reference</span><span class="p">/</span><span class="n">com</span><span class="p">/</span><span class="n">google</span><span class="p">/</span><span class="n">android</span><span class="p">/</span><span class="n">gms</span><span class="p">/</span><span class="n">location</span><span class="p">/</span><span class="n">LocationClient</span><span class="p">.</span><span class="n">html</span><span class="p">)</span> <span class="err">クラスを使います。</span>
-
-<span class="err">大雑把な流れは</span><span class="p">:</span>
-
-<span class="m">1.</span> <span class="err">インスタンスを生成する</span>
-<span class="nf">connect</span> <span class="err">を呼ぶ</span> <span class="p">-&gt;</span> <span class="n">ConnectionCallbacks</span><span class="p">.</span><span class="n">onConnected</span> <span class="err">がコールバックされる</span>
-<span class="m">2.</span> <span class="p">[</span><span class="n">LocationRequest</span><span class="p">](</span><span class="n">http</span><span class="p">://</span><span class="n">developer</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">com</span><span class="p">/</span><span class="n">reference</span><span class="p">/</span><span class="n">com</span><span class="p">/</span><span class="n">google</span><span class="p">/</span><span class="n">android</span><span class="p">/</span><span class="n">gms</span><span class="p">/</span><span class="n">location</span><span class="p">/</span><span class="n">LocationRequest</span><span class="p">.</span><span class="n">html</span><span class="p">)</span> <span class="err">を指定して、</span><span class="n">requestLocationUpdates</span> <span class="err">を呼ぶ。</span> <span class="p">-&gt;</span> <span class="n">LocationListener</span><span class="p">.</span><span class="n">onLocationChanged</span> <span class="err">が呼ばれる</span>
-
-<span class="err">です。</span><span class="nf">connect</span> <span class="err">を呼んで</span> <span class="n">onConnected</span> <span class="err">を待つのと、位置取得条件が</span> <span class="p">``</span><span class="n">LocationRequest</span><span class="p">``</span> <span class="err">クラスになった以外は</span> <span class="p">``</span><span class="n">LocationManager</span><span class="p">``</span> <span class="err">と同じです。</span>
-
-<span class="err">では、全コードです。</span>
-
-<span class="p">```</span><span class="n">java</span> <span class="n">MainActivity</span><span class="p">.</span><span class="n">java</span>
-<span class="k">package</span> <span class="n">com</span><span class="p">.</span><span class="n">example</span><span class="p">.</span><span class="n">fusedlocationprovidersample</span><span class="p">;</span>
-
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">ConnectionResult</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">GooglePlayServicesClient</span><span class="p">.</span><span class="n">ConnectionCallbacks</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">common</span><span class="p">.</span><span class="n">GooglePlayServicesClient</span><span class="p">.</span><span class="n">OnConnectionFailedListener</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationClient</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationListener</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">com</span><span class="p">.</span><span class="n">google</span><span class="p">.</span><span class="n">android</span><span class="p">.</span><span class="n">gms</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">LocationRequest</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">location</span><span class="p">.</span><span class="n">Location</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">os</span><span class="p">.</span><span class="n">Bundle</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">text</span><span class="p">.</span><span class="n">format</span><span class="p">.</span><span class="n">DateFormat</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">View</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">view</span><span class="p">.</span><span class="n">View</span><span class="p">.</span><span class="n">OnClickListener</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">widget</span><span class="p">.</span><span class="n">Button</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">widget</span><span class="p">.</span><span class="n">TextView</span><span class="p">;</span>
-<span class="n">import</span> <span class="n">android</span><span class="p">.</span><span class="n">app</span><span class="p">.</span><span class="n">Activity</span><span class="p">;</span>
-
-<span class="k">public</span> <span class="n">class</span> <span class="n">MainActivity</span> <span class="n">extends</span> <span class="n">Activity</span> <span class="p">{</span>
-	
-	<span class="p">//</span> <span class="n">FusedLocationProvider</span> <span class="err">用の</span> <span class="n">Client</span>
-	<span class="n">private</span> <span class="n">LocationClient</span> <span class="n">_locationClient</span><span class="p">;</span>
-	<span class="n">private</span> <span class="n">TextView</span> <span class="n">_textResult</span><span class="p">;</span>
-	
-	<span class="p">//</span> <span class="err">以前と変わらない</span> <span class="n">LocationListener</span>
-    <span class="n">private</span> <span class="n">final</span> <span class="n">LocationListener</span> <span class="n">_locationListener</span> <span class="p">=</span> <span class="n">new</span> <span class="n">LocationListener</span><span class="p">()</span> <span class="p">{</span>
-		
-		<span class="p">@</span><span class="n">Override</span>
-		<span class="k">public</span> <span class="n">void</span> <span class="n">onLocationChanged</span><span class="p">(</span><span class="n">final</span> <span class="n">Location</span> <span class="n">location</span><span class="p">)</span> <span class="p">{</span>
-			<span class="n">MainActivity</span><span class="p">.</span><span class="n">this</span><span class="p">.</span><span class="n">runOnUiThread</span><span class="p">(</span><span class="n">new</span> <span class="n">Runnable</span><span class="p">()</span> <span class="p">{</span>
-				<span class="p">@</span><span class="n">Override</span>
-				<span class="k">public</span> <span class="n">void</span> <span class="nf">run</span><span class="p">()</span> <span class="p">{</span>
-					<span class="k">String</span> <span class="n">text</span> <span class="p">=</span> <span class="n">_textResult</span><span class="p">.</span><span class="n">getText</span><span class="p">().</span><span class="n">toString</span><span class="p">();</span>
-		            <span class="n">text</span> <span class="p">=</span> <span class="n">DateFormat</span><span class="p">.</span><span class="n">format</span><span class="p">(</span><span class="s2">"hh:mm:ss.sss"</span><span class="p">,</span> <span class="n">location</span><span class="p">.</span><span class="nf">getTime</span><span class="p">())</span> <span class="p">+</span> <span class="s2">" - "</span> 
-		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getLatitude</span><span class="p">()</span> <span class="p">+</span> <span class="s2">"/"</span> <span class="p">+</span>
-		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getLongitude</span><span class="p">()</span> <span class="p">+</span> <span class="s2">"/"</span> <span class="p">+</span>
-		                    <span class="p">+</span> <span class="n">location</span><span class="p">.</span><span class="n">getAccuracy</span><span class="p">()</span> <span class="p">+</span> 
-		                    <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span> <span class="p">+</span> <span class="n">text</span><span class="p">;</span>
-
-		            <span class="n">_textResult</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="n">text</span><span class="p">);</span>
-				<span class="p">}</span>
-			<span class="p">});</span>
-		<span class="p">}</span>
-	<span class="p">};</span>
-	
-	<span class="p">@</span><span class="n">Override</span>
-	<span class="n">protected</span> <span class="n">void</span> <span class="n">onCreate</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">savedInstanceState</span><span class="p">)</span> <span class="p">{</span>
-		<span class="n">super</span><span class="p">.</span><span class="n">onCreate</span><span class="p">(</span><span class="n">savedInstanceState</span><span class="p">);</span>
-		<span class="n">setContentView</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">layout</span><span class="p">.</span><span class="n">activity_main</span><span class="p">);</span>
-		
-		<span class="n">_textResult</span> <span class="p">=</span> <span class="p">(</span><span class="n">TextView</span><span class="p">)</span><span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">text_result</span><span class="p">);</span>
-		
-		<span class="n">final</span> <span class="n">Button</span> <span class="n">buttonLocate</span> <span class="p">=</span> <span class="p">(</span><span class="n">Button</span><span class="p">)</span><span class="n">findViewById</span><span class="p">(</span><span class="n">R</span><span class="p">.</span><span class="n">id</span><span class="p">.</span><span class="n">button_locate</span><span class="p">);</span>
-		<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setOnClickListener</span><span class="p">(</span><span class="n">new</span> <span class="n">OnClickListener</span><span class="p">()</span> <span class="p">{</span>
-			<span class="n">private</span> <span class="k">boolean</span> <span class="n">_isStarted</span> <span class="p">=</span> <span class="nb">false</span><span class="p">;</span>
-			
-			<span class="p">@</span><span class="n">Override</span>
-			<span class="k">public</span> <span class="n">void</span> <span class="n">onClick</span><span class="p">(</span><span class="n">View</span> <span class="n">v</span><span class="p">)</span> <span class="p">{</span>
-				<span class="k">if</span> <span class="p">(</span><span class="c1">!_isStarted) {
-</span>					<span class="n">startLocate</span><span class="p">();</span>
-					<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">"Stop"</span><span class="p">);</span>
-				<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
-					<span class="n">stopLocate</span><span class="p">();</span>
-					<span class="n">buttonLocate</span><span class="p">.</span><span class="n">setText</span><span class="p">(</span><span class="s2">"Start"</span><span class="p">);</span>
-				<span class="p">}</span>
-				
-				<span class="n">_isStarted</span> <span class="p">=</span> <span class="c1">!_isStarted;
-</span>			<span class="p">}</span>
-		<span class="p">});</span>
-	<span class="p">}</span>
-	
-	<span class="p">@</span><span class="n">Override</span>
-	<span class="n">protected</span> <span class="n">void</span> <span class="n">onDestroy</span><span class="p">()</span> <span class="p">{</span>
-		<span class="n">stopLocate</span><span class="p">();</span>
-		<span class="n">super</span><span class="p">.</span><span class="n">onDestroy</span><span class="p">();</span>
-	<span class="p">}</span>
-	
-	<span class="n">private</span> <span class="n">void</span> <span class="n">startLocate</span><span class="p">()</span> <span class="p">{</span>
-		<span class="n">_locationClient</span> <span class="p">=</span> <span class="n">new</span> <span class="n">LocationClient</span><span class="p">(</span><span class="n">this</span><span class="p">,</span> <span class="n">new</span> <span class="n">ConnectionCallbacks</span><span class="p">()</span> <span class="p">{</span>
-
-			<span class="p">@</span><span class="n">Override</span>
-            <span class="k">public</span> <span class="n">void</span> <span class="n">onConnected</span><span class="p">(</span><span class="n">Bundle</span> <span class="n">bundle</span><span class="p">)</span> <span class="p">{</span>
-				<span class="p">//</span> <span class="m">2.</span> <span class="err">位置の取得開始！</span>
-				<span class="n">LocationRequest</span> <span class="n">request</span> <span class="p">=</span> <span class="n">LocationRequest</span><span class="p">.</span><span class="nb">create</span><span class="p">()</span>
-				<span class="p">.</span><span class="n">setPriority</span><span class="p">(</span><span class="n">LocationRequest</span><span class="p">.</span><span class="n">PRIORITY_HIGH_ACCURACY</span><span class="p">)</span>
-				<span class="p">.</span><span class="n">setInterval</span><span class="p">(</span><span class="m">5000</span><span class="p">);</span> <span class="p">//</span> <span class="m">5</span><span class="err">秒おき</span>
-            	<span class="n">_locationClient</span><span class="p">.</span><span class="n">requestLocationUpdates</span><span class="p">(</span><span class="n">request</span><span class="p">,</span> <span class="n">_locationListener</span><span class="p">);</span>
-            <span class="p">}</span>
-
-            <span class="p">@</span><span class="n">Override</span>
-            <span class="k">public</span> <span class="n">void</span> <span class="n">onDisconnected</span><span class="p">()</span> <span class="p">{</span>
-            	<span class="n">_locationClient</span> <span class="p">=</span> <span class="n">null</span><span class="p">;</span>
-            <span class="p">}</span>
-
-        <span class="p">},</span> <span class="n">new</span> <span class="n">OnConnectionFailedListener</span><span class="p">()</span> <span class="p">{</span>
-            <span class="p">@</span><span class="n">Override</span>
-            <span class="k">public</span> <span class="n">void</span> <span class="n">onConnectionFailed</span><span class="p">(</span><span class="n">ConnectionResult</span> <span class="n">result</span><span class="p">)</span> <span class="p">{</span>
-            <span class="p">}</span>
-        <span class="p">});</span>
-		
-		<span class="p">//</span> <span class="m">1.</span> <span class="err">位置取得サービスに接続！</span>
-		<span class="n">_locationClient</span><span class="p">.</span><span class="nf">connect</span><span class="p">();</span>
-	<span class="p">}</span>
-
-	<span class="n">private</span> <span class="n">void</span> <span class="n">stopLocate</span><span class="p">()</span> <span class="p">{</span>
-		<span class="k">if</span> <span class="p">(</span><span class="n">_locationClient</span> <span class="p">==</span> <span class="n">null</span> <span class="p">||</span> <span class="c1">!_locationClient.isConnected()) {
-</span>			<span class="n">return</span><span class="p">;</span>
-		<span class="p">}</span>
-		
-		<span class="n">_locationClient</span><span class="p">.</span><span class="n">removeLocationUpdates</span><span class="p">(</span><span class="n">_locationListener</span><span class="p">);</span>
-		<span class="n">_locationClient</span><span class="p">.</span><span class="nf">disconnect</span><span class="p">();</span>
-		<span class="p">//</span> <span class="n">ConnectionCallbacks</span><span class="p">.</span><span class="n">onDisconnected</span> <span class="err">が呼ばれるまで待った方がいい気がする</span>
-	<span class="p">}</span>
-<span class="p">}</span>
-</code></pre></div></div>
-
-<h2 id="6-動くのか">6. 動くのか！？</h2>
-
+<pre class="language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="utf-8"?></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>manifest</span> <span class="token attr-name"><span class="token namespace">xmlns:</span>android</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>http://schemas.android.com/apk/res/android<span class="token punctuation">"</span></span><br>    <span class="token attr-name">package</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>com.example.fusedlocationprovidersample<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">android:</span>versionCode</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>1<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">android:</span>versionName</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>1.0<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>uses-sdk</span><br>        <span class="token attr-name"><span class="token namespace">android:</span>minSdkVersion</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>8<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>targetSdkVersion</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>17<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>uses-permission</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.permission.ACCESS_FINE_LOCATION<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>uses-permission</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.permission.ACCESS_COARSE_LOCATION<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>application</span><br>        <span class="token attr-name"><span class="token namespace">android:</span>allowBackup</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>icon</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@drawable/ic_launcher<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/app_name<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>theme</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@style/AppTheme<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>activity</span><br>            <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>com.example.fusedlocationprovidersample.MainActivity<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>screenOrientation</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>portrait<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/app_name<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>intent-filter</span><span class="token punctuation">></span></span><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>action</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.action.MAIN<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>category</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.category.LAUNCHER<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>intent-filter</span><span class="token punctuation">></span></span><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>activity</span><span class="token punctuation">></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>application</span><span class="token punctuation">></span></span><br><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>manifest</span><span class="token punctuation">></span></span></code></pre>
+<h2 id="5.-fused-location-provider-%E3%82%92%E4%BD%BF%E3%81%86">5. Fused Location Provider を使う <a class="direct-link" href="#5.-fused-location-provider-%E3%82%92%E4%BD%BF%E3%81%86">#</a></h2>
+<p>ActivityRecognition は IntentService を使う必要があったために少々長いコードになりましたが、こちらは今までの <code>LocationProvider</code> が(も)使えるので、画面一つだけのシンプルなコードです。</p>
+<p>FusedLocationProvider を使うには、<a href="http://developer.android.com/reference/com/google/android/gms/location/LocationClient.html">LocationClient</a> クラスを使います。</p>
+<p>大雑把な流れは:</p>
+<ol>
+<li>インスタンスを生成する<br>
+connect を呼ぶ -&gt; ConnectionCallbacks.onConnected がコールバックされる</li>
+<li><a href="http://developer.android.com/reference/com/google/android/gms/location/LocationRequest.html">LocationRequest</a> を指定して、requestLocationUpdates を呼ぶ。 -&gt; LocationListener.onLocationChanged が呼ばれる</li>
+</ol>
+<p>です。connect を呼んで onConnected を待つのと、位置取得条件が <code>LocationRequest</code> クラスになった以外は <code>LocationManager</code> と同じです。</p>
+<p>では、全コードです。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">package</span> <span class="token namespace">com<span class="token punctuation">.</span>example<span class="token punctuation">.</span>fusedlocationprovidersample</span><span class="token punctuation">;</span><br><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>common<span class="token punctuation">.</span></span><span class="token class-name">ConnectionResult</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>common<span class="token punctuation">.</span></span><span class="token class-name">GooglePlayServicesClient<span class="token punctuation">.</span>ConnectionCallbacks</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>common<span class="token punctuation">.</span></span><span class="token class-name">GooglePlayServicesClient<span class="token punctuation">.</span>OnConnectionFailedListener</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>location<span class="token punctuation">.</span></span><span class="token class-name">LocationClient</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>location<span class="token punctuation">.</span></span><span class="token class-name">LocationListener</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">com<span class="token punctuation">.</span>google<span class="token punctuation">.</span>android<span class="token punctuation">.</span>gms<span class="token punctuation">.</span>location<span class="token punctuation">.</span></span><span class="token class-name">LocationRequest</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>location<span class="token punctuation">.</span></span><span class="token class-name">Location</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>os<span class="token punctuation">.</span></span><span class="token class-name">Bundle</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>text<span class="token punctuation">.</span>format<span class="token punctuation">.</span></span><span class="token class-name">DateFormat</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>view<span class="token punctuation">.</span></span><span class="token class-name">View</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>view<span class="token punctuation">.</span></span><span class="token class-name">View<span class="token punctuation">.</span>OnClickListener</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>widget<span class="token punctuation">.</span></span><span class="token class-name">Button</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>widget<span class="token punctuation">.</span></span><span class="token class-name">TextView</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token namespace">android<span class="token punctuation">.</span>app<span class="token punctuation">.</span></span><span class="token class-name">Activity</span><span class="token punctuation">;</span><br><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token keyword">extends</span> <span class="token class-name">Activity</span> <span class="token punctuation">{</span><br>	<br>	<span class="token comment">// FusedLocationProvider 用の Client</span><br>	<span class="token keyword">private</span> <span class="token class-name">LocationClient</span> _locationClient<span class="token punctuation">;</span><br>	<span class="token keyword">private</span> <span class="token class-name">TextView</span> _textResult<span class="token punctuation">;</span><br>	<br>	<span class="token comment">// 以前と変わらない LocationListener</span><br>    <span class="token keyword">private</span> <span class="token keyword">final</span> <span class="token class-name">LocationListener</span> _locationListener <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LocationListener</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>		<br>		<span class="token annotation punctuation">@Override</span><br>		<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onLocationChanged</span><span class="token punctuation">(</span><span class="token keyword">final</span> <span class="token class-name">Location</span> location<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>			<span class="token class-name">MainActivity</span><span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">runOnUiThread</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>				<span class="token annotation punctuation">@Override</span><br>				<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>					<span class="token class-name">String</span> text <span class="token operator">=</span> _textResult<span class="token punctuation">.</span><span class="token function">getText</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>		            text <span class="token operator">=</span> <span class="token class-name">DateFormat</span><span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">"hh:mm:ss.sss"</span><span class="token punctuation">,</span> location<span class="token punctuation">.</span><span class="token function">getTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">" - "</span> <br>		                    <span class="token operator">+</span> location<span class="token punctuation">.</span><span class="token function">getLatitude</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"/"</span> <span class="token operator">+</span><br>		                    <span class="token operator">+</span> location<span class="token punctuation">.</span><span class="token function">getLongitude</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"/"</span> <span class="token operator">+</span><br>		                    <span class="token operator">+</span> location<span class="token punctuation">.</span><span class="token function">getAccuracy</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <br>		                    <span class="token string">"\n"</span> <span class="token operator">+</span> text<span class="token punctuation">;</span><br><br>		            _textResult<span class="token punctuation">.</span><span class="token function">setText</span><span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">;</span><br>				<span class="token punctuation">}</span><br>			<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<span class="token punctuation">}</span><br>	<span class="token punctuation">}</span><span class="token punctuation">;</span><br>	<br>	<span class="token annotation punctuation">@Override</span><br>	<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>		<span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<span class="token function">setContentView</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>layout<span class="token punctuation">.</span>activity_main<span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<br>		_textResult <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">TextView</span><span class="token punctuation">)</span><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>text_result<span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<br>		<span class="token keyword">final</span> <span class="token class-name">Button</span> buttonLocate <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">Button</span><span class="token punctuation">)</span><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>button_locate<span class="token punctuation">)</span><span class="token punctuation">;</span><br>		buttonLocate<span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">OnClickListener</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>			<span class="token keyword">private</span> <span class="token keyword">boolean</span> _isStarted <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span><br>			<br>			<span class="token annotation punctuation">@Override</span><br>			<span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onClick</span><span class="token punctuation">(</span><span class="token class-name">View</span> v<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>				<span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>_isStarted<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>					<span class="token function">startLocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>					buttonLocate<span class="token punctuation">.</span><span class="token function">setText</span><span class="token punctuation">(</span><span class="token string">"Stop"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>				<span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>					<span class="token function">stopLocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>					buttonLocate<span class="token punctuation">.</span><span class="token function">setText</span><span class="token punctuation">(</span><span class="token string">"Start"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>				<span class="token punctuation">}</span><br>				<br>				_isStarted <span class="token operator">=</span> <span class="token operator">!</span>_isStarted<span class="token punctuation">;</span><br>			<span class="token punctuation">}</span><br>		<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token punctuation">}</span><br>	<br>	<span class="token annotation punctuation">@Override</span><br>	<span class="token keyword">protected</span> <span class="token keyword">void</span> <span class="token function">onDestroy</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>		<span class="token function">stopLocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onDestroy</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token punctuation">}</span><br>	<br>	<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">startLocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>		_locationClient <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">LocationClient</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">ConnectionCallbacks</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>			<span class="token annotation punctuation">@Override</span><br>            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onConnected</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> bundle<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>				<span class="token comment">// 2. 位置の取得開始！</span><br>				<span class="token class-name">LocationRequest</span> request <span class="token operator">=</span> <span class="token class-name">LocationRequest</span><span class="token punctuation">.</span><span class="token function">create</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>				<span class="token punctuation">.</span><span class="token function">setPriority</span><span class="token punctuation">(</span><span class="token class-name">LocationRequest</span><span class="token punctuation">.</span>PRIORITY_HIGH_ACCURACY<span class="token punctuation">)</span><br>				<span class="token punctuation">.</span><span class="token function">setInterval</span><span class="token punctuation">(</span><span class="token number">5000</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 5秒おき</span><br>            	_locationClient<span class="token punctuation">.</span><span class="token function">requestLocationUpdates</span><span class="token punctuation">(</span>request<span class="token punctuation">,</span> _locationListener<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br><br>            <span class="token annotation punctuation">@Override</span><br>            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onDisconnected</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            	_locationClient <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br><br>        <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">OnConnectionFailedListener</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token annotation punctuation">@Override</span><br>            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onConnectionFailed</span><span class="token punctuation">(</span><span class="token class-name">ConnectionResult</span> result<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<br>		<span class="token comment">// 1. 位置取得サービスに接続！</span><br>		_locationClient<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token punctuation">}</span><br><br>	<span class="token keyword">private</span> <span class="token keyword">void</span> <span class="token function">stopLocate</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>		<span class="token keyword">if</span> <span class="token punctuation">(</span>_locationClient <span class="token operator">==</span> <span class="token keyword">null</span> <span class="token operator">||</span> <span class="token operator">!</span>_locationClient<span class="token punctuation">.</span><span class="token function">isConnected</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>			<span class="token keyword">return</span><span class="token punctuation">;</span><br>		<span class="token punctuation">}</span><br>		<br>		_locationClient<span class="token punctuation">.</span><span class="token function">removeLocationUpdates</span><span class="token punctuation">(</span>_locationListener<span class="token punctuation">)</span><span class="token punctuation">;</span><br>		_locationClient<span class="token punctuation">.</span><span class="token function">disconnect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>		<span class="token comment">// ConnectionCallbacks.onDisconnected が呼ばれるまで待った方がいい気がする</span><br>	<span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h2 id="6.-%E5%8B%95%E3%81%8F%E3%81%AE%E3%81%8B%EF%BC%81%EF%BC%9F">6. 動くのか！？ <a class="direct-link" href="#6.-%E5%8B%95%E3%81%8F%E3%81%AE%E3%81%8B%EF%BC%81%EF%BC%9F">#</a></h2>
 <p>HTC J(not蝶) で動かしてみました。</p>
-
-<p><amp-img width="540" height="503" layout="responsive" src="/assets/images/posts/getting_started_fused_location_provider1.png" alt="image3" /></p>
-
+<p><img src="/img/posts/getting_started_fused_location_provider1.png" alt="image3"></p>
 <p>室内での結果ですが、最初 27m の精度だったのが、放っておくとどんどん精度が上がって行きました。が、地図に重ねてみないと実際合ってるのかよくわかりませんね。</p>
-
 <p>そのうち、地図に載せて検証してみたいです。</p>
-
-<h2 id="permission-と-priority-と精度の話">Permission と Priority と精度の話</h2>
-
+<h2 id="permission-%E3%81%A8-priority-%E3%81%A8%E7%B2%BE%E5%BA%A6%E3%81%AE%E8%A9%B1">Permission と Priority と精度の話 <a class="direct-link" href="#permission-%E3%81%A8-priority-%E3%81%A8%E7%B2%BE%E5%BA%A6%E3%81%AE%E8%A9%B1">#</a></h2>
 <p>Permission と Priority の組み合わせで、位置の精度がどう変わるか、少し調べました。</p>
-
-<h3 id="fine_locationcoarse_location-with-priority_high_accuracy">FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
+<h3 id="fine_location%2Bcoarse_location-with-priority_high_accuracy">FINE_LOCATION+COARSE_LOCATION with PRIORITY_HIGH_ACCURACY <a class="direct-link" href="#fine_location%2Bcoarse_location-with-priority_high_accuracy">#</a></h3>
 <p>GPS と WiFi と センサーフル活用。GPS が捕捉できなくても数十ｍの位置精度が概ね出るようです。</p>
-
-<h3 id="coarse_location-with-priority_high_accuracy">COARSE_LOCATION with PRIORITY_HIGH_ACCURACY</h3>
-
+<h3 id="coarse_location-with-priority_high_accuracy">COARSE_LOCATION with PRIORITY_HIGH_ACCURACY <a class="direct-link" href="#coarse_location-with-priority_high_accuracy">#</a></h3>
 <p>使えない。FINE_LOCATION が必要ってエラーになりました。</p>
-
-<h3 id="coarse_location-with--priority_balanced_power_accuracy">COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY</h3>
-
+<h3 id="coarse_location-with-priority_balanced_power_accuracy">COARSE_LOCATION with  PRIORITY_BALANCED_POWER_ACCURACY <a class="direct-link" href="#coarse_location-with-priority_balanced_power_accuracy">#</a></h3>
 <p>位置の精度が数km程度になりました。WiFi測位(従来の NETWORK_PROVIDER)よりも悪いです。うーんこれは期待はずれだなあ。</p>
-
 <p>結局、例えば屋内測位でしか使わないからGPS要らねって FINE_LOCATION を外すと、かえって精度が落ちるという事になります。(GPS使いませんPERMISSIONが欲しいな。。。)</p>
-
-<h2 id="おまけ">おまけ</h2>
-
+<h2 id="%E3%81%8A%E3%81%BE%E3%81%91">おまけ <a class="direct-link" href="#%E3%81%8A%E3%81%BE%E3%81%91">#</a></h2>
 <ul>
-  <li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
+<li><a href="https://developers.google.com/maps/documentation/android/releases#may_2013">Google Maps Android API v2 Release Notes - Google Maps Android API v2 — Google Developers</a></li>
 </ul>
-
-<p>によると、Google Maps Android API v2 の [setMyLocationEnabled(true)](https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean) でも FusedLocationProvider が使われるようになったとのことです。</p>
-
-<h2 id="まとめ">まとめ</h2>
-
+<p>によると、Google Maps Android API v2 の [setMyLocationEnabled(true)](<a href="https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean)">https://developers.google.com/maps/documentation/android/reference/com/google/android/gms/maps/GoogleMap#setMyLocationEnabled(boolean)</a> でも FusedLocationProvider が使われるようになったとのことです。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
 <p>公式のコンプリートな Getting Started は</p>
-
 <ul>
-  <li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location ｜ Android Developers</a></li>
+<li><a href="http://developer.android.com/training/location/retrieve-current.html">Retrieving the Current Location ｜ Android Developers</a></li>
 </ul>
-
 <p>にありますので、こちらを読まれた方が確実です。</p>
-
 <p>ここで作ったサンプルは、</p>
-
 <ul>
-  <li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
+<li><a href="https://github.com/amay077/fusedlocationprovidersample">amay077/fusedlocationprovidersample · GitHub</a></li>
 </ul>
-
 <p>に置いておきます。</p>
 
-    </section>
-    <footer class="post-footer">
 
-      <section class="categories">
-        
-        <div class="category">Android</div>
-        
-        <div class="category">GoogleMapsAPI</div>
-        
-        <p class="published">published <time datetime="2013-05-23 20:55">23 May 2013</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2013-05-23-getting-started-fused-location-provider.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2013/05/23/getting-started-fused-location-provider&text=Google+I%2FO+2013+%E3%81%A7%E7%99%BA%E8%A1%A8%E3%81%95%E3%82%8C%E3%81%9F+Fused+Location+Provider+%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
+published at <time class="postlist-date" datetime="2013-05-23">23 May 2013</time>
 
+tags: 
 
-        </a>
-      </section>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
 
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
+<hr>
+<ul><li>Next: <a href="/blog/2013/05/27/fused-location-provider-on-xamarin/">Xamarin.Android で Fused Location Provider(など)を使う</a></li><li>Previous: <a href="/blog/2013/05/20/digest-of-android-location-session-in-google-io2013/">Google I/O 2013 の Android Location セッションまとめ</a></li>
+</ul>
 
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
+    </main>
 
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
+    <footer></footer>
 
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2013/05/23/getting-started-fused-location-provider/ -->
   </body>
 </html>

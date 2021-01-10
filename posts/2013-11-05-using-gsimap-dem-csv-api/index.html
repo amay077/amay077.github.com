@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>地理院地図の標高タイル(CSV)を描画してみた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>地理院地図の標高タイル(CSV)を描画してみた</h1>
+
+<p>国土地理院が提供している API の一つに「標高タイル」というものがあります。</p>
+<!--more-->
+<p>タイルというと、Googleマップや OpenStreetMap などの Web地図では通常、画像を指しますが、標高タイルAPIでは <strong>「画素毎の高度(ｍ)」</strong> が取得できます。</p>
+<ul>
+<li><a href="http://portal.cyberjapan.jp/help/development/demtile.html">標高タイル仕様 - 地理院地図</a></li>
+<li><a href="http://cyberjapandata.gsi.go.jp/xyz/dem/14/14547/6463.txt">サンプルURL</a></li>
+</ul>
+<p>これは面白い、ということで使ってみました。</p>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">サンプル <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">#</a></h2>
+<ul>
+<li><a href="http://jsdo.it/amay077/jjod">地理院地図の標高タイル(CSV)を描画してみた - jsdo.it</a></li>
+</ul>
+<h3 id="google-map">Google Map <a class="direct-link" href="#google-map">#</a></h3>
+<p><img src="/img/posts/using_gsimap_dem_csv_api_01.png" alt="img1"></p>
+<h3 id="%E6%A8%99%E9%AB%98%E3%82%BF%E3%82%A4%E3%83%ABapi-%E3%81%A7%E5%8F%96%E5%BE%97%E3%81%97%E3%81%9F%E6%A8%99%E9%AB%98%E5%80%A4%E3%82%92%E6%8F%8F%E7%94%BB">標高タイルAPI で取得した標高値を描画 <a class="direct-link" href="#%E6%A8%99%E9%AB%98%E3%82%BF%E3%82%A4%E3%83%ABapi-%E3%81%A7%E5%8F%96%E5%BE%97%E3%81%97%E3%81%9F%E6%A8%99%E9%AB%98%E5%80%A4%E3%82%92%E6%8F%8F%E7%94%BB">#</a></h3>
+<p><img src="/img/posts/using_gsimap_dem_csv_api_02.png" alt="img1"></p>
+<h2 id="%E4%BD%95%E3%82%92%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E3%81%8B%EF%BC%9F">何をしているか？ <a class="direct-link" href="#%E4%BD%95%E3%82%92%E3%81%97%E3%81%A6%E3%81%84%E3%82%8B%E3%81%8B%EF%BC%9F">#</a></h2>
+<p>下は、このサンプルのコードの抜粋ですが、ポイントは２つ</p>
+<ul>
+<li>getTile で通常 img 要素を生成して返すが、代わりに canvas 要素に返す</li>
+<li>標高API をコールして得られた CSV をパースし、 高さに応じた色を計算して、canvas に矩形を描画する</li>
+</ul>
+<p>さすがに1ピクセル毎に描画すると重すぎるので、初期値では 16ピクセルずつに間引きしています(画面の DotSize で変更できます)。</p>
+<p>クライアント側でレンダリングしているので、色などが動的に変更できます。</p>
+<pre class="language-javascript"><code class="language-javascript">    map<span class="token punctuation">.</span>mapTypes<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"GsiMaps"</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><br>      name<span class="token operator">:</span><span class="token string">"標高タイル"</span><span class="token punctuation">,</span><br>      tileSize<span class="token operator">:</span><span class="token keyword">new</span> <span class="token class-name">google<span class="token punctuation">.</span>maps<span class="token punctuation">.</span>Size</span><span class="token punctuation">(</span><span class="token number">256</span><span class="token punctuation">,</span><span class="token number">256</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>      minZoom<span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span> <span class="token comment">// 標高タイルは Lv:14 しか用意されてないので</span><br>      maxZoom<span class="token operator">:</span><span class="token number">14</span><span class="token punctuation">,</span> <br>      <span class="token function-variable function">getTile</span><span class="token operator">:</span><span class="token keyword">function</span><span class="token punctuation">(</span><span class="token parameter">tileCoord<span class="token punctuation">,</span> zoom<span class="token punctuation">,</span> ownerDocument</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>          <br>        <span class="token comment">// 普通は img だけど、標高タイルは CSV で画素毎の標高値が取得できるので、</span><br>        <span class="token comment">// クライアント側で描画するために Canvas を使う</span><br>        <span class="token keyword">var</span> canvas <span class="token operator">=</span> ownerDocument<span class="token punctuation">.</span><span class="token function">createElement</span><span class="token punctuation">(</span><span class="token string">"canvas"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        canvas<span class="token punctuation">.</span>width <span class="token operator">=</span> <span class="token number">256</span><span class="token punctuation">;</span><br>        canvas<span class="token punctuation">.</span>height <span class="token operator">=</span> <span class="token number">256</span><span class="token punctuation">;</span><br>        <br>        <span class="token keyword">var</span> x <span class="token operator">=</span> <span class="token punctuation">(</span>tileCoord<span class="token punctuation">.</span>x <span class="token operator">%</span> Math<span class="token punctuation">.</span><span class="token function">pow</span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> zoom<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">var</span> y <span class="token operator">=</span> tileCoord<span class="token punctuation">.</span>y<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <br>        <span class="token comment">// 各画素の標高値を取得する</span><br>        canvas<span class="token punctuation">.</span>tileUrl <span class="token operator">=</span> <span class="token string">"http://cyberjapandata.gsi.go.jp/xyz/dem/"</span> <span class="token operator">+</span> zoom <span class="token operator">+</span>  <span class="token string">"/"</span> <span class="token operator">+</span> x <span class="token operator">+</span> <span class="token string">"/"</span> <span class="token operator">+</span> y <span class="token operator">+</span> <span class="token string">".txt"</span><span class="token punctuation">;</span><br>        <span class="token comment">// 標高を描画する</span><br>        <span class="token function">renderDem</span><span class="token punctuation">(</span>canvas<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        renderedTiles<span class="token punctuation">[</span>canvas<span class="token punctuation">.</span>tileUrl<span class="token punctuation">]</span> <span class="token operator">=</span> canvas<span class="token punctuation">;</span> <span class="token comment">// タイル再描画の為にとっておく</span><br>        <span class="token keyword">return</span> canvas<span class="token punctuation">;</span><br>      <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token comment">// 標高タイルを描画する</span><br>    <span class="token keyword">function</span> <span class="token function">renderDem</span><span class="token punctuation">(</span><span class="token parameter">canvas</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>      <span class="token keyword">var</span> ctx <span class="token operator">=</span> canvas<span class="token punctuation">.</span><span class="token function">getContext</span><span class="token punctuation">(</span><span class="token string">'2d'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>      ctx<span class="token punctuation">.</span><span class="token function">clearRect</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">256</span><span class="token punctuation">,</span> <span class="token number">256</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>      <br>      $<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span>canvas<span class="token punctuation">.</span>tileUrl<span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token parameter">data</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// CSV が得られるのでパース</span><br>        <span class="token keyword">var</span> lines <span class="token operator">=</span> data<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token regex"><span class="token regex-delimiter">/</span><span class="token regex-source language-regex">\r\n|\r|\n</span><span class="token regex-delimiter">/</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> i <span class="token operator">&lt;</span> lines<span class="token punctuation">.</span>length<span class="token punctuation">;</span> i<span class="token operator">+=</span>dotSize<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>          <span class="token keyword">var</span> cols <span class="token operator">=</span> lines<span class="token punctuation">[</span>i<span class="token punctuation">]</span><span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">','</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>          <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token keyword">var</span> j <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span> j <span class="token operator">&lt;</span> cols<span class="token punctuation">.</span>length<span class="token punctuation">;</span> j<span class="token operator">+=</span>dotSize<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token keyword">if</span> <span class="token punctuation">(</span>cols<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">==</span> <span class="token string">'e'</span><span class="token punctuation">)</span> <span class="token punctuation">{</span> <span class="token comment">// エラーの画素には 'e' が入ってる</span><br>              <span class="token keyword">continue</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>              <br>            <span class="token comment">// 標高0ｍ を startColor、標高1000ｍを endColor としたグラデーション色を設定する。</span><br>            ctx<span class="token punctuation">.</span>fillStyle <span class="token operator">=</span> $<span class="token punctuation">.</span>xcolor<br>            <span class="token punctuation">.</span><span class="token function">gradientlevel</span><span class="token punctuation">(</span>startColor<span class="token punctuation">,</span> endColor<span class="token punctuation">,</span> cols<span class="token punctuation">[</span>j<span class="token punctuation">]</span> <span class="token operator">/</span> <span class="token number">1000.0</span> <span class="token operator">*</span> <span class="token number">100.0</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">getCSS</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            ctx<span class="token punctuation">.</span><span class="token function">fillRect</span><span class="token punctuation">(</span>j<span class="token punctuation">,</span> i<span class="token punctuation">,</span> dotSize<span class="token punctuation">,</span> dotSize<span class="token punctuation">)</span><span class="token punctuation">;</span><br>          <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>      <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span></code></pre>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>ただの標高値を地図に表すなら画像でいいじゃん！とか言われそうですが、よいアイデアが浮かばなかったのでまずは素直に使ってみました。</p>
+<p>たとえば、移動手段による移動コストの違い(車だと坂道余裕だけど自転車だとキツい)みたいなのを視覚化するのに使えるような気がします。</p>
+<p>今回は、Canvas を使ったのでこの程度ですが、WebGL とかを使えば、Google Map の地形図に負けない、美しい3D地図が描画できるはずです。</p>
+<p>他に例を見ない、野心的な試みだと思うので、何か面白い使い方ができるといいなと思います。</p>
+
+
+published at <time class="postlist-date" datetime="2013-11-05">05 Nov 2013</time>
+
+tags: 
+
+  <a href="/tags/Geo/" class="post-tag">Geo</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
+  <a href="/tags/HTML5/" class="post-tag">HTML5</a>
+  <a href="/tags/JavaScript/" class="post-tag">JavaScript</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-12-01-what-is-xamarin/">Xamarin(ザマリン) とはなんぞや</a></li><li>Previous: <a href="/posts/2013-10-30-multi-apps-in-google-api-console/">Google API Console の API Access って…</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-11-05-using-gsimap-dem-csv-api/ -->
+  </body>
+</html>

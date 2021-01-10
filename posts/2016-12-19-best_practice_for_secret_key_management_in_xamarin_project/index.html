@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin プロジェクトにおける API key など秘密情報管理のベスト？プラクティス</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin プロジェクトにおける API key など秘密情報管理のベスト？プラクティス</h1>
+
+<p><a href="http://qiita.com/advent-calendar/2016/xamarin">Xamarin Advent Calendar 2016</a> 19日目です。<br>
+API key や SecretKey はハードコードダメ、git リポジトリでの管理もダメ、というわけでどうしたもんかと。</p>
+<!--more-->
+<p>Android アプリ開発では、</p>
+<ul>
+<li><a href="http://shimbaroid.hatenablog.jp/entry/2016/08/15/010350">【Android Studio】Api keyを始めとしたgit管理したくない定数を環境変数で管理する - shimbaroid’s diary</a></li>
+</ul>
+<p>のような仕組みで、システム環境変数をビルド時の変数に inject してくれる仕組みがあるのでいいですね。</p>
+<p>Xamarin（というか .NET アプリケーション、MSBuild）のエコシステムには、そういう仕組みがなさそう（見つからなかった…）なので、自力でやるしかなさそうです。</p>
+<h1 id="%E3%82%B1%E3%83%BC%E3%82%B91%3Agoogle-maps-%E3%81%AE-api-%E3%82%AD%E3%83%BC">ケース1:Google Maps の API キー <a class="direct-link" href="#%E3%82%B1%E3%83%BC%E3%82%B91%3Agoogle-maps-%E3%81%AE-api-%E3%82%AD%E3%83%BC">#</a></h1>
+<p>私は <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Xamarin.Forms.GoogleMaps</a> というライブラリを開発していて、それの <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/tree/master/XFGoogleMapSample">サンプルアプリケーションのコードも</a> 公開しています。</p>
+<p>Android や iOS で Google Maps を使うには、各々の API Key を入手して、ライブラリに設定する必要があるわけで、サンプルアプリケーションでそれをやっているのですが、API key をソースコードに直書きしてしまうと、それをうっかりコミットしてしまう危険があるし、これを Fork してくれる人にもそのような間違いを起こして欲しくありません。</p>
+<h2 id="step1%3Aapi%E3%82%AD%E3%83%BC%E3%81%AE%E5%AE%9A%E7%BE%A9%E3%82%92%E5%88%86%E9%9B%A2%E3%81%99%E3%82%8B">STEP1:APIキーの定義を分離する <a class="direct-link" href="#step1%3Aapi%E3%82%AD%E3%83%BC%E3%81%AE%E5%AE%9A%E7%BE%A9%E3%82%92%E5%88%86%E9%9B%A2%E3%81%99%E3%82%8B">#</a></h2>
+<p>まずは APIキーを Static なクラスに追い出します。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// Variables.cs</span><br><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">Variables</span><br><span class="token punctuation">{</span><br>    <span class="token comment">// https://developers.google.com/maps/documentation/android-api/signup</span><br>    <span class="token keyword">public</span> <span class="token keyword">const</span> <span class="token class-name"><span class="token keyword">string</span></span> GOOGLE_MAPS_ANDROID_API_KEY <span class="token operator">=</span> <span class="token string">"your_google_maps_android_api_v2_api_key"</span><span class="token punctuation">;</span><br><br>    <span class="token comment">// https://developers.google.com/maps/documentation/ios-sdk/start#step_4_get_an_api_key</span><br>    <span class="token keyword">public</span> <span class="token keyword">const</span> <span class="token class-name"><span class="token keyword">string</span></span> GOOGLE_MAPS_IOS_API_KEY <span class="token operator">=</span> <span class="token string">"your_google_maps_sdk_for_ios_api_key"</span><span class="token punctuation">;</span><br><br>    <span class="token comment">// https://msdn.microsoft.com/windows/uwp/maps-and-location/authentication-key</span><br>    <span class="token keyword">public</span> <span class="token keyword">const</span> <span class="token class-name"><span class="token keyword">string</span></span> BING_MAPS_UWP_API_KEY <span class="token operator">=</span> <span class="token string">"your_bing_maps_apikey"</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p><code>static readonly</code> なプロパティにせず <code>const</code> にしているのは、Android での <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/Droid/MyApp.cs#L8-L9">API Key の指定が属性になっている</a> からです。</p>
+<h2 id="step2%3Avariables.cs-%E3%82%92-.gitignore-%E3%81%AB%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">STEP2:Variables.cs を .gitignore に追加する <a class="direct-link" href="#step2%3Avariables.cs-%E3%82%92-.gitignore-%E3%81%AB%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">#</a></h2>
+<p><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/.gitignore">https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/master/XFGoogleMapSample/.gitignore</a></p>
+<p>Variables.cs を .gitignore に追加して、 git で管理しないようにします。</p>
+<p>これで <code>Variables.cs</code> に正しいAPIKeyを設定しても、コミット対象にならないので、間違えて API Key が流出することが防げます。</p>
+<p>ただ、開発者がどんな <code>Variables.cs</code> を用意すればいいか分からないので、<code>Variables.cs</code> を <code>Variables_sample.cs</code> という名前でコミットしておきます。もちろんこちらには正しい APIKey は記述しません。</p>
+<p>これで、 <code>README.md</code> などに、 「<code>Variable_sample.cs</code> を <code>Variable.cs</code> にリネームして、あなたのAPIKeyを設定して使ってください」とでも記述しておけば、大抵の開発者は理解できると思います。</p>
+<h2 id="step3%3A%E3%83%93%E3%83%AB%E3%83%89%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%81%A7-variables_sample.cs-%E3%82%92-variables.cs-%E3%81%AB%E3%82%B3%E3%83%94%E3%83%BC%E3%81%99%E3%82%8B">STEP3:ビルドイベントで <code>Variables_sample.cs</code> を <code>Variables.cs</code> にコピーする <a class="direct-link" href="#step3%3A%E3%83%93%E3%83%AB%E3%83%89%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88%E3%81%A7-variables_sample.cs-%E3%82%92-variables.cs-%E3%81%AB%E3%82%B3%E3%83%94%E3%83%BC%E3%81%99%E3%82%8B">#</a></h2>
+<p>このままでもまあよいのですが、git clone してすぐビルドしてエラーになるのは悪いような良いような…。</p>
+<p>Visual Studio、Xamarin Studio のビルドシステムには「ビルドイベント」という、ビルド前後などに任意のコマンドを実行する機能があるので、それを使って <code>Variables_sample.cs</code> を <code>Variables.cs</code> にコピーできます。</p>
+<p><code>.csproj</code> に次のように追加します。全ソースは <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/156bfc449e25c40d4455d677a761d9a7d6661253/XFGoogleMapSample/XFGoogleMapSample/XFGoogleMapSample.csproj">こちら</a> 。</p>
+<pre class="language-xml"><code class="language-xml">// XFGoogleMapSample.csproj<br>（前略）<br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>ProjectExtensions</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PropertyGroup</span> <span class="token attr-name">Condition</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span> <span class="token punctuation">'</span>$(OS)<span class="token punctuation">'</span> == <span class="token punctuation">'</span>Windows_NT<span class="token punctuation">'</span> <span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PreBuildEvent</span><span class="token punctuation">></span></span>if not exist "$(ProjectDir)Variables.cs" copy "$(ProjectDir)Variables_sample.cs" "$(ProjectDir)Variables.cs" >nul<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>PreBuildEvent</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>PropertyGroup</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PropertyGroup</span> <span class="token attr-name">Condition</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span> <span class="token punctuation">'</span>$(OS)<span class="token punctuation">'</span> != <span class="token punctuation">'</span>Windows_NT<span class="token punctuation">'</span> <span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>PreBuildEvent</span><span class="token punctuation">></span></span>rsync -u "$(ProjectDir)Variables_sample.cs" "$(ProjectDir)Variables.cs"<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>PreBuildEvent</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>PropertyGroup</span><span class="token punctuation">></span></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>Project</span><span class="token punctuation">></span></span></code></pre>
+<p>Windows と Mac 両方に対応しないといけないのが面倒な点１。<br>
+これは <code>Condition=&quot; '$(OS)' == 'Windows_NT' &quot;</code> と <code>Condition=&quot; '$(OS)' != 'Windows_NT' &quot;</code> で行っています。</p>
+<p>しかも、Visual Studio でビルドイベントを設定すると <code>Condition</code> が設定できないし、Xamarin Studio と Visual Studio で <code>.csproj</code> に記述される書式が違うしで、結局 <code>.csproj</code> に手書きするしかありませんでした。</p>
+<p>次に、「<code>Variables.cs</code> が既に存在していたらコピーしない」としたいが、</p>
+<ul>
+<li>Windows の <code>copy</code> コマンドは「上書きしない」オプションがないらしく、 <code>if not exist</code> を使う羽目に…</li>
+<li>Mac の <code>cp</code> コマンドは「上書きしない」オプションはあるものの、上書きしない場合にエラーコードを返すらしく、それを MSBuild が検知してビルド失敗してしまうため、 <code>rsync</code> を使う羽目に…</li>
+</ul>
+<p>と、それぞれ回りくどいことが必要なのが面倒な点２。<br>
+ここまでしてなんとか実現できました。</p>
+<p>これで、「ソースを取得してすぐビルドできるけど、 <code>Variables.cs</code> は git では管理されない」ようになりました。</p>
+<h1 id="%E3%82%B1%E3%83%BC%E3%82%B92%3Aci(%E7%B6%99%E7%B6%9A%E7%9A%84%E3%82%A4%E3%83%B3%E3%83%86%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)%E3%81%B8%E3%81%AE%E5%AF%BE%E5%BF%9C">ケース2:CI(継続的インテグレーション)への対応 <a class="direct-link" href="#%E3%82%B1%E3%83%BC%E3%82%B92%3Aci(%E7%B6%99%E7%B6%9A%E7%9A%84%E3%82%A4%E3%83%B3%E3%83%86%E3%82%B0%E3%83%AC%E3%83%BC%E3%82%B7%E3%83%A7%E3%83%B3)%E3%81%B8%E3%81%AE%E5%AF%BE%E5%BF%9C">#</a></h1>
+<p>Visual Studio Team Services(VSTS)などの CI サービスで自動ビルドすることを考えると、CIサービスの機能で <code>Variables.cs</code> に、正しい APIKey を設定してやる必要があります。</p>
+<p>冒頭で紹介した Android でのビルドの事例は、 gradle を使い、システム環境変数を AndroidManifest.xml に伝搬させています（<code>manifestPlaceholders</code> という仕組みなのかな？）。</p>
+<p>.NET のビルドシステムである MSBuild に同類の機能があることを確認できなかったので、CIサービスが提供する一般的な機能を使って実現するしかなさそうです。</p>
+<ul>
+<li>(本番用のAPIKeyが記述された) <code>Variables.cs</code> をコピーする</li>
+<li><code>Variables.cs</code> の内容を置換して本番用のAPIKeyを注入する</li>
+</ul>
+<p>などです。</p>
+<ul>
+<li><a href="http://www.raghurana.com/building-and-deploying-apps-using-vsts-and-hockeyapp-part-2nbsp-android">Building and Deploying apps using VSTS and HockeyApp - Part 2 : Android - Raghu Rana's blog</a></li>
+</ul>
+<p>の例では、Perl を使って <code>AndroidManifest.xml</code> のプレースホルダを置換してAPIKeyを差し込んでいるようです。</p>
+<h2 id="visual-studio-mobile-center-%E3%81%A7%E3%81%AF%E3%81%A9%E3%81%86%E3%82%88%EF%BC%9F">Visual Studio Mobile Center ではどうよ？ <a class="direct-link" href="#visual-studio-mobile-center-%E3%81%A7%E3%81%AF%E3%81%A9%E3%81%86%E3%82%88%EF%BC%9F">#</a></h2>
+<p>Connect(); で発表され、今はプレビュー版を誰でも試せるようになっている</p>
+<ul>
+<li><a href="https://www.visualstudio.com/vs/mobile-center/">Visual Studio Mobile Center / Visual Studio</a></li>
+</ul>
+<p>にも、github などからソースを取得して自動ビルドできる機能があります。<br>
+が、今のところ、VSTS や他のCIサービスほど機能が用意されていない為か、ビルド前に任意のコマンドを実行させることはできません、今のところ(期待を込めて２回言った)。</p>
+<h1 id="%E6%B1%82%E3%82%80%EF%BC%81%E3%83%99%E3%82%B9%E3%83%88%E3%83%97%E3%83%A9%E3%82%AF%E3%83%86%E3%82%A3%E3%82%B9">求む！ベストプラクティス <a class="direct-link" href="#%E6%B1%82%E3%82%80%EF%BC%81%E3%83%99%E3%82%B9%E3%83%88%E3%83%97%E3%83%A9%E3%82%AF%E3%83%86%E3%82%A3%E3%82%B9">#</a></h1>
+<p>というわけで、泥臭い方法をいくつか使わないと実現できないのがなんだかなあ、という感じです。</p>
+<p>「こういうもの」なのか、「もっとスマートな方法がある」のか、情報をお待ちしております。</p>
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">これと同じ事を Xamarin というか .NET アプリでやりたいよ～。MSBuild でできる？ /【Android Studio】Api keyを始めとしたgit管理したくない定数を環境変数で管理する <a href="https://t.co/OPfOZSCjDS">https://t.co/OPfOZSCjDS</a></p>&mdash; これがあめいの選択だよ (@amay077) <a href="https://twitter.com/amay077/status/809752860707561473">2016年12月16日</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<h2 id="%E3%82%84%E3%81%B0%E3%81%84">やばい <a class="direct-link" href="#%E3%82%84%E3%81%B0%E3%81%84">#</a></h2>
+<blockquote class="twitter-tweet" data-cards="hidden" data-lang="ja"><p lang="ja" dir="ltr">とりあえずこんなんでどうかな… <a href="https://t.co/2teIgC2NkQ">https://t.co/2teIgC2NkQ</a> <a href="https://t.co/zJjgsvvMdT">https://t.co/zJjgsvvMdT</a></p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/status/811061374361047041">2016年12月20日</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+published at <time class="postlist-date" datetime="2016-12-20">20 Dec 2016</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/VSTS/" class="post-tag">VSTS</a>
+  <a href="/tags/CI/" class="post-tag">CI</a>
+  <a href="/tags/Git/" class="post-tag">Git</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-12-21-using_carto_mobile_sdk_for_xamarin/">CARTO の Xamarin 向けモバイル用SDKを使ってみる</a></li><li>Previous: <a href="/posts/2016-12-13-eveything_is_a_stream_what_is_a_viewmodel/">Everything is a stream, ViewModel is 何？</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-12-19-best_practice_for_secret_key_management_in_xamarin_project/ -->
+  </body>
+</html>

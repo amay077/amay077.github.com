@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin に Reactive Extensions を導入する</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin に Reactive Extensions を導入する</h1>
+
+<p>昨日の <a href="http://qiita.com/amay077/items/49681b2de5d8cf208112">ポスト</a> を使ったのに、肝心の導入部分を説明するのを忘れていました。まあ Components から追加するだけなのですが。他のアドベントカレンダーとの掛け持ちで疲れたので、今日は軽く書いて済ませます。</p>
+<!--more-->
+<h2 id="reactive-extensions-%E3%82%92%E5%B0%8E%E5%85%A5%E3%81%99%E3%82%8B">Reactive Extensions を導入する <a class="direct-link" href="#reactive-extensions-%E3%82%92%E5%B0%8E%E5%85%A5%E3%81%99%E3%82%8B">#</a></h2>
+<p>Components で右クリック → Get more components → Reactive とかで検索 → 見つけたら Add to App で OK です。あ、この手順は .iOS でも .Android でも同じです。</p>
+<p><img src="/img/posts/install_rx_to_xamarin_ios_01.gif" alt=""></p>
+<h2 id="%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%BE%E3%81%97%E3%82%87%E3%81%86%E3%81%8B">使ってみましょうか <a class="direct-link" href="#%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%BE%E3%81%97%E3%82%87%E3%81%86%E3%81%8B">#</a></h2>
+<p>イベントを Stream に変換する例を示してお茶を濁します。</p>
+<p>まずこんな感じのどうでもいい画面を用意しまして、</p>
+<p><img src="/img/posts/install_rx_to_xamarin_ios_02.png" alt=""></p>
+<p><code>UIButton.TouchUpInside</code> を <code>IObservable</code> に変換する拡張メソッドを用意します。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">class</span> <span class="token class-name">UIButtonExtensions</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token return-type class-name">IObservable<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">></span></span> <span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token keyword">this</span> <span class="token class-name">UIButton</span> button<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> Observable<span class="token punctuation">.</span><span class="token generic-method"><span class="token function">FromEventPattern</span><span class="token generic class-name"><span class="token punctuation">&lt;</span>EventArgs<span class="token punctuation">></span></span></span><span class="token punctuation">(</span>button<span class="token punctuation">,</span> <span class="token string">"TouchUpInside"</span><span class="token punctuation">)</span><br>                <span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>e <span class="token operator">=></span> <span class="token punctuation">(</span><span class="token punctuation">(</span>UIButton<span class="token punctuation">)</span>e<span class="token punctuation">.</span>Sender<span class="token punctuation">)</span><span class="token punctuation">.</span>TitleLabel<span class="token punctuation">.</span>Text<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>で、こんなコードを書きます。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">ViewDidLoad</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">ViewDidLoad</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    Button1<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">Publish</span><span class="token punctuation">(</span>_ <span class="token operator">=></span> <br>            Button2<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">Amb</span><span class="token punctuation">(</span><br>                Button3<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>btnName <span class="token operator">=></span> <span class="token function">InvokeOnMainThread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <br>            Label1<span class="token punctuation">.</span>Text <span class="token operator">=</span> btnName <span class="token operator">+</span> <span class="token string">" Clicked"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<h3 id="observable.amb-(%E5%85%88%E3%81%AB%E3%81%8D%E3%81%9F%E5%80%A4%E3%82%92%E6%B5%81%E3%81%99)">Observable.Amb (先にきた値を流す) <a class="direct-link" href="#observable.amb-(%E5%85%88%E3%81%AB%E3%81%8D%E3%81%9F%E5%80%A4%E3%82%92%E6%B5%81%E3%81%99)">#</a></h3>
+<p>Button1 を押すと処理の開始です。<br>
+Publish で分配して <strong>Amb</strong> は Button2 のクリックと Button3 のクリックで先に行われた方を Label1 に表示します。</p>
+<h3 id="observable.zip-(%E3%81%A9%E3%81%A1%E3%82%89%E3%81%AE%E5%80%A4%E3%82%82%E5%BE%85%E3%81%A4)">Observable.Zip (どちらの値も待つ) <a class="direct-link" href="#observable.zip-(%E3%81%A9%E3%81%A1%E3%82%89%E3%81%AE%E5%80%A4%E3%82%82%E5%BE%85%E3%81%A4)">#</a></h3>
+<p>Amb を Zip に変えてみます。</p>
+<pre class="language-csharp"><code class="language-csharp">    Button1<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">Publish</span><span class="token punctuation">(</span>_ <span class="token operator">=></span> <br>            Button2<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">Zip</span><span class="token punctuation">(</span><br>                Button3<span class="token punctuation">.</span><span class="token function">ClickAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>l<span class="token punctuation">,</span>r<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token keyword">new</span> <span class="token punctuation">{</span>l<span class="token punctuation">,</span> r<span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>p <span class="token operator">=></span> <span class="token function">InvokeOnMainThread</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <br>            Label1<span class="token punctuation">.</span>Text <span class="token operator">=</span> p<span class="token punctuation">.</span>l <span class="token operator">+</span> <span class="token string">" and "</span> <span class="token operator">+</span> p<span class="token punctuation">.</span>r <span class="token operator">+</span> <span class="token string">"Clicked"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Zip は2つのシーケンスの結果を待ってから後続へ流します。<br>
+なので、Button2 と Button3 の両方が押されると、Label1 に表示されます。</p>
+<p>どちらもフツーに書くとフラグ変数なんか使って実現すると思うんですけど、Rx を使うと読みやすいコードになると思います。</p>
+<p>あと、私は Android-Java の開発では <a href="https://code.google.com/p/reactive4java/">reactive4Java</a> を使ってるんですが、あれには <code>Observable.FromEventPattern</code> が無い(Java のイベントの Listener はイベントのマルチキャストに対応してないから仕方ない)ので、Xamarin にすることで「完全な」Rx を使うことができて、こりゃ勉強のしがいがあるなあと思ったのでした。</p>
+<p>何の記事でしたっけ？という感じですけど Xamarin なら Linq も Rx も使えてハッピーという事で、今日は以上です。</p>
+
+
+published at <time class="postlist-date" datetime="2013-12-12">12 Dec 2013</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/XAC13/" class="post-tag">XAC13</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/ReactiveExtensions/" class="post-tag">ReactiveExtensions</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-12-13-rename-viewcontroller-with-xamarin-ios/">Xamarin.iOS で ViewController の名称を変える</a></li><li>Previous: <a href="/posts/2013-12-11-using-ibeacon-with-xamarin/">Xamarin.iOS と Rx で iBeacon を使ってみた</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-12-12-installing-rx-in-xamarin/ -->
+  </body>
+</html>

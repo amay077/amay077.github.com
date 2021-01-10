@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android NDK のセットアップ方法(バージョン r4b, 2010/11/30時点)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Android NDK のセットアップ方法(バージョン r4b, 2010/11/30時点)</h1>
+
+<p>Cygwin も NDK もド素人ですが、何とかできました。</p>
+<!--more-->
+<p>NDK 1.5 の時から変わっていて苦労しましたが、解説してくれているサイトやツイート、SDKドキュメントを読んで何とかできましたので、その手順を記録しました。</p>
+<h2 id="cygwin-%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">Cygwin のインストール <a class="direct-link" href="#cygwin-%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">#</a></h2>
+<p><a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> を参考にして進めました。</p>
+<p>ダウンロードした Cygwin は 1.7.7 でした。</p>
+<p>途中、</p>
+<blockquote>
+<p>さらにスクロールし、gccのパッケージを選択(※赤丸のしるしの部分をクリック)します。自動的にgcc-coreなどにもチェックが入りますが、そのままにしておきます。</p>
+</blockquote>
+<p>とありましたが、勝手にチェックが入らなかったので、手動で同じようにチェックを入れました。</p>
+<h2 id="ndk-%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">NDK のインストール <a class="direct-link" href="#ndk-%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">#</a></h2>
+<p>引き続き <a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> を参考にしました。</p>
+<p>android-ndk-r4b-windows.zip を</p>
+<blockquote>
+<p>c:\cygwin\home\h_oku</p>
+</blockquote>
+<p>に解凍しましたが、</p>
+<blockquote>
+<p>\android-ndk-r4b-windows\android-ndk-r4b</p>
+</blockquote>
+<p>となってしまって混乱したので、</p>
+<blockquote>
+<p>c:\cygwin\home\h_oku\android-ndk-r4b</p>
+</blockquote>
+<p>となるようにしました。</p>
+<p>次に、</p>
+<blockquote>
+<p>$ sh build/host-setup.sh</p>
+</blockquote>
+<p>としてもコマンドが無い（確かにファイルを検索しても <a href="http://host-setup.sh">host-setup.sh</a> がない）ので焦りましたが、</p>
+<blockquote>
+<p>@saltpp (Tomoki Shiono)</p>
+<p>build/host-setup.sh が無くなって、アプリのトップディレクトリで、ndk-build コマンドを実行すれば、ビルドできるようになってるね。&gt;NDKr4</p>
+<p>5月21日 TweetDeckから</p>
+</blockquote>
+<p>とのだったので、</p>
+<blockquote>
+<p>$ sh ndk-build</p>
+</blockquote>
+<p>を実行しました。</p>
+<p>…がエラーが出ました。</p>
+<blockquote>
+<p>$ sh ndk-build<br>
+Android NDK: Could not find application project directory !<br>
+Android NDK: Please define the NDK_PROJECT_PATH variable to point to it.<br>
+/home/h_oku/android-ndk-r4b/build/core/build-local.mk:85: ***<br>
+Android NDK: Aborting    .  Stop.</p>
+</blockquote>
+<p>NDK_PROJECT_PATH を定義しろ、といってるようだったので、 HOME と同じように環境変数に 「/home/h_oku/project」 と定義しました。</p>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92-ndk-%E3%81%A7%E3%83%93%E3%83%AB%E3%83%89">サンプルを NDK でビルド <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92-ndk-%E3%81%A7%E3%83%93%E3%83%AB%E3%83%89">#</a></h2>
+<p><a href="http://developer.android.com/sdk/ndk/index.html">Android NDK ｜ Android Developers</a> の</p>
+<p>Getting Started with the NDK</p>
+<p>に</p>
+<blockquote>
+<ol>
+<li>Place your native sources under /jni/…</li>
+<li>Create /jni/Android.mk to describe your native sources to the NDK build system</li>
+<li>Optional: Create /jni/Application.mk.</li>
+</ol>
+</blockquote>
+<p>とあったので、</p>
+<blockquote>
+<p>C:\cygwin\home\h_oku\android-ndk-r4b\samples\hello-jni</p>
+</blockquote>
+<p>のフォルダとファイルを</p>
+<blockquote>
+<p>C:\cygwin\home\h_okuyama\project</p>
+</blockquote>
+<p>にコピーしました。</p>
+<p>次に、</p>
+<blockquote>
+<p>Build your native code by running the ‘ndk-build’ script from your projet’s directory. It is located in the top-level NDK directory: $ cd $ /ndk-build</p>
+</blockquote>
+<p>とあったので、</p>
+<blockquote>
+<p>C:\cygwin\home\h_oku\project</p>
+</blockquote>
+<p>に CD で移動し、</p>
+<blockquote>
+<p>C:\cygwin\home\h_oku\android-ndk-r4b\ndk-build</p>
+</blockquote>
+<p>を実行しました。怒られました。</p>
+<blockquote>
+<p>C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build</p>
+</blockquote>
+<p>でうまくいきました（\ と / が違ってました）。</p>
+<p>こんな感じの出力がされました。</p>
+<blockquote>
+<p>$ C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build<br>
+Compile thumb  : hello-jni &lt;= /home/h_oku/project/jni/hello-jni.c<br>
+SharedLibrary  : <a href="http://libhello-jni.so">libhello-jni.so</a><br>
+Install        : <a href="http://libhello-jni.so">libhello-jni.so</a> =&gt; /home/h_oku/project/libs/armeabi<br>
+そして、おお！</p>
+</blockquote>
+<blockquote>
+<p>C:\cygwin\home\h_oku\project\libs</p>
+</blockquote>
+<p>とか</p>
+<blockquote>
+<p>C:\cygwin\home\h_oku\project\obj</p>
+</blockquote>
+<p>ができている！</p>
+<h2 id="eclipse-%E3%81%A7%E3%83%93%E3%83%AB%E3%83%89%E3%80%82%E3%81%9D%E3%81%97%E3%81%A6%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E5%AE%9F%E8%A1%8C">Eclipse でビルド。そしてアプリの実行 <a class="direct-link" href="#eclipse-%E3%81%A7%E3%83%93%E3%83%AB%E3%83%89%E3%80%82%E3%81%9D%E3%81%97%E3%81%A6%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E5%AE%9F%E8%A1%8C">#</a></h2>
+<p>再び <a href="http://d.hatena.ne.jp/bs-android/20090707/1246952991#">AndroidのNDK 1.5でHelloJNIを動かす手順 – Android(アンドロイド)情報-ブリリアントサービス</a> に戻り、 Eclipse で Android Project を作成し、既存の project フォルダを指定しました。</p>
+<p>プロジェクト名やビルド・ターゲットが自動で設定されましたが、Android 2.2 がチェックされ、上部に</p>
+<blockquote>
+<p>The API level for the selected SDK target does not match the Min SDK Version.</p>
+</blockquote>
+<p>と警告が出ています。とりあえず無視して完了しました。</p>
+<p>プロジェクトをビルド→実行し、Android 2.2 のエミュレータ上で動作を確認することができました。</p>
+<p>NDK 側のソースを修正したら、Cygwin で、</p>
+<blockquote>
+<p>CD C:\cygwin\home\h_oku\project<br>
+C:/cygwin/home/h_oku/android-ndk-r4b/ndk-build</p>
+</blockquote>
+<p>として、C:\cygwin\home\h_oku\project\libs\armeabi\<a href="http://libhello-jni.so">libhello-jni.so</a> を再作成し、Eclipse 側で F5 を押して読み込みなおして実行しなおせば反映されます。</p>
+<p>※ちなみに全角文字を表示しようとしたら落ちました…orz</p>
+
+
+published at <time class="postlist-date" datetime="2010-11-30">30 Nov 2010</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/NDK/" class="post-tag">NDK</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-03-21-openstreetmap-bing/">OpenStreetMap で Bing の衛星写真が使えるようになった！けどズレが気になる…</a></li><li>Previous: <a href="/posts/2013-03-21-map-g-vs-mapi-vs-y-vs-ms/">主要地図サービスの表現比較</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-03-21-android-nds-setup/ -->
+  </body>
+</html>

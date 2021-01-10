@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>アプリ内でブロードキャストする場合は LocalBroadcastManager を使うと良いらしい</h1>
+
+<p>サポートパッケージに<code>LocalBroadcastManager</code> というクラスがあるのを今頃知りまして。</p>
+<!--more-->
+<ul>
+<li><a href="http://developer.android.com/reference/android/support/v4/content/LocalBroadcastManager.html">LocalBroadcastManager ｜ Android Developers</a></li>
+</ul>
+<p>ブロードキャストは使い方を誤るとデータを(アプリの)外部に流出させる可能性があるわけですが(<a href="http://www.jssec.org/report/securecoding.html">Android アプリのセキュア設計・セキュアコーディングガイド</a> 参照)、このクラスを使うと「他のアプリにデータを漏らさない」「意図しないブロードキャストを受信しない」「効率がよい」だそうです。</p>
+<h2 id="%E3%81%84%E3%81%A4%E4%BD%BF%E3%81%86%E3%82%93%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F">いつ使うんですか？ <a class="direct-link" href="#%E3%81%84%E3%81%A4%E4%BD%BF%E3%81%86%E3%82%93%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F">#</a></h2>
+<p>たとえば GPS を使うアプリで、GPS の受信は <code>IntentService</code> にやらせて、受信した位置を地図に表示するために、IntentService からブロードキャスト投げて、<code>Activity</code> に仕掛けたレシーバで受信する、なんてケースでしょうか。(いやそれは IntentService じゃなくて普通のサービスで aidl 使ってやれよ、とかいろいろあるわけですが。ん？PendingIntent でサービスを起動する方法だと、クライアントから bind するタイミングが無いからダメかな？)</p>
+<h2 id="%E4%BD%BF%E3%81%84%E6%96%B9">使い方 <a class="direct-link" href="#%E4%BD%BF%E3%81%84%E6%96%B9">#</a></h2>
+<p>stackoverflow に良い使い方が載ってました</p>
+<ul>
+<li><a href="http://stackoverflow.com/a/8875292">android - how to use LocalBroadcastManager? - Stack Overflow</a></li>
+</ul>
+<h2 id="%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F">使ってみた <a class="direct-link" href="#%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F">#</a></h2>
+<p>状態認識の結果も秘匿情報でしょう、ということで<a href="http://amay077.github.io/blog/2013/05/18/getting-started-activity-recognition/">以前</a>作った <code>ActivityRecognitionClient</code> のサンプルを修正してみました。</p>
+<ul>
+<li><a href="https://github.com/amay077/androidactivityrecognizingsample/commit/a041b300d3e9fdfe6227c05c3f21fb1e3876bbad">amay077/androidactivityrecognizingsample · GitHub</a></li>
+</ul>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<ul>
+<li>ブロードキャストする時は、まず LocalBroadcastManager を使ってみよう。</li>
+<li>stackoverflow の回答へのダイレクトリンクとか、github の changeset へのダイレクトリンク便利すぎる！</li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2013-05-28">28 May 2013</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-05-30-testing-fused-location-provider/">Fused Location Provider を近くのショッピングセンターで評価してみた</a></li><li>Previous: <a href="/posts/2013-05-27-fused-location-provider-on-xamarin/">Xamarin.Android で Fused Location Provider(など)を使う</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-05-28-using-localbroadcastmanager/ -->
+  </body>
+</html>

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Android で音楽の音量を下げてから効果音を再生する</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Android で音楽の音量を下げてから効果音を再生する</h1>
+
+<p>カーナビでよくある、音楽流しながらナビしてると、ガイダンス中は音楽のボリュームを一時的に下げて、案内の音声を再生するってやつ。</p>
+<!--more-->
+<ul>
+<li><a href="http://ja.stackoverflow.com/questions/27452/%e3%82%b9%e3%83%9e%e3%83%9b%e3%82%a2%e3%83%97%e3%83%aa%e8%b5%b7%e5%8b%95%e6%99%82ios-android%e3%81%ab%e5%86%8d%e7%94%9f%e4%b8%ad%e3%81%ae%e9%9f%b3%e6%a5%bd%e3%82%92%e5%81%9c%e6%ad%a2%e3%81%95%e3%81%9b%e3%82%8b%e6%96%b9%e6%b3%95/27459#27459">スマホアプリ起動時(iOS/Android)に再生中の音楽を停止させる方法 - スタック・オーバーフロー</a></li>
+</ul>
+<p>に回答したので、その関連でやってみた。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">//MainActivity.cs</span><br><span class="token punctuation">[</span><span class="token function">Activity</span><span class="token punctuation">(</span>Label <span class="token operator">=</span> <span class="token string">"AudioFocusSample"</span><span class="token punctuation">,</span> MainLauncher <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">,</span> Icon <span class="token operator">=</span> <span class="token string">"@mipmap/icon"</span><span class="token punctuation">)</span><span class="token punctuation">]</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">Activity</span><span class="token punctuation">,</span> <span class="token class-name">AudioManager<span class="token punctuation">.</span>IOnAudioFocusChangeListener</span></span><br><span class="token punctuation">{</span><br>    <span class="token keyword">protected</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> savedInstanceState<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">OnCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token function">SetContentView</span><span class="token punctuation">(</span>Resource<span class="token punctuation">.</span>Layout<span class="token punctuation">.</span>Main<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token class-name"><span class="token keyword">var</span></span> audioManager <span class="token operator">=</span> <span class="token punctuation">(</span>AudioManager<span class="token punctuation">)</span><span class="token function">GetSystemService</span><span class="token punctuation">(</span>Context<span class="token punctuation">.</span>AudioService<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token comment">// 先に効果音を読み込んでおく</span><br>        <span class="token class-name"><span class="token keyword">var</span></span> soundPool <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">SoundPool</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> Stream<span class="token punctuation">.</span>Music<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name"><span class="token keyword">var</span></span> soundId <span class="token operator">=</span> soundPool<span class="token punctuation">.</span><span class="token function">Load</span><span class="token punctuation">(</span>ApplicationContext<span class="token punctuation">,</span> Resource<span class="token punctuation">.</span>Raw<span class="token punctuation">.</span>cat<span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token comment">// SoundPool は再生完了のコールバックがないので、事前に長さを得ておく</span><br>        <span class="token class-name"><span class="token keyword">var</span></span> duration <span class="token operator">=</span> <span class="token function">GetSoundDuration</span><span class="token punctuation">(</span>Resource<span class="token punctuation">.</span>Raw<span class="token punctuation">.</span>cat<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token generic-method"><span class="token function">FindViewById</span><span class="token generic class-name"><span class="token punctuation">&lt;</span>Button<span class="token punctuation">></span></span></span><span class="token punctuation">(</span>Resource<span class="token punctuation">.</span>Id<span class="token punctuation">.</span>buttonRequestFocus<span class="token punctuation">)</span><span class="token punctuation">.</span>Click <span class="token operator">+=</span> <span class="token keyword">async</span> <span class="token punctuation">(</span>sender<span class="token punctuation">,</span> e<span class="token punctuation">)</span> <span class="token operator">=></span> <br>        <span class="token punctuation">{</span><br>            <span class="token comment">// ダッキングを許可する AudioFocus を要求</span><br>            <span class="token class-name"><span class="token keyword">var</span></span> result <span class="token operator">=</span> audioManager<span class="token punctuation">.</span><span class="token function">RequestAudioFocus</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> Stream<span class="token punctuation">.</span>Music<span class="token punctuation">,</span> AudioFocus<span class="token punctuation">.</span>GainTransientMayDuck<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">if</span> <span class="token punctuation">(</span>result <span class="token operator">==</span> AudioFocusRequest<span class="token punctuation">.</span>Granted<span class="token punctuation">)</span><br>            <span class="token punctuation">{</span><br>                <span class="token comment">// 効果音を再生する</span><br>                soundPool<span class="token punctuation">.</span><span class="token function">Play</span><span class="token punctuation">(</span>soundId<span class="token punctuation">,</span> <span class="token number">1.0f</span><span class="token punctuation">,</span> <span class="token number">1.0f</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">1.0f</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>                <span class="token comment">// 再生完了まで待つ</span><br>                <span class="token keyword">await</span> Task<span class="token punctuation">.</span><span class="token function">Delay</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>duration<span class="token punctuation">)</span><span class="token punctuation">;</span><br>                <span class="token comment">// AudioFocus を開放</span><br>                audioManager<span class="token punctuation">.</span><span class="token function">AbandonAudioFocus</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// 音声の再生長さを得る</span><br>    <span class="token keyword">private</span> <span class="token return-type class-name"><span class="token keyword">long</span></span> <span class="token function">GetSoundDuration</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">int</span></span> rawId<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">var</span></span> player <span class="token operator">=</span> MediaPlayer<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span>ApplicationContext<span class="token punctuation">,</span> rawId<span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            <span class="token keyword">return</span> player<span class="token punctuation">.</span>Duration<span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// IOnAudioFocusChangeListener の実装（RequestAudioFocus のために必要）</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnAudioFocusChange</span><span class="token punctuation">(</span><span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">GeneratedEnum</span></span><span class="token punctuation">]</span> <span class="token class-name">AudioFocus</span> focusChange<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>       <span class="token comment">// 今回は使用しない</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>効果音 <code>Resource.Raw.cat</code> は、 <a href="http://on-jin.com/sound/index.php">On-Jin ～音人～</a> さんのを使わせてもらいました。</p>
+<p>音量を小さくする＝絞る＝ダッキング、というのがなかなか連想しづらいので辿りつけない。<br>
+Android の音声再生は、他に <code>MediaPlayer</code> とか <code>AudioTrack</code> もあるし、リモコンなど外部からの操作のため？に BroadcastReceiver を使わないといけないし。</p>
+<p>サンプルアプリはこちら。</p>
+<ul>
+<li><a href="https://github.com/amay077/AudioFocusSample">amay077/AudioFocusSample</a></li>
+</ul>
+<p>次は Xamarin.iOS でやってみる。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://developer.android.com/training/managing-audio/audio-focus.html">Managing Audio Focus | Android Developers</a></li>
+<li><a href="http://dev.classmethod.jp/smartphone/android/android-tips-48-soundpool-mediaplayer/">Android Tips #48 BGM や効果音を再生する ｜ Developers.IO</a></li>
+<li><a href="http://ameblo.jp/negiiiimo/entry-11488832997.html">Managing Audio Playback part2｜Android開発記録雑記</a></li>
+<li><a href="http://qiita.com/KeithYokoma/items/3896f5934478fa560a50">音を制御する - AudioManager - Qiita</a></li>
+<li><a href="https://developer.amazon.com/public/ja/solutions/devices/fire-tv/docs/managing-audio-focus">Fire TV でのオーディオフォーカスの管理 - アマゾン アプリ 開発者ポータル</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2016-07-09">09 Jul 2016</time>
+
+tags: 
+
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-07-10-joined_xamarin_hads_on_ad_hamamatsu/">Xamarin ハンズオン浜松に参加しました #JXUG #jaghama</a></li><li>Previous: <a href="/posts/2016-07-08-changed-jobs/">転職してました</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-07-09-gain_transient_in_xamarin_android/ -->
+  </body>
+</html>

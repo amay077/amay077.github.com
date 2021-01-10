@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxJava の Observable と LiveData と ObservableField をいい感じで使おう</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>RxJava の Observable と LiveData と ObservableField をいい感じで使おう</h1>
+
+<p><a href="./6e1c94305420a41ff7ed/">LiveData について勘違いしていたことをいくつか</a> からの続きです。</p>
+<!--more-->
+<p>前記事では LiveData は、</p>
+<ul>
+<li>購読解除を自動でやってくれるので便利</li>
+<li>DataBinding(=ObservableField)としては使えない</li>
+<li>最低限の合成しかできないので物足りない</li>
+</ul>
+<p>という事を書きました。</p>
+<p>今回の記事では、上で挙げた微妙な３つの点を解消すべく、RxJava と LiveData と DataBinding をいい感じで併用してみたいと思います。今回もコードは Kotlin です。</p>
+<h2 id="rxjava-with-android-databinding">RxJava with Android DataBinding <a class="direct-link" href="#rxjava-with-android-databinding">#</a></h2>
+<p>RxProperty を使おう！</p>
+<ul>
+<li><a href="https://qiita.com/k-kagurazaka@github/items/3fc1fc19ea608cac9913">RxPropertyでRxJavaとAndroid Data Bindingを連携する - Qiita</a></li>
+</ul>
+<p>はい終了。</p>
+<p>RxProperty について書くの何度目なんだ、自分。<br>
+作者の @k-kagurazaka@github さんにもお世話になりっぱなしだし、サイコーです、大好きです <a href="https://github.com/k-kagurazaka/rx-property-android">RxProperty</a>、もっと :star2: を！！</p>
+<p><code>RxProperty&lt;T&gt;</code> は基本的には <code>Observable&lt;T&gt;</code>(というか <code>Subject&lt;T&gt;</code>)なのですが、 <code>.value</code> プロパティで <code>ObservableField&lt;T&gt;</code> に変換できます。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// MainViewModel.kt</span><br><span class="token keyword">class</span> MainViewModel <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token comment">// GitHub ユーザー名。EditText.text から双方向(TwoWay)バインドされる。</span><br>    <span class="token keyword">val</span> user <span class="token operator">=</span> RxProperty<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>    <span class="token keyword">init</span> <span class="token punctuation">{</span><br>        user<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"hogehoge"</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>activity_main.xml</strong></p>
+<pre class="language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="utf-8"?></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>layout</span><br>    <span class="token attr-name"><span class="token namespace">xmlns:</span>android</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>http://schemas.android.com/apk/res/android<span class="token punctuation">"</span></span><br>    <span class="token attr-name"><span class="token namespace">xmlns:</span>app</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>http://schemas.android.com/apk/res-auto<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>LinearLayout</span><br>        <span class="token attr-name"><span class="token namespace">xmlns:</span>tools</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>http://schemas.android.com/tools<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>layout_width</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>match_parent<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>layout_height</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>match_parent<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">tools:</span>context</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>net.amay077.livedatasample.view.MainActivity<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>orientation</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>vertical<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>EditText</span><br>            <span class="token attr-name"><span class="token namespace">android:</span>layout_width</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>match_parent<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>layout_height</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>wrap_content<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>hint</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>GitHub user name<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>text</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@={viewModel.user.value}<span class="token punctuation">"</span></span><span class="token punctuation">/></span></span>  ←-- user.value とすることで ObservableField に！<br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>LinearLayout</span><span class="token punctuation">></span></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>layout</span><span class="token punctuation">></span></span></code></pre>
+<p>このように レイアウトXMLに、<code>viewModel.user.value</code> と記述するとデータバインディングできちゃいます。上記例ではちゃんと双方向バインディングも効きます。</p>
+<h2 id="rxjava-with-livedata">RxJava with LiveData <a class="direct-link" href="#rxjava-with-livedata">#</a></h2>
+<p>これは 「RxJava の <code>Observable&lt;T&gt;</code> から <code>LiveData&lt;T&gt;</code> に変換する拡張メソッド」を作ってやりましょう。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// ObservableExtensions.kt</span><br><br><span class="token comment">/**<br> * Observable&lt;T> を LiveData&lt;T> に変換<br> */</span><br><span class="token keyword">fun</span> <span class="token operator">&lt;</span>T<span class="token operator">></span> Observable<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token punctuation">.</span><span class="token function">toLiveData</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> LiveData<span class="token operator">&lt;</span>T<span class="token operator">></span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">return</span> <span class="token keyword">object</span> <span class="token operator">:</span> MutableLiveData<span class="token operator">&lt;</span>T<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">var</span> disposable <span class="token operator">:</span> Disposable<span class="token operator">?</span> <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br><br>        <span class="token comment">// ライフサイクルがActiveになったときに購読開始</span><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onActive</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onActive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>            <span class="token comment">// Observable -> LiveData</span><br>            disposable <span class="token operator">=</span> <span class="token keyword">this</span><span class="token label symbol">@toLiveData</span><span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span><span class="token punctuation">{</span><br>                <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">postValue</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span><br>            <span class="token punctuation">}</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br><br>        <span class="token comment">// ライフサイクルが非Activeになったら購読停止</span><br>        <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onInactive</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            disposable<span class="token operator">?</span><span class="token punctuation">.</span><span class="token function">dispose</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onInactive</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>ライフサイクルが非アクティブ(具体的には onPause)になったときに購読停止してあげればきっと大丈夫なはず。</p>
+<p>次のような感じで使えます。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// MainActivity.kt</span><br><span class="token keyword">class</span> MainActivity <span class="token operator">:</span> <span class="token function">AppCompatActivity</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token operator">:</span> Bundle<span class="token operator">?</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><br><br>        ＜いろいろ省略＞<br><br>        <span class="token comment">// RxProperty を LiveData に変換。</span><br>        <span class="token keyword">val</span> liveDataUser <span class="token operator">=</span> viewModel<span class="token punctuation">.</span>user<span class="token punctuation">.</span><span class="token function">toLiveData</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><br>        <span class="token comment">// LiveData を購読</span><br>        liveDataUser<span class="token punctuation">.</span><span class="token function">observe</span><span class="token punctuation">(</span>lifecycleOwner<span class="token punctuation">,</span> Observer <span class="token punctuation">{</span> <br>            editUserName<span class="token punctuation">.</span><span class="token function">setTextKeepState</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>通常は <code>RxProperty.value</code> で、DataBinding すればよいと思うんですが、 BindingAdapter を作るのが面倒とか、View側でちょっと手の込んだことをしたい場合には <code>.toLiveData()</code> で LiveData に変換して、安全な購読管理を享受できます。</p>
+<h2 id="livedata-%E3%82%92%E7%9B%B4%E6%8E%A5%E4%BD%BF%E3%81%A3%E3%81%9F%E6%96%B9%E3%81%8C%E3%82%88%E3%81%84%E3%82%B1%E3%83%BC%E3%82%B9">LiveData を直接使った方がよいケース <a class="direct-link" href="#livedata-%E3%82%92%E7%9B%B4%E6%8E%A5%E4%BD%BF%E3%81%A3%E3%81%9F%E6%96%B9%E3%81%8C%E3%82%88%E3%81%84%E3%82%B1%E3%83%BC%E3%82%B9">#</a></h2>
+<p>RxProperty -&gt; LiveData する時の注意点として、値が変更時しか通知されない、というものがあります。<br>
+<a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed">昨日書いた</a> ように、 LiveData の特性は、同値チェックは特になく値が設定されれば <code>onChanged</code> を通知するのですが、 RxProperty は「<strong>変更</strong>通知プロパティ」なので(<code>RxJava 風に言うと distinctUntilChanged なので</code>)、同じ値を連続で設定しても最初しか通知されません。</p>
+<p>そのため、Model-&gt;ViewModel-&gt;Viewの方向へ、値をただ垂れ流して、View側で受信して何かしたい場合は、LiveData をそのまま使うのがよいでしょう。これは EventBus(Messenger) 的な使い方です。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// MainViewModel.kt</span><br><span class="token keyword">class</span> MainViewModel <span class="token operator">:</span> <span class="token function">ViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token comment">// View 側から購読して Toast を表示するための LiveData。</span><br>    <span class="token comment">// 変更通知が必要ない(=EventBus的に使う)なら、LiveData をそのまま使うのがいいんじゃなイカ。</span><br>    <span class="token keyword">private</span> <span class="token keyword">val</span> _toast <span class="token operator">=</span> MutableLiveData<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token keyword">val</span> toast <span class="token operator">:</span> LiveData<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token operator">=</span> _toast<br><br>    <span class="token keyword">fun</span> <span class="token function">showToast</span><span class="token punctuation">(</span>view<span class="token operator">:</span>View<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        toast<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span><span class="token string">"トーストだよ"</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// MainActivity.kt</span><br><span class="token keyword">class</span> MainActivity <span class="token operator">:</span> <span class="token function">AppCompatActivity</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br><br>    <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token operator">:</span> Bundle<span class="token operator">?</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">super</span><span class="token punctuation">.</span><span class="token function">onCreate</span><span class="token punctuation">(</span>savedInstanceState<span class="token punctuation">)</span><br><br>        ＜いろいろ省略＞<br><br>        <span class="token comment">// Toast を表示するために、 toast:LiveData を購読する。</span><br>        viewModel<span class="token punctuation">.</span>toast<span class="token punctuation">.</span><span class="token function">observe</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> Observer <span class="token punctuation">{</span> message <span class="token operator">-></span><br>            Toast<span class="token punctuation">.</span><span class="token function">makeText</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> message<span class="token punctuation">,</span> Toast<span class="token punctuation">.</span>LENGTH_SHORT<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">show</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>上記の例は、トーストを表示するために <code>LiveData&lt;String&gt;</code> を使用しています。<br>
+他にはダイアログボックスの表示や、画面遷移の要求メッセージを View 側に通知するためには LiveData をそのまま使うのが良いと思います（というかそこを Observable にする必要を感じない）。</p>
+<h2 id="%E5%AE%8C%E6%88%90%E7%B3%BB">完成系 <a class="direct-link" href="#%E5%AE%8C%E6%88%90%E7%B3%BB">#</a></h2>
+<p><a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed#%E4%BD%9C%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA">前回</a>、サンプルとして GitHub のリポジトリ一覧を検索するアプリを作っていたんでしたね。</p>
+<p>それを、</p>
+<ul>
+<li>DataBinding</li>
+<li>LiveData</li>
+<li>RxJava</li>
+<li>RxProperty</li>
+</ul>
+<p>全部使って書いてみたコードがこちら↓です。</p>
+<ul>
+<li><a href="https://github.com/amay077/LiveDataSample">amay077/LiveDataSample: ViewModel, DataBinding, LiveData, RxJava, RxProperty 全部使ってみたサンプル</a></li>
+</ul>
+<p>スクリーンショットはこんなの。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/579172f5-898c-7dac-e8ac-52dd545f1f07.gif" alt="Untitled.gif"></p>
+<p>AAC 時代でも Observable centric な考えでいいんじゃないでしょうか。<br>
+図にまとめるとこんな感じです。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/1bf05d3f-d884-4f56-d56a-3dedc7961a0c.png" alt="snap.png"></p>
+<p>RxProperty が流行らない理由が分からないのです。みなさん使ってみてくださいね！</p>
+
+
+published at <time class="postlist-date" datetime="2017-12-05">05 Dec 2017</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
+  <a href="/tags/MVVM/" class="post-tag">MVVM</a>
+  <a href="/tags/RxJava/" class="post-tag">RxJava</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-12-06-56149cfdf84004418d5d/">C# 使いが Kotlin を使ってみて「いいな」と思ったトコ</a></li><li>Previous: <a href="/posts/2017-12-04-6e1c94305420a41ff7ed/">LiveData について勘違いしていたことをいくつか</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-12-05-58e589780ccea6fd5470/ -->
+  </body>
+</html>

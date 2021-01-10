@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin でも使える高速 Android エミュレータを簡単に作る方法(Mac編)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin でも使える高速 Android エミュレータを簡単に作る方法(Mac編)</h1>
+
+<p>「『Android のエミュレータは遅い』という常識はもう古い」と言われてもう数年経ってる気がしますが HAXM エミュレータの普及率、どのくらいなんでしょう？</p>
+<!--more-->
+<p>この高速な HAXM エミュレータの作り方も随分と簡単になったので、改めて紹介します。</p>
+<p>Mac編と言っているけど、Windows でもやる事は全く同じなので、Visual Studio 2015 で Xamarin やってる人も Android Studio 入れてやってください。</p>
+<h2 id="android-studio-%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B">Android Studio をインストールする <a class="direct-link" href="#android-studio-%E3%82%92%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB%E3%81%99%E3%82%8B">#</a></h2>
+<p>まずは Android Studio をダウンロードしてインストールしましょう。</p>
+<ul>
+<li><a href="https://developer.android.com/studio/index.html?hl=ja">Android Studio と SDK ツールをダウンロードする Android Studio</a></li>
+</ul>
+<p>Xamarin 使ってる人、「オレ Xamarin だから関係ないわｗ」とか言わないで。<br>
+Android SDK が２重に入っちゃうけど、まずはそのまま入れて下さい。</p>
+<p>(てゆうか Xamarin で作る場合もネイティブの開発知識は必要だから、Android Studio なんて入ってるよね普通)</p>
+<h2 id="android-studio-%E3%82%92%E8%B5%B7%E5%8B%95%E3%81%99%E3%82%8B">Android Studio を起動する <a class="direct-link" href="#android-studio-%E3%82%92%E8%B5%B7%E5%8B%95%E3%81%99%E3%82%8B">#</a></h2>
+<p>Android Studio を起動して、適当な Android Project を作って下さい。ここで作るプロジェクトに全く意味はありません。エミュレータの作成が終わったら削除してOKです。</p>
+<h2 id="android-sdk-%E3%81%AE%E5%A0%B4%E6%89%80%E3%82%92%E5%A4%89%E6%9B%B4%E3%81%99%E3%82%8B">Android SDK の場所を変更する <a class="direct-link" href="#android-sdk-%E3%81%AE%E5%A0%B4%E6%89%80%E3%82%92%E5%A4%89%E6%9B%B4%E3%81%99%E3%82%8B">#</a></h2>
+<p>メニューの Android Studio -&gt; Preference で設定画面を起動します。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_01.png" alt=""></p>
+<p>Appearance &amp; Behavior -&gt; System Settings -&gt; Android SDK を選択し、Android SDK Location の右横の「Edit」を押して、Xamarin や Visual Studio for Mac がインストールした Android SDK のパスを指定します。</p>
+<p>Xamarin がインストールした Android SDK は通常 <code>~/Library/Developer/Xamarin/android-sdk-macosx</code> にあります。</p>
+<p>逆に、 Xamarin Studio や、 Visual Studio for Mac 側の設定を、 Android Studio に合わせてもOKです。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_02.png" alt=""></p>
+<p>Android SDK をどちらかに統一できたら、不要な方はディレクトリ毎削除して OK です。あ、 <code>.bashrc</code> などでパスを通してる場合はそちらの変更も忘れずに。</p>
+<h2 id="android-%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B">Android エミュレータを作成する <a class="direct-link" href="#android-%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%82%92%E4%BD%9C%E6%88%90%E3%81%99%E3%82%8B">#</a></h2>
+<p>さて、 Android Studio の画面にもどって、ツールバーにある「AVD Manager」のアイコンをクリックします。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_a.png" alt=""></p>
+<p>Android Vistual Device Manager の画面が表示されます。<br>
+ここで「Create Virtual Device」をクリックします。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_b.png" alt=""></p>
+<p>System Image の画面が表示されます。<br>
+重要なのは右下、 <strong>「Install Intel HAXM for better emulation performance」</strong> の表示です。<br>
+これが表示されているということは、PC に HAXM がインストールされていないので、その下にある <strong>「Download and Install HAXM」</strong> をクリックします。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_c.png" alt=""></p>
+<p>「Download and Install HAXM」をクリックすると、Emulator Settings の画面になります。<br>
+特に設定は変えずに「Next」を押します。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_d.png" alt=""></p>
+<p>HAXM のインストールが完了しました。<br>
+Finish で一旦画面を閉じて、再び「Create Virtual Device」をクリックします。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_e.png" alt=""></p>
+<p>再び System Image の画面です。<br>
+右下の、 「Install Intel HAXM for better emulation performance」 が消えているのがわかります。</p>
+<p>さて下ごしらえができた所で、実際にエミュレータを作っていきましょう。<br>
+試しに「Marshmallow」の「x86_64」を選択して「Next」をクリックします。<br>
+（上の方の Release Name が <code>null</code> になってるの、なんででしょう？）</p>
+<p><img src="/img/posts/making_android_haxm_emulator_f.png" alt=""></p>
+<p>Android Virtual Device の画面です。<br>
+特に設定を変更せず、「Next」をクリックします。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_g.png" alt=""></p>
+<p>はい、HAXM のインストールと、それを使用したエミュレータが作成されました。<br>
+「実行」ボタンをクリックして、起動してみましょう。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_h.png" alt=""></p>
+<p>起動して動かしてみた画面です。アニGIFなのでうまく伝えられてないかもですが、普通の Android エミュレータよりは全然速いです。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_03.gif" alt=""></p>
+<p>ということで、 Android Studio を使うと、もはや「普通の手順で」作られるエミュレータが、高速な HAXM エミュレータになっています。</p>
+<h2 id="xamarin-studio-%E3%82%84-visual-studio-for-mac-%E3%81%8B%E3%82%89%E3%82%82%E4%BD%BF%E3%81%88%E3%81%BE%E3%81%99">Xamarin Studio や Visual Studio for Mac からも使えます <a class="direct-link" href="#xamarin-studio-%E3%82%84-visual-studio-for-mac-%E3%81%8B%E3%82%89%E3%82%82%E4%BD%BF%E3%81%88%E3%81%BE%E3%81%99">#</a></h2>
+<p>作成したエミュレータは、もちろん Xamarin Studio や Visual Studio for Mac からも使えます。</p>
+<p>下図は Visual Studio for Mac で、 Xamarin.Android のプロジェクトを実行するところですが、Android Studio で先ほど作成したエミュレータが選択肢に出てきます。</p>
+<p><img src="/img/posts/making_android_haxm_emulator_i.png" alt=""></p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>Android Studio でエミュレータを作ると、ちょっと面倒な HAXM のインストールもウィザードに沿ってできて、高速エミュレータが簡単に作れるよ。</p>
+<p>（自分が使ってる Android Studio がまだ v1.4 だったという盛大なブーメランｗｗ けどウィザードの画面はだいたい今も同じだから。）</p>
+
+
+published at <time class="postlist-date" datetime="2016-11-21">21 Nov 2016</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/VisualStudio/" class="post-tag">VisualStudio</a>
+  <a href="/tags/AndroidStudio/" class="post-tag">AndroidStudio</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-11-21-creating_fast_android_emulator_for_windows/">Xamarin でも使える高速 Android エミュレータを簡単に作る方法(Windows編)</a></li><li>Previous: <a href="/posts/2016-11-17-installing_visual_studio_for_mac_instead_of_xamarin_studio/">Xamarin Studio をアンインストールして Visual Studio for Mac(Preview) をインストールする</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-11-21-creating_fast_android_emulator_for_mac/ -->
+  </body>
+</html>

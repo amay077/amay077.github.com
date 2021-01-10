@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Android で Google Maps Android API v2 を使う</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Android で Google Maps Android API v2 を使う</h1>
+
+<p>だんだん自力でサンプルプログラム書くのに疲れてきたので、MonoDroid のサンプル集に頼ることにします。</p>
+<ul>
+<li><a href="https://github.com/xamarin/monodroid-samples">xamarin / monodroid-samples</a></li>
+</ul>
+<!--more-->
+<p>すごく豊富なので、これひと通り動かせば大抵のことはできるようになるんじゃないか。。。</p>
+<p>というわけで、この中の <a href="https://github.com/xamarin/monodroid-samples/tree/master/MapsAndLocationDemo_v2">MapsAndLocationDemo_v2</a> を動かしてみます。<a href="http://Readme.md">Readme.md</a> に沿って。</p>
+<h2 id="%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%92%E5%8F%96%E5%BE%97%E3%81%99%E3%82%8B">ソースを取得する <a class="direct-link" href="#%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%92%E5%8F%96%E5%BE%97%E3%81%99%E3%82%8B">#</a></h2>
+<p>まず monodroid-samples を Clone しときます。</p>
+<blockquote>
+<p>$git clone git://github.com/xamarin/monodroid-samples.git</p>
+</blockquote>
+<h2 id="%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%82%92%E3%83%93%E3%83%AB%E3%83%89%E3%81%99%E3%82%8B(building-the-client-library)">クライアントライブラリをビルドする(Building the Client Library) <a class="direct-link" href="#%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%82%92%E3%83%93%E3%83%AB%E3%83%89%E3%81%99%E3%82%8B(building-the-client-library)">#</a></h2>
+<p>ここでいうクライアントライブラリとは、Android SDK に含まれる <strong>Google Play services</strong> の事です。<br>
+この準備は本家Android開発で Google Maps Android API v2 を使うときに必要なので、これが何者かは、</p>
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+<p>などを参考に。<br>
+SDK で Google Play services が取得できていれば、</p>
+<p><code>{※あなたのAndroidSDKディレクトリ}/extras/google/google_play_services/libproject/google-play-services_lib</code> ができているはず。</p>
+<p>※Xamarin.Android で使われる Android SDK は、Xamarin Studio のPreferences → SDK Locations → Android で確認できます。</p>
+<p><img src="https://blog.amay0777.net/img/posts/xamarin_android_sdk_locations.png" alt="&quot;sdklocations&quot;"></p>
+<p><code>google-play-services_lib</code> へ移動して、Ant 用のビルドファイルを生成します。</p>
+<blockquote>
+<p>$cd google-play-services_lib<br>
+$Android update project --path .<br>
+$ant debug</p>
+</blockquote>
+<p><a href="http://Readme.md">Readme.md</a> では <code>android project update -p .</code> って書いてあるけど上のコマンドじゃないとうまくいかないんですけど？<br>
+あと <code>{あなたのAndroidSDKディレクトリ}/tools</code> にパス通しておかないと android コマンド使えないです。ant も(ry</p>
+<p>ant の実行に成功すると /bin の中に classes.jar とかができてるはずです。</p>
+<p>次に、Xamarin Studio で <code>MapsAndLocationDemo.sln</code> を開いて、GooglePlayService プロジェクトを展開します。<br>
+すると、`project.properties`` ファイルが赤くなってる(ちゃんと指定した位置に google-play-services_lib をコピってれば赤くなってないかも)ので、これを一度削除して、追加しなおします。リンクファイルとして、ね。</p>
+<p>一連の画像貼っときます。</p>
+<p><img src="https://blog.amay0777.net/img/posts/xamarin_studio_delete_file.png" alt="&quot;red&quot;"><br>
+<img src="https://blog.amay0777.net/img/posts/xamarin_studio_add_exist_file.png" alt="&quot;red&quot;"><br>
+<img src="https://blog.amay0777.net/img/posts/xamarin_studio_add_a_link.png" alt="&quot;red&quot;"></p>
+<h2 id="google-maps-v2-api-key">Google Maps v2 API Key <a class="direct-link" href="#google-maps-v2-api-key">#</a></h2>
+<p>Google Maps v2 API Key の取得も本家と同じですが、<br>
+ディレクトリが、<code>/Users/[USERNAME]/.local/share/Xamarin/Mono for Android/debug.keystore</code> なのでそこだけ注意。(←Mac の場合。Win は <a href="http://Readme.md">Readme.md</a> 見て)</p>
+<p>該当のディレクトリへ移動して、以下のコマンドで表示されるキーの内、SHA-1 をコピーします。</p>
+<blockquote>
+<p>$ keytool -V -list -keystore debug.keystore -alias androiddebugkey -storepass android -keypass android</p>
+</blockquote>
+<p>あとは、</p>
+<ul>
+<li><a href="http://www.adamrocker.com/blog/334/google-maps-android-api-v2.html">throw Life - Google Maps Android API v2を使ってみた</a></li>
+</ul>
+<p>を参考に、Google API Console から、API key を取得します。<br>
+API Key を取得する際に必要なパッケージ名、取得した API Key を貼り付ける場所は、いずれも MapsAndLocationDemo プロジェクトの AndroidManifest.xml にあるので、先に開いておくとよいでしょう。</p>
+<p><img src="https://blog.amay0777.net/img/posts/xamarin_studio_android_manifest.png" alt="&quot;apikey&quot;"></p>
+<p>API Key を取得したら、<code>com.google.android.maps.v2.API_KEY</code> のところに貼り付けて準備完了です。</p>
+<h2 id="a-note-about-google-play-services">A Note About Google Play Services <a class="direct-link" href="#a-note-about-google-play-services">#</a></h2>
+<p>Google Play Services が端末にインストールされてないと動かんよ、つまりエミュレータでは動かんよ。Google Play Services のインストールの仕方など、私の知ったことではない。だそうです。</p>
+<h2 id="%E5%8B%95%E3%81%8B%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">動かしてみる <a class="direct-link" href="#%E5%8B%95%E3%81%8B%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>「実機で」動かしてみます。</p>
+<p><img src="https://blog.amay0777.net/img/posts/xamarin_studio_android_google_maps_api_v2.png" alt="&quot;play&quot;"></p>
+<p>動いてます。(上は Show Map with Overlays を動かしたところ)</p>
+<p>今回はここまで。コードの深追いは日を改めて。</p>
+
+
+published at <time class="postlist-date" datetime="2013-03-05">05 Mar 2013</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-03-13-xamarin-studio-code-formatting/">Xamarin Studio でコード整形を Visual Studio っぽくする</a></li><li>Previous: <a href="/posts/2013-03-04-xamarin-android-send-implicit-intent/">Xamarin.Android で暗黙的Intent を発行する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-03-05-xamarin-android-using-google-maps-android-api-v2/ -->
+  </body>
+</html>

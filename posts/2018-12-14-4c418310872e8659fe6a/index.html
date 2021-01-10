@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure Custom Vision に投入する学習用画像データを imgaug を使って水増ししてみた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Azure Custom Vision に投入する学習用画像データを imgaug を使って水増ししてみた</h1>
+
+<p>Azure Custom Vision を使ったシステムを作っています。</p>
+<!--more-->
+<p><a href="https://azure.microsoft.com/ja-jp/services/cognitive-services/custom-vision-service/">Azure Custom Vision</a> を使うには、1つのタグに5つ以上の画像ファイルが必要です。</p>
+<p>が、データ提供元から画像データが一つしかもらえなかったり、そもそも5ファイル程度では期待した精度が得られなかったりします。</p>
+<p>こういう時、機械学習の世界では、学習用のデータを水増し(augmentation)することがよくあるようです。</p>
+<ul>
+<li><a href="https://qiita.com/bohemian916/items/9630661cd5292240f8c7">機械学習のデータセット画像枚数を増やす方法 - Qiita</a></li>
+<li><a href="https://products.sint.co.jp/aisia/blog/vol1-7">水増しと転移学習 (Vol.7)</a></li>
+</ul>
+<p>機械学習のフレームワーク(Cognitive toolkit を含む)には、データの水増し機能が入っているそうですが、今回は Custom Vision を使いたいだけなので、CNTK は使わず、画像の水増しを行うライブラリを使ってみました。</p>
+<h2 id="%E7%94%BB%E5%83%8F%E3%81%AE%E6%B0%B4%E5%A2%97%E3%81%97%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%82%92%E3%81%84%E3%81%8F%E3%81%A4%E3%81%8B">画像の水増しライブラリをいくつか <a class="direct-link" href="#%E7%94%BB%E5%83%8F%E3%81%AE%E6%B0%B4%E5%A2%97%E3%81%97%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA%E3%82%92%E3%81%84%E3%81%8F%E3%81%A4%E3%81%8B">#</a></h2>
+<ul>
+<li><a href="https://github.com/aleju/imgaug">aleju/imgaug: Image augmentation for machine learning experiments.</a></li>
+<li><a href="https://github.com/mdbloice/Augmentor">mdbloice/Augmentor: Image augmentation library in Python for machine learning.</a></li>
+</ul>
+<p>Python ばっかりやなー。C# や JavaScript 製のも探してみたのですが Popular なものは見つからず。<br>
+Python はハンズオンを一度経験しただけの状態ですが、トライしてみます。</p>
+<p>ツールは「imgaug」を使うことにしました。日本語の解説記事がありましたので。</p>
+<ul>
+<li><a href="https://dev.classmethod.jp/etc/imgaug-introduction/">imgaugを使ってPythonで画像増幅を行う ｜ DevelopersIO</a></li>
+</ul>
+<h2 id="%E3%81%A4%E3%81%84%E3%81%A7%E3%81%AB-docker-%E3%82%82%E4%BD%BF%E3%81%8A%E3%81%86">ついでに Docker も使おう <a class="direct-link" href="#%E3%81%A4%E3%81%84%E3%81%A7%E3%81%AB-docker-%E3%82%82%E4%BD%BF%E3%81%8A%E3%81%86">#</a></h2>
+<p>たしか Python って 2.x と 3.x がどちらも生きてるんだよねえ、(macOSだけど)環境構築面倒そう。<br>
+ということで Docker を使うことにしました。Docker で動くようにしておけば、ゆくゆくはまるっと FaaS 化できるよね、という期待もあります。</p>
+<p>Docker は version 18.09.0 が入っているのでこのままで。<br>
+まず Docker イメージを作るための <code>Dockerfile</code> を記述します。</p>
+<p><strong>Dockerfile</strong></p>
+<pre><code>FROM python:3
+
+RUN pip install imgaug
+RUN pip install opencv-python
+RUN pip install imageio
+</code></pre>
+<p>python:3 をベースに imgaug と処理に必要なライブラリ各種をインストールしておきます。</p>
+<p>そして <code>Dockerfile</code> のあるディレクトリで</p>
+<pre class="language-bash"><code class="language-bash">docker build <span class="token builtin class-name">.</span> imgaug</code></pre>
+<p>を実行すると、 imgaug という名の Docker イメージが作成されます。(↓は <code>docker images</code> で確認した様子)</p>
+<pre class="language-bash"><code class="language-bash">REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE<br>imgaug              latest              1fb215f98c9a        About an hour ago   <span class="token number">1</span>.41GB<br>python              <span class="token number">3</span>                   1e80caffd59e        <span class="token number">3</span> weeks ago         923MB</code></pre>
+<h2 id="imgaug-%E3%81%A7%E7%94%BB%E5%83%8F%E3%82%92%E6%B0%B4%E5%A2%97%E3%81%97%E3%81%99%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F">imgaug で画像を水増しするコードを書く <a class="direct-link" href="#imgaug-%E3%81%A7%E7%94%BB%E5%83%8F%E3%82%92%E6%B0%B4%E5%A2%97%E3%81%97%E3%81%99%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F">#</a></h2>
+<p>次に imgaug で水増しを行う処理を Python で書きます。</p>
+<p><code>work/</code> ディレクトリを作って、その中に <code>run_aug.py</code> を作成することにしましょうか。<br>
+あ、今のところは docker 関係なく。ホストコンピュータの方で作業します。</p>
+<p><strong>run_aug.py</strong></p>
+<pre class="language-python"><code class="language-python"><span class="token keyword">import</span> imgaug <span class="token keyword">as</span> ia<br><span class="token keyword">from</span> imgaug <span class="token keyword">import</span> augmenters <span class="token keyword">as</span> iaa<br><span class="token keyword">from</span> matplotlib <span class="token keyword">import</span> pyplot <span class="token keyword">as</span> plt<br><span class="token keyword">import</span> imageio<br><span class="token keyword">import</span> glob<br><span class="token keyword">import</span> os<span class="token punctuation">.</span>path<br><br><span class="token keyword">def</span> <span class="token function">remove_glob</span><span class="token punctuation">(</span>pathname<span class="token punctuation">)</span><span class="token punctuation">:</span><br>    <span class="token keyword">for</span> p <span class="token keyword">in</span> glob<span class="token punctuation">.</span>glob<span class="token punctuation">(</span>pathname<span class="token punctuation">,</span> recursive<span class="token operator">=</span><span class="token boolean">False</span><span class="token punctuation">)</span><span class="token punctuation">:</span><br>        <span class="token keyword">if</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>isfile<span class="token punctuation">(</span>p<span class="token punctuation">)</span><span class="token punctuation">:</span><br>            os<span class="token punctuation">.</span>remove<span class="token punctuation">(</span>p<span class="token punctuation">)</span><br><br><span class="token keyword">def</span> <span class="token function">main</span><span class="token punctuation">(</span>dir_in<span class="token punctuation">,</span> dir_out<span class="token punctuation">)</span><span class="token punctuation">:</span><br>    <span class="token comment"># 出力先ディレクトリをクリーン</span><br>    remove_glob<span class="token punctuation">(</span>dir_out <span class="token operator">+</span> <span class="token string">'/*'</span><span class="token punctuation">)</span><br><br>    <span class="token keyword">for</span> filepath <span class="token keyword">in</span> glob<span class="token punctuation">.</span>glob<span class="token punctuation">(</span>dir_in <span class="token operator">+</span><span class="token string">'/*'</span><span class="token punctuation">)</span><span class="token punctuation">:</span><br>        <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'in: '</span> <span class="token operator">+</span> filepath<span class="token punctuation">)</span><br>        img <span class="token operator">=</span> imageio<span class="token punctuation">.</span>imread<span class="token punctuation">(</span>filepath<span class="token punctuation">)</span><br><br>        <span class="token comment"># ノイズ</span><br>        noise<span class="token punctuation">(</span>filepath<span class="token punctuation">,</span> dir_out<span class="token punctuation">,</span> img<span class="token punctuation">,</span> <span class="token punctuation">[</span><span class="token number">0.3</span><span class="token punctuation">,</span> <span class="token number">0.4</span><span class="token punctuation">,</span> <span class="token number">0.5</span><span class="token punctuation">]</span><span class="token punctuation">)</span><br><br><span class="token comment"># 加工後画像をファイルに保存する</span><br><span class="token keyword">def</span> <span class="token function">writeFile</span><span class="token punctuation">(</span>filepath<span class="token punctuation">,</span> dir_out<span class="token punctuation">,</span> prefix<span class="token punctuation">,</span> i<span class="token punctuation">,</span> aug_img<span class="token punctuation">)</span><span class="token punctuation">:</span><br>    filename <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>basename<span class="token punctuation">(</span>filepath<span class="token punctuation">)</span> <span class="token comment"># /data_in/img.jpg -> img.jpg</span><br>    root<span class="token punctuation">,</span> ext <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>splitext<span class="token punctuation">(</span>filename<span class="token punctuation">)</span> <span class="token comment"># img.jpg -> (img, jpg)</span><br>    outpath <span class="token operator">=</span> dir_out <span class="token operator">+</span> <span class="token string">'/'</span> <span class="token operator">+</span> root <span class="token operator">+</span> <span class="token string">'_'</span> <span class="token operator">+</span> prefix <span class="token operator">+</span> <span class="token string">'_'</span> <span class="token operator">+</span> <span class="token builtin">str</span><span class="token punctuation">(</span>i<span class="token punctuation">)</span> <span class="token operator">+</span> ext<br>    imageio<span class="token punctuation">.</span>imwrite<span class="token punctuation">(</span>outpath<span class="token punctuation">,</span> aug_img<span class="token punctuation">)</span><br>    <span class="token keyword">print</span><span class="token punctuation">(</span><span class="token string">'out: '</span> <span class="token operator">+</span> outpath<span class="token punctuation">)</span><br><br><span class="token comment"># ノイズを入れる</span><br><span class="token keyword">def</span> <span class="token function">noise</span><span class="token punctuation">(</span>filepath<span class="token punctuation">,</span> dir_out<span class="token punctuation">,</span> img<span class="token punctuation">,</span> params<span class="token punctuation">)</span><span class="token punctuation">:</span><br>    i <span class="token operator">=</span> <span class="token number">0</span><br>    <span class="token keyword">for</span> d <span class="token keyword">in</span> params<span class="token punctuation">:</span><br>        i <span class="token operator">=</span> i <span class="token operator">+</span> <span class="token number">1</span><br>        <span class="token comment"># 画像に変換を適用する</span><br>        augDropout <span class="token operator">=</span> iaa<span class="token punctuation">.</span>Dropout<span class="token punctuation">(</span>p<span class="token operator">=</span>d<span class="token punctuation">)</span><br>        aug_img <span class="token operator">=</span> augDropout<span class="token punctuation">.</span>augment_image<span class="token punctuation">(</span>img<span class="token punctuation">)</span><br>        writeFile<span class="token punctuation">(</span>filepath<span class="token punctuation">,</span> dir_out<span class="token punctuation">,</span> <span class="token string">'noise'</span><span class="token punctuation">,</span> i<span class="token punctuation">,</span> aug_img<span class="token punctuation">)</span><br><br><span class="token builtin">dir</span> <span class="token operator">=</span> os<span class="token punctuation">.</span>path<span class="token punctuation">.</span>dirname<span class="token punctuation">(</span>__file__<span class="token punctuation">)</span> <span class="token comment"># 実行ファイルの場所</span><br>main<span class="token punctuation">(</span><span class="token builtin">dir</span> <span class="token operator">+</span> <span class="token string">'/images_in'</span><span class="token punctuation">,</span> <span class="token builtin">dir</span> <span class="token operator">+</span> <span class="token string">'/images_out'</span><span class="token punctuation">)</span></code></pre>
+<p>これが C#er が初めて書いた Python のコードだｗ</p>
+<p>ええと、 <code>run_aug.py</code> のあるディレクトリに <code>images_in/</code>、 <code>images_out/</code> というディレクトリを作り、入力画像を <code>images_in/</code> に入れます。</p>
+<p><code>image_in/</code> 内のファイルを列挙して、入力ファイルにノイズを入れます。 <code>noise</code> 関数に渡しているパラメータ <code>[0.3, 0.4, 0.5]</code> はノイズの濃さを示しており、ノイズ薄い・中間・濃いの3つのファイルが <code>images_out/</code> に出力されるという仕組みです。</p>
+<h2 id="docker-%E3%81%A7-run_aug.py-%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B">Docker で <code>run_aug.py</code> を実行する <a class="direct-link" href="#docker-%E3%81%A7-run_aug.py-%E3%82%92%E5%AE%9F%E8%A1%8C%E3%81%99%E3%82%8B">#</a></h2>
+<p>Docker 内で、Python で <code>run_aug.py</code> を実行します。<br>
+<code>work/</code> ディレクトリで、以下のコマンド一発です。</p>
+<pre><code>cd work
+
+docker run --rm -v $(pwd):/temp imgaug python /temp/work/run_aug.py
+</code></pre>
+<p>一応解説。</p>
+<ul>
+<li>docker run : docker コンテナを作って起動します</li>
+<li>--rm : 実行が終わったら直ちにコンテナを削除します</li>
+<li>-v : <code>$(pwd)</code>=現在のディレクトリを docker 内の <code>/temp</code> ディレクトリにマップします</li>
+<li>imgaug : docker イメージ名です(先に作ったやつ)</li>
+<li>python /temp/work/run_aug.py : docker 内で実行するコマンドです。Python で <code>run_aug.py</code> を実行します。</li>
+</ul>
+<p>完了すると、 <code>images_out/</code> ディレクトリに、</p>
+<pre><code>sample_noise_1.jpg
+sample_noise_2.jpg
+sample_noise_3.jpg
+</code></pre>
+<p>の水増し画像ファイル群が出力されます。</p>
+<h2 id="%E5%AE%8C%E5%85%A8%E7%89%88">完全版 <a class="direct-link" href="#%E5%AE%8C%E5%85%A8%E7%89%88">#</a></h2>
+<p>これの完全版を github に公開しています。<br>
+ノイズ以外に「一部欠落」「回転」「移動」「剪断(shear)」を行っています。</p>
+<ul>
+<li><a href="https://github.com/amay077/imgaug_sample_with_docker">amay077/imgaug_sample_with_docker: imgaug を使うサンプルプログラム（実行環境 docker 付き）</a></li>
+</ul>
+<p><strong>完全版の実行結果</strong></p>
+<p><img src="https://github.com/amay077/imgaug_sample_with_docker/raw/master/result.png" alt=""></p>
+<h2 id="%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB">おわりに <a class="direct-link" href="#%E3%81%8A%E3%82%8F%E3%82%8A%E3%81%AB">#</a></h2>
+<p>こうして水増しされた画像を、元画像とともに Custom Vision に投入して Train し、まずまず期待した検出が行えるようになりました。</p>
+<p>水増しの加工の種類は imgaug にもたくさん用意されており、今回試したものが最適とは思えませんが、とりあえず検証を繰り返すための 「たたき台」 としては使えると思っています。</p>
+<p>ひとつ疑問なのは、</p>
+<p><strong>「Custom Vision の Train の過程で、自動的にデータの水増し(augmentation)を行っているのではないか？」</strong></p>
+<p>ということです。特に根拠はなく、「CNTKには、データの水増し機能が入っている」という情報から勝手に思っているだけなのですが。</p>
+<p>できれば機械学習そのものに対する学習はできるだけ避けてとおりたい（手が回らん）ので、簡単な手間で使用できる Custom Vision を始めとする各社の PaaS は、大変助かります。</p>
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Q:どのくらい勉強しなければならないのか？<br>A:時間軸次第。２～３年先には機械学習もパターン化すると予想。その後にはアルゴリズムを選択する必用もなくなると思う。 <a href="https://twitter.com/hashtag/roomH?src=hash&amp;ref_src=twsrc%5Etfw">#roomH</a> <a href="https://twitter.com/hashtag/decode16?src=hash&amp;ref_src=twsrc%5Etfw">#decode16</a></p>&mdash; あめいぱわーにおまかせろ! (@amay077) <a href="https://twitter.com/amay077/status/735333613085020160?ref_src=twsrc%5Etfw">2016年5月25日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>これ、2年前の de:code でスピーカーの方が話されていたことですが、だいぶその通りな世界になりつつあるなあという感じがします。</p>
+
+
+published at <time class="postlist-date" datetime="2018-12-14">14 Dec 2018</time>
+
+tags: 
+
+  <a href="/tags/Docker/" class="post-tag">Docker</a>
+  <a href="/tags/Python/" class="post-tag">Python</a>
+  <a href="/tags/MachineLearning/" class="post-tag">MachineLearning</a>
+  <a href="/tags/Azure/" class="post-tag">Azure</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-12-18-2a8f14684b1210d75c1e/">Xamarin.Forms の WebView で JavaScript 連携を行う(with iOS/Android共通化)</a></li><li>Previous: <a href="/posts/2018-12-11-1c1f55d09760fa57b448/">Android/iOSアプリを Azure Pipelines から DeployGate に配信する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-12-14-4c418310872e8659fe6a/ -->
+  </body>
+</html>

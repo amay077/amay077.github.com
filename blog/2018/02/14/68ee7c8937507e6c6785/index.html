@@ -1,1139 +1,171 @@
-﻿<!doctype html>
-<html ⚡ lang="ja">
+<!doctype html>
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DroidKaigi 2018 Apps のバグを爆速で直した話</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>DroidKaigi 2018 Apps のバグを爆速で直した話</title>
-  <meta name="description" content="DroidKaigi 2018、2日間おつかれさまでした＆ありがとうございました。その感想は末尾に。">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>DroidKaigi 2018 Apps のバグを爆速で直した話 | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="DroidKaigi 2018 Apps のバグを爆速で直した話" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="DroidKaigi 2018、2日間おつかれさまでした＆ありがとうございました。 その感想は末尾に。" />
-<meta property="og:description" content="DroidKaigi 2018、2日間おつかれさまでした＆ありがとうございました。 その感想は末尾に。" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2018-02-14T08:59:00-06:00" />
-<script type="application/ld+json">
-{"headline":"DroidKaigi 2018 Apps のバグを爆速で直した話","dateModified":"2018-02-14T08:59:00-06:00","datePublished":"2018-02-14T08:59:00-06:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785/"},"url":"https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"DroidKaigi 2018、2日間おつかれさまでした＆ありがとうございました。 その感想は末尾に。","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785/",
-  "headline": "DroidKaigi 2018 Apps のバグを爆速で直した話",
-  "datePublished": "2018-02-14T08:59:00-06:00",
-  "dateModified": "2018-02-14T08:59:00-06:00",
-  "description": "DroidKaigi 2018、2日間おつかれさまでした＆ありがとうございました。その感想は末尾に。",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>DroidKaigi 2018 Apps のバグを爆速で直した話</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">DroidKaigi 2018 Apps のバグを爆速で直した話</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p><a href="https://droidkaigi.jp/2018/">DroidKaigi 2018</a>、2日間おつかれさまでした＆ありがとうございました。<br />
+<p><a href="https://droidkaigi.jp/2018/">DroidKaigi 2018</a>、2日間おつかれさまでした＆ありがとうございました。<br>
 その感想は末尾に。</p>
-
 <!--more-->
-
 <p>ここでは、初日の午前に</p>
-
 <p>「DroidKaigiアプリからフィードバック送信するとぐるぐるが消えない」</p>
-
 <p>という不具合を修正した話をします（アプリリーダーの @takahirom さんから「爆速で修正してくれて─」と言っていただいたのでタイトル盛ってます）。</p>
-
-<h2 id="不具合の症状を確認">不具合の症状を確認</h2>
-
+<h2 id="%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E7%97%87%E7%8A%B6%E3%82%92%E7%A2%BA%E8%AA%8D">不具合の症状を確認 <a class="direct-link" href="#%E4%B8%8D%E5%85%B7%E5%90%88%E3%81%AE%E7%97%87%E7%8A%B6%E3%82%92%E7%A2%BA%E8%AA%8D">#</a></h2>
 <p>最初のセッションが終わったあとで TL から、</p>
-
 <ul>
-  <li>「DroidKaigiアプリからフィードバック送信するとぐるぐるが消えない」</li>
-  <li>「BACKで戻ってやり直そうとすると、送信済みになっている」</li>
+<li>「DroidKaigiアプリからフィードバック送信するとぐるぐるが消えない」</li>
+<li>「BACKで戻ってやり直そうとすると、送信済みになっている」</li>
 </ul>
-
-<p>といったツイートが見られました。<br />
+<p>といったツイートが見られました。<br>
 はじめは「すぐに直されるだろう」と思いつつ、アプリには軽微な修正でコントリビュートしていたこともあり、ソースは既に取得済みだったので、「ちょっと見てみるか」と軽い気持ちで Android Studio を立ち上げました。</p>
-
-<h2 id="どこから調べるか">どこから調べるか</h2>
-
+<h2 id="%E3%81%A9%E3%81%93%E3%81%8B%E3%82%89%E8%AA%BF%E3%81%B9%E3%82%8B%E3%81%8B">どこから調べるか <a class="direct-link" href="#%E3%81%A9%E3%81%93%E3%81%8B%E3%82%89%E8%AA%BF%E3%81%B9%E3%82%8B%E3%81%8B">#</a></h2>
 <p>アプリが <a href="https://github.com/DroidKaigi/conference-app-2018/blob/master/README.md#architecture">MVVM(AAC の VM) パターンを採用している</a> ことは知っており、不具合は View(DataBinding) か ViewModel か それ以外(Model)  のどこかで発生していることは間違いないわけです。</p>
-
-<p>上記の症状「ぐるぐるは消えないが、送信はされているようだ」から想像するに、「View(DataBinding) で、 何らかの原因で ぐるぐる(ProgressBar) に <code class="highlighter-rouge">visible = false</code> ができていないのかな？」 と思い、まずそのソースを見てみました（ロジックの方から調査していくと、大抵はそちらの方が複雑なので、苦労して不具合を調べまくった後で DataBinding の簡単なミスであることが発覚すると精神が殺られます）。</p>
-
-<h2 id="viewdatabindingを調べる">View(DataBinding)を調べる</h2>
-
-<p>ぐるぐるの visible を変えているのは <a href="https://github.com/DroidKaigi/conference-app-2018/blob/22fefe8e4afcba0d77cc879c6a9816ccda89e86d/app/src/main/java/io/github/droidkaigi/confsched2018/presentation/sessions/feedback/SessionsFeedbackFragment.kt#L93"><code class="highlighter-rouge">SessionsFeedbackFragment.kt</code></a> の次の箇所です。</p>
-
-<pre><code class="language-kotlin:SessionsFeedbackFragment.kt">sessionsFeedbackViewModel.isLoading.observeNonNull(this, {
-    binding.progress.setVisible(it)
-})
-</code></pre>
-
-<p>うん、これだけのコードで <code class="highlighter-rouge">it</code> が <code class="highlighter-rouge">false</code> の時だけ動作しない、なんてありえない。<br />
-ここはシロだ、と判断しました。(<code class="highlighter-rouge">setVisible()</code> はこのアプリでの拡張関数なので、一応そちらも見つつ)</p>
-
-<h2 id="viewmodel-を調べる">ViewModel を調べる</h2>
-
-<p>では次に ViewModel、 <code class="highlighter-rouge">sessionsFeedbackViewModel.isLoading</code> が <code class="highlighter-rouge">false</code> にならないのではないか？ を疑います。</p>
-
-<p>それは <a href="https://github.com/DroidKaigi/conference-app-2018/blob/22fefe8e4afcba0d77cc879c6a9816ccda89e86d/app/src/main/java/io/github/droidkaigi/confsched2018/presentation/sessions/feedback/SessionsFeedbackViewModel.kt#L70-L71"><code class="highlighter-rouge">SessionsFeedbackViewModel.kt</code></a> の次の箇所です。</p>
-
-<pre><code class="language-kotlin:SessionsFeedbackViewModel.kt">fun submit(session: Session.SpeechSession, sessionFeedback: SessionFeedback) {
-    repository.submitSessionFeedback(session, sessionFeedback)
-            .doOnSubscribe { 
-                isLoading.value = true 
-            }.doOnDispose { 
-                isLoading.value = false 
-            }.doOnComplete {
-                alertMessage.value = Alert(Alert.Type.Toast, R.string.submit_success)
-            }
-            .doOnError { alertMessage.value = Alert(Alert.Type.Toast, R.string.submit_failure) }
-            .subscribeBy(onError = defaultErrorHandler())
-            .addTo(compositeDisposable)
-</code></pre>
-
-<p><code class="highlighter-rouge">repository.submitSessionFeedback()</code> は RxJava の Observable です（正確には Completable）。</p>
-
-<p><code class="highlighter-rouge">doOnSubScribe</code>(購読開始時) に <code class="highlighter-rouge">true</code> を、<code class="highlighter-rouge">doOnDispose</code>(購読終了？時)に <code class="highlighter-rouge">false</code> を設定しているので、なんだか問題なさそうです。</p>
-
+<p>上記の症状「ぐるぐるは消えないが、送信はされているようだ」から想像するに、「View(DataBinding) で、 何らかの原因で ぐるぐる(ProgressBar) に <code>visible = false</code> ができていないのかな？」 と思い、まずそのソースを見てみました（ロジックの方から調査していくと、大抵はそちらの方が複雑なので、苦労して不具合を調べまくった後で DataBinding の簡単なミスであることが発覚すると精神が殺られます）。</p>
+<h2 id="view(databinding)%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">View(DataBinding)を調べる <a class="direct-link" href="#view(databinding)%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">#</a></h2>
+<p>ぐるぐるの visible を変えているのは <a href="https://github.com/DroidKaigi/conference-app-2018/blob/22fefe8e4afcba0d77cc879c6a9816ccda89e86d/app/src/main/java/io/github/droidkaigi/confsched2018/presentation/sessions/feedback/SessionsFeedbackFragment.kt#L93"><code>SessionsFeedbackFragment.kt</code></a> の次の箇所です。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">//SessionsFeedbackFragment.kt</span><br>sessionsFeedbackViewModel<span class="token punctuation">.</span>isLoading<span class="token punctuation">.</span><span class="token function">observeNonNull</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> <span class="token punctuation">{</span><br>    binding<span class="token punctuation">.</span>progress<span class="token punctuation">.</span><span class="token function">setVisible</span><span class="token punctuation">(</span>it<span class="token punctuation">)</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span></code></pre>
+<p>うん、これだけのコードで <code>it</code> が <code>false</code> の時だけ動作しない、なんてありえない。<br>
+ここはシロだ、と判断しました。(<code>setVisible()</code> はこのアプリでの拡張関数なので、一応そちらも見つつ)</p>
+<h2 id="viewmodel-%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">ViewModel を調べる <a class="direct-link" href="#viewmodel-%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">#</a></h2>
+<p>では次に ViewModel、 <code>sessionsFeedbackViewModel.isLoading</code> が <code>false</code> にならないのではないか？ を疑います。</p>
+<p>それは <a href="https://github.com/DroidKaigi/conference-app-2018/blob/22fefe8e4afcba0d77cc879c6a9816ccda89e86d/app/src/main/java/io/github/droidkaigi/confsched2018/presentation/sessions/feedback/SessionsFeedbackViewModel.kt#L70-L71"><code>SessionsFeedbackViewModel.kt</code></a> の次の箇所です。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">//SessionsFeedbackViewModel.kt</span><br><span class="token keyword">fun</span> <span class="token function">submit</span><span class="token punctuation">(</span>session<span class="token operator">:</span> Session<span class="token punctuation">.</span>SpeechSession<span class="token punctuation">,</span> sessionFeedback<span class="token operator">:</span> SessionFeedback<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    repository<span class="token punctuation">.</span><span class="token function">submitSessionFeedback</span><span class="token punctuation">(</span>session<span class="token punctuation">,</span> sessionFeedback<span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">doOnSubscribe</span> <span class="token punctuation">{</span> <br>                isLoading<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token boolean">true</span> <br>            <span class="token punctuation">}</span><span class="token punctuation">.</span><span class="token function">doOnDispose</span> <span class="token punctuation">{</span> <br>                isLoading<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token boolean">false</span> <br>            <span class="token punctuation">}</span><span class="token punctuation">.</span><span class="token function">doOnComplete</span> <span class="token punctuation">{</span><br>                alertMessage<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token function">Alert</span><span class="token punctuation">(</span>Alert<span class="token punctuation">.</span>Type<span class="token punctuation">.</span>Toast<span class="token punctuation">,</span> R<span class="token punctuation">.</span>string<span class="token punctuation">.</span>submit_success<span class="token punctuation">)</span><br>            <span class="token punctuation">}</span><br>            <span class="token punctuation">.</span><span class="token function">doOnError</span> <span class="token punctuation">{</span> alertMessage<span class="token punctuation">.</span>value <span class="token operator">=</span> <span class="token function">Alert</span><span class="token punctuation">(</span>Alert<span class="token punctuation">.</span>Type<span class="token punctuation">.</span>Toast<span class="token punctuation">,</span> R<span class="token punctuation">.</span>string<span class="token punctuation">.</span>submit_failure<span class="token punctuation">)</span> <span class="token punctuation">}</span><br>            <span class="token punctuation">.</span><span class="token function">subscribeBy</span><span class="token punctuation">(</span>onError <span class="token operator">=</span> <span class="token function">defaultErrorHandler</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">addTo</span><span class="token punctuation">(</span>compositeDisposable<span class="token punctuation">)</span></code></pre>
+<p><code>repository.submitSessionFeedback()</code> は RxJava の Observable です（正確には Completable）。</p>
+<p><code>doOnSubScribe</code>(購読開始時) に <code>true</code> を、<code>doOnDispose</code>(購読終了？時)に <code>false</code> を設定しているので、なんだか問題なさそうです。</p>
 <p>ということをツイートしてみると、 @MoyuruAizawa さんから、</p>
-
-<amp-twitter data-tweetid="961427139168841728?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- これってdoFinally案件じゃない？ <a href="https://t.co/RnGoOWWaKv">https://t.co/RnGoOWWaKv</a> by @MoyuruAizawa -->
-
-<p>というコメントがもらえました。ほうほう 「<code class="highlighter-rouge">doOnDispose</code> じゃなくて <code class="highlighter-rouge">doFinally</code> なのか！」と思いつつ、ここで初めてデバッグに取り掛かります。 <code class="highlighter-rouge">isLoading.value = false</code> の行にブレークポイントを置いて実行したら止まらないはずだ、と。</p>
-
-<p><code class="highlighter-rouge">doOnSubscribe</code>、 <code class="highlighter-rouge">doOnDispose</code> にブレークポイントを張って実行してみると、 <code class="highlighter-rouge">doOnSubscribe</code> では止まるけど <code class="highlighter-rouge">doOnDispose</code> では止まりません。<br />
-次に、 <code class="highlighter-rouge">doOnDispose</code> を <code class="highlighter-rouge">doFinally</code> に変えて再度チャレンジしてみると、状況は変わらず <code class="highlighter-rouge">doFinally</code> でも止まりません。</p>
-
-<p>ならば <code class="highlighter-rouge">doOnDispose</code> でも <code class="highlighter-rouge">doFinally</code> でもない何かならうまくいくのか？と考えるより、 「submitSessionFeedback() の返値が、 <strong>ちゃんと Observable しているか？</strong> 」 を調べるのが先です。</p>
-
-<h3 id="おまけ-デバッグしやすくする">おまけ: デバッグしやすくする</h3>
-
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">これってdoFinally案件じゃない？ <a href="https://t.co/RnGoOWWaKv">https://t.co/RnGoOWWaKv</a></p>&mdash; Moyuru (@MoyuruAizawa) <a href="https://twitter.com/MoyuruAizawa/status/961427139168841728?ref_src=twsrc%5Etfw">2018年2月8日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>というコメントがもらえました。ほうほう 「<code>doOnDispose</code> じゃなくて <code>doFinally</code> なのか！」と思いつつ、ここで初めてデバッグに取り掛かります。 <code>isLoading.value = false</code> の行にブレークポイントを置いて実行したら止まらないはずだ、と。</p>
+<p><code>doOnSubscribe</code>、 <code>doOnDispose</code> にブレークポイントを張って実行してみると、 <code>doOnSubscribe</code> では止まるけど <code>doOnDispose</code> では止まりません。<br>
+次に、 <code>doOnDispose</code> を <code>doFinally</code> に変えて再度チャレンジしてみると、状況は変わらず <code>doFinally</code> でも止まりません。</p>
+<p>ならば <code>doOnDispose</code> でも <code>doFinally</code> でもない何かならうまくいくのか？と考えるより、 「submitSessionFeedback() の返値が、 <strong>ちゃんと Observable しているか？</strong> 」 を調べるのが先です。</p>
+<h3 id="%E3%81%8A%E3%81%BE%E3%81%91%3A-%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%97%E3%82%84%E3%81%99%E3%81%8F%E3%81%99%E3%82%8B">おまけ: デバッグしやすくする <a class="direct-link" href="#%E3%81%8A%E3%81%BE%E3%81%91%3A-%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%97%E3%82%84%E3%81%99%E3%81%8F%E3%81%99%E3%82%8B">#</a></h3>
 <p>フィードバック画面の「送信」ボタンは、一度処理が成功したとみなされると disable になってしまいます。その情報は端末内に保持している(ユーザー認証のないアプリだからそれしかない)ので、アプリのデータを消すとまた押せるようになりますが、それも面倒なので <a href="https://github.com/DroidKaigi/conference-app-2018/blob/22fefe8e4afcba0d77cc879c6a9816ccda89e86d/app/src/main/res/layout/fragment_sessions_feedback.xml#L271">ボタンの enable/disable を切り替えている箇所</a> を一時的に削除しました。これも DataBinding を使っていると知っていれば箇所はだいたいわかります。</p>
-
-<h3 id="もうひとつ気づいた事-livedata-と-uiスレッド">もうひとつ気づいた事: LiveData と UIスレッド</h3>
-
-<p>RxJava 関連の処理の他に、もう一つ気づいたことがありました。それは <code class="highlighter-rouge">isLoading</code> は <code class="highlighter-rouge">MutableLiveData&lt;Boolean&gt;</code> なのですが、 <code class="highlighter-rouge">isLoading.value = false</code> と、 value プロパティを使用していることです。</p>
-
+<h3 id="%E3%82%82%E3%81%86%E3%81%B2%E3%81%A8%E3%81%A4%E6%B0%97%E3%81%A5%E3%81%84%E3%81%9F%E4%BA%8B%3A-livedata-%E3%81%A8-ui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89">もうひとつ気づいた事: LiveData と UIスレッド <a class="direct-link" href="#%E3%82%82%E3%81%86%E3%81%B2%E3%81%A8%E3%81%A4%E6%B0%97%E3%81%A5%E3%81%84%E3%81%9F%E4%BA%8B%3A-livedata-%E3%81%A8-ui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89">#</a></h3>
+<p>RxJava 関連の処理の他に、もう一つ気づいたことがありました。それは <code>isLoading</code> は <code>MutableLiveData&lt;Boolean&gt;</code> なのですが、 <code>isLoading.value = false</code> と、 value プロパティを使用していることです。</p>
 <p>どういうことかと言うと、 <strong>「MutableLiveData.setValue() は、UIスレッドから呼び出さないと例外を発生させる」</strong> ということです。</p>
-
 <p>これは、</p>
-
 <ul>
-  <li><a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed#setvalue-%E3%81%AFui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%A7%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%81%AA%E3%81%84%E3%81%A8%E3%81%84%E3%81%91%E3%81%AA%E3%81%84postvalue-%E3%82%92%E4%BD%BF%E3%81%8A%E3%81%86">LiveData について勘違いしていたことをいくつか - Qiita</a></li>
+<li><a href="https://qiita.com/amay077/items/6e1c94305420a41ff7ed#setvalue-%E3%81%AFui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%A7%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%81%AA%E3%81%84%E3%81%A8%E3%81%84%E3%81%91%E3%81%AA%E3%81%84postvalue-%E3%82%92%E4%BD%BF%E3%81%8A%E3%81%86">LiveData について勘違いしていたことをいくつか - Qiita</a></li>
 </ul>
-
-<p>に書いたとおり、 @kkagurazaka さんから教わっていたことで知っていたことです。<br />
-加えて RxJava は非同期処理を行うライブラリであり、処理開始(<code class="highlighter-rouge">doOnSubscribe</code>)はUIスレッドでも、終了時(<code class="highlighter-rouge">doOnDispose</code>)にUIスレッドである保証はありません。</p>
-
-<p>ちょっと怪しげなので <code class="highlighter-rouge">isLoading.value = false</code> を <code class="highlighter-rouge">isLoading.postValue(false)</code> に直しました。</p>
-
-<h2 id="modelrepository-を調べる">Model(Repository) を調べる</h2>
-
-<p><code class="highlighter-rouge">repository.submitSessionFeedback()</code> をデバッグのステップインで掘っていくと、 <code class="highlighter-rouge">SessionDataRepository.kt</code> の <code class="highlighter-rouge">saveSessionFeedback()</code> までは到達していることが確認できます。</p>
-
-<pre><code class="language-kotlin:SessionDataRepository.kt">@CheckResult override fun saveSessionFeedback(sessionFeedback: SessionFeedback): Completable =
-        Completable.create { sessionDatabase.saveSessionFeedback(sessionFeedback) }
-                .subscribeOn(schedulerProvider.io())
-</code></pre>
-
+<p>に書いたとおり、 @kkagurazaka さんから教わっていたことで知っていたことです。<br>
+加えて RxJava は非同期処理を行うライブラリであり、処理開始(<code>doOnSubscribe</code>)はUIスレッドでも、終了時(<code>doOnDispose</code>)にUIスレッドである保証はありません。</p>
+<p>ちょっと怪しげなので <code>isLoading.value = false</code> を <code>isLoading.postValue(false)</code> に直しました。</p>
+<h2 id="model(repository)-%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">Model(Repository) を調べる <a class="direct-link" href="#model(repository)-%E3%82%92%E8%AA%BF%E3%81%B9%E3%82%8B">#</a></h2>
+<p><code>repository.submitSessionFeedback()</code> をデバッグのステップインで掘っていくと、 <code>SessionDataRepository.kt</code> の <code>saveSessionFeedback()</code> までは到達していることが確認できます。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">//SessionDataRepository.kt</span><br><span class="token annotation builtin">@CheckResult</span> <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token operator">:</span> SessionFeedback<span class="token punctuation">)</span><span class="token operator">:</span> Completable <span class="token operator">=</span><br>        Completable<span class="token punctuation">.</span><span class="token function">create</span> <span class="token punctuation">{</span> sessionDatabase<span class="token punctuation">.</span><span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token punctuation">)</span> <span class="token punctuation">}</span><br>                <span class="token punctuation">.</span><span class="token function">subscribeOn</span><span class="token punctuation">(</span>schedulerProvider<span class="token punctuation">.</span><span class="token function">io</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
 <p>この処理をしばらく眺めていて、「！！ッ」と問題に気づきました。</p>
-
 <p>それは、</p>
-
 <ol>
-  <li><code class="highlighter-rouge">saveSessionFeedback</code> は Completable を返す</li>
-  <li>Completable は Observable である</li>
-  <li>Observable は、それの “終了” を示すために <code class="highlighter-rouge">onComplete()</code> を呼び出さなければならない（またはエラーを示す <code class="highlighter-rouge">onError()</code> を呼び出さなければならない）</li>
-  <li>しかしこのコードは <strong><code class="highlighter-rouge">onComplete()</code> を呼び出していない</strong></li>
+<li><code>saveSessionFeedback</code> は Completable を返す</li>
+<li>Completable は Observable である</li>
+<li>Observable は、それの &quot;終了&quot; を示すために <code>onComplete()</code> を呼び出さなければならない（またはエラーを示す <code>onError()</code> を呼び出さなければならない）</li>
+<li>しかしこのコードは <strong><code>onComplete()</code> を呼び出していない</strong></li>
 </ol>
-
-<amp-twitter data-tweetid="961432446863486976?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- これだ！！！ by @new_runnable -->
-
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">これだ！！！</p>&mdash; takahirom (@new_runnable) <a href="https://twitter.com/new_runnable/status/961432446863486976?ref_src=twsrc%5Etfw">2018年2月8日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 <p>ということで確信の同意も得られ、実際に修正していきます。</p>
-
-<pre><code class="language-kotlin:SessionDataRepository.kt">@CheckResult override fun saveSessionFeedback(sessionFeedback: SessionFeedback): Completable =
-        Completable.create { emitter -&gt;
-            sessionDatabase.saveSessionFeedback(sessionFeedback)
-            emitter.onComplete()
-        }.subscribeOn(schedulerProvider.io())
-</code></pre>
-
-<p>こんな感じで。「Observable を返すのに onComplete または onError を呼ばない」というのは RxJava プログラミングのあるあるなミスなのですが、Kotlin では引数一つの匿名関数は <code class="highlighter-rouge">{ }</code> と書けてしまう(明示的に引数を宣言しなくてもよい)ので、忘れる可能性が高くなっているのかも知れませんね。</p>
-
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">//SessionDataRepository.kt</span><br><span class="token annotation builtin">@CheckResult</span> <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token operator">:</span> SessionFeedback<span class="token punctuation">)</span><span class="token operator">:</span> Completable <span class="token operator">=</span><br>        Completable<span class="token punctuation">.</span><span class="token function">create</span> <span class="token punctuation">{</span> emitter <span class="token operator">-></span><br>            sessionDatabase<span class="token punctuation">.</span><span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token punctuation">)</span><br>            emitter<span class="token punctuation">.</span><span class="token function">onComplete</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><span class="token punctuation">.</span><span class="token function">subscribeOn</span><span class="token punctuation">(</span>schedulerProvider<span class="token punctuation">.</span><span class="token function">io</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p>こんな感じで。「Observable を返すのに onComplete または onError を呼ばない」というのは RxJava プログラミングのあるあるなミスなのですが、Kotlin では引数一つの匿名関数は <code>{ }</code> と書けてしまう(明示的に引数を宣言しなくてもよい)ので、忘れる可能性が高くなっているのかも知れませんね。</p>
 <p>その後、 @yanzm さんから、</p>
-
-<amp-twitter data-tweetid="962134194943025152?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- この場合だと fromAction() の方がよいかもです。どっちでもこの場合挙動は同じですけど。 by @yanzm -->
-
-<p>という意見もいただきました。なるほど <code class="highlighter-rouge">Completable.fromAction()</code>、 <code class="highlighter-rouge">Completable.fromCallable()</code> は、自動的に <code class="highlighter-rouge">onComplete()</code> を呼び出してくれるのですね。</p>
-
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">この場合だと fromAction() の方がよいかもです。どっちでもこの場合挙動は同じですけど。</p>&mdash; Yuki Anzai (@yanzm) <a href="https://twitter.com/yanzm/status/962134194943025152?ref_src=twsrc%5Etfw">2018年2月10日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>という意見もいただきました。なるほど <code>Completable.fromAction()</code>、 <code>Completable.fromCallable()</code> は、自動的に <code>onComplete()</code> を呼び出してくれるのですね。</p>
 <p>上記の修正は、</p>
-
-<pre><code class="language-kotlin:SessionDataRepository.kt">@CheckResult override fun saveSessionFeedback(sessionFeedback: SessionFeedback): Completable =
-        Completable.fromAction { sessionDatabase.saveSessionFeedback(sessionFeedback) }
-        .subscribeOn(schedulerProvider.io())
-</code></pre>
-
-<p>と書いた方がよりスッキリします。<code class="highlighter-rouge">.create()</code> を使っている箇所は、代替メソッドを検討してみた方がよいでしょう(Lint で検出してもよいのかも)。</p>
-
-<h2 id="修正点まとめ">修正点まとめ</h2>
-
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">//SessionDataRepository.kt</span><br><span class="token annotation builtin">@CheckResult</span> <span class="token keyword">override</span> <span class="token keyword">fun</span> <span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token operator">:</span> SessionFeedback<span class="token punctuation">)</span><span class="token operator">:</span> Completable <span class="token operator">=</span><br>        Completable<span class="token punctuation">.</span><span class="token function">fromAction</span> <span class="token punctuation">{</span> sessionDatabase<span class="token punctuation">.</span><span class="token function">saveSessionFeedback</span><span class="token punctuation">(</span>sessionFeedback<span class="token punctuation">)</span> <span class="token punctuation">}</span><br>        <span class="token punctuation">.</span><span class="token function">subscribeOn</span><span class="token punctuation">(</span>schedulerProvider<span class="token punctuation">.</span><span class="token function">io</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span></code></pre>
+<p>と書いた方がよりスッキリします。<code>.create()</code> を使っている箇所は、代替メソッドを検討してみた方がよいでしょう(Lint で検出してもよいのかも)。</p>
+<h2 id="%E4%BF%AE%E6%AD%A3%E7%82%B9%E3%81%BE%E3%81%A8%E3%82%81">修正点まとめ <a class="direct-link" href="#%E4%BF%AE%E6%AD%A3%E7%82%B9%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
 <p>以上の修正をまとめると、</p>
-
 <ol>
-  <li><code class="highlighter-rouge">doOnDispose</code> を <code class="highlighter-rouge">doFinally</code> に</li>
-  <li><code class="highlighter-rouge">isLoading.value = false</code> を <code class="highlighter-rouge">isLoading.postValue(false)</code> に</li>
-  <li><code class="highlighter-rouge">saveSessionFeedback()</code> で <code class="highlighter-rouge">onComplete()</code> を呼ぶように</li>
+<li><code>doOnDispose</code> を <code>doFinally</code> に</li>
+<li><code>isLoading.value = false</code> を <code>isLoading.postValue(false)</code> に</li>
+<li><code>saveSessionFeedback()</code> で <code>onComplete()</code> を呼ぶように</li>
 </ol>
-
-<p>の3点です。<br />
-すべての修正を含んだ状態で試して、問題が解消されていることが確認できました。<br />
+<p>の3点です。<br>
+すべての修正を含んだ状態で試して、問題が解消されていることが確認できました。<br>
 本来なら、 1. と 2. の修正が本当に必要かを確認してからコミットするべきなのですが、今回は時間がなかった（ランチの時間に突入していた）ので、このまま PR を送りました。</p>
-
 <ul>
-  <li><a href="https://github.com/DroidKaigi/conference-app-2018/pull/653">Fix dismiss loading progress when feedback submitted by amay077 · Pull Request #653 · DroidKaigi/conference-app-2018</a></li>
+<li><a href="https://github.com/DroidKaigi/conference-app-2018/pull/653">Fix dismiss loading progress when feedback submitted by amay077 · Pull Request #653 · DroidKaigi/conference-app-2018</a></li>
 </ul>
-
 <p>さっそくマージしてもらいアプリも更新され、</p>
-
-<amp-twitter data-tweetid="961595405220769795?ref_src=twsrc%5Etfw" width="800" height="600" layout="responsive" ></amp-twitter><!-- アプリ更新して、フィードバックを送信してみました。<br />グルグル表示後、送信しましたというトーストが表示されました。挙動に問題は有りません。修正ありがとうございます。<br />Android7.1.1 ZenFone4 Max by @MiddleSizeRabbi -->
-
-<p>問題なさそうだったので 「Yesッッ!!!」 と喜びました。<br />
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">アプリ更新して、フィードバックを送信してみました。<br>グルグル表示後、送信しましたというトーストが表示されました。挙動に問題は有りません。修正ありがとうございます。<br>Android7.1.1 ZenFone4 Max</p>&mdash; ニースト@中ウサギ工房（仮） (@MiddleSizeRabbi) <a href="https://twitter.com/MiddleSizeRabbi/status/961595405220769795?ref_src=twsrc%5Etfw">2018年2月8日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>問題なさそうだったので 「Yesッッ!!!」 と喜びました。<br>
 ソースを見始めたのが AM11:20頃、PR を送ったのが 12:00、約40分間の出来事でした。</p>
-
 <p>スタッフや登壇者のみなさんは本業で忙しかっただろうし、会場はセッションを聴くのに集中していた人が多かったと思うので、そういう状況でなければどなたかがもっと爆速で修正されていたと思います。</p>
-
 <p>とはいえ、今回予定外の3つ目のPRが役に立てて嬉しかったです。ちょっとツイートするとすぐに反応がもらえ、一人で考えるよりも効率的だったと思います。</p>
-
-<h2 id="droidkaigi-2018-に参加して">DroidKaigi 2018 に参加して</h2>
-
-<p>なんだかんだで皆勤賞してました。<br />
+<h2 id="droidkaigi-2018-%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6">DroidKaigi 2018 に参加して <a class="direct-link" href="#droidkaigi-2018-%E3%81%AB%E5%8F%82%E5%8A%A0%E3%81%97%E3%81%A6">#</a></h2>
+<p>なんだかんだで皆勤賞してました。<br>
 今年も、</p>
-
 <ul>
-  <li>今までできないと思っていたことができると分かったこと</li>
-  <li>明日から使ってみたいと思ったこと</li>
-  <li>明日からはムリだけど、半年後使いそうなこと</li>
-  <li>今のところ予定はないけど、知っておいて損はないと思えること</li>
-  <li>自分が知っている事でも、他の参加者の人は知らない(またはウケる)んだなーということ</li>
-  <li>ID でしか交流のなかった方々にごあいさつできたこと(地方エンジニアにとっては貴重)</li>
+<li>今までできないと思っていたことができると分かったこと</li>
+<li>明日から使ってみたいと思ったこと</li>
+<li>明日からはムリだけど、半年後使いそうなこと</li>
+<li>今のところ予定はないけど、知っておいて損はないと思えること</li>
+<li>自分が知っている事でも、他の参加者の人は知らない(またはウケる)んだなーということ</li>
+<li>ID でしか交流のなかった方々にごあいさつできたこと(地方エンジニアにとっては貴重)</li>
 </ul>
-
-<p>などなど、価値のある体験ができました、本当にありがとうございました。<br />
+<p>などなど、価値のある体験ができました、本当にありがとうございました。<br>
 今年は CFP 採択されず割引価格で気楽にオーディエンスできましたが、次回は登壇返り咲きを目指そうと思います:muscle_tone2:</p>
 
-    </section>
-    <footer class="post-footer">
 
-      <section class="categories">
-        
-        <div class="category">Android</div>
-        
-        <div class="category">Kotlin</div>
-        
-        <div class="category">RxJava</div>
-        
-        <p class="published">published <time datetime="2018-02-14 08:59">14 Feb 2018</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2018-02-14-68ee7c8937507e6c6785.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2018/02/14/68ee7c8937507e6c6785&text=DroidKaigi+2018+Apps+%E3%81%AE%E3%83%90%E3%82%B0%E3%82%92%E7%88%86%E9%80%9F%E3%81%A7%E7%9B%B4%E3%81%97%E3%81%9F%E8%A9%B1&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
+published at <time class="postlist-date" datetime="2018-02-14">14 Feb 2018</time>
 
+tags: 
 
-        </a>
-      </section>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
+  <a href="/tags/RxJava/" class="post-tag">RxJava</a>
 
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
+<hr>
+<ul><li>Next: <a href="/blog/2018/03/01/dff88e7ce6868615a9bb/">Xamarin と React Native と Flutter の違いを正しく理解しよう</a></li><li>Previous: <a href="/blog/2018/01/31/04925765982893eeab7f/">RxProperty で最初にボタンを押すまでバリデーションしない方法</a></li>
+</ul>
 
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
+    </main>
 
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
+    <footer></footer>
 
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2018/02/14/68ee7c8937507e6c6785/ -->
   </body>
 </html>

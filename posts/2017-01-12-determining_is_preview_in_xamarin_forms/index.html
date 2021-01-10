@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Forms で XAML Preview 中かどうかを判別する方法</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Forms で XAML Preview 中かどうかを判別する方法</h1>
+
+<p>Xamarin.Forms 向けのUIライブラリを提供する人向けの内容です。</p>
+<!--more-->
+<p><a href="https://developer.xamarin.com/guides/xamarin-forms/xaml/xaml-previewer/">XAML Previewer</a> によって、XAML のコーディングも捗るようになってきました。</p>
+<h2 id="xaml-previewer-%E3%81%AE%E5%8B%95%E3%81%8D">XAML Previewer の動き <a class="direct-link" href="#xaml-previewer-%E3%81%AE%E5%8B%95%E3%81%8D">#</a></h2>
+<p><a href="https://developer.xamarin.com/guides/xamarin-forms/custom-renderer/">Custom Renderer</a> を使って、独自のコントロールを作成し、それを Page で使用した場合、XAML Previewer は、そのカスタムコントロールもレンダリングしようとします。</p>
+<p>アプリ実行時とほぼ変わらない処理が行われるようです。<br>
+その為、特に意識しなくとも、カスタムコントロールをプレビューすることができます。</p>
+<p>一方で、プレビュー時には、アプリ実行時とは異なる動きをさせたい場合があります。</p>
+<p>私の作成している <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Xamarin.Forms.GoogleMaps</a> は地図を表示するためのカスタムコントロールです。<br>
+これは、次の理由で、プレビュー時には、実行時の処理をさせたくありません。</p>
+<ol>
+<li>Android/iOS の Google Maps SDK に依存しているが、プレビュー時はこれが使用できない</li>
+<li>動作に必要な API Key はメソッドで渡すため、プレビュー時には API Key が無い</li>
+<li>そもそもプレビュー時に地図が見えても、嬉しい人は少ない</li>
+</ol>
+<p>Xamarin.Forms.GoogleMaps 以外でも、例えば Android/iOS 端末内のデータを読んで表示・描画するようなものや C/C++ のライブラリに依存したカスタムコントロールも該当すると思います。</p>
+<p>このような場合、XAML Previewer による <strong>プレビュー中かどうか</strong> を判断し、プレビュー中なら背景色をグレイにする、何か文字を表示する、などの特別な処理をしたいです。</p>
+<h2 id="%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%81%AE%E5%88%A4%E6%96%AD%E3%81%AF%E5%8F%AF%E8%83%BD%E3%81%8B%EF%BC%9F">プレビュー中かどうかの判断は可能か？ <a class="direct-link" href="#%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%81%AE%E5%88%A4%E6%96%AD%E3%81%AF%E5%8F%AF%E8%83%BD%E3%81%8B%EF%BC%9F">#</a></h2>
+<p>Windows.Forms で言えば <code>DesignMode</code> プロパティ、Blend だと <code>DesignModeEnabled</code> に相当するような、「プレビュー中かどうか」を明確に知る手法は、現在の Xamarin.Forms には提供されていませんでした。</p>
+<h2 id="%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%82%92%E5%88%A4%E6%96%AD%E3%81%99%E3%82%8B%E4%BB%A3%E6%9B%BF%E6%89%8B%E6%B3%95%EF%BC%91%3A-application.current-%E3%81%8C-null-%E3%81%8B">プレビュー中かどうかを判断する代替手法１: Application.Current が null か <a class="direct-link" href="#%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%82%92%E5%88%A4%E6%96%AD%E3%81%99%E3%82%8B%E4%BB%A3%E6%9B%BF%E6%89%8B%E6%B3%95%EF%BC%91%3A-application.current-%E3%81%8C-null-%E3%81%8B">#</a></h2>
+<ul>
+<li><a href="https://forums.xamarin.com/discussion/68440/xamarin-forms-xaml-previewer-determine-if-in-design-mode-in-code-behind-and-xaml-similar-to-blend">Xamarin.Forms XAML Previewer - Determine if in Design Mode in Code Behind and XAML similar to Blend — Xamarin Forums</a></li>
+</ul>
+<p>で紹介されていますが、 「<code>Application.Current</code> が <code>null</code> だったらプレビュー中である」という判断方法があるようです。</p>
+<p>ところが、<code>App.xaml.cs</code> で <code>MainPage = new NavigationPage(new SomePage());</code> としている場合、iOS ではプレビュー中にも関わらず <code>Application.Current</code> が <code>null</code> ではありませんでした（XAML Previewer が <code>App.xaml.cs</code> もパースして実行している？）。</p>
+<h2 id="%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%82%92%E5%88%A4%E6%96%AD%E3%81%99%E3%82%8B%E4%BB%A3%E6%9B%BF%E6%89%8B%E6%B3%95%EF%BC%92%3A-mylib.init()-%E3%81%8C%E5%91%BC%E3%81%B0%E3%82%8C%E3%81%9F%E3%81%8B">プレビュー中かどうかを判断する代替手法２: MyLib.Init() が呼ばれたか <a class="direct-link" href="#%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%8B%E3%81%A9%E3%81%86%E3%81%8B%E3%82%92%E5%88%A4%E6%96%AD%E3%81%99%E3%82%8B%E4%BB%A3%E6%9B%BF%E6%89%8B%E6%B3%95%EF%BC%92%3A-mylib.init()-%E3%81%8C%E5%91%BC%E3%81%B0%E3%82%8C%E3%81%9F%E3%81%8B">#</a></h2>
+<ul>
+<li><a href="http://qiita.com/amay077/items/b40d0383b9aaa75ab3f1">Xamarin.Forms 向けのUIライブラリを作る時の注意点 - Qiita</a></li>
+</ul>
+<p>で書きましたが、ライブラリを提供する場合、そのアセンブリが確実にロードされるようにするには、<code>MainActivity.cs</code> や <code>AppDelegate.cs</code> で、UIライブラリの何らかのメソッド(<code>MyLib.Init()</code>のような)を明示的に呼び出す必要があります。</p>
+<p>これは、「実行時にのみ、 <code>MyLib.Init()</code> が呼び出される」前提になるので、「<code>MyLib.Init()</code> が呼び出されていなければプレビュー中である」と疑似的に判断することができます。</p>
+<p>こちらは XAML Previewer でも正常に判断されました。<br>
+Xamarin.Forms.GoogleMaps では、<code>Xamarin.FormsGoogleMaps.Init()</code> という初期化メソッドを提供していますが、これが呼び出されていない場合には、地図の描画をせず、背景色付きのラベルを配置するようにしました。</p>
+<p>その修正のコミットが↓です。</p>
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/commit/5d483e85ef8e64fdb5047e23b36e20862d79df21">Render empty bounds when FormsGoogleMaps.Init not called · amay077/Xamarin.Forms.GoogleMaps@5d483e8</a></li>
+</ul>
+<p><code>OnElementChanged</code> で、<code>Init</code> が呼び出されていない場合は、<code>MapView</code> ではなく <code>UILabel</code> をセットするようにしています。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// iOS/MapRenderer.cs</span><br><span class="token keyword">protected</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnElementChanged</span><span class="token punctuation">(</span><span class="token class-name">ElementChangedEventArgs<span class="token punctuation">&lt;</span>View<span class="token punctuation">></span></span> e<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">OnElementChanged</span><span class="token punctuation">(</span>e<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token comment">// For XAML Previewer or FormsGoogleMaps.Init not called.</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>FormsGoogleMaps<span class="token punctuation">.</span>IsInitialized<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token class-name"><span class="token keyword">var</span></span> label <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">UILabel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            Text <span class="token operator">=</span> <span class="token string">"Xamarin.Forms.GoogleMaps"</span><span class="token punctuation">,</span><br>            BackgroundColor <span class="token operator">=</span> Color<span class="token punctuation">.</span>Teal<span class="token punctuation">.</span><span class="token function">ToUIColor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>            TextColor <span class="token operator">=</span> Color<span class="token punctuation">.</span>Black<span class="token punctuation">.</span><span class="token function">ToUIColor</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>            TextAlignment <span class="token operator">=</span> UITextAlignment<span class="token punctuation">.</span>Center<br>        <span class="token punctuation">}</span><span class="token punctuation">;</span><br>        <span class="token function">SetNativeControl</span><span class="token punctuation">(</span>label<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">return</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// 以下略</span></code></pre>
+<h2 id="%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%AF%E3%82%B9%E3%82%AD%E3%83%83%E3%83%97%E3%81%97%E3%81%9F%E6%96%B9%E3%81%8C%E3%82%88%E3%81%84%E5%87%A6%E7%90%86">プレビュー中はスキップした方がよい処理 <a class="direct-link" href="#%E3%83%97%E3%83%AC%E3%83%93%E3%83%A5%E3%83%BC%E4%B8%AD%E3%81%AF%E3%82%B9%E3%82%AD%E3%83%83%E3%83%97%E3%81%97%E3%81%9F%E6%96%B9%E3%81%8C%E3%82%88%E3%81%84%E5%87%A6%E7%90%86">#</a></h2>
+<p>前述のコミットにも示されていますが、Android/iOS それぞれの Custom Renderer の実装で、</p>
+<p>コンストラクタ, <code>OnElementChanged</code>, <code>OnLayout</code>, <code>OnElementPropertyChanged</code>, <code>LayoutSubviews</code> など、親クラスを override しているメソッドは、プレビュー中にも呼び出される可能性があるので、処理をスキップした方がよいです。</p>
+<p>Xamarin.Forms.GoogleMaps では、以下のような感じで処理をスキップしています。</p>
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps/blob/5d483e85ef8e64fdb5047e23b36e20862d79df21/Xamarin.Forms.GoogleMaps/Xamarin.Forms.GoogleMaps.iOS/MapRenderer.cs#L130">iOS/MapRenderer.cs - OnElementPropertyChanged</a></li>
+</ul>
+<h2 id="%E7%B5%90%E6%9E%9C">結果 <a class="direct-link" href="#%E7%B5%90%E6%9E%9C">#</a></h2>
+<p>これらを対応した結果、Xamarin.Forms.GoogleMaps は、Visual Studio for Mac の XAML Preview では下図のような背景色付きのラベルで表示されるようになりました。</p>
+<p><img src="/img/posts/determine_if_in_Xamarin_xaml_previewer_01.png" alt=""></p>
+<p>プロジェクトが使用している Xamarin.Forms の nuget パッケージが古いとプレビューが表示されないようです（この記事投稿時、2.3.0 では「古い」と言われ、最新の 2.3.3 に上げたら表示されるようになりました）。</p>
+<p>尚、未検証ですが、<code>Init</code> が呼ばれたか、という手法なら、XAML Previewer 以外のプレビューソリューション（Gorilla Player とか）でも使用可能と思われます。</p>
+
+
+published at <time class="postlist-date" datetime="2017-01-12">12 Jan 2017</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Xamarin.Forms/" class="post-tag">Xamarin.Forms</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-01-28-camera_changed_event_on_google_maps_android_api/">Google Maps Android API のカメラ変更イベントについて</a></li><li>Previous: <a href="/posts/2017-01-12-avoiding_overlaps_software_keyboard_in_xamarin_forms/">Xamarin.Forms でソフトウェアキーボードが表示された時に画面が隠れないようにする</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-01-12-determining_is_preview_in_xamarin_forms/ -->
+  </body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task→Observable 変換でハマったこと</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Task→Observable 変換でハマったこと</h1>
+
+<p>.NET の <code>Task&lt;T&gt;</code> は、Reactive Extensions が提供する拡張メソッド <code>ToObservable()</code> で <code>IObservable&lt;T&gt;</code> に変換できます。</p>
+<p>なにも考えずに <code>ToObservable()</code> を連発していたら、盛大にハマったのでメモ。</p>
+<!--more-->
+<h2 id="task.run().toobservable()-%E3%81%A8%E3%81%8B%E3%80%81%E6%84%8F%E5%91%B3%E3%81%AA%E3%81%84%E3%81%A3%E3%81%97%E3%82%87">Task.Run().ToObservable() とか、意味ないっしょ <a class="direct-link" href="#task.run().toobservable()-%E3%81%A8%E3%81%8B%E3%80%81%E6%84%8F%E5%91%B3%E3%81%AA%E3%81%84%E3%81%A3%E3%81%97%E3%82%87">#</a></h2>
+<p>ダメなコード。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name"><span class="token keyword">var</span></span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span><br><span class="token class-name">IObservable<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span> incrementObservable <span class="token operator">=</span> Task<span class="token punctuation">.</span>Run <span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>	i<span class="token operator">++</span><span class="token punctuation">;</span><br>	Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"increment! - </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">i</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token keyword">return</span> i<span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">.</span>ToObservable <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Ready..."</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>incrementObservable <span class="token comment">// インクリメント</span><br>	<span class="token punctuation">.</span><span class="token function">Repeat</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> <span class="token comment">// ３回繰り返す</span><br>	<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span><br>		x  <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"OnNext(</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">x</span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>		ex <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"OnError(</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">ex<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>		<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"OnCompleted"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br></code></pre>
+<p><code>incrementObservable</code> は、副作用ありありですが、外部変数 i を +1 して後続に流す <code>IObservable&lt;int&gt;</code> です。<br>
+　これを <code>.Repeat(3)</code> して <code>.Subscribe</code> してますから、</p>
+<blockquote>
+<p>Ready...<br>
+increment! - 1<br>
+OnNext(1)<br>
+increment! - 2<br>
+OnNext(2)<br>
+increment! - 3<br>
+OnNext(3)<br>
+OnCompleted</p>
+</blockquote>
+<p>という出力を期待してました。<br>
+が、実際の出力はこう。</p>
+<blockquote>
+<p>increment! - 1<br>
+Ready...<br>
+OnNext(1)<br>
+OnNext(1)<br>
+OnNext(1)<br>
+OnCompleted</p>
+</blockquote>
+<p>Subscribe する前に Task が実行されてるし、 repeat してるのに increment されない。。。</p>
+<p>「・・・ん？ Task.Run().ToObservable() って、タスクを実行した結果を IObservable 化してるだけじゃね？」</p>
+<p>コード見たまんまなんですが、これに気づくのに１時間かかりました。。。</p>
+<p>期待通り動くのはこう↓。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name"><span class="token keyword">var</span></span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span><br><span class="token class-name">IObservable<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span> incrementObservable <span class="token operator">=</span> Observable<span class="token punctuation">.</span><span class="token function">FromAsync</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">=></span>Task<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>	i<span class="token operator">++</span><span class="token punctuation">;</span><br>	Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"increment! - </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">i</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token keyword">return</span> i<span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Ready..."</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>incrementObservable <span class="token comment">// インクリメント</span><br>	<span class="token punctuation">.</span><span class="token function">Repeat</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span> <span class="token comment">// ３回繰り返す</span><br>	<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span><br>		x  <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"OnNext(</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">x</span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>		ex <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"OnError(</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">ex<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span></span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>		<span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"OnCompleted"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br></code></pre>
+<p><code>Observable.FromAsync</code> で Task の実行そのものを IObservable 化します。<br>
+これの結果は正しくこう↓なりました。</p>
+<blockquote>
+<p>Ready...<br>
+increment! - 1<br>
+OnNext(1)<br>
+increment! - 2<br>
+OnNext(2)<br>
+increment! - 3<br>
+OnNext(3)<br>
+OnCompleted</p>
+</blockquote>
+<h2 id="task-%E3%81%AF%EF%BC%91%E5%9B%9E%E3%81%97%E3%81%8B%E5%AE%9F%E8%A1%8C%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84">Task は１回しか実行できない <a class="direct-link" href="#task-%E3%81%AF%EF%BC%91%E5%9B%9E%E3%81%97%E3%81%8B%E5%AE%9F%E8%A1%8C%E3%81%A7%E3%81%8D%E3%81%AA%E3%81%84">#</a></h2>
+<p>ところで、 <code>Task&lt;T&gt;</code> は一度実行すると、２度目は実行できません。（Furure や Promise もそうだっけ）</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name"><span class="token keyword">var</span></span> i <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span><br><span class="token class-name">Task<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span> incrementTask <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Task<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token punctuation">{</span><br>	i<span class="token operator">++</span><span class="token punctuation">;</span><br>	Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"increment! - </span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">i</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>	<span class="token keyword">return</span> i<span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>incrementTask<span class="token punctuation">.</span><span class="token function">RunSynchronously</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>incrementTask<span class="token punctuation">.</span><span class="token function">RunSynchronously</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> </code></pre>
+<p>このコードは２回目の <code>RunSynchronously()</code> で例外がでます。</p>
+<p>となると、 <code>incrementTask.ToObservable()</code> したとしても、期待通り動いてくれなさそうです。<br>
+（そもそも Task は <code>Start</code> などしないと実行されないので、Observable のチェインの中でいつ呼ぶの？）</p>
+<p>というわけで、 <code>Task.ToObservable()</code> は、どういう時に使えばいいのかよくわかりませんでした。だれか教えて下さい。（汗）</p>
+
+
+published at <time class="postlist-date" datetime="2016-01-16">16 Jan 2016</time>
+
+tags: 
+
+  <a href="/tags/ReactiveX/" class="post-tag">ReactiveX</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-01-21-ixjava-the-best-library-of-list-operations/">Android-Java でリスト操作するなら IxJava が決定版だと思う</a></li><li>Previous: <a href="/posts/2015-12-24-creating-stopwatchapp-using-rxjava-and-mvvm-patternn/">RxJava + MVVM パターンで作るストップウォッチアプリ</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-01-16-misunderstood-task-to-observable-conversion/ -->
+  </body>
+</html>

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>iOS アプリでアラート出してボタンが押されるまで待つ？方法を Objective-C と Xamarin.iOS で比べてみた</h1>
+
+<p>なんか割とニーズがあるみたいで。</p>
+<!--more-->
+<ul>
+<li><a href="http://teapipin.blog10.fc2.com/blog-entry-224.html">【Objective-C】アラート（UIAlertView）でボタンを押すまで次の処理を待つ方法 - creativi.tea</a></li>
+<li><a href="http://cocoadays.blogspot.jp/2011/05/ios.html">Cocoaの日々: [iOS] 非同期処理を同期処理に変える</a></li>
+<li><a href="http://qiita.com/edo_m18/items/cb1d9061d91e572b58eb">[Objective-C] UIAlertViewを同期処理する - Qiita </a></li>
+</ul>
+<h2 id="objective-c-%E3%81%AE%E5%A0%B4%E5%90%88">Objective-C の場合 <a class="direct-link" href="#objective-c-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<p><code>UIAlertView</code> は、結果を受け取るのが deletgate で、 Objective-C では、(Blocks を使わなければ) 受け取りが別メソッドになってしまう、しかも複数のアラートの結果が同じメソッドに飛んでくるので、tag値で分岐…とかいろいろで、ホントに使うのが面倒ですね。</p>
+<p>さらに、「アラートの結果を受け取ってから、次の処理を行う」という処理を素直に記述したいと思うと、上で示したような「アラートを表示して、結果が得られるまで while で待つ」というなんとも不格好なコードになってしまいます。下にも書いてみました。（あ、メンバ変数も使わざるを得ないし。）</p>
+<pre><code>//HogeViewController.m
+@implementation HogeViewController {
+    NSInteger _buttonIndex;
+}
+
+- (IBAction)buttonTouchUp:(id)sender
+{
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:nil
+                                message:NSLocalizedString(@&quot;なにか押して&quot;,@&quot;&quot;)
+                               delegate:self
+                      cancelButtonTitle:@&quot;Cancel&quot;
+                      otherButtonTitles:@&quot;OK&quot;, nil];
+    [alert show];
+    
+    // ボタンが押されるまで待つ
+    _buttonIndex = -1;
+    while (_buttonIndex == -1) {
+        [[NSRunLoop currentRunLoop]
+         runUntilDate:[NSDate dateWithTimeIntervalSinceNow:0.5f]]; // 0.5秒
+    }
+    
+    label1.text = [NSString stringWithFormat:@&quot;%d 番目のボタンを押したね&quot;, (int)_buttonIndex];
+}
+
+-(void)alertView:(UIAlertView*)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
+{
+	_buttonIndex = buttonIndex;
+}
+</code></pre>
+<p><code>[NSRunLoop runUntilDate]</code> なんて VB6 の <code>DoEvents</code> ですもんねなつかしい。</p>
+<h2 id="xamarin.ios(c%23)-%E3%81%AE%E5%A0%B4%E5%90%88">Xamarin.iOS(C#) の場合 <a class="direct-link" href="#xamarin.ios(c%23)-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<p>Objective-C ではややこしかった「アラートを出す→ボタンを押す→次の処理へ」という流れ、 Xamarin.iOS と C# ならこんなにシンプルに書けます。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">async</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnButtonTouch</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">object</span></span> sender<span class="token punctuation">,</span> <span class="token class-name">EventArgs</span> e<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> buttonIndex <span class="token operator">=</span> <span class="token keyword">await</span> <span class="token function">MsgBox</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"なにか押して"</span><span class="token punctuation">,</span> <span class="token string">"Cancel"</span><span class="token punctuation">,</span> <span class="token string">"OK"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    label1<span class="token punctuation">.</span>Text <span class="token operator">=</span> buttonIndex<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">+</span> <span class="token string">"番目を押したね"</span><span class="token punctuation">;</span>  <br><span class="token punctuation">}</span><br><br><span class="token keyword">static</span> <span class="token return-type class-name">Task<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span> <span class="token function">MsgBox</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> title<span class="token punctuation">,</span> <span class="token class-name"><span class="token keyword">string</span></span> message<span class="token punctuation">,</span> <br>    <span class="token class-name"><span class="token keyword">string</span></span> cancelButtonTitle<span class="token punctuation">,</span> <span class="token keyword">params</span> <span class="token class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> buttons<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> comp <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">TaskCompletionSource<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token class-name"><span class="token keyword">var</span></span> alert <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">UIAlertView</span><span class="token punctuation">(</span>title<span class="token punctuation">,</span> message<span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">,</span> cancelButtonTitle<span class="token punctuation">,</span> buttons<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    alert<span class="token punctuation">.</span>Clicked <span class="token operator">+=</span> <span class="token punctuation">(</span>_<span class="token punctuation">,</span> e<span class="token punctuation">)</span> <span class="token operator">=></span> comp<span class="token punctuation">.</span><span class="token function">TrySetResult</span><span class="token punctuation">(</span>e<span class="token punctuation">.</span>ButtonIndex<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    alert<span class="token punctuation">.</span><span class="token function">Show</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    <span class="token keyword">return</span> comp<span class="token punctuation">.</span>Task<span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>VB6 が懐かしくて <code>MsgBox</code> ってメソッドにしちゃいましたよ。</p>
+<p><code>MsgBox</code> は、Task を返す <strong>非同期な</strong> メソッドです。この非同期処理が終了するのは、<code>TaskCompletionSource.TrySetResult</code> が呼び出された時、つまりアラートのボタンが押された時です。この非同期処理の戻り値はもちろん押したボタンのインデックスです。</p>
+<p>非同期メソッドである <code>MsgBox</code> を呼び出す側には、キーワード <code>await</code> が付いています。<br>
+これをつけると、次行以降の処理は、非同期の MsgBox が完了した後、順次実行されます、つまり待っているわけではなく、どちらかというと、 <strong>処理を後続に付け足す</strong> 感じ。<br>
+さらに、この後続処理はUIスレッドで実行されるので、UIパーツへのアクセスも問題ありません。</p>
+<p><code>async</code> はメソッド内で <code>await</code> を使うときにつけるお約束。</p>
+<p>async/await は一見、ただの同期処理に見えるので理解して使う必要がありますが、Objective-C のコードに比べて、とても簡潔に、流れるように書くことができるのが分かると思います。</p>
+<p><strong>C# の非常に強力な言語機能は、<a href="https://xamarin.com/">Xamarin</a> を選択する大きな理由の一つです。</strong></p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="http://stackoverflow.com/questions/4613071/messagebox-show-and-dialogresult-equivalent-in-monotouch">c# - Messagebox.Show and DialogResult equivalent in MonoTouch - Stack Overflow</a></li>
+<li><a href="http://ufcpp.wordpress.com/2012/11/12/asyncawait%e3%81%a8%e5%90%8c%e6%99%82%e5%ae%9f%e8%a1%8c%e5%88%b6%e5%be%a1/">async/awaitと同時実行制御 ｜ ++C++; // 未確認飛行 C ブログ</a></li>
+<li><a href="http://www.slideshare.net/bleistift/asyncawait2">async/await不要論</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2014-03-10">10 Mar 2014</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/Objective-C/" class="post-tag">Objective-C</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2014-03-19-android-memory-leaks-improvements/">Activity がメモリリークしにくくなってる件</a></li><li>Previous: <a href="/posts/2014-02-27-using-reactiveui-on-xamarin-ios/">MVVMフレームワーク「ReactiveUI」を Xamarin.iOS で使ってみる</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2014-03-10-using-uialertview-objc-vs-xamarin/ -->
+  </body>
+</html>

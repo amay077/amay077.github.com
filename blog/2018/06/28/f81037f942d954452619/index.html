@@ -1,940 +1,67 @@
 <!doctype html>
-<html ⚡ lang="ja">
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kotlin の Channel と Rx の Observable/Subject の対比</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>Kotlin の Channel と Rx の Observable/Subject の対比</title>
-  <meta name="description" content="これ の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>Kotlin の Channel と Rx の Observable/Subject の対比 | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="Kotlin の Channel と Rx の Observable/Subject の対比" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="これ の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。" />
-<meta property="og:description" content="これ の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2018-06-28T09:59:00-05:00" />
-<script type="application/ld+json">
-{"headline":"Kotlin の Channel と Rx の Observable/Subject の対比","dateModified":"2018-06-28T09:59:00-05:00","datePublished":"2018-06-28T09:59:00-05:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619/"},"url":"https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"これ の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619/",
-  "headline": "Kotlin の Channel と Rx の Observable/Subject の対比",
-  "datePublished": "2018-06-28T09:59:00-05:00",
-  "dateModified": "2018-06-28T09:59:00-05:00",
-  "description": "これ の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>Kotlin の Channel と Rx の Observable/Subject の対比</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">Kotlin の Channel と Rx の Observable/Subject の対比</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p><a href="https://qiita.com/amay077/items/d4629f9d20ba36a1347e">これ</a> の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。<br />
-<!--more--></p>
-
-<h2 id="まずはこれを読もう">まずはこれを読もう</h2>
-
+<p><a href="https://qiita.com/amay077/items/d4629f9d20ba36a1347e">これ</a> の通り、Rx には本来の目的のみを遂行してもらいたいので考えみました。</p>
+<!--more-->
+<h2 id="%E3%81%BE%E3%81%9A%E3%81%AF%E3%81%93%E3%82%8C%E3%82%92%E8%AA%AD%E3%82%82%E3%81%86">まずはこれを読もう <a class="direct-link" href="#%E3%81%BE%E3%81%9A%E3%81%AF%E3%81%93%E3%82%8C%E3%82%92%E8%AA%AD%E3%82%82%E3%81%86">#</a></h2>
 <p>下記に書いてある以上の説明はないです（圧倒的感謝っ）</p>
-
 <ul>
-  <li><a href="https://qiita.com/pljp/items/a1f3e8d1d13c88a94907">実例によるkotlinx.coroutinesの手引き（日本語訳） - Qiita</a></li>
-  <li><a href="https://dev.classmethod.jp/smartphone/kotlin-coroutine-channel-1/">[Kotlin]コルーチンのChannelのハマり所 ｜ Developers.IO</a></li>
-  <li><a href="https://qiita.com/pljp/items/f748125934fd3f880565">Kotlinコルーチンによるリアクティブストリームのガイド (日本語訳) - Qiita</a></li>
+<li><a href="https://qiita.com/pljp/items/a1f3e8d1d13c88a94907">実例によるkotlinx.coroutinesの手引き（日本語訳） - Qiita</a></li>
+<li><a href="https://dev.classmethod.jp/smartphone/kotlin-coroutine-channel-1/">[Kotlin]コルーチンのChannelのハマり所 ｜ Developers.IO</a></li>
+<li><a href="https://qiita.com/pljp/items/f748125934fd3f880565">Kotlinコルーチンによるリアクティブストリームのガイド (日本語訳) - Qiita</a></li>
 </ul>
-
-<h2 id="kotlin-の-channelt-と-broadcastchannelt">Kotlin の <code class="highlighter-rouge">Channel&lt;T&gt;</code> と <code class="highlighter-rouge">BroadcastChannel&lt;T&gt;</code></h2>
-
-<p><code class="highlighter-rouge">Channel</code> は「キューのようなもの」と例えられます、<code class="highlighter-rouge">BroadcastChannel</code> も同じく。</p>
-
-<p><code class="highlighter-rouge">Channel&lt;T&gt;</code> は、送信者と受信者が 1:1 で、<br />
-<code class="highlighter-rouge">BroadcastChannel&lt;T&gt;</code> は、送信者と受信者が 1:n です。 <strong>Broadcast</strong> と言われるように。</p>
-
+<h2 id="kotlin-%E3%81%AE-channel%3Ct%3E-%E3%81%A8-broadcastchannel%3Ct%3E">Kotlin の <code>Channel&lt;T&gt;</code> と <code>BroadcastChannel&lt;T&gt;</code> <a class="direct-link" href="#kotlin-%E3%81%AE-channel%3Ct%3E-%E3%81%A8-broadcastchannel%3Ct%3E">#</a></h2>
+<p><code>Channel</code> は「キューのようなもの」と例えられます、<code>BroadcastChannel</code> も同じく。</p>
+<p><code>Channel&lt;T&gt;</code> は、送信者と受信者が 1:1 で、<br>
+<code>BroadcastChannel&lt;T&gt;</code> は、送信者と受信者が 1:n です。 <strong>Broadcast</strong> と言われるように。</p>
 <p>両方使ってみます。</p>
-
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Channel の例</span>
-<span class="kd">val</span> <span class="py">c</span> <span class="p">=</span> <span class="n">ArrayChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;(</span><span class="m">2</span><span class="p">)</span> <span class="c1">// capacity=2 は具体的に何に効くのか不明…</span>
-<span class="n">launch</span><span class="p">(</span><span class="n">CommonPool</span><span class="p">)</span> <span class="p">{</span>
-    <span class="c1">// delay(2000) // キューに追加されてから受信してもok</span>
-    <span class="n">c</span><span class="p">.</span><span class="n">consumeEach</span> <span class="p">{</span>
-        <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT"</span><span class="p">,</span><span class="s">"${it}"</span><span class="p">)</span>
-    <span class="p">}</span>
-<span class="p">}</span>
-
-<span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span>
-    <span class="n">c</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"a"</span><span class="p">)</span>
-    <span class="n">c</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"b"</span><span class="p">)</span>
-    <span class="n">c</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"c"</span><span class="p">)</span>
-<span class="p">}</span>
-
-<span class="c1">// BroadcastChannel の例</span>
-<span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">val</span> <span class="py">bc</span> <span class="p">=</span> <span class="n">ArrayBroadcastChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;(</span><span class="m">10</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"A"</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"B"</span><span class="p">)</span>
-
-    <span class="c1">// 受信者1</span>
-    <span class="n">launch</span><span class="p">(</span><span class="n">newSingleThreadContext</span><span class="p">(</span><span class="s">"threadA"</span><span class="p">))</span> <span class="p">{</span>
-        <span class="kd">val</span> <span class="py">subscription1</span><span class="p">:</span> <span class="n">SubscriptionReceiveChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;</span> <span class="p">=</span> <span class="n">bc</span><span class="p">.</span><span class="n">openSubscription</span><span class="p">()</span>
-        <span class="n">subscription1</span><span class="p">.</span><span class="n">consumeEach</span> <span class="p">{</span>
-            <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT-BROADCAST-1"</span><span class="p">,</span><span class="s">"${it}"</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="c1">// ここに何か書いても実行されないよん</span>
-    <span class="p">}</span>
-
-    <span class="c1">// 受信者2</span>
-    <span class="n">launch</span><span class="p">(</span><span class="n">newSingleThreadContext</span><span class="p">(</span><span class="s">"threadB"</span><span class="p">))</span> <span class="p">{</span>
-        <span class="kd">val</span> <span class="py">subscription2</span><span class="p">:</span> <span class="n">SubscriptionReceiveChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;</span> <span class="p">=</span> <span class="n">bc</span><span class="p">.</span><span class="n">openSubscription</span><span class="p">()</span>
-        <span class="n">subscription2</span><span class="p">.</span><span class="n">consumeEach</span> <span class="p">{</span>
-            <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT-BROADCAST-2"</span><span class="p">,</span><span class="s">"${it}"</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="c1">// ここに何か書いても実行されないよん</span>
-    <span class="p">}</span>
-
-    <span class="n">delay</span><span class="p">(</span><span class="m">2000</span><span class="p">)</span> <span class="c1">// 受信側のために少し待ってから</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"C"</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"D"</span><span class="p">)</span>
-<span class="p">}</span>
-
-</code></pre></div></div>
-
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// Channel の例</span><br><span class="token keyword">val</span> c <span class="token operator">=</span> ArrayChannel<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">)</span> <span class="token comment">// capacity=2 は具体的に何に効くのか不明…</span><br><span class="token function">launch</span><span class="token punctuation">(</span>CommonPool<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token comment">// delay(2000) // キューに追加されてから受信してもok</span><br>    c<span class="token punctuation">.</span><span class="token function">consumeEach</span> <span class="token punctuation">{</span><br>        Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>it<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br><span class="token function">launch</span><span class="token punctuation">(</span>UI<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    c<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"a"</span><span class="token punctuation">)</span><br>    c<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"b"</span><span class="token punctuation">)</span><br>    c<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"c"</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><br><br><span class="token comment">// BroadcastChannel の例</span><br><span class="token function">launch</span><span class="token punctuation">(</span>UI<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">val</span> bc <span class="token operator">=</span> ArrayBroadcastChannel<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token number">10</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"A"</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"B"</span><span class="token punctuation">)</span><br><br>    <span class="token comment">// 受信者1</span><br>    <span class="token function">launch</span><span class="token punctuation">(</span><span class="token function">newSingleThreadContext</span><span class="token punctuation">(</span><span class="token string">"threadA"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> subscription1<span class="token operator">:</span> SubscriptionReceiveChannel<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token operator">=</span> bc<span class="token punctuation">.</span><span class="token function">openSubscription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        subscription1<span class="token punctuation">.</span><span class="token function">consumeEach</span> <span class="token punctuation">{</span><br>            Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT-BROADCAST-1"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>it<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// ここに何か書いても実行されないよん</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// 受信者2</span><br>    <span class="token function">launch</span><span class="token punctuation">(</span><span class="token function">newSingleThreadContext</span><span class="token punctuation">(</span><span class="token string">"threadB"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> subscription2<span class="token operator">:</span> SubscriptionReceiveChannel<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token operator">=</span> bc<span class="token punctuation">.</span><span class="token function">openSubscription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        subscription2<span class="token punctuation">.</span><span class="token function">consumeEach</span> <span class="token punctuation">{</span><br>            Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT-BROADCAST-2"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>it<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// ここに何か書いても実行されないよん</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token function">delay</span><span class="token punctuation">(</span><span class="token number">2000</span><span class="token punctuation">)</span> <span class="token comment">// 受信側のために少し待ってから</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"C"</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"D"</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span><br></code></pre>
 <p><strong>上記の出力:</strong></p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KT a
+<pre><code>KT a
    b
    c
 
@@ -942,235 +69,95 @@ KT-BROADCAST-1  C
 KT-BROADCAST-2  C
                 D
 KT-BROADCAST-1  D
-</code></pre></div></div>
-
-<p><code class="highlighter-rouge">Channel</code> は <code class="highlighter-rouge">send</code> されたものを <code class="highlighter-rouge">consumeEach { }</code> で受信します。1：1 です。<br />
-ここで使っている <code class="highlighter-rouge">ArrayChannel</code> は単純なキューなので、send が先、あとから consume でも問題なくすべて受信できます（<code class="highlighter-rouge">capacity=2</code> は？？）。</p>
-
-<p>一方 <code class="highlighter-rouge">BroadcastChannel</code> は、<code class="highlighter-rouge">. openSubscription()</code> を呼ぶことで複数の受信者を持てます。受信者1と2が、それぞれ同じ値を受信できることがわかるでしょう。</p>
-
-<p><code class="highlighter-rouge">ArrayBroadcastChannel</code> では、受信登録前に追加した <code class="highlighter-rouge">"A", "B"</code> が受信されていません。<br />
-これは BroadcastChannel というよりは <code class="highlighter-rouge">ArrayBroadcastChannel</code> の特性で、 <strong>受信者が誰も居ない状態で <code class="highlighter-rouge">send()</code> された値はそのまま捨てられます。</strong></p>
-
-<h3 id="channel-send-と-offer">Channel. <code class="highlighter-rouge">send()</code> と <code class="highlighter-rouge">offer()</code></h3>
-
+</code></pre>
+<p><code>Channel</code> は <code>send</code> されたものを <code>consumeEach { }</code> で受信します。1：1 です。<br>
+ここで使っている <code>ArrayChannel</code> は単純なキューなので、send が先、あとから consume でも問題なくすべて受信できます（<code>capacity=2</code> は？？）。</p>
+<p>一方 <code>BroadcastChannel</code> は、<code>. openSubscription()</code> を呼ぶことで複数の受信者を持てます。受信者1と2が、それぞれ同じ値を受信できることがわかるでしょう。</p>
+<p><code>ArrayBroadcastChannel</code> では、受信登録前に追加した <code>&quot;A&quot;, &quot;B&quot;</code> が受信されていません。<br>
+これは BroadcastChannel というよりは <code>ArrayBroadcastChannel</code> の特性で、 <strong>受信者が誰も居ない状態で <code>send()</code> された値はそのまま捨てられます。</strong></p>
+<h3 id="channel.-send()-%E3%81%A8-offer()">Channel. <code>send()</code> と <code>offer()</code> <a class="direct-link" href="#channel.-send()-%E3%81%A8-offer()">#</a></h3>
 <p>どちらも「キューに要素を追加する」という役割ですが、次の違いがあります。</p>
-
-<h4 id="send">send()</h4>
-
+<h4 id="send()">send() <a class="direct-link" href="#send()">#</a></h4>
 <ul>
-  <li>コルーチンの中(<code class="highlighter-rouge">launch(xx) { }</code>)でしか使えない</li>
-  <li>Channel のキャパシティを超える要素を追加できる(※半信半疑。<code class="highlighter-rouge">ArrayCannel</code> では追加できてしまった)</li>
+<li>コルーチンの中(<code>launch(xx) { }</code>)でしか使えない</li>
+<li>Channel のキャパシティを超える要素を追加できる(※半信半疑。<code>ArrayCannel</code> では追加できてしまった)</li>
 </ul>
-
-<h4 id="offer">offer()</h4>
-
+<h4 id="offer()">offer() <a class="direct-link" href="#offer()">#</a></h4>
 <ul>
-  <li>コルーチン外でも使える</li>
-  <li>Channel のキャパシティを超える要素を追加できない(<code class="highlighter-rouge">false</code> が返却される)</li>
+<li>コルーチン外でも使える</li>
+<li>Channel のキャパシティを超える要素を追加できない(<code>false</code> が返却される)</li>
 </ul>
-
 <p>参考 − <a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-channel/index.html">Channel - kotlinx-coroutines-core</a></p>
-
-<h3 id="arraybroadcastchannel-と-conflatedbroadcastchannel">ArrayBroadcastChannel と ConflatedBroadcastChannel</h3>
-
-<p>BroadcastChannel には <code class="highlighter-rouge">ArrayBroadcastChannel</code> の他に <code class="highlighter-rouge">ConflatedBroadcastChannel</code> というものがあります。</p>
-
+<h3 id="arraybroadcastchannel-%E3%81%A8-conflatedbroadcastchannel">ArrayBroadcastChannel と ConflatedBroadcastChannel <a class="direct-link" href="#arraybroadcastchannel-%E3%81%A8-conflatedbroadcastchannel">#</a></h3>
+<p>BroadcastChannel には <code>ArrayBroadcastChannel</code> の他に <code>ConflatedBroadcastChannel</code> というものがあります。</p>
 <ul>
-  <li><a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-conflated-broadcast-channel/index.html">ConflatedBroadcastChannel - kotlinx-coroutines-core</a></li>
+<li><a href="https://kotlin.github.io/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.experimental.channels/-conflated-broadcast-channel/index.html">ConflatedBroadcastChannel - kotlinx-coroutines-core</a></li>
 </ul>
-
-<p>これは、 <strong>最近 <code class="highlighter-rouge">send()</code> された値をひとつだけキャッシュしておく</strong> BroadcastChannel です、どっかで聞いたことありますね。</p>
-
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">launch</span><span class="p">(</span><span class="n">UI</span><span class="p">)</span> <span class="p">{</span>
-    <span class="kd">val</span> <span class="py">bc</span> <span class="p">=</span> <span class="n">ConflatedBroadcastChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;()</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"A"</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"B"</span><span class="p">)</span>
-
-    <span class="c1">// 受信者1</span>
-    <span class="n">launch</span><span class="p">(</span><span class="n">newSingleThreadContext</span><span class="p">(</span><span class="s">"threadA"</span><span class="p">))</span> <span class="p">{</span>
-        <span class="kd">val</span> <span class="py">subscription1</span><span class="p">:</span> <span class="n">SubscriptionReceiveChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;</span> <span class="p">=</span> <span class="n">bc</span><span class="p">.</span><span class="n">openSubscription</span><span class="p">()</span>
-        <span class="n">subscription1</span><span class="p">.</span><span class="n">consumeEach</span> <span class="p">{</span>
-            <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT-BROADCAST-1"</span><span class="p">,</span><span class="s">"${it}"</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="c1">// ここに何か書いても実行されないよん</span>
-    <span class="p">}</span>
-
-    <span class="c1">// 受信者2</span>
-    <span class="n">launch</span><span class="p">(</span><span class="n">newSingleThreadContext</span><span class="p">(</span><span class="s">"threadB"</span><span class="p">))</span> <span class="p">{</span>
-        <span class="kd">val</span> <span class="py">subscription2</span><span class="p">:</span> <span class="n">SubscriptionReceiveChannel</span><span class="p">&lt;</span><span class="n">String</span><span class="p">&gt;</span> <span class="p">=</span> <span class="n">bc</span><span class="p">.</span><span class="n">openSubscription</span><span class="p">()</span>
-        <span class="n">subscription2</span><span class="p">.</span><span class="n">consumeEach</span> <span class="p">{</span>
-            <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT-BROADCAST-2"</span><span class="p">,</span><span class="s">"${it}"</span><span class="p">)</span>
-        <span class="p">}</span>
-        <span class="c1">// ここに何か書いても実行されないよん</span>
-    <span class="p">}</span>
-
-    <span class="n">delay</span><span class="p">(</span><span class="m">2000</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"C"</span><span class="p">)</span>
-    <span class="n">bc</span><span class="p">.</span><span class="n">send</span><span class="p">(</span><span class="s">"D"</span><span class="p">)</span>
-
-    <span class="n">Log</span><span class="p">.</span><span class="n">d</span><span class="p">(</span><span class="s">"KT-BROADCAST-LATEST"</span><span class="p">,</span><span class="s">"${bc.valueOrNull}"</span><span class="p">)</span>
-<span class="p">}</span>
-</code></pre></div></div>
-
+<p>これは、 <strong>最近 <code>send()</code> された値をひとつだけキャッシュしておく</strong> BroadcastChannel です、どっかで聞いたことありますね。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token function">launch</span><span class="token punctuation">(</span>UI<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">val</span> bc <span class="token operator">=</span> ConflatedBroadcastChannel<span class="token operator">&lt;</span>String<span class="token operator">></span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"A"</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"B"</span><span class="token punctuation">)</span><br><br>    <span class="token comment">// 受信者1</span><br>    <span class="token function">launch</span><span class="token punctuation">(</span><span class="token function">newSingleThreadContext</span><span class="token punctuation">(</span><span class="token string">"threadA"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> subscription1<span class="token operator">:</span> SubscriptionReceiveChannel<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token operator">=</span> bc<span class="token punctuation">.</span><span class="token function">openSubscription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        subscription1<span class="token punctuation">.</span><span class="token function">consumeEach</span> <span class="token punctuation">{</span><br>            Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT-BROADCAST-1"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>it<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// ここに何か書いても実行されないよん</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// 受信者2</span><br>    <span class="token function">launch</span><span class="token punctuation">(</span><span class="token function">newSingleThreadContext</span><span class="token punctuation">(</span><span class="token string">"threadB"</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">val</span> subscription2<span class="token operator">:</span> SubscriptionReceiveChannel<span class="token operator">&lt;</span>String<span class="token operator">></span> <span class="token operator">=</span> bc<span class="token punctuation">.</span><span class="token function">openSubscription</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        subscription2<span class="token punctuation">.</span><span class="token function">consumeEach</span> <span class="token punctuation">{</span><br>            Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT-BROADCAST-2"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>it<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br>        <span class="token punctuation">}</span><br>        <span class="token comment">// ここに何か書いても実行されないよん</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token function">delay</span><span class="token punctuation">(</span><span class="token number">2000</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"C"</span><span class="token punctuation">)</span><br>    bc<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">"D"</span><span class="token punctuation">)</span><br><br>    Log<span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span><span class="token string">"KT-BROADCAST-LATEST"</span><span class="token punctuation">,</span><span class="token string">"<span class="token interpolation"><span class="token delimiter variable">${</span>bc<span class="token punctuation">.</span>valueOrNull<span class="token delimiter variable">}</span></span>"</span><span class="token punctuation">)</span><br><span class="token punctuation">}</span></code></pre>
 <p><strong>上記の出力:</strong></p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>KT-BROADCAST-1  B
+<pre><code>KT-BROADCAST-1  B
 KT-BROADCAST-2  B
 KT-BROADCAST-1  C
 KT-BROADCAST-2  C
                 D
 KT-BROADCAST-LATEST  D
 KT-BROADCAST-1  D
-</code></pre></div></div>
-
-<p>上記のように、受信登録前に <code class="highlighter-rouge">send</code> された <code class="highlighter-rouge">A, B</code> の内、最後に送信された <code class="highlighter-rouge">B</code> が受信できています。<br />
-また、最後に送信された値を <code class="highlighter-rouge">.valueOrNull</code> プロパティで取り出すことができます。</p>
-
-<h2 id="rx-との対比">Rx との対比</h2>
-
+</code></pre>
+<p>上記のように、受信登録前に <code>send</code> された <code>A, B</code> の内、最後に送信された <code>B</code> が受信できています。<br>
+また、最後に送信された値を <code>.valueOrNull</code> プロパティで取り出すことができます。</p>
+<h2 id="rx-%E3%81%A8%E3%81%AE%E5%AF%BE%E6%AF%94">Rx との対比 <a class="direct-link" href="#rx-%E3%81%A8%E3%81%AE%E5%AF%BE%E6%AF%94">#</a></h2>
 <p>さてさて、 Channel と BroadcastChannel を次のようにまとめてみました。</p>
-
 <ul>
-  <li>Channel は 送信1 : 受信1 のキュー</li>
-  <li>BroadcastChannel は 送信1 : 受信n</li>
-  <li>ArrayBroadcastChannel は誰も受信者が居ない時に send された値は捨てられる</li>
-  <li>ConflatedBroadcastChannel は(受信者が居なくても) send された最新の値を一つキャッシュして新しい受信者に配信する</li>
+<li>Channel は 送信1 : 受信1 のキュー</li>
+<li>BroadcastChannel は 送信1 : 受信n</li>
+<li>ArrayBroadcastChannel は誰も受信者が居ない時に send された値は捨てられる</li>
+<li>ConflatedBroadcastChannel は(受信者が居なくても) send された最新の値を一つキャッシュして新しい受信者に配信する</li>
 </ul>
-
-<p>次に Rx の Observable/Subject、Hot/Cold について次のようにまとめます(<code class="highlighter-rouge">Observable/Flowable/Single/Completable</code> などの違いについては述べません)。</p>
-
+<p>次に Rx の Observable/Subject、Hot/Cold について次のようにまとめます(<code>Observable/Flowable/Single/Completable</code> などの違いについては述べません)。</p>
 <ul>
-  <li>Cold Observable は 「あなただけの」 Observable(ニコ動<sup id="fnref:1"><a href="#fn:1" class="footnote">1</a></sup>)</li>
-  <li>Hot Observable は 「みんなの」 Observable(ニコ生)</li>
-  <li>PublishSubject は <code class="highlighter-rouge">onNext</code> された値を subscriber に配信する(subscriber が居なければ無視される)</li>
-  <li>BehaviorSubject は subscriber が居なくても <code class="highlighter-rouge">onNext</code> された最新の値をキャッシュして新しい subscriber に配信する</li>
+<li>Cold Observable は 「あなただけの」 Observable(ニコ動[^1])</li>
+<li>Hot Observable は 「みんなの」 Observable(ニコ生)</li>
+<li>PublishSubject は <code>onNext</code> された値を subscriber に配信する(subscriber が居なければ無視される)</li>
+<li>BehaviorSubject は subscriber が居なくても <code>onNext</code> された最新の値をキャッシュして新しい subscriber に配信する</li>
 </ul>
-
 <p>そうすると、Channel と Rx は次のように対比できると考えます。</p>
-
+<p>[^1]: <a href="https://qiita.com/amay077/items/4bb6b09a1911b074f50c">Hot Observable と ConnectableObservable について - Qiita</a></p>
 <ul>
-  <li>Channel - Cold Observable</li>
-  <li>ArrayBroadcastChannel - PublishSubject(Hot Observable)</li>
-  <li>ConflatedBroadcastChannel - BehaviorSubject(Hot Observable) ※これは冒頭のリンクにも説明あり</li>
+<li>Channel - Cold Observable</li>
+<li>ArrayBroadcastChannel - PublishSubject(Hot Observable)</li>
+<li>ConflatedBroadcastChannel - BehaviorSubject(Hot Observable) ※これは冒頭のリンクにも説明あり</li>
 </ul>
-
 <p>具体的には、</p>
-
 <ul>
-  <li>メソッドの返値に <code class="highlighter-rouge">Observable&lt;T&gt;</code> を使っている → <code class="highlighter-rouge">Channel&lt;T&gt;</code> に替える</li>
-  <li>公開プロパティとして <code class="highlighter-rouge">Observable&lt;T&gt;</code>(実体は <code class="highlighter-rouge">Subject&lt;T&gt;</code>) を用意している → <code class="highlighter-rouge">BroadcastChannel&lt;T&gt;</code> に替える</li>
+<li>メソッドの返値に <code>Observable&lt;T&gt;</code> を使っている → <code>Channel&lt;T&gt;</code> に替える</li>
+<li>公開プロパティとして <code>Observable&lt;T&gt;</code>(実体は <code>Subject&lt;T&gt;</code>) を用意している → <code>BroadcastChannel&lt;T&gt;</code> に替える</li>
 </ul>
-
 <p>ことができると思います。おまけですが、</p>
-
 <ul>
-  <li>メソッドの返値に <code class="highlighter-rouge">Single&lt;T&gt;</code> や <code class="highlighter-rouge">Completable</code> を使っている → <code class="highlighter-rouge">Continuation&lt;T&gt;</code> に替える</li>
+<li>メソッドの返値に <code>Single&lt;T&gt;</code> や <code>Completable</code> を使っている → <code>Continuation&lt;T&gt;</code> に替える</li>
+</ul>
+<p>も。</p>
+<p>適当にリポジトリクラスを書いてみると、こんな感じかなと。</p>
+<pre class="language-kotlin"><code class="language-kotlin"><span class="token comment">// 「アドレス帳」 のリポジトリクラスのインターフェース</span><br><span class="token keyword">interface</span> AddressRepository <span class="token punctuation">{</span><br>   <span class="token comment">// アドレスリスト帳を通知する(1件のAddressの変更通知をするものなら完璧)</span><br>   <span class="token keyword">val</span> addresses<span class="token operator">:</span> BroadcastChannel<span class="token operator">&lt;</span>Array<span class="token operator">&lt;</span>Address<span class="token operator">></span><span class="token operator">></span><br><br>   <span class="token comment">// なんかの条件でアドレス帳を非同期で検索して結果を返す</span><br>   <span class="token keyword">fun</span> <span class="token function">filter</span><span class="token punctuation">(</span>criteria<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> Channel<span class="token operator">&lt;</span>Array<span class="token operator">&lt;</span>Address<span class="token operator">></span><span class="token operator">></span><br><br>   <span class="token comment">// 特定の名前の人がアドレス帳に存在するかを非同期で調べて居るなら true を返す</span><br>   <span class="token keyword">suspend</span> <span class="token keyword">fun</span> <span class="token function">exists</span><span class="token punctuation">(</span>name<span class="token operator">:</span> String<span class="token punctuation">)</span><span class="token operator">:</span> Boolean<br><span class="token punctuation">}</span></code></pre>
+<p><a href="https://qiita.com/amay077/items/d4629f9d20ba36a1347e">MV* の「つなぎ」に RxJava を使うのをやめたい</a> からは少し前進できたかなと。もっと勉強が必要です。</p>
+
+
+published at <time class="postlist-date" datetime="2018-06-28">28 Jun 2018</time>
+
+tags: 
+
+  <a href="/tags/RxJava/" class="post-tag">RxJava</a>
+  <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
+
+<hr>
+<ul><li>Next: <a href="/blog/2018/07/02/renew_microsoft_most_valuable_professional_2018/">MVP Renewal</a></li><li>Previous: <a href="/blog/2018/06/26/829630273721fb7a615e/">Firebase Functions + TypeScript を VSCode でデバッグする</a></li>
 </ul>
 
-<p>も。</p>
+    </main>
 
-<p>適当にリポジトリクラスを書いてみると、こんな感じかなと。</p>
+    <footer></footer>
 
-<div class="language-kotlin highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// 「アドレス帳」 のリポジトリクラスのインターフェース</span>
-<span class="kd">interface</span> <span class="nc">AddressRepository</span> <span class="p">{</span>
-   <span class="c1">// アドレスリスト帳を通知する(1件のAddressの変更通知をするものなら完璧)</span>
-   <span class="kd">val</span> <span class="py">addresses</span><span class="p">:</span> <span class="n">BroadcastChannel</span><span class="p">&lt;</span><span class="n">Array</span><span class="p">&lt;</span><span class="n">Address</span><span class="p">&gt;&gt;</span>
-
-   <span class="c1">// なんかの条件でアドレス帳を非同期で検索して結果を返す</span>
-   <span class="k">fun</span> <span class="n">filter</span><span class="p">(</span><span class="n">criteria</span><span class="p">:</span> <span class="n">String</span><span class="p">):</span> <span class="n">Channel</span><span class="p">&lt;</span><span class="n">Array</span><span class="p">&lt;</span><span class="n">Address</span><span class="p">&gt;&gt;</span>
-
-   <span class="c1">// 特定の名前の人がアドレス帳に存在するかを非同期で調べて居るなら true を返す</span>
-   <span class="n">suspend</span> <span class="k">fun</span> <span class="n">exists</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="n">String</span><span class="p">):</span> <span class="n">Boolean</span>
-<span class="p">}</span>
-</code></pre></div></div>
-
-<p><a href="https://qiita.com/amay077/items/d4629f9d20ba36a1347e">MV* の「つなぎ」に RxJava を使うのをやめたい</a> からは少し前進できたかなと。もっと勉強が必要です。</p>
-<div class="footnotes">
-  <ol>
-    <li id="fn:1">
-      <p><a href="https://qiita.com/amay077/items/4bb6b09a1911b074f50c">Hot Observable と ConnectableObservable について - Qiita</a> <a href="#fnref:1" class="reversefootnote">&#8617;</a></p>
-    </li>
-  </ol>
-</div>
-
-    </section>
-    <footer class="post-footer">
-
-      <section class="categories">
-        
-        <div class="category">RxJava</div>
-        
-        <div class="category">Kotlin</div>
-        
-        <p class="published">published <time datetime="2018-06-28 09:59">28 Jun 2018</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2018-06-28-f81037f942d954452619.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2018/06/28/f81037f942d954452619&text=Kotlin+%E3%81%AE+Channel+%E3%81%A8+Rx+%E3%81%AE+Observable%2FSubject+%E3%81%AE%E5%AF%BE%E6%AF%94&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
-
-
-        </a>
-      </section>
-
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
-
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
-
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
-
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2018/06/28/f81037f942d954452619/ -->
   </body>
 </html>

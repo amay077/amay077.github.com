@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Forms 向けのUIライブラリを作る時の注意点</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Forms 向けのUIライブラリを作る時の注意点</h1>
+
+<p><a href="http://qiita.com/advent-calendar/2016/xamarin-student">[学生さん・初心者さん大歓迎！]Xamarin Advent Calendar 2016</a> 16日目です。<br>
+<a href="http://ticktack.hatenablog.jp/entry/2015/11/19/083000">【Xamarin.Forms】自作ライブラリのカスタムコントロール使用時にSystem.IO.FileNotFoundExceptionが発生する場合の対処 - ぴーさんログ</a></p>
+<!--more-->
+<p>これ系の話です。</p>
+<p>Xamarin.Forms 向けのライブラリで、使う側が XAML のみで完結しそうなものは、次のような種類があります。</p>
+<ul>
+<li>ValueConverter</li>
+<li>Behavior</li>
+<li>Effects</li>
+<li>Custom Renderer</li>
+</ul>
+<p>上２つと下２つで、症状と対策が異なるので、それぞれ説明します。</p>
+<h2 id="valueconverter%2C-behavior-%E3%81%AE%E5%A0%B4%E5%90%88">ValueConverter, Behavior の場合 <a class="direct-link" href="#valueconverter%2C-behavior-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<h2 id="%E7%97%87%E7%8A%B6">症状 <a class="direct-link" href="#%E7%97%87%E7%8A%B6">#</a></h2>
+<p>これらのライブラリを XAML でしか使用していない（C# のコードで使用していない）場合、冒頭のリンクで紹介したような <code>System.IO.FileNotFoundException</code> が発生することがあります。<br>
+これは iOS プロジェクトの実行で顕著なようです。（Android プロジェクトの場合、通常の実行ではプロジェクトで参照されているアセンブリが全て配布されるためでしょうか。）</p>
+<h2 id="%E5%AF%BE%E7%AD%96">対策 <a class="direct-link" href="#%E5%AF%BE%E7%AD%96">#</a></h2>
+<p>これを回避するには、 P3PPP さんが書いているように <code>new MyLib.MyControl()</code> などと、そのアセンブリを参照するコードを明示的に書いておきます。</p>
+<p>あるいは、XAMLC という、XAML の事前コンパイル機能を使用することでも回避できます。これによりコンパイル時に XAML がパースされ、それに必要なアセンブリが配布されるためです。</p>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/xaml/xamlc/">XAML Compilation - Xamarin</a></li>
+</ul>
+<p>XAMLC は互換性維持のためデフォルトではOFFになっており、ON にするためには <code>XamlCompilationOptions.Compile</code> を namespace または page class に付与します。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// アセンブリまるっと指定</span><br><span class="token keyword">using</span> <span class="token namespace">Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Xaml</span><span class="token punctuation">;</span><br><span class="token range operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">[</span><span class="token attribute"><span class="token target keyword">assembly</span><span class="token punctuation">:</span> <span class="token class-name">XamlCompilation</span> <span class="token attribute-arguments"><span class="token punctuation">(</span>XamlCompilationOptions<span class="token punctuation">.</span>Compile<span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br><span class="token keyword">namespace</span> <span class="token namespace">PhotoApp</span><br><span class="token punctuation">{</span><br>  <span class="token range operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">}</span><br><br><br><span class="token comment">// 特定ページにのみ指定</span><br><span class="token keyword">using</span> <span class="token namespace">Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Xaml</span><span class="token punctuation">;</span><br><span class="token range operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">XamlCompilation</span> <span class="token attribute-arguments"><span class="token punctuation">(</span>XamlCompilationOptions<span class="token punctuation">.</span>Compile<span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">HomePage</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">ContentPage</span></span><br><span class="token punctuation">{</span><br>  <span class="token range operator">..</span><span class="token punctuation">.</span><br><span class="token punctuation">}</span></code></pre>
+<p>では XAMLC を強制させればOKかというとそうでもありません。これで解決できるのは、 ValueConverter, Behavior のライブラリのみです。</p>
+<p>そもそも XAMLC も、 <a href="https://blog.xamarin.com/adding-bindable-native-views-directly-to-xaml/">Native Embedding と併用できない</a> など、ON を強制できない事情もあります。</p>
+<h2 id="effects%2C-custom-renderer-%E3%81%AE%E5%A0%B4%E5%90%88">Effects, Custom Renderer の場合 <a class="direct-link" href="#effects%2C-custom-renderer-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<h3 id="%E7%97%87%E7%8A%B6-2">症状 <a class="direct-link" href="#%E7%97%87%E7%8A%B6-2">#</a></h3>
+<p>3rd party ライブラリとして提供される Effects, Custom Renderer には、 PCL による共通インターフェース部と、 Xamarin.Android、Xamarin.iOS によるプラットフォーム実装のアセンブリが存在します。</p>
+<p>これらの場合、プラットフォーム実装のアセンブリ(<code>MyLib.Droid.dll</code> や <code>MyLib.iOS.dll</code> のこと)もまた、配布されない場合があることに注意が必要です。</p>
+<p>CustomRenderer も Effects も DependencyService や RootingEffect を利用してプラットフォーム固有のアセンブリに制御を委譲していますが、プラットフォーム固有のアセンブリを参照するコードがあなたのアプリプロジェクトに存在しない場合、やはりプラットフォーム固有のアセンブリは配布されず、Effects や Custom Renderer が機能しないことになります。この場合、特に例外は出ません、機能するはずの Effects、CustomRenderer が表示されない、といった症状になります。</p>
+<h3 id="%E5%AF%BE%E7%AD%96-2">対策 <a class="direct-link" href="#%E5%AF%BE%E7%AD%96-2">#</a></h3>
+<p>これの対策は、C# でそのアセンブリを参照するコードを書くしかありません。しかも <strong>プラットフォーム毎に書く必要があります</strong> 。</p>
+<h4 id="android-%E5%81%B4">Android 側 <a class="direct-link" href="#android-%E5%81%B4">#</a></h4>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// MainActivity.cs</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainActivity</span> <span class="token punctuation">:</span> <span class="token keyword">global</span><span class="token punctuation">::</span>Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Platform<span class="token punctuation">.</span>Android<span class="token punctuation">.</span>FormsAppCompatActivity<br><span class="token punctuation">{</span><br>    <span class="token keyword">protected</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> bundle<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        TabLayoutResource <span class="token operator">=</span> Resource<span class="token punctuation">.</span>Layout<span class="token punctuation">.</span>Tabbar<span class="token punctuation">;</span><br>        ToolbarResource <span class="token operator">=</span> Resource<span class="token punctuation">.</span>Layout<span class="token punctuation">.</span>Toolbar<span class="token punctuation">;</span><br><br>        <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">OnCreate</span><span class="token punctuation">(</span>bundle<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token keyword">global</span><span class="token punctuation">::</span>Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">,</span> bundle<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        MyLib<span class="token punctuation">.</span>Initializer<span class="token punctuation">.</span><span class="token function">InitForDroid</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// ←これ！</span><br><br>        <span class="token function">LoadApplication</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h4 id="ios-%E5%81%B4">iOS 側 <a class="direct-link" href="#ios-%E5%81%B4">#</a></h4>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// AppDelegate.cs</span><br><span class="token keyword">public</span> <span class="token keyword">partial</span> <span class="token keyword">class</span> <span class="token class-name">AppDelegate</span> <span class="token punctuation">:</span> <span class="token keyword">global</span><span class="token punctuation">::</span>Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Platform<span class="token punctuation">.</span>iOS<span class="token punctuation">.</span>FormsApplicationDelegate<br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">bool</span></span> <span class="token function">FinishedLaunching</span><span class="token punctuation">(</span><span class="token class-name">UIApplication</span> app<span class="token punctuation">,</span> <span class="token class-name">NSDictionary</span> options<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">global</span><span class="token punctuation">::</span>Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span><span class="token function">Init</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token function">LoadApplication</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">App</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        MyLib<span class="token punctuation">.</span>Initializer<span class="token punctuation">.</span><span class="token function">InitForiOS</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// ←これ！</span><br><br>        <span class="token keyword">return</span> <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">FinishedLaunching</span><span class="token punctuation">(</span>app<span class="token punctuation">,</span> options<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>アセンブリを読み込ませるだけのコードなので、プラットフォーム毎、アセンブリ毎に１回だけ呼べばOKです。</p>
+<p>私が開発・配布している <a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">Xamarin.Forms.GoogleMaps</a> も、Custom Renderer を使っているのでこれに該当しますが、 X.F.GoogleMaps は、各プラットフォームで Google Maps の API Key を指定してもらう必要があるため、もともと <code>MainActivity.cs</code> や <code>AppDelegate.cs</code> で <code>Xamarin.FormsGoogleMaps.Init(&quot;your_api_key&quot;)</code> を呼び出してもらう必要があったため、本件の問題は発生していませんでした。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>Effects, Custom Renderer の場合の対応策である</p>
+<p>「<code>MainActivity.cs</code> や <code>AppDelegate.cs</code> で <code>MyLib.Initializer.InitForDroid()</code>, <code>MyLib.Initializer.InitForiOS()</code> を呼んでもらう」</p>
+<p>は、ValueConverter, Behavior の対策も包括します。よって、Xamarin.Forms 向けの UI ライブラリを提供しようと考えている人は、とりあえず <strong>実装は空っぽの <code>Initializer.Init()</code> メソッドを用意して、それを各プラットフォームの起動直後に呼び出してもらう</strong> 、という「運用でカバー」をお願いします。</p>
+<p>今は ValueConverter、 Behavior しか提供するつもりがなくても、将来的に Effect、Custom Renderer も提供する可能性がゼロではない場合は、最初から各プラットフォームのプロジェクトも作って、上の <code>Init()</code> メソッドを用意しておいた方がよいと思います。</p>
+<p>「なんだかな〜」という気もしますが、現状はこうするしかなさそうです。</p>
+
+
+published at <time class="postlist-date" datetime="2016-12-31">31 Dec 2016</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Xamarin.Forms/" class="post-tag">Xamarin.Forms</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-01-01-bought_macbookpro_2016_with_touchbar/">MacBook Pro Late 2016 13インチ TouchBar付きと周辺機器を購入しました</a></li><li>Previous: <a href="/posts/2016-12-31-can_use_visual_basic_in_xamarin/">Visual Basic で Xamarin.Forms アプリ開発どこまでいける？</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-12-31-notice_for_creating_ui_library_for_xamarin_forms/ -->
+  </body>
+</html>

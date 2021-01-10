@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Android/EditTextでIMEの未確定文字列が確定された瞬間(のフォーク)</h1>
+
+<p>Android の EditText の文字列と、String 変数値を同期させたいケースって結構あると思うんですけど、<a href="http://developer.android.com/reference/android/view/View.OnFocusChangeListener.html">LostFocus</a> みたいなのでやると、オンフォーカスな状態で Activity が閉じられた時に LostFocus が呼ばれなくてあぼんとなるのは VB6あがりのプログラマ(=私)なら誰もが経験するんじゃないでしょうか？</p>
+<!-- more -->
+<p>じゃあ <a href="http://developer.android.com/reference/android/text/TextWatcher.html">onTextChanged</a> だぜ、って仕込んでみると、Android のこれは IME で変換中の文字列もバンバン飛んで来まして大変使い勝手が悪い。(サジェストなんかする際には必要なんでしょうけども)</p>
+<p>例えば、以下で紹介されている方法</p>
+<ul>
+<li><a href="http://blog.global-eng.co.jp/android/2011/04/08/textwatcher%e3%81%a7edittext%e3%81%ae%e5%85%a5%e5%8a%9b%e5%86%85%e5%ae%b9%e3%82%92%e3%83%aa%e3%82%a2%e3%83%ab%e3%82%bf%e3%82%a4%e3%83%a0%e3%81%ab%e5%8f%8d%e6%98%a0%e3%81%99%e3%82%8b/">TextWatcherでEditTextの入力内容をリアルタイムに反映する / GE Android Blog</a></li>
+</ul>
+<p>を実装しますと、IME確定前の文字列もじゃんじゃん同期してくれちゃいます。</p>
+<p>これに起因したであろう Android アプリもありまして(Instagram とか。今は治ってる。)、なんとかならんかなーと思っていました。</p>
+<p>そんな時、こちら↓</p>
+<ul>
+<li><a href="http://www.spiritek.co.jp/spkblog/2012/10/25/androidedittext%e3%81%a7ime%e3%81%ae%e6%9c%aa%e7%a2%ba%e5%ae%9a%e6%96%87%e5%ad%97%e5%88%97%e3%81%8c%e7%a2%ba%e5%ae%9a%e3%81%95%e3%82%8c%e3%81%9f%e7%9e%ac%e9%96%93/">Android/EditTextでIMEの未確定文字列が確定された瞬間 ｜ SpiriteK Blog</a></li>
+</ul>
+<p>の記事にめぐり逢いまして、まさに私が求めていたそのもの。</p>
+<p>ですが、未確定文字＝下線付き(<code>UnderlineSpan</code>)である、という前提がどうにもしっくり来ませんで(未確定文字に下線を付けない IME もそりゃあるだろうなーという意味で)。</p>
+<p>もちろん、その前で言及されている内部クラス <code>android.view.inputmethod.ComposingText</code> を文字列比較するのもうーん…。</p>
+<p>で、自分でも試行錯誤してみたところ、[Spanned.getSpanFlags](<a href="http://developer.android.com/reference/android/text/Spanned.html#getSpanFlags(java.lang.Object)">http://developer.android.com/reference/android/text/Spanned.html#getSpanFlags(java.lang.Object)</a> というメソッドがあるのに気づきました。あと、<a href="http://developer.android.com/reference/android/text/Spanned.html#SPAN_COMPOSING">SPAN_COMPOSING</a> というフラグも。</p>
+<p>これらを使って、文字列が確定されているかどうか？を識別することができるのではないかと考え、前出の記事のコードを以下のように修正してみました。</p>
+<p><strong>DetermineComposingText.java</strong></p>
+<pre class="language-java"><code class="language-java">edit1<span class="token punctuation">.</span><span class="token function">addTextChangedListener</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">TextWatcher</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">int</span> currentLength <span class="token operator">=</span> <span class="token number">0</span><span class="token punctuation">;</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onTextChanged</span><span class="token punctuation">(</span><span class="token class-name">CharSequence</span> s<span class="token punctuation">,</span> <span class="token keyword">int</span> start<span class="token punctuation">,</span> <span class="token keyword">int</span> before<span class="token punctuation">,</span> <span class="token keyword">int</span> count<span class="token punctuation">)</span> <span class="token punctuation">{</span><span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">beforeTextChanged</span><span class="token punctuation">(</span><span class="token class-name">CharSequence</span> s<span class="token punctuation">,</span> <span class="token keyword">int</span> start<span class="token punctuation">,</span> <span class="token keyword">int</span> count<span class="token punctuation">,</span> <span class="token keyword">int</span> after<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        currentLength <span class="token operator">=</span> s<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">afterTextChanged</span><span class="token punctuation">(</span><span class="token class-name">Editable</span> s<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">v</span><span class="token punctuation">(</span><span class="token string">""</span><span class="token punctuation">,</span> <span class="token string">"after:"</span> <span class="token operator">+</span> s<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">toString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">&lt;</span> currentLength<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token keyword">return</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>        <span class="token keyword">boolean</span> unfixed <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span><br>        <span class="token class-name">Object</span><span class="token punctuation">[</span><span class="token punctuation">]</span> spanned <span class="token operator">=</span> s<span class="token punctuation">.</span><span class="token function">getSpans</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> s<span class="token punctuation">.</span><span class="token function">length</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token class-name">Object</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>spanned <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token keyword">for</span> <span class="token punctuation">(</span><span class="token class-name">Object</span> obj <span class="token operator">:</span> spanned<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                <span class="token comment">// UnderlineSpan での判定から getSpanFlags への判定に変更。</span><br>                <span class="token comment">// if (obj instanceof android.text.style.UnderlineSpan) {</span><br>                <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token punctuation">(</span>s<span class="token punctuation">.</span><span class="token function">getSpanFlags</span><span class="token punctuation">(</span>obj<span class="token punctuation">)</span> <span class="token operator">&amp;</span> <span class="token class-name">Spanned</span><span class="token punctuation">.</span>SPAN_COMPOSING<span class="token punctuation">)</span> <span class="token operator">==</span> <span class="token class-name">Spanned</span><span class="token punctuation">.</span>SPAN_COMPOSING<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                    unfixed <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span><br>                <span class="token punctuation">}</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token operator">!</span>unfixed<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token class-name">Toast</span> toast <span class="token operator">=</span> <span class="token class-name">Toast</span><span class="token punctuation">.</span><span class="token function">makeText</span><span class="token punctuation">(</span><span class="token function">getApplicationContext</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token string">"確定"</span><span class="token punctuation">,</span> <span class="token class-name">Toast</span><span class="token punctuation">.</span>LENGTH_SHORT<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            toast<span class="token punctuation">.</span><span class="token function">show</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p><code>s.getSpanFlags(obj) &amp; Spanned.SPAN_COMPOSING) == Spanned.SPAN_COMPOSING)</code> で SPAN_COMPOSING(未確定文字)のフラグが立っているかを判定しています。</p>
+<p>とりあえず手持ちの ATOK では修正前と同じように動作しているようです。</p>
+<p>IME 側で「未確定文字は SPAN_COMPOSING を必ず設定する」ものかどうかは分かりませんが、個人的には UnderlineSpan を使った手法よりもすっきりしました、というお話でした。</p>
+
+
+published at <time class="postlist-date" datetime="2012-12-26">26 Dec 2012</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-02-19-osm-on-googlemapv2/">Google Maps Android API v2 で OpenStreetMap を表示する</a></li><li>Previous: <a href="/posts/2013-02-19-googlemap-v2-zindex/">Google Maps Android API v2 の図形の描画順(zIndex)を探る</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-02-19-edittext-ontextchanged/ -->
+  </body>
+</html>

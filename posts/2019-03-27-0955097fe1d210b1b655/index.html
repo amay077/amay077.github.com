@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker で AngularアプリをビルドしてAWS S3へデプロイする</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Docker で AngularアプリをビルドしてAWS S3へデプロイする</h1>
+
+<h2 id="%E3%82%84%E3%82%8A%E3%81%9F%E3%81%84%E4%BA%8B">やりたい事 <a class="direct-link" href="#%E3%82%84%E3%82%8A%E3%81%9F%E3%81%84%E4%BA%8B">#</a></h2>
+<ol>
+<li>git repo からソースを clone する（複数の repo を clone する必要がある)</li>
+<li>それは Angular のアプリなので、 <code>ng --prod build</code> する</li>
+<li>ビルドされたアプリのファイル群を aws cli を使って S3 にアップロードする</li>
+</ol>
+<!--more-->
+<h2 id="dockerfile">Dockerfile <a class="direct-link" href="#dockerfile">#</a></h2>
+<p><a href="https://qiita.com/ABCompany1/items/c92ac5087519c103f056">AWS CLIをDocker環境で実行する</a> で紹介されていた Dockerfile に、 node と Angular をインストールするスクリプトを追加したものです。</p>
+<pre class="language-dockerfile"><code class="language-dockerfile"><span class="token keyword">FROM</span> python<span class="token punctuation">:</span>3.6<br><br><span class="token keyword">ARG</span> pip_installer=<span class="token string">"https://bootstrap.pypa.io/get-pip.py"</span><br><span class="token keyword">ARG</span> awscli_version=<span class="token string">"1.16.76"</span><br><br><span class="token comment"># Install awscli</span><br><span class="token keyword">RUN</span> pip install awscli==$<span class="token punctuation">{</span>awscli_version<span class="token punctuation">}</span><br><br><span class="token comment"># Install sam</span><br><span class="token keyword">RUN</span> pip install <span class="token punctuation">-</span><span class="token punctuation">-</span>user <span class="token punctuation">-</span><span class="token punctuation">-</span>upgrade aws<span class="token punctuation">-</span>sam<span class="token punctuation">-</span>cli<br><span class="token keyword">RUN</span> mkdir /data<br><span class="token keyword">RUN</span> chmod <span class="token punctuation">-</span>x /data<br><br><span class="token comment"># Install nodejs</span><br><span class="token keyword">RUN</span> apt<span class="token punctuation">-</span>get update <br><span class="token keyword">RUN</span> apt<span class="token punctuation">-</span>get install curl software<span class="token punctuation">-</span>properties<span class="token punctuation">-</span>common <span class="token punctuation">-</span>y<br><span class="token keyword">RUN</span> curl <span class="token punctuation">-</span>sL https<span class="token punctuation">:</span>//deb.nodesource.com/setup_10.x <span class="token punctuation">|</span> bash <span class="token punctuation">-</span><br><span class="token keyword">RUN</span> apt<span class="token punctuation">-</span>get install nodejs<br><br><span class="token comment"># Install angular</span><br><span class="token keyword">RUN</span> npm install <span class="token punctuation">-</span>g @angular/cli@7.3.6<br><br><span class="token keyword">ENV</span> PATH $PATH<span class="token punctuation">:</span>/root/.local/bin</code></pre>
+<h2 id="%E5%AE%9F%E8%A1%8C%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88">実行スクリプト <a class="direct-link" href="#%E5%AE%9F%E8%A1%8C%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88">#</a></h2>
+<p>次に Docker 内で実行するスクリプトです。<br>
+ファイル名は <code>Deploy.sh</code> としておきます。</p>
+<pre class="language-bash"><code class="language-bash"><span class="token shebang important">#!/bin/sh</span><br><br><span class="token comment"># Setup git user/password</span><br><span class="token builtin class-name">echo</span> -e <span class="token string">"machine <span class="token variable">$GIT_DOMAIN</span><span class="token entity" title="\n">\n</span>login <span class="token variable">$GIT_USER</span><span class="token entity" title="\n">\n</span>password <span class="token variable">$GIT_PW</span>"</span> <span class="token operator">></span> ~/.netrc<br><br><span class="token comment"># Create work directory</span><br><span class="token function">mkdir</span> work<br><span class="token builtin class-name">cd</span> work<br><br><span class="token comment"># Clone projects</span><br><span class="token function">git</span> clone -b <span class="token variable">$GIT_BRANCH</span> https://xxxx/my-awesome-lib.git<br><span class="token function">git</span> clone -b <span class="token variable">$GIT_BRANCH</span> https://xxxx/my-awesome-app.git<br><br><span class="token comment"># Restore node_modules</span><br><span class="token builtin class-name">cd</span> my-awesome-lib<br><span class="token function">npm</span> ci<br><span class="token builtin class-name">cd</span> <span class="token punctuation">..</span><br><br><span class="token comment"># Build angular prod</span><br><span class="token builtin class-name">cd</span> my-awesome-app<br><span class="token function">npm</span> ci<br>ng --base-href<span class="token operator">=</span>./ --prod build<br><br><span class="token comment"># Deploy to S3</span><br>aws s3 <span class="token function">sync</span> ./dist/my-awesome-app/ s3://my-awesome-bucket/www --acl public-read</code></pre>
+<p>冒頭で言ったように、複数のリポジトリから Clone する必要があるプロジェクトです。<br>
+また Private なので user/password が必要ですが、どうせ docker コンテナは使い捨てだし <code>.netrc</code> でいっか、と思ってますがどうなんでしょう？</p>
+<p>clone した後、それぞれのディレクトリに移動して <code>npm ci</code> をして node_modules を復元します。</p>
+<p>その後、Angular アプリをビルド (<code>ng --prod build</code>)します。</p>
+<p>最後に、 <code>s3 sync</code> で AWS S3 の指定バケットにアップロードしています。<code>--acl public-read</code> は、誰でも閲覧できるサイトにするために付けています。</p>
+<h3 id="%E5%BF%85%E8%A6%81%E3%81%AA%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0">必要な環境変数 <a class="direct-link" href="#%E5%BF%85%E8%A6%81%E3%81%AA%E7%92%B0%E5%A2%83%E5%A4%89%E6%95%B0">#</a></h3>
+<p>Dockerコンテナ内で、次の環境変数が必要です。</p>
+<ul>
+<li>Git アクセス
+<ul>
+<li>GIT_DOMAIN - git リポジトリのドメイン</li>
+<li>GIT_USER - git ユーザー</li>
+<li>GIT_PW - ↑のパスワード</li>
+<li>GIT_BRANCH - 取得する branch 名</li>
+</ul>
+</li>
+<li>AWS S3 アクセス
+<ul>
+<li>AWS_ACCESS_KEY_ID - S3 への書込権限を持った IAMユーザーのアクセスキー</li>
+<li>AWS_SECRET_ACCESS_KEY - ↑のシークレットキー</li>
+<li>AWS_DEFAULT_REGION - リージョン（S3 だから要らないかも）</li>
+</ul>
+</li>
+</ul>
+<p>これらの値は、後述の <code>docker run</code> する時に渡します。</p>
+<h2 id="docker-%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89%E3%81%A8%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E3%81%AE%E5%AE%9F%E8%A1%8C">Docker イメージのビルドとコンテナの実行 <a class="direct-link" href="#docker-%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89%E3%81%A8%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E3%81%AE%E5%AE%9F%E8%A1%8C">#</a></h2>
+<h3 id="docker-%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89">Docker イメージのビルド <a class="direct-link" href="#docker-%E3%82%A4%E3%83%A1%E3%83%BC%E3%82%B8%E3%81%AE%E3%83%93%E3%83%AB%E3%83%89">#</a></h3>
+<p><code>Dockerfile</code> のあるディレクトリで、以下のコマンドを実行します。</p>
+<pre><code>docker build -t aws-angular .
+</code></pre>
+<p><code>docker images</code> で aws-angular が作成されていれば成功です。</p>
+<h3 id="%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E5%AE%9F%E8%A1%8C%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88">コンテナ実行スクリプト <a class="direct-link" href="#%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A%E5%AE%9F%E8%A1%8C%E3%82%B9%E3%82%AF%E3%83%AA%E3%83%97%E3%83%88">#</a></h3>
+<p>実行スクリプトファイル <code>Deploy.sh</code> があるディレクトリで、以下のコマンドを実行します。<br>
+環境変数に入れる値はそれぞれ準備してください。</p>
+<pre class="language-bash"><code class="language-bash">docker run -it <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">AWS_ACCESS_KEY_ID</span><span class="token operator">=</span>xxxx <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">AWS_SECRET_ACCESS_KEY</span><span class="token operator">=</span>xxxxxxx <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">AWS_DEFAULT_REGION</span><span class="token operator">=</span>ap-northeast-1 <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">GIT_DOMAIN</span><span class="token operator">=</span>your.repo.com <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">GIT_USER</span><span class="token operator">=</span>your_user_id <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">GIT_PW</span><span class="token operator">=</span>your_password <span class="token punctuation">\</span><br> -e <span class="token assign-left variable">GIT_BRANCH</span><span class="token operator">=</span>master <span class="token punctuation">\</span><br> -v <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span>:/data <span class="token punctuation">\</span><br> aws-angular <span class="token function">sh</span> /data/deploy.sh</code></pre>
+<p>これを実行すると、</p>
+<ol>
+<li>git repo からソースを clone する（複数の repo を clone する必要がある)</li>
+<li>それは Angular のアプリなので、 <code>ng --prod build</code> する</li>
+<li>ビルドされたアプリのファイル群を aws cli を使って S3 にアップロードする</li>
+</ol>
+<p>が順次実行されます。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://qiita.com/ABCompany1/items/c92ac5087519c103f056">AWS CLIをDocker環境で実行する - Qiita</a></li>
+<li><a href="http://www.codebind.com/linux-tutorials/install-latest-nodejs-npm-ubuntu-18-04-linux/">How to Install Latest Nodejs with Npm on Ubuntu 18.04 (Linux)</a></li>
+<li><a href="https://qiita.com/azusanakano/items/8dc1d7e384b00239d4d9#1-netrc%E3%81%AB%E3%83%A6%E3%83%BC%E3%82%B6%E5%90%8D%E3%83%91%E3%82%B9%E3%83%AF%E3%83%BC%E3%83%89%E3%82%92%E6%9B%B8%E3%81%8F">GitHubでユーザ名・パスワード省略（push, pull） - Qiita</a></li>
+<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/cli-services-s3-commands.html">Using High-Level (s3) Commands with the AWS CLI - AWS Command Line Interface</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2019-03-27">27 Mar 2019</time>
+
+tags: 
+
+  <a href="/tags/Docker/" class="post-tag">Docker</a>
+  <a href="/tags/AWS/" class="post-tag">AWS</a>
+  <a href="/tags/angular-cli/" class="post-tag">angular-cli</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2019-03-27-901a04254cd71fa1a957/">シェルスクリプトで日本時間のYYYYMMDDを返す</a></li><li>Previous: <a href="/posts/2019-03-13-57dc477fcec9192aa7e0/">Xamarin.UITest が HttpRequestException で失敗する場合の対処</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2019-03-27-0955097fe1d210b1b655/ -->
+  </body>
+</html>

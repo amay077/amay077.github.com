@@ -1,1044 +1,123 @@
-﻿<!doctype html>
-<html ⚡ lang="ja">
+<!doctype html>
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Serverless Framework で AWS Lambda と API Gateway をデプロイする</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>Serverless Framework で AWS Lambda と API Gateway をデプロイする</title>
-  <meta name="description" content="Serverless Meetup Tokyo #16 （オンライン開催） を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。尚、Serlverless Framwork については知っていたが、offl...">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>Serverless Framework で AWS Lambda と API Gateway をデプロイする | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="Serverless Framework で AWS Lambda と API Gateway をデプロイする" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="Serverless Meetup Tokyo #16 （オンライン開催） を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。 尚、Serlverless Framwork については知っていたが、offline-start しか使ったことがなかった程度の人間です。" />
-<meta property="og:description" content="Serverless Meetup Tokyo #16 （オンライン開催） を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。 尚、Serlverless Framwork については知っていたが、offline-start しか使ったことがなかった程度の人間です。" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2020-03-05T07:30:00-06:00" />
-<script type="application/ld+json">
-{"headline":"Serverless Framework で AWS Lambda と API Gateway をデプロイする","dateModified":"2020-03-05T07:30:00-06:00","datePublished":"2020-03-05T07:30:00-06:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb/"},"url":"https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"Serverless Meetup Tokyo #16 （オンライン開催） を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。 尚、Serlverless Framwork については知っていたが、offline-start しか使ったことがなかった程度の人間です。","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb/",
-  "headline": "Serverless Framework で AWS Lambda と API Gateway をデプロイする",
-  "datePublished": "2020-03-05T07:30:00-06:00",
-  "dateModified": "2020-03-05T07:30:00-06:00",
-  "description": "Serverless Meetup Tokyo #16 （オンライン開催） を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。尚、Serlverless Framwork については知っていたが、offl...",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>Serverless Framework で AWS Lambda と API Gateway をデプロイする</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">Serverless Framework で AWS Lambda と API Gateway をデプロイする</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p><a href="https://serverless.connpass.com/event/165352/">Serverless Meetup Tokyo #16 （オンライン開催）</a> を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。<br />
-尚、Serlverless Framwork については知っていたが、offline-start しか使ったことがなかった程度の人間です。<br />
-<!--more--></p>
-
-<h2 id="やったこと">やったこと</h2>
-
+<p><a href="https://serverless.connpass.com/event/165352/">Serverless Meetup Tokyo #16 （オンライン開催）</a> を拝見していて、ちょうど今、AWS への各種リソースのデプロイの自動化が課題だったので、よい機会と思い Serverless Framework を使ってみた。<br>
+尚、Serlverless Framwork については知っていたが、offline-start しか使ったことがなかった程度の人間です。</p>
+<!--more-->
+<h2 id="%E3%82%84%E3%81%A3%E3%81%9F%E3%81%93%E3%81%A8">やったこと <a class="direct-link" href="#%E3%82%84%E3%81%A3%E3%81%9F%E3%81%93%E3%81%A8">#</a></h2>
 <p>弊社では Webシステムを、</p>
-
 <ul>
-  <li>フロントエンド: SPA(Angular)</li>
-  <li>バックエンド:
-    <ul>
-      <li>REST っぽいAPI: Lambda + API Gateway</li>
-      <li>DB: PostgreSQL 他</li>
-    </ul>
-  </li>
+<li>フロントエンド: SPA(Angular)</li>
+<li>バックエンド:
+<ul>
+<li>REST っぽいAPI: Lambda + API Gateway</li>
+<li>DB: PostgreSQL 他</li>
 </ul>
-
-<p>で組むことが増えてきていて、プロジェクトの取っ掛かり時の環境構築を手動でやっているのがダルくなってきた。<br />
+</li>
+</ul>
+<p>で組むことが増えてきていて、プロジェクトの取っ掛かり時の環境構築を手動でやっているのがダルくなってきた。<br>
 今回は、「REST っぽいAPI: Lambda + API Gateway」のところを Serverless Framework で自動化してみた。</p>
-
-<h2 id="手順">手順</h2>
-
-<h3 id="1-環境構築用-iam-の作成">1. 環境構築用 IAM の作成</h3>
-
+<h2 id="%E6%89%8B%E9%A0%86">手順 <a class="direct-link" href="#%E6%89%8B%E9%A0%86">#</a></h2>
+<h3 id="1.-%E7%92%B0%E5%A2%83%E6%A7%8B%E7%AF%89%E7%94%A8-iam-%E3%81%AE%E4%BD%9C%E6%88%90">1. 環境構築用 IAM の作成 <a class="direct-link" href="#1.-%E7%92%B0%E5%A2%83%E6%A7%8B%E7%AF%89%E7%94%A8-iam-%E3%81%AE%E4%BD%9C%E6%88%90">#</a></h3>
 <p>IAM コンソールで「serverless_deployment」という名前で作成。以下のポリシーをアタッチした。</p>
-
 <ul>
-  <li>AWSLambdaFullAccess</li>
-  <li>AmazonS3FullAccess</li>
-  <li>AmazonAPIGatewayAdministrator</li>
-  <li>AWSCloudFormationFullAccess</li>
+<li>AWSLambdaFullAccess</li>
+<li>AmazonS3FullAccess</li>
+<li>AmazonAPIGatewayAdministrator</li>
+<li>AWSCloudFormationFullAccess</li>
 </ul>
-
 <p>さらに、以下のようなインラインポリシーを追加した。</p>
-
-<div class="language-json highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="p">{</span><span class="w">
-    </span><span class="s2">"Version"</span><span class="p">:</span><span class="w"> </span><span class="s2">"2012-10-17"</span><span class="p">,</span><span class="w">
-    </span><span class="s2">"Statement"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-        </span><span class="p">{</span><span class="w">
-            </span><span class="s2">"Sid"</span><span class="p">:</span><span class="w"> </span><span class="s2">"VisualEditor0"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"Effect"</span><span class="p">:</span><span class="w"> </span><span class="s2">"Allow"</span><span class="p">,</span><span class="w">
-            </span><span class="s2">"Action"</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="w">
-                </span><span class="s2">"iam:DeleteRolePolicy"</span><span class="p">,</span><span class="w">
-                </span><span class="s2">"iam:CreateRole"</span><span class="p">,</span><span class="w">
-                </span><span class="s2">"iam:DeleteRole"</span><span class="p">,</span><span class="w">
-                </span><span class="s2">"iam:PutRolePolicy"</span><span class="w">
-            </span><span class="p">],</span><span class="w">
-            </span><span class="s2">"Resource"</span><span class="p">:</span><span class="w"> </span><span class="s2">"*"</span><span class="w">
-        </span><span class="p">}</span><span class="w">
-    </span><span class="p">]</span><span class="w">
-</span><span class="p">}</span><span class="w">
-</span></code></pre></div></div>
-
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>    <span class="token property">"Version"</span><span class="token operator">:</span> <span class="token string">"2012-10-17"</span><span class="token punctuation">,</span><br>    <span class="token property">"Statement"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>        <span class="token punctuation">{</span><br>            <span class="token property">"Sid"</span><span class="token operator">:</span> <span class="token string">"VisualEditor0"</span><span class="token punctuation">,</span><br>            <span class="token property">"Effect"</span><span class="token operator">:</span> <span class="token string">"Allow"</span><span class="token punctuation">,</span><br>            <span class="token property">"Action"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>                <span class="token string">"iam:DeleteRolePolicy"</span><span class="token punctuation">,</span><br>                <span class="token string">"iam:CreateRole"</span><span class="token punctuation">,</span><br>                <span class="token string">"iam:DeleteRole"</span><span class="token punctuation">,</span><br>                <span class="token string">"iam:PutRolePolicy"</span><br>            <span class="token punctuation">]</span><span class="token punctuation">,</span><br>            <span class="token property">"Resource"</span><span class="token operator">:</span> <span class="token string">"*"</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
 <p>IAMFullAccess はさすがにヤバいかなと思い必要な権限だけ抽出したものだが、たぶん他の xxxFullAccess も必要なものだけにした方がよいだろう。</p>
-
-<p>作成した IAM のアクセスキーなどを自PCの <code class="highlighter-rouge">~/.aws/credentials</code> に追加した。ちなみに環境は Windows 10 内の WSL(Ubuntu)。</p>
-
+<p>作成した IAM のアクセスキーなどを自PCの <code>~/.aws/credentials</code> に追加した。ちなみに環境は Windows 10 内の WSL(Ubuntu)。</p>
 <p><strong>.aws/credentials</strong></p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[serverless-deployment]
+<pre><code>[serverless-deployment]
 aws_access_key_id = AKIAxxxxx
 aws_secret_access_key = 49s9xxxxxxxxxxxxxxxxxxxxxxxxxxxx
-</code></pre></div></div>
-
-<h3 id="2-ツールのインストール">2. ツールのインストール</h3>
-
+</code></pre>
+<h3 id="2.-%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">2. ツールのインストール <a class="direct-link" href="#2.-%E3%83%84%E3%83%BC%E3%83%AB%E3%81%AE%E3%82%A4%E3%83%B3%E3%82%B9%E3%83%88%E3%83%BC%E3%83%AB">#</a></h3>
 <p>awscli は現在最新の v2 をインストール</p>
-
 <ul>
-  <li><a href="https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html#cliv2-linux-install">Installing the AWS CLI version 2 on Linux - AWS Command Line Interface</a></li>
+<li><a href="https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2-linux.html#cliv2-linux-install">Installing the AWS CLI version 2 on Linux - AWS Command Line Interface</a></li>
 </ul>
-
 <p>node は 12.14.1</p>
-
 <ul>
-  <li><a href="https://nodejs.org/ja/">Node.js</a></li>
+<li><a href="https://nodejs.org/ja/">Node.js</a></li>
 </ul>
-
 <p>そして Serverless Framework をインストールする。</p>
-
 <ul>
-  <li><a href="https://serverless.com/">Serverless - The Serverless Application Framework powered by AWS Lambda, API Gateway, and more</a></li>
+<li><a href="https://serverless.com/">Serverless - The Serverless Application Framework powered by AWS Lambda, API Gateway, and more</a></li>
 </ul>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm <span class="nb">install </span>serverless <span class="nt">-g</span>
-
-<span class="nb">source</span> ~/.bash_profile
-serverless <span class="nt">--version</span>
-
-<span class="o">&gt;</span> Framework Core: 1.65.0
-<span class="o">&gt;</span> Plugin: 3.4.1
-<span class="o">&gt;</span> SDK: 2.3.0
-<span class="o">&gt;</span> Components: 2.22.3
-</code></pre></div></div>
-
+<pre class="language-bash"><code class="language-bash"><span class="token function">npm</span> <span class="token function">install</span> serverless -g<br><br><span class="token builtin class-name">source</span> ~/.bash_profile<br>serverless --version<br><br><span class="token operator">></span> Framework Core: <span class="token number">1.65</span>.0<br><span class="token operator">></span> Plugin: <span class="token number">3.4</span>.1<br><span class="token operator">></span> SDK: <span class="token number">2.3</span>.0<br><span class="token operator">></span> Components: <span class="token number">2.22</span>.3</code></pre>
 <p>global じゃなくてもいいけど、パス通すのが面倒なので。</p>
-
-<h2 id="3-テンプレートからプロジェクトの作成">3. テンプレートからプロジェクトの作成</h2>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>serverless create <span class="nt">--template</span> aws-nodejs
-</code></pre></div></div>
-
+<h2 id="3.-%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E3%81%8B%E3%82%89%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90">3. テンプレートからプロジェクトの作成 <a class="direct-link" href="#3.-%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88%E3%81%8B%E3%82%89%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E3%81%AE%E4%BD%9C%E6%88%90">#</a></h2>
+<pre class="language-bash"><code class="language-bash">serverless create --template aws-nodejs</code></pre>
 <p>で、nodejs のテンプレートから Serverless Framework のプロジェクトを作成。</p>
-
-<p>また、<code class="highlighter-rouge">npm init</code> で適当に <code class="highlighter-rouge">package.json</code> を作って、</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>npm <span class="nb">install</span> <span class="nt">--save-dev</span> serverless-plugin-custom-binary
-</code></pre></div></div>
-
+<p>また、<code>npm init</code> で適当に <code>package.json</code> を作って、</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">npm</span> <span class="token function">install</span> --save-dev serverless-plugin-custom-binary</code></pre>
 <p>を実行しておく。これは後に必要になるプラグイン。</p>
-
-<p><code class="highlighter-rouge">ls</code> すると以下のようなファイルとディレクトリがある。</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>handler.js  node_modules  package-lock.json  package.json  serverless.yml
-</code></pre></div></div>
-
-<h3 id="4-serverlessyml-を編集する">4. serverless.yml を編集する</h3>
-
-<p><code class="highlighter-rouge">serverless.yml</code> を開いて次のように編集する（これだと最早テンプレートの意味ないが）。</p>
-
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">service</span><span class="pi">:</span> <span class="s">my-awesome-service</span>
-
-<span class="na">plugins</span><span class="pi">:</span>
-  <span class="pi">-</span> <span class="s">serverless-plugin-custom-binary</span>
-
-<span class="na">custom</span><span class="pi">:</span>
-  <span class="na">apiGateway</span><span class="pi">:</span>
-    <span class="na">binaryMediaTypes</span><span class="pi">:</span>
-      <span class="pi">-</span> <span class="s">image/jpeg</span>
-
-<span class="na">provider</span><span class="pi">:</span>
-  <span class="na">name</span><span class="pi">:</span> <span class="s">aws</span>
-  <span class="na">runtime</span><span class="pi">:</span> <span class="s">nodejs12.x</span>
-  <span class="na">stage</span><span class="pi">:</span> <span class="s">${opt:stage, 'dev'}</span>
-  <span class="na">region</span><span class="pi">:</span> <span class="s">ap-northeast-1</span>
-  <span class="na">apiName</span><span class="pi">:</span> <span class="s">${self:service}-${self:provider.stage}</span>
-
-<span class="na">functions</span><span class="pi">:</span>
-  <span class="na">api</span><span class="pi">:</span>
-    <span class="na">handler</span><span class="pi">:</span>  <span class="s">handler.hello</span>
-    <span class="na">name</span><span class="pi">:</span> <span class="s">${self:service}-api-${self:provider.stage}</span>
-    <span class="na">events</span><span class="pi">:</span>
-      <span class="pi">-</span> <span class="na">http</span><span class="pi">:</span>
-          <span class="na">path</span><span class="pi">:</span> <span class="s">/{proxy+}</span>
-          <span class="na">method</span><span class="pi">:</span> <span class="s">get</span>
-          <span class="na">integration</span><span class="pi">:</span> <span class="s">lambda</span>
-</code></pre></div></div>
-
-<p>まず <code class="highlighter-rouge">service: my-awesome-service</code>、これが AWS に作成されるリソース名の元になるのでちゃんと考えて命名しよう。重複したらどうなちゃうのかは不明。 <a href="https://qiita.com/ybiquitous/items/75288bacb596a82a2805"><strong>kebab-case</strong></a> を採用しておくと良いと思われる。例えばサービス名で S3 Bucket を作りたいとき、Bucket 名は CamelCase(大文字) を許可してないため。</p>
-
+<p><code>ls</code> すると以下のようなファイルとディレクトリがある。</p>
+<pre class="language-bash"><code class="language-bash">handler.js  node_modules  package-lock.json  package.json  serverless.yml</code></pre>
+<h3 id="4.-serverless.yml-%E3%82%92%E7%B7%A8%E9%9B%86%E3%81%99%E3%82%8B">4. serverless.yml を編集する <a class="direct-link" href="#4.-serverless.yml-%E3%82%92%E7%B7%A8%E9%9B%86%E3%81%99%E3%82%8B">#</a></h3>
+<p><code>serverless.yml</code> を開いて次のように編集する（これだと最早テンプレートの意味ないが）。</p>
+<pre class="language-yaml"><code class="language-yaml"><span class="token key atrule">service</span><span class="token punctuation">:</span> my<span class="token punctuation">-</span>awesome<span class="token punctuation">-</span>service<br><br><span class="token key atrule">plugins</span><span class="token punctuation">:</span><br>  <span class="token punctuation">-</span> serverless<span class="token punctuation">-</span>plugin<span class="token punctuation">-</span>custom<span class="token punctuation">-</span>binary<br><br><span class="token key atrule">custom</span><span class="token punctuation">:</span><br>  <span class="token key atrule">apiGateway</span><span class="token punctuation">:</span><br>    <span class="token key atrule">binaryMediaTypes</span><span class="token punctuation">:</span><br>      <span class="token punctuation">-</span> image/jpeg<br><br><span class="token key atrule">provider</span><span class="token punctuation">:</span><br>  <span class="token key atrule">name</span><span class="token punctuation">:</span> aws<br>  <span class="token key atrule">runtime</span><span class="token punctuation">:</span> nodejs12.x<br>  <span class="token key atrule">stage</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>opt<span class="token punctuation">:</span>stage<span class="token punctuation">,</span> <span class="token string">'dev'</span><span class="token punctuation">}</span><br>  <span class="token key atrule">region</span><span class="token punctuation">:</span> ap<span class="token punctuation">-</span>northeast<span class="token punctuation">-</span><span class="token number">1</span><br>  <span class="token key atrule">apiName</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>self<span class="token punctuation">:</span>service<span class="token punctuation">}</span><span class="token punctuation">-</span>$<span class="token punctuation">{</span>self<span class="token punctuation">:</span>provider.stage<span class="token punctuation">}</span><br><br><span class="token key atrule">functions</span><span class="token punctuation">:</span><br>  <span class="token key atrule">api</span><span class="token punctuation">:</span><br>    <span class="token key atrule">handler</span><span class="token punctuation">:</span>  handler.hello<br>    <span class="token key atrule">name</span><span class="token punctuation">:</span> $<span class="token punctuation">{</span>self<span class="token punctuation">:</span>service<span class="token punctuation">}</span><span class="token punctuation">-</span>api<span class="token punctuation">-</span>$<span class="token punctuation">{</span>self<span class="token punctuation">:</span>provider.stage<span class="token punctuation">}</span><br>    <span class="token key atrule">events</span><span class="token punctuation">:</span><br>      <span class="token punctuation">-</span> <span class="token key atrule">http</span><span class="token punctuation">:</span><br>          <span class="token key atrule">path</span><span class="token punctuation">:</span> /<span class="token punctuation">{</span>proxy+<span class="token punctuation">}</span><br>          <span class="token key atrule">method</span><span class="token punctuation">:</span> get<br>          <span class="token key atrule">integration</span><span class="token punctuation">:</span> lambda</code></pre>
+<p>まず <code>service: my-awesome-service</code>、これが AWS に作成されるリソース名の元になるのでちゃんと考えて命名しよう。重複したらどうなちゃうのかは不明。 <a href="https://qiita.com/ybiquitous/items/75288bacb596a82a2805"><strong>kebab-case</strong></a> を採用しておくと良いと思われる。例えばサービス名で S3 Bucket を作りたいとき、Bucket 名は CamelCase(大文字) を許可してないため。</p>
 <p>次に Plugins と binaryMediaTypes。これを行うために先に serverless-plugin-custom-binary をインストールしておいた。</p>
-
-<p>provider-apiName。これは API Gateway の名前なんだけど、これをしない場合 <code class="highlighter-rouge">&lt;stage名&gt;-&lt;service名&gt;</code> になる。Lambda とかは <code class="highlighter-rouge">&lt;service名&gt;-&lt;stage名&gt;</code> となり逆で気持ち悪いので、他の同じになるように直している。</p>
-
-<p>stage: ${opt:stage, ‘dev’}。単純に <code class="highlighter-rouge">stage: dev</code> とするだけだと、 <code class="highlighter-rouge">--stage prod</code> を引数で指定された値が <code class="highlighter-rouge">${self:provider.stage}</code> に代入されないので注意。</p>
-
-<p>functions-api。Labmda に <code class="highlighter-rouge">&lt;service名&gt;-&lt;stage名&gt;-api</code> という名前の関数が作成される。”api” は任意の名称で ok。</p>
-
-<p>functions-api-name。既定だと <code class="highlighter-rouge">&lt;service名&gt;-&lt;stage名&gt;-api</code> になるが、<code class="highlighter-rouge">&lt;service名&gt;-api-&lt;stage名&gt;</code>にしたい(stage名は最後尾に統一したい) ので <code class="highlighter-rouge">name: ${self:service}-api-${self:provider.stage}</code> とした。</p>
-
-<p>handler:  handler.hello。 <code class="highlighter-rouge">handles.js</code> の hello 関数を呼び出すの意。</p>
-
-<p>path: /{proxy+}。呼び出し URL のパス部分を全てスルーする。<code class="highlighter-rouge">https://hoge.net/dev/fuga/piyo/gege</code> とか。</p>
-
+<p>provider-apiName。これは API Gateway の名前なんだけど、これをしない場合 <code>&lt;stage名&gt;-&lt;service名&gt;</code> になる。Lambda とかは <code>&lt;service名&gt;-&lt;stage名&gt;</code> となり逆で気持ち悪いので、他の同じになるように直している。</p>
+<p>stage: ${opt:stage, 'dev'}。単純に <code>stage: dev</code> とするだけだと、 <code>--stage prod</code> を引数で指定された値が <code>${self:provider.stage}</code> に代入されないので注意。</p>
+<p>functions-api。Labmda に <code>&lt;service名&gt;-&lt;stage名&gt;-api</code> という名前の関数が作成される。&quot;api&quot; は任意の名称で ok。</p>
+<p>functions-api-name。既定だと <code>&lt;service名&gt;-&lt;stage名&gt;-api</code> になるが、<code>&lt;service名&gt;-api-&lt;stage名&gt;</code>にしたい(stage名は最後尾に統一したい) ので <code>name: ${self:service}-api-${self:provider.stage}</code> とした。</p>
+<p>handler:  handler.hello。 <code>handles.js</code> の hello 関数を呼び出すの意。</p>
+<p>path: /{proxy+}。呼び出し URL のパス部分を全てスルーする。<code>https://hoge.net/dev/fuga/piyo/gege</code> とか。</p>
 <p>integration: lambda。既定で ON ぽいので要らないかも。</p>
-
-<h3 id="5-aws-にデプロイする">5. AWS にデプロイする</h3>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>serverless deploy <span class="nt">--aws-profile</span> serverless-deployment
-</code></pre></div></div>
-
-<p>を実行する。<code class="highlighter-rouge">--aws-profile serverless-deployment</code> で AWSプロファイルを指定している事に注意。</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Serverless: Packaging service...
+<h3 id="5.-aws-%E3%81%AB%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%99%E3%82%8B">5. AWS にデプロイする <a class="direct-link" href="#5.-aws-%E3%81%AB%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%99%E3%82%8B">#</a></h3>
+<pre class="language-bash"><code class="language-bash">serverless deploy --aws-profile serverless-deployment</code></pre>
+<p>を実行する。<code>--aws-profile serverless-deployment</code> で AWSプロファイルを指定している事に注意。</p>
+<pre><code>Serverless: Packaging service...
 Serverless: Excluding development dependencies...
 Serverless: Creating Stack...
 Serverless: Checking Stack create progress...
@@ -1066,159 +145,68 @@ functions:
   api: MyAwesomeService-dev-api
 layers:
   None
-Serverless: Run the "serverless" command to setup monitoring, troubleshooting and testing.
-</code></pre></div></div>
-
+Serverless: Run the &quot;serverless&quot; command to setup monitoring, troubleshooting and testing.
+</code></pre>
 <p>なんやかんや実行されてデプロイされたみたい。</p>
-
-<h3 id="6-デプロイされたか確認">6. デプロイされたか確認</h3>
-
-<h4 id="api-gateway">API Gateway</h4>
-
-<p><amp-img width="1119" height="343" layout="responsive" src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/061865db-2644-945c-bd22-30aa39746845.png" alt="image.png" /></p>
-
-<p><amp-img width="910" height="384" layout="responsive" src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/320b3303-657a-4d0c-c3f8-59ea5d572482.png" alt="image.png" /></p>
-
-<h4 id="lambda">Lambda</h4>
-
-<p><amp-img width="1012" height="322" layout="responsive" src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/d0a87c53-babc-05d6-bda4-74f38ae4fa01.png" alt="image.png" /></p>
-
-<p><amp-img width="939" height="514" layout="responsive" src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/e3827772-e025-a0d3-545a-cca87071cfba.png" alt="image.png" /></p>
-
+<h3 id="6.-%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%95%E3%82%8C%E3%81%9F%E3%81%8B%E7%A2%BA%E8%AA%8D">6. デプロイされたか確認 <a class="direct-link" href="#6.-%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%95%E3%82%8C%E3%81%9F%E3%81%8B%E7%A2%BA%E8%AA%8D">#</a></h3>
+<h4 id="api-gateway">API Gateway <a class="direct-link" href="#api-gateway">#</a></h4>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/061865db-2644-945c-bd22-30aa39746845.png" alt="image.png"></p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/320b3303-657a-4d0c-c3f8-59ea5d572482.png" alt="image.png"></p>
+<h4 id="lambda">Lambda <a class="direct-link" href="#lambda">#</a></h4>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/d0a87c53-babc-05d6-bda4-74f38ae4fa01.png" alt="image.png"></p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/e3827772-e025-a0d3-545a-cca87071cfba.png" alt="image.png"></p>
 <p>cURL で呼び出してみる。</p>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code> curl https://xxxx.execute-api.ap-northeast-1.amazonaws.com/dev/aaa/bbb/ccc
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{"statusCode":200,"body":"{\n  \"message\": \"Go Serverless v1.0! Your function executed successfully!\"...
-</code></pre></div></div>
-
+<pre class="language-bash"><code class="language-bash"> <span class="token function">curl</span> https://xxxx.execute-api.ap-northeast-1.amazonaws.com/dev/aaa/bbb/ccc</code></pre>
+<pre><code>{&quot;statusCode&quot;:200,&quot;body&quot;:&quot;{\n  \&quot;message\&quot;: \&quot;Go Serverless v1.0! Your function executed successfully!\&quot;...
+</code></pre>
 <p>うまくいったみたい。</p>
-
-<h3 id="7-後片付け削除">7. 後片付け（削除）</h3>
-
-<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>serverless remove <span class="nt">--aws-profile</span> serverless-deployment
-</code></pre></div></div>
-
+<h3 id="7.-%E5%BE%8C%E7%89%87%E4%BB%98%E3%81%91%EF%BC%88%E5%89%8A%E9%99%A4%EF%BC%89">7. 後片付け（削除） <a class="direct-link" href="#7.-%E5%BE%8C%E7%89%87%E4%BB%98%E3%81%91%EF%BC%88%E5%89%8A%E9%99%A4%EF%BC%89">#</a></h3>
+<pre class="language-bash"><code class="language-bash">serverless remove --aws-profile serverless-deployment</code></pre>
 <p>ですべてのリソースがキレイさっぱり消えます。これはこれで怖いので IAM の権限で制限したほうが良さそう。</p>
-
-<h2 id="トラブルシューティング">トラブルシューティング</h2>
-
-<h3 id="q-デプロイが全然終わらない">Q: デプロイが全然終わらない</h3>
-
+<h2 id="%E3%83%88%E3%83%A9%E3%83%96%E3%83%AB%E3%82%B7%E3%83%A5%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0">トラブルシューティング <a class="direct-link" href="#%E3%83%88%E3%83%A9%E3%83%96%E3%83%AB%E3%82%B7%E3%83%A5%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0">#</a></h2>
+<h3 id="q%3A-%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%8C%E5%85%A8%E7%84%B6%E7%B5%82%E3%82%8F%E3%82%89%E3%81%AA%E3%81%84">Q: デプロイが全然終わらない <a class="direct-link" href="#q%3A-%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%8C%E5%85%A8%E7%84%B6%E7%B5%82%E3%82%8F%E3%82%89%E3%81%AA%E3%81%84">#</a></h3>
 <p>A: Console から CloudFormation の該当スタックを削除してリトライ</p>
-
-<h3 id="q-sls-deploy-や-remove-がs3-のバケットが無いとかでエラーになる">Q: sls deploy や remove が「S3 のバケットが無い」とかでエラーになる</h3>
-
-<p>A: 該当バケット(<code class="highlighter-rouge">my-awesome-service-veri-serverlessdeploymentbucke-rzr9e2jjdrlv</code> のようなごちゃごちゃしたやつ) を手動作成するか、Console から CloudFormation の該当スタックを削除してリトライ</p>
-
-<h2 id="今後やりたいこと">今後やりたいこと</h2>
-
+<h3 id="q%3A-sls-deploy-%E3%82%84-remove-%E3%81%8C%E3%80%8Cs3-%E3%81%AE%E3%83%90%E3%82%B1%E3%83%83%E3%83%88%E3%81%8C%E7%84%A1%E3%81%84%E3%80%8D%E3%81%A8%E3%81%8B%E3%81%A7%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B">Q: sls deploy や remove が「S3 のバケットが無い」とかでエラーになる <a class="direct-link" href="#q%3A-sls-deploy-%E3%82%84-remove-%E3%81%8C%E3%80%8Cs3-%E3%81%AE%E3%83%90%E3%82%B1%E3%83%83%E3%83%88%E3%81%8C%E7%84%A1%E3%81%84%E3%80%8D%E3%81%A8%E3%81%8B%E3%81%A7%E3%82%A8%E3%83%A9%E3%83%BC%E3%81%AB%E3%81%AA%E3%82%8B">#</a></h3>
+<p>A: 該当バケット(<code>my-awesome-service-veri-serverlessdeploymentbucke-rzr9e2jjdrlv</code> のようなごちゃごちゃしたやつ) を手動作成するか、Console から CloudFormation の該当スタックを削除してリトライ</p>
+<h2 id="%E4%BB%8A%E5%BE%8C%E3%82%84%E3%82%8A%E3%81%9F%E3%81%84%E3%81%93%E3%81%A8">今後やりたいこと <a class="direct-link" href="#%E4%BB%8A%E5%BE%8C%E3%82%84%E3%82%8A%E3%81%9F%E3%81%84%E3%81%93%E3%81%A8">#</a></h2>
 <ul>
-  <li>Lambda へ VPC の設定</li>
-  <li>Lambda タイムアウト値の設定</li>
-  <li>スクリプトでビルドとか Webpack した結果を Serverless でデプロイ</li>
-  <li>S3 Bucket の作成</li>
-  <li>S3 に SPA をデプロイ</li>
-  <li>リソース権限周りをもっと深堀り</li>
+<li>Lambda へ VPC の設定</li>
+<li>Lambda タイムアウト値の設定</li>
+<li>スクリプトでビルドとか Webpack した結果を Serverless でデプロイ</li>
+<li>S3 Bucket の作成</li>
+<li>S3 に SPA をデプロイ</li>
+<li>リソース権限周りをもっと深堀り</li>
 </ul>
-
-<h2 id="参考">参考</h2>
-
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
 <ul>
-  <li><a href="https://serverless.com/framework/docs/providers/aws/guide/intro/">Serverless Framework - AWS Lambda Guide - Introduction</a></li>
-  <li><a href="https://serverless.com/framework/docs/providers/aws/guide/variables/">Serverless Variables</a></li>
-  <li><a href="https://qiita.com/makoll/items/5f330b2469e310474c4e">Serverless FlameworkでAPI Gatewayのバイナリメディアタイプを設定する方法 - Qiita</a></li>
-  <li><a href="https://qiita.com/maaaashin324/items/9e5d3f02fca94989e9f6">Serverless Framework で API Gateway &amp; Lambda を構築する - Qiita</a></li>
-  <li><a href="https://qiita.com/wara_be/items/f3ec38e5be6bdea7c79d">Serverlessで任意のディレクトリ配下に、関数毎にディレクトリを切ってソースを配置する with webpack building - Qiita</a></li>
-  <li><a href="https://qiita.com/aical/items/c498c5a69b66b1ea7c3d">一時的にPATHを追加する（Linux） - Qiita</a></li>
-  <li><a href="http://hkou.hatenablog.com/entry/2018/05/07/213412">ServerlessFrameworkでS3の静的サイトのホスティングをする - マコーの日記</a></li>
+<li><a href="https://serverless.com/framework/docs/providers/aws/guide/intro/">Serverless Framework - AWS Lambda Guide - Introduction</a></li>
+<li><a href="https://serverless.com/framework/docs/providers/aws/guide/variables/">Serverless Variables</a></li>
+<li><a href="https://qiita.com/makoll/items/5f330b2469e310474c4e">Serverless FlameworkでAPI Gatewayのバイナリメディアタイプを設定する方法 - Qiita</a></li>
+<li><a href="https://qiita.com/maaaashin324/items/9e5d3f02fca94989e9f6">Serverless Framework で API Gateway &amp; Lambda を構築する - Qiita</a></li>
+<li><a href="https://qiita.com/wara_be/items/f3ec38e5be6bdea7c79d">Serverlessで任意のディレクトリ配下に、関数毎にディレクトリを切ってソースを配置する with webpack building - Qiita</a></li>
+<li><a href="https://qiita.com/aical/items/c498c5a69b66b1ea7c3d">一時的にPATHを追加する（Linux） - Qiita</a></li>
+<li><a href="http://hkou.hatenablog.com/entry/2018/05/07/213412">ServerlessFrameworkでS3の静的サイトのホスティングをする - マコーの日記</a></li>
 </ul>
 
 
-    </section>
-    <footer class="post-footer">
+published at <time class="postlist-date" datetime="2020-03-05">05 Mar 2020</time>
 
-      <section class="categories">
-        
-        <div class="category">AWS</div>
-        
-        <div class="category">ServerlessFramework</div>
-        
-        <div class="category">Node.js</div>
-        
-        <div class="category">lambda</div>
-        
-        <div class="category">APIGateway</div>
-        
-        <p class="published">published <time datetime="2020-03-05 07:30">05 Mar 2020</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2020-03-05-81bbb556b9d6063370fb.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2020/03/05/81bbb556b9d6063370fb&text=Serverless+Framework+%E3%81%A7+AWS+Lambda+%E3%81%A8+API+Gateway+%E3%82%92%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4%E3%81%99%E3%82%8B&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
+tags: 
 
+  <a href="/tags/AWS/" class="post-tag">AWS</a>
+  <a href="/tags/ServerlessFramework/" class="post-tag">ServerlessFramework</a>
+  <a href="/tags/Node.js/" class="post-tag">Node.js</a>
+  <a href="/tags/lambda/" class="post-tag">lambda</a>
+  <a href="/tags/APIGateway/" class="post-tag">APIGateway</a>
 
-        </a>
-      </section>
+<hr>
+<ul><li>Next: <a href="/blog/2020/03/12/cddd1bbd158ea4e79647/">Vue+Nuxt+TypeScript のプロジェクトを VSCode でデバッグ可能にする</a></li><li>Previous: <a href="/blog/2020/02/24/386da362df3ecc0157e2/">MapBox GL JS でラベル付きマーカー</a></li>
+</ul>
 
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
+    </main>
 
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
+    <footer></footer>
 
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
-
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2020/03/05/81bbb556b9d6063370fb/ -->
   </body>
 </html>

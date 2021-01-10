@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARC のメモリ解放タイミングを調べた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>ARC のメモリ解放タイミングを調べた</h1>
+
+<p>一つの関数内で容量の大きなファイルを読み込み加工する処理を連続して行っていたらメモリが足りなくなった。</p>
+<!--more-->
+<p>ARC ではスコープを外れ(て参照カウンタがゼロになっ)たオブジェクトは、すぐに破棄されると思っていたのでしばらくハマった。</p>
+<h2 id="%E5%95%8F%E9%A1%8C%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9(arc%E4%BD%BF%E7%94%A8)">問題のソース(ARC使用) <a class="direct-link" href="#%E5%95%8F%E9%A1%8C%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9(arc%E4%BD%BF%E7%94%A8)">#</a></h2>
+<p>ローカルでもWebでも何でもいいけど、ファイルから無視できない程度の容量のデータの読み込みを繰り返す処理。</p>
+<pre><code>- (IBAction)buttonDownWithArc:(id)sender {
+    NSString* path = @&quot;.../bigdata.img&quot;;
+
+    for (int i = 0; i &lt; 10000; i++) {
+        NSData* data = [NSData dataWithContentsOfFile:path];
+        [NSThread sleepForTimeInterval:0.5];
+        data = nil;
+    }
+}
+</code></pre>
+<p>これを Instruments でプロファイルするとこうなる。</p>
+<p><img src="/img/posts/arc_memory_release_timing_01.png" alt="img"></p>
+<p>じゃんじゃんメモリ確保してしまう（汗<br>
+ARC で <code>data</code> は <code>nil</code> にしてるからスコープ外れた時にメモリ解放されると思っていたのだが。</p>
+<p>ちなみにこの関数の処理が終了すると、メモリが解放される。</p>
+<h2 id="%E9%9D%9Earc-%E3%81%A7%E3%82%84%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F">非ARC でやってみた <a class="direct-link" href="#%E9%9D%9Earc-%E3%81%A7%E3%82%84%E3%81%A3%E3%81%A6%E3%81%BF%E3%81%9F">#</a></h2>
+<p>メモリ管理をマニュアルでやったらどうなるかを確認した。</p>
+<pre><code>- (IBAction)buttonDownNoArc:(id)sender {
+    NSString* path = @&quot;.../bigdata.img&quot;;
+
+    for (int i = 0; i &lt; 10000; i++) {
+        NSData* data = [NSData dataWithContentsOfFile:path];
+        [NSThread sleepForTimeInterval:0.5];
+        [data dealloc];
+        data = nil;
+    }
+}
+</code></pre>
+<p>この時のメモリ確保状況は、期待した通りになった。</p>
+<p><img src="/img/posts/arc_memory_release_timing_02.png" alt="img"></p>
+<p>メモリ使用量が線形に<strong>増えない</strong>ことが分かる。ARC 利用時にもこうなるようにしたい。</p>
+<p>状況は、スコープ内変数の破棄が、関数を抜ける時に遅延されている。<br>
+ARC 周りの情報をいろいろ漁っていて、AutoReleasePool との関わりが怪しいと予想した。</p>
+<ul>
+<li><a href="http://blog.natsuapps.com/2011/11/ios5-arc-overview.html">[iOS5] ARC (Automatic Reference Counting) : Overview - iOS 開発ブログ Natsu's note </a></li>
+</ul>
+<p>より引用：</p>
+<blockquote>
+<p>###retain, release, autorelease, deallocはコンパイラのお仕事</p>
+<p>ARCを利用する場合、コンパイラが</p>
+<ul>
+<li>retain, release, autoreleaseを挿入してくれる（自分で呼んではいけない。コンパイラエラーになる）。</li>
+<li>deallocを適切な位置に挿入してくれる（deallocのオーバーライドは可能。ただし[super dealloc]は不可能）。</li>
+</ul>
+<p>ことになります。</p>
+</blockquote>
+<p>コンパイラにより関数単位で <code>@autoreleasepool { }</code> が挿入されているとしたら、最初の図のような動きになるはず。ということは、for ループの中に @autorelease を持ってったらどうか？</p>
+<h2 id="arc-%2B-%40autoreleasepool-%E7%89%88">ARC + @autoreleasepool 版 <a class="direct-link" href="#arc-%2B-%40autoreleasepool-%E7%89%88">#</a></h2>
+<p>for の中の処理を <code>@autoreleasepool { }</code> で括ってみた。</p>
+<pre><code>- (IBAction)buttonDownWithArcAndAutoRelease:(id)sender {
+    for (int i = 0; i &lt; 100; i++) {
+        @autoreleasepool {
+            NSData* data = [NSData dataWithContentsOfFile:_path];
+            [NSThread sleepForTimeInterval:0.5];
+        }
+    }
+}
+</code></pre>
+<p>すると、</p>
+<p><img src="/img/posts/arc_memory_release_timing_03.png" alt="img"></p>
+<p>やたー、期待する動きになったぞ。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>とここまで調べて、しばらく Obj-C さわってなかったので埃をかぶっていた</p>
+<ul>
+<li><a href="http://www.amazon.co.jp/gp/product/4844331094?ie=UTF8&amp;camp=1207&amp;creative=8411&amp;creativeASIN=4844331094&amp;linkCode=shr&amp;tag=oku2008-22">エキスパートObjective-Cプログラミング -iOS/OS Xのメモリ管理とマルチスレッド-</a></li>
+</ul>
+<p>を引っ張り出してきて読んだら、P.25 にまさにその事が書かれていて泣いた。</p>
+<blockquote>
+<p>とはいえ、autorelease されたオブジェクトが大量に発生した場合、NSAutoReleasePool のオブジェクトが破棄されない限り、それらのオブジェクトは release されないので、メモリ不足に陥る場合があります。典型的な例は、大量の画像をリサイズしながら読み込む場合でしょう。…</p>
+<pre><code>   for (int i = 0; i &lt; 画像数; i++) {
+       /*
+        * 画像読み込み処理
+        * autoreleaseされたオブジェクトが大量発生。
+        * NSAutoReleasePoolのオブジェクトが破棄されないため
+        * いずれメモリ不足発生！
+        */	       
+   }
+</code></pre>
+</blockquote>
+<p>勉強しなおします。。。</p>
+
+
+published at <time class="postlist-date" datetime="2013-09-02">02 Sep 2013</time>
+
+tags: 
+
+  <a href="/tags/Objective-C/" class="post-tag">Objective-C</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-09-03-using-instruments-with-xamarin-ios/">Xamarin.iOS + iOS Simulator で Instruments を使う</a></li><li>Previous: <a href="/posts/2013-09-01-re-studying-executorservice/">ExecutorService の復習</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-09-02-when-release-memory-by-arc/ -->
+  </body>
+</html>

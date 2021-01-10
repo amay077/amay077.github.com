@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angular 6 で、日付や時刻との双方向データバインディング</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Angular 6 で、日付や時刻との双方向データバインディング</h1>
+
+<p>Angular 始めましたなので、メモ書きです。</p>
+<!--more-->
+<h2 id="%E6%99%AE%E9%80%9A%E3%81%AE%E3%82%84%E3%81%A4">普通のやつ <a class="direct-link" href="#%E6%99%AE%E9%80%9A%E3%81%AE%E3%82%84%E3%81%A4">#</a></h2>
+<p><strong>HTML</strong></p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>input</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>text<span class="token punctuation">"</span></span> <span class="token attr-name">[(ngModel)]</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>myText<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><span class="token comment">&lt;!-- これでもおｋ &lt;input type="text" [ngModel]="myText" (ngModelChange)="myText=$event" /> --></span><br><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>label</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>label</span><span class="token punctuation">></span></span></code></pre>
+<p><strong>TypeScript</strong></p>
+<pre class="language-typescript"><code class="language-typescript"><span class="token keyword">export</span> <span class="token keyword">class</span> <span class="token class-name">Main</span><br>Component <span class="token punctuation">{</span><br>  <span class="token keyword">public</span> myText<span class="token operator">:</span> <span class="token builtin">string</span> <span class="token operator">=</span> <span class="token string">"hoge"</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>結果</strong></p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/608e5bba-30e3-b872-052a-a3e14600d698.gif" alt="Untitled5.gif"></p>
+<p><code>[(ngModel)]=&quot;myText&quot;</code> は <code>[ngModel]=&quot;myText&quot; (ngModelChange)=&quot;myText=$event&quot;</code> の短縮表記に過ぎないことを知りました。</p>
+<h2 id="%E6%97%A5%E4%BB%98%E3%81%AE-%3Cinput%3E-%E3%81%A8-%E6%99%82%E5%88%BB%E3%81%AE-%3Cinput%3E-%E3%81%A8-date-%E5%9E%8B%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3">日付の <code>&lt;input&gt;</code> と 時刻の <code>&lt;input&gt;</code> と <code>Date</code> 型プロパティ <a class="direct-link" href="#%E6%97%A5%E4%BB%98%E3%81%AE-%3Cinput%3E-%E3%81%A8-%E6%99%82%E5%88%BB%E3%81%AE-%3Cinput%3E-%E3%81%A8-date-%E5%9E%8B%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3">#</a></h2>
+<p><strong>HTML</strong></p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>input</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>date<span class="token punctuation">"</span></span> <br>  <span class="token attr-name">[ngModel]</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>myDate | date: <span class="token punctuation">'</span>y-MM-dd<span class="token punctuation">'</span><span class="token punctuation">"</span></span> <br>  <span class="token attr-name">(ngModelChange)</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>myDateChange($event)<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>  <br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>input</span> <span class="token attr-name">type</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>time<span class="token punctuation">"</span></span> <br>  <span class="token attr-name">[ngModel]</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>myDate | date: <span class="token punctuation">'</span>HH:mm<span class="token punctuation">'</span><span class="token punctuation">"</span></span> <br>  <span class="token attr-name">(ngModelChange)</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>myTimeChange($event)<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>label</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>label</span><span class="token punctuation">></span></span></code></pre>
+<p><strong>TypeScript</strong></p>
+<pre class="language-typescript"><code class="language-typescript"><span class="token keyword">public</span> myDate<span class="token operator">:</span> Date <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token number">2018</span><span class="token punctuation">,</span> <span class="token number">6</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">,</span> <span class="token number">15</span><span class="token punctuation">,</span> <span class="token number">56</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2018/7/20 15:56</span><br><br><span class="token keyword">public</span> <span class="token function">myDateChange</span><span class="token punctuation">(</span>text<span class="token operator">:</span> <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>  <span class="token comment">// インスタンス変えた方がいいと思うんだ</span><br>  <span class="token keyword">const</span> newDate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>myDate<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>  <span class="token comment">// 新しいインスタンスに年月日をコピー(時刻は維持)</span><br>  <span class="token keyword">const</span> parsed <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span>text<span class="token punctuation">)</span><span class="token punctuation">;</span><br>  newDate<span class="token punctuation">.</span><span class="token function">setFullYear</span><span class="token punctuation">(</span><br>    parsed<span class="token punctuation">.</span><span class="token function">getFullYear</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>    parsed<span class="token punctuation">.</span><span class="token function">getMonth</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>    parsed<span class="token punctuation">.</span><span class="token function">getDate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <br><br>    <span class="token keyword">this</span><span class="token punctuation">.</span>myDate <span class="token operator">=</span> newDate<span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">public</span> <span class="token function">myTimeChange</span><span class="token punctuation">(</span>text<span class="token operator">:</span> <span class="token builtin">string</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>  <span class="token comment">// インスタンス変えた方がいいと思うんだ</span><br>  <span class="token keyword">const</span> newDate <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span><span class="token keyword">this</span><span class="token punctuation">.</span>myDate<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>  <span class="token comment">// 新しいインスタンスに時刻をコピー(年月日は維持)</span><br>  <span class="token keyword">const</span> buf <span class="token operator">=</span> text<span class="token punctuation">.</span><span class="token function">split</span><span class="token punctuation">(</span><span class="token string">':'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>  <span class="token keyword">if</span> <span class="token punctuation">(</span>buf<span class="token punctuation">.</span>length <span class="token operator">===</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    newDate<span class="token punctuation">.</span><span class="token function">setHours</span><span class="token punctuation">(</span><span class="token function">parseInt</span><span class="token punctuation">(</span>buf<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token function">parseInt</span><span class="token punctuation">(</span>buf<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">this</span><span class="token punctuation">.</span>myDate <span class="token operator">=</span> newDate<span class="token punctuation">;</span><br>  <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><strong>結果</strong></p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/0d775891-0964-5545-1c43-c0c65c313a79.gif" alt="Untitled6.gif"></p>
+<p>パイプ(<code>| date:</code>) のところの意味が未だわかってません。</p>
+
+
+published at <time class="postlist-date" datetime="2018-07-25">25 Jul 2018</time>
+
+tags: 
+
+  <a href="/tags/angular/" class="post-tag">angular</a>
+  <a href="/tags/TypeScript/" class="post-tag">TypeScript</a>
+  <a href="/tags/HTML/" class="post-tag">HTML</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-07-25-e00a7c459bc555556bfa/">Angular 6 で、日付や時刻との双方向データバインディング</a></li><li>Previous: <a href="/posts/2018-07-19-bbf4a9bcc1ba4594ebc3/">各Cloud Functions で使える言語比較(2018年7月)</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-07-25-16722d33632bbc543f19/ -->
+  </body>
+</html>

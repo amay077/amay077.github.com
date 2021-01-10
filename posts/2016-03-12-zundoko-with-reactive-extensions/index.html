@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>C# と Reactive Extensions でズンドコキヨシ</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>C# と Reactive Extensions でズンドコキヨシ</h1>
+
+<p>流行り？に乗っていくスタイル。</p>
+<!--more-->
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Javaの講義、試験が「自作関数を作り記述しなさい」って問題だったから<br>「ズン」「ドコ」のいずれかをランダムで出力し続けて「ズン」「ズン」「ズン」「ズン」「ドコ」の配列が出たら「キ・ヨ・シ！」って出力した後終了って関数作ったら満点で単位貰ってた</p>&mdash; てくも (@kumiromilk) <a href="https://twitter.com/kumiromilk/status/707437861881180160">2016年3月9日</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">//Zondoko.cs</span><br><span class="token class-name"><span class="token keyword">var</span></span> random <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Random</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> K <span class="token operator">=</span> <span class="token string">"キ・ヨ・シ！"</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> PATTERN <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> <span class="token punctuation">{</span> <span class="token string">"ずん"</span><span class="token punctuation">,</span> <span class="token string">"ずん"</span><span class="token punctuation">,</span> <span class="token string">"ずん"</span><span class="token punctuation">,</span> <span class="token string">"ずん"</span><span class="token punctuation">,</span> <span class="token string">"どこ"</span> <span class="token punctuation">}</span><span class="token punctuation">;</span><br><br>Observable<span class="token punctuation">.</span><span class="token function">Interval</span><span class="token punctuation">(</span>TimeSpan<span class="token punctuation">.</span><span class="token function">FromMilliseconds</span><span class="token punctuation">(</span><span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>_ <span class="token operator">=></span> <span class="token punctuation">(</span>random<span class="token punctuation">.</span><span class="token function">Next</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span> <span class="token punctuation">?</span> <span class="token string">"ずん"</span> <span class="token punctuation">:</span> <span class="token string">"どこ"</span><span class="token punctuation">)</span> <span class="token comment">// ランダムに ずんorどこ</span><br>    <span class="token punctuation">.</span><span class="token function">Scan</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">List<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>queue<span class="token punctuation">,</span> x<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token comment">// 最大５つのQueueに貯める</span><br>        <span class="token punctuation">{</span><br>            queue<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">while</span> <span class="token punctuation">(</span>queue<span class="token punctuation">.</span>Count <span class="token operator">></span> PATTERN<span class="token punctuation">.</span>Count<span class="token punctuation">)</span> <span class="token punctuation">{</span> queue<span class="token punctuation">.</span><span class="token function">RemoveAt</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><span class="token punctuation">}</span><br>            <span class="token keyword">return</span> queue<span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">SelectMany</span><span class="token punctuation">(</span>queue <span class="token operator">=></span> queue<span class="token punctuation">.</span><span class="token function">SequenceEqual</span><span class="token punctuation">(</span>PATTERN<span class="token punctuation">)</span> <span class="token punctuation">?</span> <span class="token comment">// パターンと一致したら…</span><br>        Observable<span class="token punctuation">.</span><span class="token function">Concat</span><span class="token punctuation">(</span><br>            Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span>queue<span class="token punctuation">.</span><span class="token function">Last</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">,</span>   <span class="token comment">// Queueの最後</span><br>            Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span>K<span class="token punctuation">)</span><span class="token punctuation">,</span>              <span class="token comment">// + キ・ヨ・シ！</span><br>            Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span><span class="token keyword">string</span><span class="token punctuation">.</span>Empty<span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token comment">// + 空文字(終了判定用)</span><br>        Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span>queue<span class="token punctuation">.</span><span class="token function">Last</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">TakeWhile</span><span class="token punctuation">(</span>x <span class="token operator">=></span> <span class="token operator">!</span><span class="token keyword">string</span><span class="token punctuation">.</span><span class="token function">IsNullOrEmpty</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span>  <span class="token comment">// 空文字になるまで繰り返す</span><br>    <span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span><br>        x <span class="token operator">=></span> Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">,</span><br>        <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"complete!!"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<p>どこ<br>
+どこ<br>
+ずん<br>
+ずん<br>
+ずん<br>
+どこ<br>
+どこ<br>
+どこ<br>
+ずん<br>
+どこ<br>
+ずん<br>
+ずん<br>
+ずん<br>
+ずん<br>
+どこ<br>
+キ・ヨ・シ！<br>
+complete!!</p>
+</blockquote>
+<p><code>SelectMany</code> に頼ってるのが気に入らない。。。</p>
+<ul>
+<li>RxJava 版はこちら - <a href="http://qiita.com/amay077/items/2c8575753e37fcc94f87">RxJava でズンドコキヨシ(window 使用)</a></li>
+<li><a href="http://qiita.com/B73W56H84/items/519e27a1aed5e6d5304f#%E3%81%82%E3%82%8F%E3%81%9B%E3%81%A6%E8%AA%AD%E3%81%BF%E3%81%9F%E3%81%84">さまざまなズンドコキヨシ</a></li>
+<li><a href="http://qiita.com/shunsugai@github/items/971a15461de29563bf90">ズンドコキヨシまとめ</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2016-03-12">12 Mar 2016</time>
+
+tags: 
+
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/ReactiveX/" class="post-tag">ReactiveX</a>
+  <a href="/tags/ズンドコキヨシ/" class="post-tag">ズンドコキヨシ</a>
+  <a href="/tags/.NET/" class="post-tag">.NET</a>
+  <a href="/tags/ReactiveExtensions/" class="post-tag">ReactiveExtensions</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-03-13-zundoko-with-rxjava/">RxJava でズンドコキヨシ(window or buffer 使用)</a></li><li>Previous: <a href="/posts/2016-02-27-convert-rxjava-observable-to-android-databinding-observablefield/">RxJava の Observable を Android DataBinding の ObservableField に変換する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-03-12-zundoko-with-reactive-extensions/ -->
+  </body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>爆速エミュレータで Google Maps Android API v2 を動かす</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>爆速エミュレータで Google Maps Android API v2 を動かす</h1>
+
+<p>Google APIs のエミュレータで Google Map Android API v2 が動くようになったのですが、やっぱり遅い、使えん。<br>
+という訳で、Intel の爆速エミュレータで GMapV2 を使う手順の備忘録です。(ご利用は自己責任で)</p>
+<!--more-->
+<h2 id="%E7%88%86%E9%80%9F%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%AE%E5%B0%8E%E5%85%A5">爆速エミュレータの導入 <a class="direct-link" href="#%E7%88%86%E9%80%9F%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%AE%E5%B0%8E%E5%85%A5">#</a></h2>
+<p>こちら等を参考にセットアップします。</p>
+<ul>
+<li><a href="http://qiita.com/gabu/items/8bc1a11f1382409f1d2a">Android再入門 - エミュレータの作成</a></li>
+</ul>
+<h2 id="%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%A7-google-maps-android-api-v2-%E3%82%92%E5%8B%95%E3%81%8B%E3%81%99">エミュレータで Google Maps Android API v2 を動かす <a class="direct-link" href="#%E3%82%A8%E3%83%9F%E3%83%A5%E3%83%AC%E3%83%BC%E3%82%BF%E3%81%A7-google-maps-android-api-v2-%E3%82%92%E5%8B%95%E3%81%8B%E3%81%99">#</a></h2>
+<p><code>com.google.android.gms.apk</code> と <code>com.android.vending.apk</code> が必要なのでどうにかして入手しインストールします。(ほとんど答えだけど下記参照)</p>
+<ul>
+<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+</ul>
+<p>apk が古いとうまく動作しません。なるべく新しいものを探しましょう。(ﾎﾞｿ</p>
+<h2 id="androidmanifest.xml-%E3%81%8B%E3%82%89-com.google.android.maps-%E3%81%AE%E5%AE%9A%E7%BE%A9%E3%82%92%E6%B6%88%E3%81%99">AndroidManifest.xml から com.google.android.maps の定義を消す <a class="direct-link" href="#androidmanifest.xml-%E3%81%8B%E3%82%89-com.google.android.maps-%E3%81%AE%E5%AE%9A%E7%BE%A9%E3%82%92%E6%B6%88%E3%81%99">#</a></h2>
+<p>意外とハマったのがコレ。</p>
+<p><code>AndroidManifest.xml</code> で</p>
+<pre><code>&lt;uses-library android:name=&quot;com.google.android.maps&quot; /&gt;
+</code></pre>
+<p>が定義してあると、</p>
+<pre><code>10-20 11:35:52.977: E/PackageManager(1178): Package xxxx requires unavailable shared library com.google.android.maps; failing!
+</code></pre>
+<p>というエラーになります。</p>
+<p>この <code>com.google.android.maps</code> は Google Maps API v1 で必要だったもので、v2 では必要ありません。削除しましょう。</p>
+<p>v2 の使い方を説明するブログやサイトで、これが含まれてしまってるものがあるようです。(かくいう自分もそんなサイトからコピペしてきたまま使ってたのでエラーになりました（汗）</p>
+<h2 id="%E5%8B%95%E3%81%8B%E3%81%99">動かす <a class="direct-link" href="#%E5%8B%95%E3%81%8B%E3%81%99">#</a></h2>
+<p>あとは、実機と変わりません。</p>
+<p><img src="/img/posts/using_gmapv2_on_intel_emulator_01.png" alt="img"></p>
+<p>やばい、PC性能とネットワーク環境のおかげで実機より快適になったｗ</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="http://d.hatena.ne.jp/ria10/20121218/1355794748">AndroidでGoogle Maps v2 をエミュレータで動かしてしかも爆速 - リア充爆発日記</a></li>
+<li><a href="http://denshikousaku.net/how-to-make-android-google-maps-v2-work-in-android-emulator">エミュレータでGoogle Maps for Android V2を動かす方法｜ アプリ開発とRaspberry PIとArduino実験</a></li>
+<li><a href="http://stackoverflow.com/questions/14040185/running-google-maps-v2-on-android-emulator">Running Google Maps v2 on Android Emulator - Stack Overflow</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2013-10-20">20 Oct 2013</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
+  <a href="/tags/Geo/" class="post-tag">Geo</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-10-23-android-flat-button-sample/">フラットな感じのボタンを作ってみた</a></li><li>Previous: <a href="/posts/2013-10-17-make-clickable-from-part-of-text/">TextView で、テキストの一部だけクリック可能にする</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-10-20-using-gmapv2-on-intel-emulator/ -->
+  </body>
+</html>

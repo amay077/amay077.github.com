@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>クアルコムの AR SDK ”QCAR” を Xperia と IS03 で動かしてみた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>クアルコムの AR SDK ”QCAR” を Xperia と IS03 で動かしてみた</h1>
+
+<p>QCAR とは クアルコム社 が<a href="http://japanese.engadget.com/2010/10/07/android-ar-sdk/">提供している</a> Android 用の AR（拡張現実） SDK です。</p>
+<!--more-->
+<p><a href="https://ar.qualcomm.com/qdevnet/sdk">Qualcomm Developper Network - AR SDK ｜ Qualcomm Augmented Reality</a></p>
+<p>こちらの方々</p>
+<ul>
+<li>クアルコムのAndroid向けAR SDK（QCAR）を動かしてみた - kotamzの日記</li>
+<li>QualcommのAR SDK &quot;QCAR&quot; で遊んでみた - hdk_embeddedの日記</li>
+</ul>
+<p>が使い方を説明してくださってますので、自分も（仕事で）やってみました。</p>
+<p>対応している端末は Desire , Nexus One との事でしたが、どちらも持ってないので、手持ちの Xperia (※ Android 2.1 に上げたやつ) と IS03 で試してみました。</p>
+<p>まず Xperia 。</p>
+<p>お、できた！（QCAR というより NDK と Cygwin でかなりてこずりましたが、順番にやれば大丈夫）</p>
+<p><img src="https://blog.amay0777.net/img/posts/qcar_xperia_1.png" alt="&quot;1&quot;"><br>
+<img src="https://blog.amay0777.net/img/posts/qcar_xperia_2.png" alt="&quot;2&quot;"></p>
+<p>なかなかイイ感じに認識します。</p>
+<p>ただ、MultiImageTargets だけはうまく認識してくれませんでした。せっかく立方体作ったのに…）<br>
+カメラのピントなどを調節すれば認識するのかも知れません。</p>
+<p>(2010.12.2追記)あ、動いた。なかなか認識してくれなかったけど、正面（ライオンがついてない方）をまっすぐ映してじっとしてたらできました。</p>
+<p><img src="https://blog.amay0777.net/img/posts/qcar_xperia_3.png" alt="&quot;3&quot;"></p>
+<p>ミンティアの上にポットを載せてみました(^ ^)</p>
+<p><img src="https://blog.amay0777.net/img/posts/qcar_xperia_4.png" alt="&quot;4&quot;"></p>
+<p>自分の画像を使うには、Qualcomm Developper Network の AR SDK のページ内にある <a href="https://ar.qualcomm.com/qdevnet/projects">My Trackables</a> へ行き、プロジェクトを作った後、画像（JPG か PNG で 2MB未満）をアップロードします。</p>
+<p><img src="https://blog.amay0777.net/img/posts/qcar_xperia_5.png" alt="&quot;5&quot;"></p>
+<p>アップロードできると↑こんな画面になります。たぶん ☆ が多い方が認識しやすい画像です。（試しにホットペッパーの見開き２ページをアップしたら ☆ がひとつも付きませんでした。→追記(2010.12.2)ちゃんとスキャンしてもらってグレイスケールに変換して制限2MBギリギリな画像でアップしたら、☆が4つ付きました。）</p>
+<p>このデータをアプリで使うには、項目をチェックして download selected trackables をクリックすると ZIP がダウンロードできるので、その中身を ImageTargets サンプル の assets フォルダに上書きしてあげると適用できます。（たぶん、複数項目をチェックしてダウンロードすると画像によってポットの色が変わるようになると思います。→追記(2010.12.2)大嘘。JNI 側の ImageTargets.cpp をダウンロードした画像の名前（config.xml を見ると分かる）に合わせて修正してあげないとダメっぽい）</p>
+<p>自分で動かすと相当オモシロイので、是非お試しください！</p>
+<p>次に IS03 ですが、、、動きませんでしたー(^ ^;</p>
+<p>エラーは出ませんが、カメラが起動しないです。<br>
+ソースコードを直すと動くかも知れないので、また調べたいと思います。</p>
+<p>今日はこんなところで。</p>
+<h3 id="%E8%BF%BD%E8%A8%98%EF%BC%882010.12.2%EF%BC%89%EF%BC%9Axperia-%E3%81%A7%E3%81%AF%E3%83%90%E3%82%B0%E3%81%8C%E3%81%82%E3%82%8B%E3%82%89%E3%81%97%E3%81%84">追記（2010.12.2）：Xperia ではバグがあるらしい <a class="direct-link" href="#%E8%BF%BD%E8%A8%98%EF%BC%882010.12.2%EF%BC%89%EF%BC%9Axperia-%E3%81%A7%E3%81%AF%E3%83%90%E3%82%B0%E3%81%8C%E3%81%82%E3%82%8B%E3%82%89%E3%81%97%E3%81%84">#</a></h3>
+<p>QCAR SDK のページに 「Xperia で動かすとバグがある」的な情報が載ってました。MultiImageTargets サンプルがうまく動いてくれなかったのはこの為かなあ？</p>
+<blockquote>
+<p>Note: We have currently identified a bug that prevents the SDK from working correctly on the Sony Ericsson Xperia X10i (QSD 8250) running Android 2.1. This page will be updated once it is fixed.</p>
+<p>via <a href="https://ar.qualcomm.com/qdevnet/sdk">AR SDK ｜ Qualcomm Augmented Realit</a></p>
+</blockquote>
+<h3 id="%E8%BF%BD%E8%A8%98%EF%BC%882010.12.2%EF%BC%89%EF%BC%9A%E8%AA%8D%E8%AD%98%E3%81%A7%E3%81%8D%E3%82%8B%E7%94%BB%E5%83%8F%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">追記（2010.12.2）：認識できる画像について <a class="direct-link" href="#%E8%BF%BD%E8%A8%98%EF%BC%882010.12.2%EF%BC%89%EF%BC%9A%E8%AA%8D%E8%AD%98%E3%81%A7%E3%81%8D%E3%82%8B%E7%94%BB%E5%83%8F%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">#</a></h3>
+<ul>
+<li>アルゴリズムは良く分からないけど、画像から特徴点を算出している。これに色は関係ないみたい。カラー画像もアップしたらグレイスケールに変換されてた。</li>
+<li>認識率のよい（☆がいっぱい付く）画像は、ごちゃごちゃしている画像。</li>
+<li>ホットペッパーの各ページは、構図は似ているけど、店の写真がそれぞれ違うので認識率は高い。</li>
+<li>店内写真だけ切り抜いてアップしたら、写真によってバラつきがある。下の左の写真は認識率が高いが、右は低い。</li>
+</ul>
+<p><img src="https://blog.amay0777.net/img/posts/qcar_xperia_6.png" alt="&quot;6&quot;"><br>
+<img src="https://blog.amay0777.net/img/posts/qcar_xperia_7.png" alt="&quot;7&quot;"></p>
+
+
+published at <time class="postlist-date" datetime="2010-12-01">01 Dec 2010</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+  <a href="/tags/AR/" class="post-tag">AR</a>
+  <a href="/tags/QCAR/" class="post-tag">QCAR</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-03-21-hamackathon2/">ハマッカソン2 - #hamackathon に参加してきました</a></li><li>Previous: <a href="/posts/2013-03-21-openstreetmap-bing/">OpenStreetMap で Bing の衛星写真が使えるようになった！けどズレが気になる…</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-03-21-qcar-xperia-is03/ -->
+  </body>
+</html>

@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Elasticsearch で位置情報を検索する手順</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Elasticsearch で位置情報を検索する手順</h1>
+
+<p>Elasticsearch は、オープンソースの全文検索エンジンです。Apache Solr と並んでよく取り上げられるようになってきました。</p>
+<p>位置情報の検索機能も標準搭載しているとのことで、試しに使ってみました。</p>
+<!--more-->
+<h2 id="elasticsearch-%E3%81%AE%E5%B0%8E%E5%85%A5">Elasticsearch の導入 <a class="direct-link" href="#elasticsearch-%E3%81%AE%E5%B0%8E%E5%85%A5">#</a></h2>
+<p>下の情報が大変参考になりました。(環境は Mac。事前に Java と homebrew の導入が必要です）</p>
+<ul>
+<li><a href="http://qiita.com/Konboi@github/items/56f0aaca77db5df027af">elasticsearch - ElasitcSearch ことはじめ - Qiita [キータ]</a></li>
+</ul>
+<h2 id="%E8%A9%A6%E3%81%97%E3%81%AB%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">試しに使ってみる <a class="direct-link" href="#%E8%A9%A6%E3%81%97%E3%81%AB%E4%BD%BF%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>下のサイトが大変参考なりました。</p>
+<ul>
+<li><a href="http://inokara.hateblo.jp/entry/2013/09/07/153826">Elasticsearch を試してみる - ようへいの日々精進</a></li>
+</ul>
+<h2 id="%E4%BD%8D%E7%BD%AE%E6%83%85%E5%A0%B1%E3%82%92%E6%A4%9C%E7%B4%A2%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">位置情報を検索してみる <a class="direct-link" href="#%E4%BD%8D%E7%BD%AE%E6%83%85%E5%A0%B1%E3%82%92%E6%A4%9C%E7%B4%A2%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>下のようなスキーマのデータを登録して検索する想定です。</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token punctuation">{</span><br>    <span class="token string">"name"</span> <span class="token operator">:</span> <span class="token string">"Tokyo St"</span><span class="token punctuation">,</span><br>    <span class="token string">"pin"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>        <span class="token string">"location"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>            <span class="token string">"lat"</span> <span class="token operator">:</span> <span class="token number">35.68</span><span class="token punctuation">,</span><br>            <span class="token string">"lon"</span> <span class="token operator">:</span> <span class="token number">139.76</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h3 id="1.-%E3%82%B9%E3%82%AD%E3%83%BC%E3%83%9E%E3%82%92%E7%99%BB%E9%8C%B2%E3%81%99%E3%82%8B">1. スキーマを登録する <a class="direct-link" href="#1.-%E3%82%B9%E3%82%AD%E3%83%BC%E3%83%9E%E3%82%92%E7%99%BB%E9%8C%B2%E3%81%99%E3%82%8B">#</a></h3>
+<p>Elasticsearch は基本的にはスキーマレスで動くのですが、位置情報を表す項目は、明確にスキーマを定義する必要があるようです。</p>
+<p>データ投入の前にそれを行います。</p>
+<pre><code>curl -XPUT 'http://localhost:9200/myvenues/'
+
+curl -XPUT 'http://localhost:9200/myvenues/venue/_mapping' -d '
+{
+    &quot;venue&quot; : {
+        &quot;properties&quot; : {
+            &quot;pin&quot; : { &quot;type&quot; : &quot;geo_point&quot; }
+        }
+    }
+}'
+</code></pre>
+<p>ここでは、<code>venue</code> のプロパティ群の内の <code>pin</code> 項目は、位置情報(geo_point)だよ、と定義しています。</p>
+<h3 id="2.-%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E6%8A%95%E5%85%A5%E3%81%99%E3%82%8B">2. データを投入する <a class="direct-link" href="#2.-%E3%83%87%E3%83%BC%E3%82%BF%E3%82%92%E6%8A%95%E5%85%A5%E3%81%99%E3%82%8B">#</a></h3>
+<p>2件ほど、テストデータを投入します。</p>
+<pre><code>curl -XPUT 'http://localhost:9200/myvenues/venue/1' -d '{
+    &quot;name&quot; : &quot;Tokyo St&quot;,
+    &quot;tag&quot; : [&quot;station&quot;, &quot;train&quot;],
+    &quot;pin&quot; : {
+        &quot;location&quot; : {
+            &quot;lat&quot; : 35.68,
+            &quot;lon&quot; : 139.76
+        }
+    }
+}'
+
+curl -XPUT 'http://localhost:9200/myvenues/venue/2' -d '{
+    &quot;name&quot; : &quot;Nagoya St&quot;,
+    &quot;tag&quot; : [&quot;station&quot;, &quot;train&quot;],
+    &quot;pin&quot; : {
+        &quot;location&quot; : {
+            &quot;lat&quot; : 35.17,
+            &quot;lon&quot; : 136.88
+        }
+    }
+}'
+</code></pre>
+<h3 id="3.-%E4%BD%8D%E7%BD%AE%E6%83%85%E5%A0%B1%E3%81%A7%E6%A4%9C%E7%B4%A2%E3%81%99%E3%82%8B">3. 位置情報で検索する <a class="direct-link" href="#3.-%E4%BD%8D%E7%BD%AE%E6%83%85%E5%A0%B1%E3%81%A7%E6%A4%9C%E7%B4%A2%E3%81%99%E3%82%8B">#</a></h3>
+<h4 id="%E4%BD%8D%E7%BD%AE%EF%BC%8B%E8%B7%9D%E9%9B%A2">位置＋距離 <a class="direct-link" href="#%E4%BD%8D%E7%BD%AE%EF%BC%8B%E8%B7%9D%E9%9B%A2">#</a></h4>
+<p>緯度/経度:35.6/139.8 から 20km 周囲にあるデータを検索します。</p>
+<pre><code>curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{
+    &quot;query&quot;: {
+        &quot;filtered&quot; : {
+            &quot;query&quot; : {
+                &quot;match_all&quot; : {}
+            },
+            &quot;filter&quot; : {
+                &quot;geo_distance&quot; : {
+                    &quot;distance&quot; : &quot;20km&quot;,
+                    &quot;venue.pin&quot; : {
+                        &quot;lat&quot; : 35.6,
+                        &quot;lon&quot; : 139.8
+                    }
+                }
+            }
+        }
+    }
+}'
+</code></pre>
+<h5 id="%E7%B5%90%E6%9E%9C">結果 <a class="direct-link" href="#%E7%B5%90%E6%9E%9C">#</a></h5>
+<p>Tokyo St だけがヒットしました。</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token punctuation">{</span><span class="token string">"took"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"timed_out"</span><span class="token operator">:</span><span class="token boolean">false</span><span class="token punctuation">,</span><span class="token string">"_shards"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"successful"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"failed"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">"max_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">[</span><span class="token punctuation">{</span><span class="token string">"_index"</span><span class="token operator">:</span><span class="token string">"myvenues"</span><span class="token punctuation">,</span><span class="token string">"_type"</span><span class="token operator">:</span><span class="token string">"venue"</span><span class="token punctuation">,</span><span class="token string">"_id"</span><span class="token operator">:</span><span class="token string">"1"</span><span class="token punctuation">,</span><span class="token string">"_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span> <span class="token string">"_source"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token string">"name"</span> <span class="token operator">:</span> <span class="token string">"Tokyo St"</span><span class="token punctuation">,</span><br>    <span class="token string">"pin"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>        <span class="token string">"location"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>            <span class="token string">"lat"</span> <span class="token operator">:</span> <span class="token number">35.68</span><span class="token punctuation">,</span><br>            <span class="token string">"lon"</span> <span class="token operator">:</span> <span class="token number">139.76</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">}</span></code></pre>
+<h4 id="%E7%AF%84%E5%9B%B2(%E7%9F%A9%E5%BD%A2)">範囲(矩形) <a class="direct-link" href="#%E7%AF%84%E5%9B%B2(%E7%9F%A9%E5%BD%A2)">#</a></h4>
+<p>左上:35.2/136.8 〜 右下:35.1/136.9 にあるデータを検索します。緯度は上(北)の方が値が大きくなるので、上下関係に注意が必要です。</p>
+<pre><code>curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{
+    &quot;query&quot;: {
+        &quot;filtered&quot; : {
+            &quot;query&quot; : {
+                &quot;match_all&quot; : {}
+            },
+            &quot;filter&quot; : {
+                &quot;geo_bounding_box&quot; : {
+	                &quot;venue.pin&quot; : {
+	                    &quot;top_left&quot; : {
+	                        &quot;lat&quot; : 35.2,
+	                        &quot;lon&quot; : 136.8
+	                    },
+	                    &quot;bottom_right&quot; : {
+	                        &quot;lat&quot; : 35.1,
+	                        &quot;lon&quot; : 136.9
+	                    }
+	                }
+	            }
+            }
+        }
+    }
+}'
+</code></pre>
+<h5 id="%E7%B5%90%E6%9E%9C-2">結果 <a class="direct-link" href="#%E7%B5%90%E6%9E%9C-2">#</a></h5>
+<p>Nagoya St だけがヒットしました。</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token punctuation">{</span><span class="token string">"took"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"timed_out"</span><span class="token operator">:</span><span class="token boolean">false</span><span class="token punctuation">,</span><span class="token string">"_shards"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"successful"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"failed"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">"max_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">[</span><span class="token punctuation">{</span><span class="token string">"_index"</span><span class="token operator">:</span><span class="token string">"myvenues"</span><span class="token punctuation">,</span><span class="token string">"_type"</span><span class="token operator">:</span><span class="token string">"venue"</span><span class="token punctuation">,</span><span class="token string">"_id"</span><span class="token operator">:</span><span class="token string">"2"</span><span class="token punctuation">,</span><span class="token string">"_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span> <span class="token string">"_source"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token string">"name"</span> <span class="token operator">:</span> <span class="token string">"Nagoya St"</span><span class="token punctuation">,</span><br>    <span class="token string">"pin"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>        <span class="token string">"location"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>            <span class="token string">"lat"</span> <span class="token operator">:</span> <span class="token number">35.17</span><span class="token punctuation">,</span><br>            <span class="token string">"lon"</span> <span class="token operator">:</span> <span class="token number">136.88</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">}</span></code></pre>
+<h4 id="%E7%AF%84%E5%9B%B2(%E5%A4%9A%E8%A7%92%E5%BD%A2)">範囲(多角形) <a class="direct-link" href="#%E7%AF%84%E5%9B%B2(%E5%A4%9A%E8%A7%92%E5%BD%A2)">#</a></h4>
+<p>任意の多角形領域にあるデータを検索します。</p>
+<p>ここでは GeoJSON 互換の記述方式で書いてます。経度が先なので注意。<br>
+今までのような lat: lon: の配列でもかけますが、 GeoJSON 便利なので。</p>
+<pre><code>curl -XPOST 'http://localhost:9200/myvenues/venue/_search' -d '{
+    &quot;query&quot;: {
+        &quot;filtered&quot; : {
+            &quot;query&quot; : {
+                &quot;match_all&quot; : {}
+            },
+            &quot;filter&quot; : {
+                &quot;geo_polygon&quot; : {
+	                &quot;venue.pin&quot; : {
+	                	&quot;points&quot; : [
+	                		[139.7, 35.7],  // 経度が先！
+	                		[139.8, 35.7],
+	                		[139.8, 35.6],
+	                		[139.7, 35.6],
+	                		[139.7, 35.7]
+	                	]
+	                }
+	            }
+            }
+        }
+    }
+}'
+</code></pre>
+<h5 id="%E7%B5%90%E6%9E%9C-3">結果 <a class="direct-link" href="#%E7%B5%90%E6%9E%9C-3">#</a></h5>
+<p>Tokyo St だけがヒットしました。</p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token punctuation">{</span><span class="token string">"took"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token string">"timed_out"</span><span class="token operator">:</span><span class="token boolean">false</span><span class="token punctuation">,</span><span class="token string">"_shards"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"successful"</span><span class="token operator">:</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token string">"failed"</span><span class="token operator">:</span><span class="token number">0</span><span class="token punctuation">}</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">{</span><span class="token string">"total"</span><span class="token operator">:</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token string">"max_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span><span class="token string">"hits"</span><span class="token operator">:</span><span class="token punctuation">[</span><span class="token punctuation">{</span><span class="token string">"_index"</span><span class="token operator">:</span><span class="token string">"myvenues"</span><span class="token punctuation">,</span><span class="token string">"_type"</span><span class="token operator">:</span><span class="token string">"venue"</span><span class="token punctuation">,</span><span class="token string">"_id"</span><span class="token operator">:</span><span class="token string">"1"</span><span class="token punctuation">,</span><span class="token string">"_score"</span><span class="token operator">:</span><span class="token number">1.0</span><span class="token punctuation">,</span> <span class="token string">"_source"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token string">"name"</span> <span class="token operator">:</span> <span class="token string">"Tokyo St"</span><span class="token punctuation">,</span><br>    <span class="token string">"pin"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>        <span class="token string">"location"</span> <span class="token operator">:</span> <span class="token punctuation">{</span><br>            <span class="token string">"lat"</span> <span class="token operator">:</span> <span class="token number">35.68</span><span class="token punctuation">,</span><br>            <span class="token string">"lon"</span> <span class="token operator">:</span> <span class="token number">139.76</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">}</span><span class="token punctuation">]</span><span class="token punctuation">}</span><span class="token punctuation">}</span></code></pre>
+<p>(ポリゴンの座標群が、右回りじゃないとダメかな？と思って恐る恐る左回りにしてみたら、問題なく検索できました！)</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>最初 <code>geo_point</code> を明示的に指定しないといけないのに気づかなくてしばらくハマりましたが、それ意外はすんなりと動きました。</p>
+<p>機能を試しただけでパフォーマンスなどは計測できていませんが、なんか使えそうな気はします。</p>
+<p>位置情報関係の情報を探したい時は、公式サイトの GUIDE</p>
+<ul>
+<li><a href="http://www.elasticsearch.org/guide/">Reference Guide ｜ Elasticsearch</a></li>
+</ul>
+<p>の検索バーで 「geo」で検索すると、有用な情報が得られます。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="http://www.elasticsearch.org/">Open Source Distributed Real Time Search &amp; Analytics ｜ Elasticsearch</a></li>
+<li><a href="http://www.elasticsearch.org/blog/geo-location-and-search/">Geo Location And Search ｜ Blog ｜ Elasticsearch</a></li>
+<li><a href="http://www.elasticsearchtutorial.com/spatial-search-tutorial.html">Spatial Search ElasticSearch tutorial - ElasticSearch Tutorial.com</a></li>
+<li><a href="http://stackoverflow.com/questions/16113439/elasticsearch-geo-distance-filter-with-multiple-locations-in-array-possible">ElasticSearch geo distance filter with multiple locations in array - possible? - Stack Overflow</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2013-09-09">09 Sep 2013</time>
+
+tags: 
+
+  <a href="/tags/Elasticsearch/" class="post-tag">Elasticsearch</a>
+  <a href="/tags/Geo/" class="post-tag">Geo</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-09-10-implementing-reverse-geocoding-using-elasticsearch/">総務省のデータを Elasticsearch にぶち込んで、緯度経度から市区町村の何丁目までを取り出す</a></li><li>Previous: <a href="/posts/2013-09-04-understanding-android-thread-priority/">スレッドの優先度について調べた</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-09-09-using-spatialdata-with-elasticsearch/ -->
+  </body>
+</html>

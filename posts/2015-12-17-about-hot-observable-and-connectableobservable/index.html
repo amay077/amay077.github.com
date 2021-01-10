@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hot Observable と ConnectableObservable について</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Hot Observable と ConnectableObservable について</h1>
+
+<p>これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 17日目</a> の記事です。</p>
+<p>空いてたので参加してみました。<br>
+普段は Xamarin(C#) + Reactive Extensions + ReactiveProperty で、Reactive + MVVM な Android/iOS両対応アプリを開発しています。</p>
+<!--more-->
+<h2 id="cold-vs-hot">Cold vs Hot <a class="direct-link" href="#cold-vs-hot">#</a></h2>
+<p>Cold Observable は「あなただけの」Stream、Hot は「みんなの」Stream 。<br>
+（私的にはニコ動かニコ生か、みたいに理解してますが、その話はいいや）</p>
+<p>Cold は、あなたが subscribe した瞬間からデータが流れ始めます。<br>
+Hot は、あなたが subscribe してもデータは流れ始めません(流れるかも知れません？)。</p>
+<p>では Hot Observable はいつからデータが流れ始める？Observable が生成された瞬間から？<br>
+その答え(の一つ)が <strong>ConnectableObservable</strong> 。</p>
+<h2 id="connectableobservable-%E3%81%AE%E3%83%87%E3%83%BC%E3%82%BF%E6%94%BE%E6%B5%81%E3%81%AE%E9%96%8B%E5%A7%8B%E3%81%A8%E5%81%9C%E6%AD%A2">ConnectableObservable のデータ放流の開始と停止 <a class="direct-link" href="#connectableobservable-%E3%81%AE%E3%83%87%E3%83%BC%E3%82%BF%E6%94%BE%E6%B5%81%E3%81%AE%E9%96%8B%E5%A7%8B%E3%81%A8%E5%81%9C%E6%AD%A2">#</a></h2>
+<p>Cold Observable を Hot化する publish メソッドの返り値は ConnectableObservable。<br>
+Hot は必ず ConnectableObservable。（←これ後で否定します）</p>
+<p>ConnectableObservable には connect メソッドがあります。<br>
+Hot Observable のデータが流れ始めるのは、このメソッドを呼んだ瞬間から。<br>
+なので、どれだけ subscriber が居ようとも connect を呼ばなければデータは流れません。逆に subscriber が居なくても connect を呼べばデータが流れ始めます。</p>
+<p>connect メソッドの返り値は Subscription です。<br>
+Subscription の unsubscribe メソッドを呼ぶと、データの放流が停止します。これも subscriber が居ようが居まいが停止します。<br>
+再度 connect すると、 <strong>最初から</strong> データが流れ出します。再開ではありません。</p>
+<h2 id="%E5%AE%9F%E4%BE%8B">実例 <a class="direct-link" href="#%E5%AE%9F%E4%BE%8B">#</a></h2>
+<h3 id="cold-observable">Cold Observable <a class="direct-link" href="#cold-observable">#</a></h3>
+<p>Observable.interval は、一定時間置きにインクリメントされた値を流す <strong>Cold</strong> Observable。<br>
+なので、複数の subscriber が居たら、各々に独立した値を流します。</p>
+<p>Android の画面にボタンが２つ（buttonSubscribe1 と buttonSubscribe2）並んでるだけのサンプルです。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">final</span> <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> tickObservable <span class="token operator">=</span> <span class="token class-name">Observable</span><span class="token punctuation">.</span><span class="token function">interval</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">,</span> <span class="token class-name">TimeUnit</span><span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token comment">// 可視性向上の為のなんちゃってラムダ</span><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe1<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span> <br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe1 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber1 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe2<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe2 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber2 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<p>結果:<br>
+D/MainActivity: buttonSubscribe1 click!<br>
+D/MainActivity: subscriber1 - onNext - 0<br>
+D/MainActivity: subscriber1 - onNext - 1<br>
+D/MainActivity: subscriber1 - onNext - 2<br>
+D/MainActivity: subscriber1 - onNext - 3<br>
+D/MainActivity: subscriber1 - onNext - 4<br>
+D/MainActivity: subscriber1 - onNext - 5<br>
+D/MainActivity: buttonSubscribe2 click!<br>
+D/MainActivity: subscriber1 - onNext - 6<br>
+D/MainActivity: subscriber2 - onNext - 0<br>
+D/MainActivity: subscriber1 - onNext - 7<br>
+D/MainActivity: subscriber2 - onNext - 1<br>
+D/MainActivity: subscriber1 - onNext - 8<br>
+D/MainActivity: subscriber2 - onNext - 2</p>
+</blockquote>
+<p>buttonSubscribe1 を押すとデータ(０から連番)が流れ始めます。<br>
+しばらくして buttonSubscribe2 を押すと、1 とは関係なく、また 0 から流れ始めます。</p>
+<h3 id="hot(connectable)-observable">Hot(Connectable) Observable <a class="direct-link" href="#hot(connectable)-observable">#</a></h3>
+<p>publish で Hot 化します。<br>
+connect と unsubscribe を呼ぶためのボタン（buttonConnect, buttonDisConnect）を画面に追加してます。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token class-name">Subscription</span> _connection<span class="token punctuation">;</span> <span class="token comment">// field です</span><br><br><br><span class="token keyword">final</span> <span class="token class-name">ConnectableObservable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> tickObservable <span class="token operator">=</span> <br>    <span class="token class-name">Observable</span><span class="token punctuation">.</span><span class="token function">interval</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">,</span> <span class="token class-name">TimeUnit</span><span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">publish</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// publish で Hot化</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe1<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span> <br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe1 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber1 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe2<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe2 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber2 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonConnect<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonConnect click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    _connection <span class="token operator">=</span> tickObservable<span class="token punctuation">.</span><span class="token function">connect</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// データ放流開始</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonDisConnect<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonDisConnect click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>_connection <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        _connection<span class="token punctuation">.</span><span class="token function">unsubscribe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// データ放流停止</span><br>        _connection <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<p>結果:<br>
+D/MainActivity: buttonSubscribe1 click!<br>
+D/MainActivity: buttonConnect click!      // ←数秒経過している<br>
+D/MainActivity: subscriber1 - onNext - 0<br>
+D/MainActivity: subscriber1 - onNext - 1<br>
+D/MainActivity: subscriber1 - onNext - 2<br>
+D/MainActivity: subscriber1 - onNext - 3<br>
+D/MainActivity: buttonSubscribe2 click!<br>
+D/MainActivity: subscriber1 - onNext - 4<br>
+D/MainActivity: subscriber2 - onNext - 4<br>
+D/MainActivity: subscriber1 - onNext - 5<br>
+D/MainActivity: subscriber2 - onNext - 5<br>
+D/MainActivity: subscriber1 - onNext - 6<br>
+D/MainActivity: subscriber2 - onNext - 6<br>
+D/MainActivity: buttonDisConnect click!<br>
+-これ以降 onNext は出力されない-</p>
+</blockquote>
+<p>buttonSubscribe1 を押しても、まだデータは流れてきません。<br>
+数秒後、buttonConnect を押すとデータが流れ始めます。<br>
+buttonSubscribe2 を押すと、subscriber2 が増えますが、Hot(みんなの)Observable なので、流れてくる値とタイミングは subscriber1 と全く同じです。</p>
+<p>buttonDisConnect を押すと、データの放流が停止されます。(ちなみにもう一度 CONNECT すると、また 0 から値が流れます)<br>
+subscriber1, subscriber2 にはもう onNext は呼ばれません。</p>
+<p>※サンプルでは onNext しか受信していませんが、 buttonDisConnect を押しても、 subscriber1, subscriber2 の onComplete や onError も呼ばれません。つまり、 <strong>「データの放流が停止されても、 subscriber はそれに気付けない」</strong> ということになります。これはこれでいいんだろか、という感じです。</p>
+<h2 id="connectableobservable.refcount-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">ConnectableObservable.refCount について <a class="direct-link" href="#connectableobservable.refcount-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">#</a></h2>
+<blockquote>
+<p>Hot は必ず ConnectableObservable。（←これ後で否定します）</p>
+</blockquote>
+<p>否定始めます。</p>
+<p>ConnectableObservable では、データ放流の開始と停止は、 connect と unsubscribe に委ねられていました。</p>
+<p>refCount() を使うとそれを自動化できます。(refCount？参照カウントを返すメソッド？そう思っていましたが全然違いました。)<br>
+どういうことかと言うと、最初の subscriber が現れたらデータ放流を開始し、誰も subscriber が居なくなったら放流を停止する、というものです。<br>
+refCount() の返値はただの Observable です、でも Hot です。はい否定しましたー。</p>
+<h3 id="%E5%AE%9F%E4%BE%8B-2">実例 <a class="direct-link" href="#%E5%AE%9F%E4%BE%8B-2">#</a></h3>
+<p>publish した Hot Observable を refCount してデータ放流を自動制御してもらいます。<br>
+画面には、 buttonConnect, buttonDisConnect に代わり、buttonUnsubscribe1, buttonUnsubscribe2 を用意します。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">private</span> <span class="token class-name">Subscription</span> _subscription1<span class="token punctuation">;</span> <span class="token comment">// field です</span><br><span class="token keyword">private</span> <span class="token class-name">Subscription</span> _subscription2<span class="token punctuation">;</span> <span class="token comment">// field です</span><br><span class="token keyword">private</span> <span class="token class-name">Subscription</span> _connection<span class="token punctuation">;</span>    <span class="token comment">// field です</span><br><br><br><span class="token keyword">final</span> <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Long</span><span class="token punctuation">></span></span> tickObservable <span class="token operator">=</span> <br>    <span class="token class-name">Observable</span><span class="token punctuation">.</span><span class="token function">interval</span><span class="token punctuation">(</span><span class="token number">1000</span><span class="token punctuation">,</span> <span class="token class-name">TimeUnit</span><span class="token punctuation">.</span>MILLISECONDS<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">publish</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">refCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 返値は Connectable ではない</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe1<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span> <br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe1 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    _subscription1 <span class="token operator">=</span> tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber1 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonSubscribe2<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonSubscribe2 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    _subscription2 <span class="token operator">=</span> tickObservable<span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"subscriber2 - onNext - "</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonUnsubscribe1<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonUnsubscribe1 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>_subscription1 <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        _subscription1<span class="token punctuation">.</span><span class="token function">unsubscribe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 1購読終了</span><br>        _subscription1 <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token function">findViewById</span><span class="token punctuation">(</span><span class="token class-name">R</span><span class="token punctuation">.</span>id<span class="token punctuation">.</span>buttonUnsubscribe2<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">setOnClickListener</span><span class="token punctuation">(</span>v <span class="token operator">-></span> <span class="token punctuation">{</span><br>    <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"buttonUnsubscribe2 click!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">if</span> <span class="token punctuation">(</span>_subscription2 <span class="token operator">!=</span> <span class="token keyword">null</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        _subscription2<span class="token punctuation">.</span><span class="token function">unsubscribe</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 2購読終了</span><br>        _subscription2 <span class="token operator">=</span> <span class="token keyword">null</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<blockquote>
+<p>結果:<br>
+D/MainActivity: buttonSubscribe1 click!<br>
+D/MainActivity: subscriber1 - onNext - 0<br>
+D/MainActivity: subscriber1 - onNext - 1<br>
+D/MainActivity: subscriber1 - onNext - 2<br>
+D/MainActivity: buttonSubscribe2 click!<br>
+D/MainActivity: subscriber1 - onNext - 3<br>
+D/MainActivity: subscriber2 - onNext - 3<br>
+D/MainActivity: subscriber1 - onNext - 4<br>
+D/MainActivity: subscriber2 - onNext - 4<br>
+D/MainActivity: subscriber1 - onNext - 5<br>
+D/MainActivity: subscriber2 - onNext - 5<br>
+D/MainActivity: subscriber1 - onNext - 6<br>
+D/MainActivity: subscriber2 - onNext - 6<br>
+D/MainActivity: subscriber1 - onNext - 7<br>
+D/MainActivity: subscriber2 - onNext - 7<br>
+D/MainActivity: buttonUnsubscribe1 click!<br>
+D/MainActivity: subscriber2 - onNext - 8<br>
+D/MainActivity: subscriber2 - onNext - 9<br>
+D/MainActivity: subscriber2 - onNext - 10<br>
+D/MainActivity: subscriber2 - onNext - 11<br>
+D/MainActivity: buttonUnsubscribe2 click!<br>
+-これ以降 onNext は出力されない-</p>
+</blockquote>
+<p>buttonSubscribe1 を押すと、その時点でデータが流れ始めます(refCount による自動制御)。<br>
+buttonSubscribe2 を押すと、subscriber1 と同じタイミングで、同じ値を受信できます(Hot だから)。<br>
+buttonUnsubscribe1 を押すと、 subscriber1 は購読をやめますが、subscriber2 はまだ受信しています。<br>
+buttonUnsubscribe2 を押すと、subscriber2 も購読をやめ、この時点でデータ放流が停止します(refCount による自動制御)。</p>
+<p>※ほんとにデータ放流終わってんの？を確認するには、 tickObservable に doOnNext を繋げて確認するとよいと思います。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>Hot Observable は、ほとんどの場合(publish により生成されるので) ConnectableObservable。<br>
+ConnectableObservable は、購読者の有無に関係なく connect でデータ放流開始、Subscription.unsubscribe でデータ放流停止。<br>
+refCount により購読者の有無に連動したデータ放流の自動制御が可能。この場合 Hot だけど普通の Observable型。</p>
+<p>実際に Hot Observable を使う場合は、refCount() しとくのが無難かなー、と思いました。(購読者の unsubscribe を厳密に管理しておけば、という前提で)</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="http://www.introtorx.com/content/v1.0.10621.0/14_HotAndColdObservables.html">Intro to Rx - Hot and Cold observables</a></li>
+<li><a href="https://github.com/ReactiveX/RxJava/wiki/Connectable-Observable-Operators">Connectable Observable Operators · ReactiveX/RxJava Wiki</a></li>
+<li><a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 を書かれた皆さん</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2015-12-17">17 Dec 2015</time>
+
+tags: 
+
+  <a href="/tags/RxJava/" class="post-tag">RxJava</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+  <a href="/tags/ReactiveX/" class="post-tag">ReactiveX</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2015-12-24-creating-stopwatchapp-using-rxjava-and-mvvm-patternn/">RxJava + MVVM パターンで作るストップウォッチアプリ</a></li><li>Previous: <a href="/posts/2015-12-01-save-your-data-using-akavache/">クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2015-12-17-about-hot-observable-and-connectableobservable/ -->
+  </body>
+</html>

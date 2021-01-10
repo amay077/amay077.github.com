@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AsyncTask の cancel メソッドにはバグがあるよ、Froyo(2.2)以降で直されるかもよ→Gingerbread（2.3）で直ったよ</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>AsyncTask の cancel メソッドにはバグがあるよ、Froyo(2.2)以降で直されるかもよ→Gingerbread（2.3）で直ったよ</h1>
+
+<h3 id="2010.12.16-%E8%BF%BD%E8%A8%98">2010.12.16 追記 <a class="direct-link" href="#2010.12.16-%E8%BF%BD%E8%A8%98">#</a></h3>
+<p>Gingerbread (Android 2.3) では修正されているとの事です。</p>
+<!--more-->
+<blockquote>
+<p>Romain Guy:<br>
+This AyncTask's cancel bug was fixed in Gingerbread?<br>
+It was fixed in Gingerbread yes :)<br>
+via <a href="http://groups.google.com/group/android-developers/browse_thread/thread/6dccc5cbd7bb9205/aae9a3136945890c#">groups.google.com - AyncTask's cancel bug was fixed in Gingerbread?</a></p>
+</blockquote>
+<p>2.3 のコードが公開されれば、2.2 でも ”正しく” 修正できますね。</p>
+<ul>
+<li>追記ここまで -</li>
+</ul>
+<p>[AsyncTaskの cancel()には問題があり、Froyoの次で修正される。</p>
+<ul>
+<li>kinneko@転職先募集中の日記](<a href="http://d.hatena.ne.jp/kinneko/20100730/p9">http://d.hatena.ne.jp/kinneko/20100730/p9</a>)</li>
+</ul>
+<p>で教えてもらった話。</p>
+<blockquote>
+<p>Eric Mill:</p>
+<ol>
+<li>
+<p>onDestroy(), calls task.cancel()</p>
+</li>
+<li>
+<p>task's onPostExecute runs, isCancelled() returns false, so I have<br>
+no conditional to stop the flow</p>
+</li>
+</ol>
+<p>and that's it. onCancelled never runs.</p>
+<p>via <a href="http://groups.google.com/group/android-developers/browse_thread/thread/07ea01892ee7a5f4/9f71428217c2cd44?">groups.google.com</a></p>
+</blockquote>
+<p>Activity.onDestroy で AsyncTask.cancel を呼ぶと、</p>
+<ul>
+<li>キャンセル時は呼ばれないハズの onPostExecute が呼ばれちゃう。</li>
+<li>isCancelled は false を返すし、</li>
+<li>onCancelled も呼ばれないし、</li>
+</ul>
+<p>から、なんとかしてぇ！ということらしい。</p>
+<p>んで Google の Romain さんが、</p>
+<blockquote>
+<p>Romain Guy:<br>
+There was a race in the cancel() code that we fixed post-froyo.</p>
+</blockquote>
+<p>と言ってるけど、&quot;post-froyo&quot; というのは、<br>
+Post-froyo  means after froyo, so not in froyo :)<br>
+だそうで、”Froyo の後” つまり、Gingerbread (Android 2.3) での修正らしい。<br>
+（けど &quot;gingerbread!&quot;  って断言してないからもっと先かも知れないなあ。）<br>
+なので、しばらくは、いや当分は自力で flag でも用意して回避するしかないみたい。<br>
+けど AsyncTask.cancel は final メソッドで override できないから、何とも不自然なコードになりそう。。。</p>
+
+
+published at <time class="postlist-date" datetime="2010-11-16">16 Nov 2010</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-03-21-wps/">略語「WPS」って何？</a></li><li>Previous: <a href="/posts/2013-03-21-ar-car-navi/">ARカーナビとな？</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-03-21-asynctask-cancel-froyo22/ -->
+  </body>
+</html>

@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mac に Homebrew で Haskell 入れて HelloWorld</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Mac に Homebrew で Haskell 入れて HelloWorld</h1>
+
+<p>OS は Mountain Lion、Homebrew は入ってる前提で。</p>
+<!-- more -->
+<p>##インストール<br>
+「処理系」の GHC と、開発用プラットフォームをインストールする。</p>
+<pre><code>brew install ghc
+</code></pre>
+<blockquote>
+<p>==&gt; Downloading <a href="http://www.haskell.org/ghc/dist/7.4.2/ghc-7.4.2-x86_64-apple-darwin.tar.bz2">http://www.haskell.org/ghc/dist/7.4.2/ghc-7.4.2-x86_64-apple-darwin.tar.bz2</a><br>
+######################################################################## 100.0%<br>
+==&gt; ./configure --prefix=/usr/local/Cellar/ghc/7.4.2<br>
+==&gt; make install<br>
+==&gt; Caveats<br>
+This brew is for GHC only; you might also be interested in haskell-platform.<br>
+==&gt; Summary<br>
+/usr/local/Cellar/ghc/7.4.2: 6209 files, 842M, built in 18.9 minutes</p>
+</blockquote>
+<p>20分弱かかった。</p>
+<pre><code>brew install haskell-platform
+</code></pre>
+<blockquote>
+<p>==&gt; Downloading <a href="http://lambda.haskell.org/platform/download/2012.2.0.0/haskell-platform-2012">http://lambda.haskell.org/platform/download/2012.2.0.0/haskell-platform-2012</a><br>
+######################################################################## 100.0%<br>
+==&gt; ./configure --prefix=/usr/local/Cellar/haskell-platform/2012.2.0.0 --enable-unsupported-<br>
+==&gt; EXTRA_CONFIGURE_OPTS=&quot;--libdir=/usr/local/Cellar/haskell-platform/2012.2.0.0/lib/ghc&quot; ma<br>
+==&gt; Caveats<br>
+Run <code>cabal update</code> to initialize the package list.</p>
+</blockquote>
+<p>If you are replacing a previous version of haskell-platform, you may want<br>
+to unregister packages belonging to the old version. You can find broken<br>
+packages using:<br>
+ghc-pkg check --simple-output<br>
+You can uninstall them using:<br>
+ghc-pkg check --simple-output | xargs -n 1 ghc-pkg unregister --force<br>
+==&gt; Summary<br>
+/usr/local/Cellar/haskell-platform/2012.2.0.0: 869 files, 174M, built in 13.4 minutes</p>
+<p>全部で３０分ほど。途中「ほんとに動いてんの？」って状態になったが焦らず放っておいたら終わってた。</p>
+<p>##対話式インタプリタを起動する</p>
+<pre><code>ghci
+</code></pre>
+<blockquote>
+<p>GHCi, version 7.4.2: <a href="http://www.haskell.org/ghc/">http://www.haskell.org/ghc/</a>  :? for help<br>
+Loading package ghc-prim ... linking ... done.<br>
+Loading package integer-gmp ... linking ... done.<br>
+Loading package base ... linking ... done.<br>
+Prelude&gt;</p>
+</blockquote>
+<p>##ハロワ</p>
+<pre><code>Prelude&gt; putStrLn &quot;Hello, World&quot;
+</code></pre>
+<blockquote>
+<p>Hello, World</p>
+</blockquote>
+<p>##GHCi の終了<br>
+意外と分からなかった。</p>
+<pre><code>:quit
+</code></pre>
+<blockquote>
+<p>Leaving GHCi.</p>
+</blockquote>
+<p>##【未解決】runhaskell で「lexical error (UTF-8 decoding error)」エラー</p>
+<p><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a> にあった REPL じゃなくてソースをビルドして実行する方法でエラーが。</p>
+<pre class="language-hs"><code class="language-hs"><span class="token hvariable">main</span> <span class="token operator">=</span> <span class="token keyword">do</span> <span class="token builtin">putStrLn</span> <span class="token string">"What is 2 + 2?"</span><br>          <span class="token hvariable">x</span> <span class="token operator">&lt;-</span> <span class="token builtin">readLn</span><br>          <span class="token keyword">if</span> <span class="token hvariable">x</span> <span class="token operator">==</span> <span class="token number">4</span><br>              <span class="token keyword">then</span> <span class="token builtin">putStrLn</span> <span class="token string">"You're right!"</span><br>              <span class="token keyword">else</span> <span class="token builtin">putStrLn</span> <span class="token string">"You're wrong!"</span></code></pre>
+<p>を Test.hs で保存して、</p>
+<pre><code>ghc --make Test.hs
+</code></pre>
+<p>を実行して、Test, Test.hi, Test.o ファイルが生成される。<br>
+で、</p>
+<pre><code>runhaskell Test
+</code></pre>
+<p>とすると</p>
+<blockquote>
+<p>Test:1:1: lexical error (UTF-8 decoding error)</p>
+</blockquote>
+<p>というエラーが。よく分からないからとりあえず、</p>
+<pre><code>runghc Test.hs
+</code></pre>
+<p>で満足してる。まだ入り口にも立ってない気分。</p>
+<p>##参考</p>
+<ul>
+<li><a href="http://www.haskell.org/haskellwiki/10%E5%88%86%E3%81%A7%E5%AD%A6%E3%81%B6Haskell">10分で学ぶHaskell - HaskellWiki</a></li>
+<li><a href="http://d.hatena.ne.jp/hide_o_55/20110427/1303914801">Haskell再入門 1日目(環境構築) - WebService::Blog-&gt;new( user =&gt; ’hide_o_55’ )</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2012-10-20">20 Oct 2012</time>
+
+tags: 
+
+  <a href="/tags/Haskell/" class="post-tag">Haskell</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-02-20-how-to-use-shiftjis-on-sublimetext2/">SublimeText2 で Shift-jis を使う</a></li><li>Previous: <a href="/posts/2013-03-03-sourcetree-supports-git-svn/">SourceTree は git-svn したリポジトリも使えます</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-02-20-helloworld-of-haskell/ -->
+  </body>
+</html>

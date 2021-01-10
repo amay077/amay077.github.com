@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jekyll で作ったブログを Google AMP に対応させた</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Jekyll で作ったブログを Google AMP に対応させた</h1>
+
+<p>自分のブログは Jekyll を使って Markdown から生成し、それを GitHub pages でホストしている。<br>
+GitHub 側でのページ生成はしてなくて、ローカルで Jekyll を実行して、その結果を push している。</p>
+<!--more-->
+<p>特につよい興味があったわけでもないけど、 Jekyll のテーマに AMP 対応をうたうものがあったから使ってみたら、それだけではダメで、いろいろ四苦八苦した（してる）という事を書きます。</p>
+<h2 id="jekyll-%E3%83%86%E3%83%BC%E3%83%9E">Jekyll テーマ <a class="direct-link" href="#jekyll-%E3%83%86%E3%83%BC%E3%83%9E">#</a></h2>
+<ul>
+<li><a href="https://github.com/ageitgey/amplify">ageitgey/amplify: A Jekyll html theme in the vague style of Medium.com built using Google AMP</a></li>
+</ul>
+<p>という AMP 対応とされるテーマを使っている。</p>
+<p><code>&lt;html lang=&quot;en&quot;&gt;</code> になってたので、 <code>&lt;html lang=&quot;ja&quot;&gt;</code> に直したりした。<br>
+テンプレートのタグは AMP 対応になってたので、まあ便利、余計なプラグインなどは入ってなくてシンプルなのもよい。</p>
+<h2 id="%E7%94%BB%E5%83%8F">画像 <a class="direct-link" href="#%E7%94%BB%E5%83%8F">#</a></h2>
+<p>AMP では、<code>&lt;amp-img&gt;</code> というタグを使わないといけなくて、しかも <code>width</code> と <code>height</code> が必須だと言う。<br>
+Markdown から HTML の変換は <code>&lt;img&gt;</code> タグを出力するので、その結果を <code>&lt;amp-img&gt;</code> に置換するようにしたが、Markdown では画像のサイズは指定できない。<br>
+Markdown の方言でサイズが指定できるものもあるようだが、書きたくないし。</p>
+<p>仕方がないので、Markdown から変換された HTML のタグを置換しつつ、画像を読み込んで縦横のサイズを取得し、 <code>&lt;amp-img width=? height=?</code> に変換するツールを作った。<br>
+なぜか Mono 製ｗ</p>
+<ul>
+<li><a href="https://github.com/amay077/AmpImgnizer">amay077/AmpImgnizer: img タグを amp-img タグに置換する mono コンソールアプリ</a></li>
+</ul>
+<p>ビルドしてできた <code>AmpImgnizer.exe</code> を以下のようにして使う。</p>
+<pre class="language-bash"><code class="language-bash"><span class="token function">find</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span> -type f -name <span class="token string">"*.html"</span> -print <span class="token operator">|</span> <span class="token function">xargs</span> -0 mono <span class="token punctuation">..</span>/AmpImgnizer/AmpImgnizer.exe</code></pre>
+<p>相対URLと絶対URL、あと SVG にも対応してたりするし、一度サイズを取得したら、そのURLをキーにキャッシュして、時間は画像を読み直さず処理するようになっている。<br>
+（副次的な効果として、 404 な画像を発見できる。）</p>
+<p>Markdown から生成された HTML を対象にしているので、 HTML パーサなんぞは使ってなくて、テキストとして1行ずつ回していくテキトーな実装。<br>
+でもこれで十分使えてる。</p>
+<h2 id="%E3%83%84%E3%82%A4%E3%83%BC%E3%83%88%E3%81%AE%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91">ツイートの貼り付け <a class="direct-link" href="#%E3%83%84%E3%82%A4%E3%83%BC%E3%83%88%E3%81%AE%E8%B2%BC%E3%82%8A%E4%BB%98%E3%81%91">#</a></h2>
+<p>自分や誰かのツイートをブログに貼り付ける時、 Twitter の Webサイトから生成できるスクリプトをそのまま貼り付けるのが楽で使っている。<br>
+そのタグはこう↓</p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>blockquote</span> <span class="token attr-name">class</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>twitter-tweet<span class="token punctuation">"</span></span> <span class="token attr-name">data-lang</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>ja<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>p</span> <span class="token attr-name">lang</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>ja<span class="token punctuation">"</span></span> <span class="token attr-name">dir</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>ltr<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>うおおおお！ <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>https://twitter.com/hashtag/jxug?src=hash<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>#jxug<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span> <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>https://t.co/lc7x6vaNWl<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>pic.twitter.com/lc7x6vaNWl<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>p</span><span class="token punctuation">></span></span><span class="token entity named-entity" title="&mdash;">&amp;mdash;</span> これがあめいの選択だよ (@amay077) <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>a</span> <span class="token attr-name">href</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>https://twitter.com/amay077/status/802320470204788737<span class="token punctuation">"</span></span><span class="token punctuation">></span></span>2016年11月26日<span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>a</span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>blockquote</span><span class="token punctuation">></span></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>script</span> <span class="token attr-name">async</span> <span class="token attr-name">src</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>//platform.twitter.com/widgets.js<span class="token punctuation">"</span></span> <span class="token attr-name">charset</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>utf-8<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><span class="token script"></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>script</span><span class="token punctuation">></span></span></code></pre>
+<p>が、 AMP は外部のスクリプトを実行できないので、 <code>&lt;script&gt;</code> タグは使えない。</p>
+<p>ツイートを埋め込むためには、 <a href="https://www.ampproject.org/ja/docs/reference/components/amp-twitter">amp-twitter</a> という &quot;許可された&quot; スクリプトを定義し、 <code>&lt;amp-twitter&gt;</code> タグを使う必要がある。</p>
+<p>いちいちこのタグを書くのも面倒だし、AMP が廃れて使えなくなった時も考えて、オリジナル(Markdown)は Twitter 公式の埋め込みにしておきたい。</p>
+<p>なので、これも前述の <code>AmpImgnizer</code> で変換した。<br>
+上の <code>&lt;blockquote 〜 /script&gt;</code> は、以下のように変換される。</p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>amp-twitter</span> <span class="token attr-name">data-tweetid</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>802320470204788737<span class="token punctuation">"</span></span> <span class="token attr-name">width</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>800<span class="token punctuation">"</span></span> <span class="token attr-name">height</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>600<span class="token punctuation">"</span></span> <span class="token attr-name">layout</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>responsive<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>amp-twitter</span><span class="token punctuation">></span></span><span class="token comment">&lt;!-- うおおおお！ &lt;a href="https://twitter.com/hashtag/jxug?src=hash">#jxug&lt;/a> &lt;a href="https://t.co/lc7x6vaNWl">pic.twitter.com/lc7x6vaNWl&lt;/a> by @amay077 --></span></code></pre>
+<p>こっちもテキトーな実装なので、変換出来ないケースがあるかも。</p>
+<h2 id="%E5%BA%83%E5%91%8A">広告 <a class="direct-link" href="#%E5%BA%83%E5%91%8A">#</a></h2>
+<p>Amazon の広告を各ページに配置している。もともとの広告タグは <code>&lt;iframe&gt;</code> だが、AMP では <code>&lt;amp-iframe&gt;</code> を使う必要がある。</p>
+<p>これはもともと</p>
+<ul>
+<li><a href="http://okzk.org/blog/jekyll-amazon-gem">Jekyllでamazonアソシエイトリンクを作るためのgem ”jekyll-amazon”</a></li>
+</ul>
+<p>を使っていたので、そのソースを少し改造して <code>&lt;amp-iframe</code> を吐くようにした。結果は以下のようなものだ。</p>
+<pre class="language-html"><code class="language-html"><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>amp-iframe</span> <span class="token attr-name">src</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>https://rcm-fe.amazon-adsystem.com/e/cm?t=oku2008-22&amp;o=9&amp;p=48&amp;l=st1&amp;mode=books-jp&amp;search=Xamarin%7C%E5%8B%89%E5%BC%B7%E4%BC%9A&amp;lt1=_blank&amp;lc1=469AF6&amp;bg1=FFFFFF&amp;f=ifr<span class="token punctuation">"</span></span> <span class="token attr-name">width</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>728<span class="token punctuation">"</span></span> <span class="token attr-name">height</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>90<span class="token punctuation">"</span></span> <span class="token attr-name">frameborder</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>0<span class="token punctuation">"</span></span> <span class="token attr-name">scrolling</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>no<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>amp-iframe</span><span class="token punctuation">></span></span></code></pre>
+<h2 id="disqus">DISQUS <a class="direct-link" href="#disqus">#</a></h2>
+<p>コメントシステムに <a href="https://disqus.com/">DISQUS</a> を採用している。</p>
+<ul>
+<li><a href="https://blog.disqus.com/disqus-now-compatible-with-google-amp">Disqus now compatible with Google AMP</a></li>
+</ul>
+<p>ってことで「Disqus も AMP 対応したぜ！」って言ってるけど、実体は <code>&lt;amp-iframe</code> を使っているだけだ。<br>
+しかも amp-iframe の src に指定するコンテンツは自分でホストしなければならない。ちょっと面倒だったので、</p>
+<ul>
+<li><a href="http://dangoldin.com/2016/09/13/supporting-disqus-in-amp/">Supporting Disqus in AMP</a></li>
+</ul>
+<p>で Dan Goldin さんが使用している s3 を間借りしちゃってる、怒られたら謝る。</p>
+<h2 id="css-%E3%81%A8%E3%81%8B-analytics">CSS とか Analytics <a class="direct-link" href="#css-%E3%81%A8%E3%81%8B-analytics">#</a></h2>
+<p>これらは何も特殊なことはしてなくて、CSS はリンクせずに各ページに Jekyll で埋め込んじゃってる。</p>
+<pre class="language-html"><code class="language-html">  <span class="token comment">&lt;!--head.html--></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>style</span> <span class="token attr-name">amp-custom</span><span class="token punctuation">></span></span><span class="token style"><span class="token language-css"><br>  ｛％ capture include_to_scssify ％｝<br>    ｛％ include styles.scss ％｝<br>  ｛％ endcapture ％｝<br>  ｛｛ include_to_scssify | scssify ｝｝<br><br>  ｛％ include syntax.css ％｝<br>  </span></span><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>style</span><span class="token punctuation">></span></span></code></pre>
+<p>シンタックスハイライトに使う CSS も毎ページに埋め込まれてるので、冗長と言えば冗長。</p>
+<p>Google Anaytics は、 <code>&lt;/amp-analytics&gt;</code> を使ってる。</p>
+<h2 id="%E3%83%93%E3%83%AB%E3%83%89%E3%81%A8%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4">ビルドとデプロイ <a class="direct-link" href="#%E3%83%93%E3%83%AB%E3%83%89%E3%81%A8%E3%83%87%E3%83%97%E3%83%AD%E3%82%A4">#</a></h2>
+<p>下のような感じで、 Jekyll でビルドした後、例の AmpImgnizer で img と twitter を変換して、サイトに push してる。</p>
+<pre class="language-bash"><code class="language-bash">jekyll build<br><span class="token builtin class-name">cd</span> _site<br><span class="token function">git</span> <span class="token function">add</span> <span class="token builtin class-name">.</span><br><span class="token function">git</span> commit -m <span class="token string">"site update"</span><br><span class="token function">find</span> <span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">pwd</span><span class="token variable">)</span></span> -type f -name <span class="token string">"*.html"</span> -print <span class="token operator">|</span> <span class="token function">xargs</span> -0 mono <span class="token punctuation">..</span>/AmpImgnizer/AmpImgnizer.exe<br><span class="token function">git</span> <span class="token function">add</span> <span class="token builtin class-name">.</span><br><span class="token function">git</span> commit -m <span class="token string">"replace img to amp-img"</span><br><span class="token builtin class-name">echo</span> <span class="token string">"press enter to deploy"</span><br><span class="token builtin class-name">read</span><br><span class="token function">git</span> push<br><span class="token builtin class-name">cd</span> <span class="token punctuation">..</span></code></pre>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>ここまで対応して、ほとんどのページを AMP 対応にする事ができた。<br>
+2017/2/3現在では、まだ AMP として認識されているページは少ないけど、放っておけば更新されてくのかな？</p>
+<p>AMP 対応した方が SEO 的にも効く、との情報もあるけど、まあそのへんは期待してないです。</p>
+<p>何の役にたつかわからないけど、このサイトの Jekyll プロジェクトと、github page のリポジトリは以下です。</p>
+<ul>
+<li><a href="https://github.com/amay077/blog.vNext">amay077/blog.vNext</a></li>
+<li><a href="https://github.com/amay077/amay077.github.com">amay077/amay077.github.com: My blog powered by jekyll.</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2017-02-03">03 Feb 2017</time>
+
+tags: 
+
+  <a href="/tags/AMP/" class="post-tag">AMP</a>
+  <a href="/tags/Google/" class="post-tag">Google</a>
+  <a href="/tags/Markdown/" class="post-tag">Markdown</a>
+  <a href="/tags/jekyll/" class="post-tag">jekyll</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-02-13-we_had_a_meetup_aboud_send_pull_request_to_Xamarin_forms_googlemaps/">Xamarin.Forms.GoogleMaps にプルリクエストを送る会、を開催しました</a></li><li>Previous: <a href="/posts/2017-01-28-camera_changed_event_on_google_maps_android_api/">Google Maps Android API のカメラ変更イベントについて</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-02-03-google_amp_in_jekyll_blog/ -->
+  </body>
+</html>

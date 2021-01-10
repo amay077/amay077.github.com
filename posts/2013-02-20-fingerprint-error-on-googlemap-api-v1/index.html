@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Maps API Key の取得で「入力されたフィンガープリントは無効です。」が出るようになった件</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Google Maps API Key の取得で「入力されたフィンガープリントは無効です。」が出るようになった件</h1>
+
+<p>Android で Googleマップを利用する際に必ず通る道である Google Map API Key の取得。<br>
+久しぶりに行ったら、少しハマったのでメモ。</p>
+<!-- more -->
+<p>手順は、</p>
+<p><a href="http://wikiwiki.jp/android/?Maps%20API%20Key%A4%CE%BC%E8%C6%C0">Maps API Keyの取得 - Android Wiki</a></p>
+<p>など、たくさん出てくるが、この通りやっても <strong>「入力されたフィンガープリントは無効です。」</strong> とエラーになってしまう。</p>
+<p>「いやいやご冗談を。」と、よぉ〜く見直したら、</p>
+<p>##keytool の結果が MD5 じゃなくて SHA1 になってるッ！！！</p>
+<p>という話。</p>
+<pre><code>$  keytool -list -keystore ~/.android/debug.keystore 
+</code></pre>
+<blockquote>
+<p>キーストアのパスワードを入力してください:</p>
+</blockquote>
+<p>*****************  WARNING WARNING WARNING  *****************<br>
+<em>キーストアに保存された情報の整合性は</em><br>
+<em>検証されていません。整合性を検証するには</em><br>
+<em>キーストアのパスワードを入力する必要があります。</em><br>
+*****************  WARNING WARNING WARNING  *****************</p>
+<blockquote></blockquote>
+<p>キーストアのタイプ: JKS<br>
+キーストア・プロバイダ: SUN</p>
+<blockquote></blockquote>
+<p>キーストアには1エントリが含まれます</p>
+<blockquote></blockquote>
+<p>androiddebugkey,2011/10/05, PrivateKeyEntry,<br>
+証明書のフィンガプリント(SHA1): xx:xx:xx:xx:xx:xx:xx:…</p>
+<p>上のリンク先のコメントにチラッと説明があった。<br>
+どうやら Java7 を導入すると SHA1 に替わってしまうらしい。</p>
+<p>-v を足して実行すると、MD5 も表示されるので、そこからコピーして解決。</p>
+<pre><code>$  keytool -list -keystore ~/.android/debug.keystore -v
+</code></pre>
+<blockquote>
+<p>キーストアのパスワードを入力してください:</p>
+</blockquote>
+<p>*****************  WARNING WARNING WARNING  *****************<br>
+<em>キーストアに保存された情報の整合性は</em><br>
+<em>検証されていません。整合性を検証するには</em><br>
+<em>キーストアのパスワードを入力する必要があります。</em><br>
+*****************  WARNING WARNING WARNING  *****************</p>
+<blockquote></blockquote>
+<p>キーストアのタイプ: JKS<br>
+キーストア・プロバイダ: SUN</p>
+<blockquote></blockquote>
+<p>キーストアには1エントリが含まれます</p>
+<blockquote></blockquote>
+<p>別名: androiddebugkey<br>
+作成日: 2011/10/05<br>
+エントリ・タイプ: PrivateKeyEntry<br>
+証明書チェーンの長さ: 1<br>
+証明書[1]:<br>
+所有者: CN=Android Debug, O=Android, C=US<br>
+発行者: CN=Android Debug, O=Android, C=US<br>
+シリアル番号: 4e8bdcd5<br>
+有効期間の開始日: Wed Oct 05 13:28:05 JST 2011終了日: Fri Sep 27 13:28:05 JST 2041<br>
+証明書のフィンガプリント:<br>
+MD5:  xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…<br>
+SHA1: xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…<br>
+SHA256: xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:xx:…<br>
+署名アルゴリズム名: SHA1withRSA<br>
+バージョン: 3</p>
+<p>気づかねぇよ、こんなもん（←やつあたり</p>
+
+
+published at <time class="postlist-date" datetime="2012-11-20">20 Nov 2012</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/GoogleMapsAPI/" class="post-tag">GoogleMapsAPI</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-02-20-how-to-install-jade-on-express/">Express で ejs のつもりなのに jade が入っちゃう時</a></li><li>Previous: <a href="/posts/2013-02-20-how-to-use-shiftjis-on-sublimetext2/">SublimeText2 で Shift-jis を使う</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-02-20-fingerprint-error-on-googlemap-api-v1/ -->
+  </body>
+</html>

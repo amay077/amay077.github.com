@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Forms をガチで使う時のプロジェクト構成(2016冬Ver)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Forms をガチで使う時のプロジェクト構成(2016冬Ver)</h1>
+
+<p><a href="http://qiita.com/advent-calendar/2016/xamarin">Xamarin Advent Calendar 2016 &quot;その1&quot;</a> の初日です。今年もよろしくお願いします。</p>
+<!--more-->
+<p>Xamarin.Forms も大分安定し、機能も増え、ライブラリも充実してきました。既に実戦投入されていらっしゃる方も多いと思います。事例も増えてきました。</p>
+<p>（一方で、プラットフォーム固有のUIをフルに活用したい場合は Xamarin.Forms は使うべきでありません。例えば Android には、<a href="https://material.google.com/components/buttons-floating-action-button.html?utm_campaign=io15&amp;utm_source=dac&amp;utm_medium=blog">Floating Action Button - FAB</a>、<a href="http://www.materialdoc.com/edit-text/">ラベル付きのTextField</a> と言った特徴的なUIパーツがあります。これらは Xamarin.Forms ではサポートされません。※ちょっとだけ頑張れば使うことはできます。）</p>
+<p>そこで初日は、 「Xamarin.Forms をガチで使う時のプロジェクト構成(2016冬Ver)」と題して、現在のベストプラクティスと呼べるプロジェクト構成案を示してみようと思います。</p>
+<p>これは、以前に書いた、</p>
+<ul>
+<li><a href="http://qiita.com/amay077/items/e66108afb0d1e1dc26c8">Xamarin.Forms をガチで使うときのプロジェクト構成案 - Qiita</a></li>
+</ul>
+<p>の Update 版です。</p>
+<h2 id="%E3%82%B3%E3%83%B3%E3%82%BB%E3%83%97%E3%83%88">コンセプト <a class="direct-link" href="#%E3%82%B3%E3%83%B3%E3%82%BB%E3%83%97%E3%83%88">#</a></h2>
+<ul>
+<li>Xamarin.Forms</li>
+<li>且つ、非Xamarin への相互運用も視野に</li>
+<li>Shared でなく PCL</li>
+<li>Prism.Forms で MVVM</li>
+<li>ReactiveProperty で Rx + Data Binding</li>
+</ul>
+<h2 id="%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E6%A7%8B%E6%88%90">プロジェクト構成 <a class="direct-link" href="#%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88%E6%A7%8B%E6%88%90">#</a></h2>
+<p><img src="/img/posts/xamarin_forms_gachi_projects_2016_winter_01.png" alt="プロジェクト構成図"></p>
+<p>プロジェクトは以下の5つです。</p>
+<ol>
+<li>Hoge.Droid</li>
+<li>Hoge.iOS</li>
+<li>Hoge.UWP</li>
+<li>Hoge.ViewCore</li>
+<li>Hoge.Core</li>
+</ol>
+<p>1 〜 3 は Xamarin.Forms のソリューションを作成すると作られる各プラットフォーム向けのプロジェクトです。<br>
+4 は Xamarin.Forms のソリューションを作成すると作られる共通部分のプロジェクトです。XAML や Page などはここに記述します。プロジェクト作成直後は、 Hoge という名前ですが、説明しやすさのために Hoge.ViewCore と名称変更しています。<br>
+5 は ViewModel-Model層を担うプロジェクトです。なぜ 4 と分けているのかに意味があります。</p>
+<p>では、それぞれ説明します。</p>
+<h3 id="hoge.droid%2Fios%2Fuwp-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">Hoge.Droid/iOS/UWP プロジェクト <a class="direct-link" href="#hoge.droid%2Fios%2Fuwp-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">#</a></h3>
+<p>Xamarin.Forms では「スタートアップ プロジェクト」としての役割が多いですが、以下のものを置きます。</p>
+<ul>
+<li>Custom Renderer</li>
+<li>Effects</li>
+<li>プラットフォーム固有の機能</li>
+</ul>
+<p>プラットフォーム固有の機能はここに実装し、（Prism における PlatformInitializer を用いて）Dependency Injection します。</p>
+<h3 id="hoge.viewcore-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">Hoge.ViewCore プロジェクト <a class="direct-link" href="#hoge.viewcore-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">#</a></h3>
+<p><strong>Xamarin.Forms として</strong> のメインプロジェクト。</p>
+<ul>
+<li>XAML / Page</li>
+<li>ValueConverter</li>
+<li>カスタムView</li>
+<li>Behavior</li>
+</ul>
+<p>などを置きます。<br>
+ここには ViewModel や Model層の機能は置きません。</p>
+<h3 id="hoge.core-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">Hoge.Core プロジェクト <a class="direct-link" href="#hoge.core-%E3%83%97%E3%83%AD%E3%82%B8%E3%82%A7%E3%82%AF%E3%83%88">#</a></h3>
+<p>ViewModel, Model層を配置するプロジェクト。</p>
+<p>ここは <strong>Xamarin.Forms に依存しません</strong> 。そう、ViewModel や Model 層を Hoge.ViewCore に置いてしまうと、それは Xamarin.Forms に依存しているため、Xamarin.Native プロジェクトから参照できないし、Xamarin と関係ないプロジェクト(WPF とか)からも使えなくなってしまいます。</p>
+<p>また、View層と明確に切り離すことで、View層の部品を誤って参照してしまう、といったミスをなくすことができます（それは ViewModel, Model にも言えて、規模によっては Model は別プロジェクトにすべきかも知れません）。</p>
+<p>よって、ここには以下のものを配置します。</p>
+<ul>
+<li>ViewModel</li>
+<li>Model</li>
+<li>各種API</li>
+<li>プラットフォーム固有機能の共通インターフェース</li>
+</ul>
+<p>各種APIとは、SQLite/Realm などのDBライブラリ、HttpClient などのWeb通信ライブラリなどのインターフェースです。<a href="https://docs.microsoft.com/ja-jp/azure/app-service-mobile/app-service-mobile-value-prop">Azure</a> 等 mBaaS 用機能も含まれるかな。<br>
+プラットフォーム固有機能の共通インターフェースは、Hoge.Droid/iOS/UWP プロジェクトでそれぞれ実装する機能クラスのインターフェースです。</p>
+<h2 id="%E6%8E%A8%E5%A5%A8%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA">推奨ライブラリ <a class="direct-link" href="#%E6%8E%A8%E5%A5%A8%E3%83%A9%E3%82%A4%E3%83%96%E3%83%A9%E3%83%AA">#</a></h2>
+<h3 id="mvvm%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF-%3D-prism.forms">MVVMフレームワーク = Prism.Forms <a class="direct-link" href="#mvvm%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%83%AF%E3%83%BC%E3%82%AF-%3D-prism.forms">#</a></h3>
+<ul>
+<li><a href="http://www.nuits.jp/entry/2016/08/11/160313">Prism for Xamarin.Forms入門　はじめに - nuits.jp blog</a></li>
+</ul>
+<p>もはや鉄板とも言えるのかも。<br>
+本 Advent Caledar でこのネタもよく出ると思いますので、多くは語りませんが、いま一番勢いのあるライブラリです。</p>
+<h3 id="di%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A-%3D-unity">DIコンテナ = Unity <a class="direct-link" href="#di%E3%82%B3%E3%83%B3%E3%83%86%E3%83%8A-%3D-unity">#</a></h3>
+<p>Prism.Forms の標準のコンテナがこれなので、まあ良いかなと。<br>
+Xamarin.Forms の DependencyService は、使わない方針です。理由は二つ、ユニットテストが難しいのと、ViewModel,Model層 は Xamarin.Forms に依存しない、です。</p>
+<p>＊＊追記(2017/1/11)＊＊</p>
+<p>DIコンテナの Unity は開発停止しているとの情報が。</p>
+<ul>
+<li><a href="http://www.nuits.jp/entry/is-unity-dead">ゲームじゃないUnityの開発が停止している疑惑について - nuits.jp blog</a></li>
+</ul>
+<p>Unity は実績も豊富で枯れているので当面使用に問題はないでしょうが、新しいフレームワークへの追従などが期待できなくなるリスクはあります（.NET Standard とか）。</p>
+<p>Prism 自体は、さまざまはDIコンテナに対応していて、 @Nuits さんが最新の比較をしてくれていますので、こちらも参考に。</p>
+<ul>
+<li><a href="http://www.nuits.jp/entry/ioc-battle-in-2017">IoC Battle in 2017 - nuits.jp blog</a></li>
+</ul>
+<h3 id="data-binding-%3D-reactiveproperty">Data Binding = ReactiveProperty <a class="direct-link" href="#data-binding-%3D-reactiveproperty">#</a></h3>
+<ul>
+<li><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty · runceel/ReactiveProperty</a></li>
+</ul>
+<p>こちらも鉄板。<br>
+ViewModel-Modelのやり取りは <code>Task&lt;T&gt;</code> あるいは <code>Observable&lt;T&gt;</code>、Page と ViewModel のバインディングは ReactiveProperty でやるのが理想。</p>
+<p>でも Rx 難しいという人は Prism にも <code>INotifyPropertyChanged</code> のヘルパーがあるので、そちらを使用してもおｋです。</p>
+<h3 id="%E7%AB%AF%E6%9C%AB%E5%86%85%E3%83%87%E3%83%BC%E3%82%BF%E4%BF%9D%E5%AD%98-%3D-akavache">端末内データ保存 = Akavache <a class="direct-link" href="#%E7%AB%AF%E6%9C%AB%E5%86%85%E3%83%87%E3%83%BC%E3%82%BF%E4%BF%9D%E5%AD%98-%3D-akavache">#</a></h3>
+<p>Akavache については、昨年の Advent Calendar で書きました。</p>
+<ul>
+<li><a href="http://qiita.com/amay077/items/356ad0028b7e6fbf089f">クロスプラットフォーム対応KVS Akavache を使ってお手軽にデータを保存する - Qiita</a></li>
+</ul>
+<p>Key-Value Store なので、アプリケーションの設定情報などの保存に便利です。</p>
+<h3 id="%E3%83%AD%E3%82%AC%E3%83%BC-%3D-metrolog">ロガー = MetroLog <a class="direct-link" href="#%E3%83%AD%E3%82%AC%E3%83%BC-%3D-metrolog">#</a></h3>
+<p><code>Debug.WriteLine</code> ではツラい時はこれ。</p>
+<ul>
+<li><a href="https://www.nuget.org/packages/MetroLog/">MetroLog Lightweight Logging for Portable and WinJS 1.0.1</a></li>
+</ul>
+<p>名前がよくないですか？「Metro」ってｗ<br>
+Log4j ライクに使えるので、割と重宝しています。</p>
+<p><a href="https://firebase.google.com/docs/analytics/?hl=ja">Firebase</a> や <a href="https://hockeyapp.net/">HockeyApp</a> や <a href="https://blogs.msdn.microsoft.com/visualstudio_jpn/2016/11/18/visual-studio-mobile-center/">Visual Studio Mobile Center</a> といった「継続的デプロイメントサービス」には、少し目的の違った（ユーザーの導線を知るような）ロギング機能があります。それらの SDK も選択肢に入るかと思います。</p>
+<h3 id="%5Bpr%5D-%E5%9C%B0%E5%9B%B3-%3D-xamarin.forms.googlemaps">[PR] 地図 = Xamarin.Forms.GoogleMaps <a class="direct-link" href="#%5Bpr%5D-%E5%9C%B0%E5%9B%B3-%3D-xamarin.forms.googlemaps">#</a></h3>
+<p>ここは宣伝です。Xamarin.Forms で地図を使うなら是非！</p>
+<ul>
+<li><a href="https://github.com/amay077/Xamarin.Forms.GoogleMaps">amay077/Xamarin.Forms.GoogleMaps: Map library for Xamarin.Forms using Google maps API</a></li>
+</ul>
+<p>(サンプルではこっそり Google Maps っではなく「地理院地図」を使うという Trick を見せています)</p>
+<h2 id="%E6%87%B8%E6%A1%88">懸案 <a class="direct-link" href="#%E6%87%B8%E6%A1%88">#</a></h2>
+<p>Hoge.Core を Xamarin.Forms から切り離したとは言え Prism には依存しているので、それが邪魔になる可能性はあります。特定の MVVM フレームワークに依存したくなければ Prism.Forms の使用をあきらめるしかないと思いますが、Model層だけは別プロジェクトに逃がして、再利用する選択肢もあります。</p>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%A2%E3%83%97%E3%83%AA">サンプルアプリ <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%A2%E3%83%97%E3%83%AA">#</a></h2>
+<p>本ポストの指針に基づいたサンプルアプリを作ってみました（全てのライブラリを使っているわけではありませんが）。</p>
+<p>これは、</p>
+<ol>
+<li>テキストボックスに住所を入力してボタンを押す</li>
+<li>住所から緯度経度を取得（ジオコード）して、次の画面に渡す</li>
+<li>地図上にマーカーを立てる</li>
+</ol>
+<p>という単純なものです。</p>
+<p><img src="/img/posts/xamarin_forms_gachi_projects_2016_winter_02.gif" alt="サンプル"></p>
+<p>本ポストで提示したプロジェクト構成になっており、</p>
+<ul>
+<li>Prism.Forms による MVVM サポート、ナビゲーション、DI</li>
+<li>ReactiveProperty による Data Binding</li>
+</ul>
+<p>を実装しています。よければ参考にしてください。</p>
+<ul>
+<li><a href="https://github.com/amay077/XamarinFormsGachiSample2016Winter">amay077/XamarinFormsGachiSample2016Winter</a></li>
+</ul>
+<p>※ 住所→緯度経度の変換（ジオコーディング）には、 OpenStreetMap の <a href="http://wiki.openstreetmap.org/wiki/JA:Nominatim">Nominatim</a> を使用しています。<br>
+※ 地図の表示には、 国土地理院 - 地理院地図の <a href="http://maps.gsi.go.jp/development/ichiran.html">地理院タイル</a> を使用しています。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>「プロジェクトを分ける」ことを意識することで、それぞれの責務に関心が持てます。</p>
+<p>小規模アプリなら、デフォルトの4つでもよいでしょうし、大規模アプリだとこので紹介した5つでは足りないかも知れません。</p>
+<p>原理主義的に分けすぎるのも考えものですが、いつも心に留めておきたいですし、開発前にできるだけ設計したいですね。</p>
+<p>では、本日より25日間、 Xamarin Advent Calendar 2016 シリーズをお楽しみ下さい。</p>
+<ul>
+<li><a href="http://qiita.com/advent-calendar/2016/xamarin">Xamarin Advent Calendar 2016 - Qiita</a></li>
+<li><a href="http://qiita.com/advent-calendar/2016/xamarin2">Xamarin(その2) Advent Calendar 2016 - Qiita</a></li>
+<li><a href="http://qiita.com/advent-calendar/2016/xamarin-student">[学生さん・初心者さん大歓迎！]Xamarin Advent Calendar 2016 - Qiita</a></li>
+<li><a href="http://qiita.com/advent-calendar/2016/xamarin-welcome">[初心者さん・学生さん大歓迎！]Xamarin その2 Advent Calendar 2016 - Qiita</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2016-12-01">01 Dec 2016</time>
+
+tags: 
+
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Xamarin.Forms/" class="post-tag">Xamarin.Forms</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-12-10-copy_file_to_shared_folder_with_password/">VB.NET でパスワード付き共有フォルダにファイルをコピーする</a></li><li>Previous: <a href="/posts/2016-11-28-joined_xamarin_hands_on_at_nagoya_part2/">JXUGC #20 Xamarin ハンズオン大会 第二弾でサポートスタッフしてきました</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-12-01-gachi_project_structure_for_xamarin_forms_in_2016_winter/ -->
+  </body>
+</html>

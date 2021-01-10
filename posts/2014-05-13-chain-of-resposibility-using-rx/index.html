@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rx で Chain of Responsibility</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Rx で Chain of Responsibility</h1>
+
+<p>今さらだけど GoF の Chain of Responsibility パターン。「自分に処理できないタスクは上へ投げる」ってやつ。Reactive な感じでやるとこんな感じかなあと思って書いてみた。</p>
+<!--more-->
+<pre class="language-csharp"><code class="language-csharp"><span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">Main</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> document <span class="token operator">=</span> <span class="token string">"有給届"</span><span class="token punctuation">;</span><br>    <br>    <span class="token class-name"><span class="token keyword">var</span></span> kakariCho <span class="token operator">=</span> <span class="token function">CreateManager</span><span class="token punctuation">(</span><span class="token string">"係長"</span><span class="token punctuation">,</span> document<span class="token punctuation">,</span> d <span class="token operator">=></span> String<span class="token punctuation">.</span><span class="token function">Equals</span><span class="token punctuation">(</span>document<span class="token punctuation">,</span> <span class="token string">"遅刻届"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> kaCho <span class="token operator">=</span> <span class="token function">CreateManager</span><span class="token punctuation">(</span><span class="token string">"課長"</span><span class="token punctuation">,</span> document<span class="token punctuation">,</span> d <span class="token operator">=></span> String<span class="token punctuation">.</span><span class="token function">Equals</span><span class="token punctuation">(</span>document<span class="token punctuation">,</span> <span class="token string">"有給届"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> buCho <span class="token operator">=</span> <span class="token function">CreateManager</span><span class="token punctuation">(</span><span class="token string">"部長"</span><span class="token punctuation">,</span> document<span class="token punctuation">,</span> d <span class="token operator">=></span> String<span class="token punctuation">.</span><span class="token function">Equals</span><span class="token punctuation">(</span>document<span class="token punctuation">,</span> <span class="token string">"退職届"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <br>    Observable<span class="token punctuation">.</span><span class="token function">Concat</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span> <br>        kakariCho<span class="token punctuation">,</span>  <span class="token comment">// 係長</span><br>        kaCho<span class="token punctuation">,</span>      <span class="token comment">// 課長</span><br>        buCho       <span class="token comment">// 部長</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">FirstOrDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// 最初の１人に承認されたら終了</span><br>    <span class="token punctuation">.</span><span class="token function">Timeout</span><span class="token punctuation">(</span>TimeSpan<span class="token punctuation">.</span><span class="token function">FromDays</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 猶予１日</span><br>    <span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>x <span class="token operator">=></span> Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>String<span class="token punctuation">.</span><span class="token function">IsNullOrEmpty</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span> <br>        <span class="token punctuation">?</span> <span class="token string">"あなたの届書は却下されました"</span> <br>        <span class="token punctuation">:</span> x <span class="token operator">+</span> <span class="token string">"が承認しました"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token comment">/// 管理職を作成する（役職名、渡された届書、自分に承認できる届書）</span><br><span class="token return-type class-name">IObservable<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">></span></span> <span class="token function">CreateManager</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">string</span></span> managerTitle<span class="token punctuation">,</span> <span class="token class-name"><span class="token keyword">string</span></span> document<span class="token punctuation">,</span> <span class="token class-name">Predicate<span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">></span></span> canIAccept<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">return</span> Observable<span class="token punctuation">.</span><span class="token generic-method"><span class="token function">Create</span><span class="token generic class-name"><span class="token punctuation">&lt;</span><span class="token keyword">string</span><span class="token punctuation">></span></span></span><span class="token punctuation">(</span>o <span class="token operator">=></span> Task<span class="token punctuation">.</span><span class="token function">Run</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> <br>    <span class="token punctuation">{</span><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span><span class="token function">canIAccept</span><span class="token punctuation">(</span>document<span class="token punctuation">)</span><span class="token punctuation">)</span> <br>        <span class="token punctuation">{</span><br>            o<span class="token punctuation">.</span><span class="token function">OnNext</span><span class="token punctuation">(</span>managerTitle<span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 承認</span><br>        <span class="token punctuation">}</span><br>        o<span class="token punctuation">.</span><span class="token function">OnCompleted</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>管理職の人を <code>IObservable</code> に見立てて、自分が処理できるなら <code>OnNext</code> を呼ぶ、処理できないなら <code>OnNext</code> は呼ばずに <code>OnComplete</code> しちゃう。<br>
+で、係長・課長・部長の IObservable を <code>Concat</code> で役職の低い順につなげて、 <code>FirstOrDefault()</code> で最初の承認がもらえるまで待つ、みたいな。</p>
+<p>係長・課長・部長が誰も承認しなかった時、タイムアウトするまで待ちが発生しちゃうのが難点。→ <code>Take(1)</code> じゃなくて <code>FirstOrDefault</code> すればいいみたい。誰も承認しなかった場合 <code>default(string)</code> つまり空文字が流れてくる。</p>
+<p>あと、係長→課長→部長と管理職のハンコリレーが必要な場合に対応できていない、Concat なので係長の結果を課長に引き継いでないから。</p>
+<p>んーどうしようか。。。</p>
+
+
+published at <time class="postlist-date" datetime="2014-05-13">13 May 2014</time>
+
+tags: 
+
+  <a href="/tags/ReactiveExtensions/" class="post-tag">ReactiveExtensions</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2014-05-14-find-new-api-in-ios4-supported-code/">iOS4.x 対応のソースコードから「新しいAPI」を使っている箇所を探す</a></li><li>Previous: <a href="/posts/2014-04-23-put-and-get-enum-from-intent/">Intent に Enum を詰めて、取り出す</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2014-05-13-chain-of-resposibility-using-rx/ -->
+  </body>
+</html>

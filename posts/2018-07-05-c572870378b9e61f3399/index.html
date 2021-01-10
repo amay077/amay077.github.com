@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Azure の Functions Bot を TypeScript で作る(+ VSCodeでデバッグする)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Azure の Functions Bot を TypeScript で作る(+ VSCodeでデバッグする)</h1>
+
+<p>Bot Application が Azure Functions で作れるようになっていました。</p>
+<!--more-->
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/d28995cf-41ac-c440-351d-1a06bbf0662d.png" alt="image.png"></p>
+<p>Node.js か C# のいくつかのテンプレートから選択できます。</p>
+<p>Node.js → Basic を選択して作った Functions は JavaScript なので、これを TypeScript に変えてみます。</p>
+<h2 id="node.js-%E3%81%AE%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B">Node.js のサンプルをダウンロードする <a class="direct-link" href="#node.js-%E3%81%AE%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB%E3%82%92%E3%83%80%E3%82%A6%E3%83%B3%E3%83%AD%E3%83%BC%E3%83%89%E3%81%99%E3%82%8B">#</a></h2>
+<p>Bot を作成したあと、ビルド → zip ファイルをダウンロード でソースコード一式がダウンロードできます。</p>
+<p>そのディレクトリ構成は次の図に。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/a4583c7c-3c57-a984-295c-f3a31efb618c.png" alt="image.png"></p>
+<h2 id="typescript-%E3%81%AB%E6%9B%B8%E3%81%8D%E6%8F%9B%E3%81%88%E3%82%8B">TypeScript に書き換える <a class="direct-link" href="#typescript-%E3%81%AB%E6%9B%B8%E3%81%8D%E6%8F%9B%E3%81%88%E3%82%8B">#</a></h2>
+<p><code>/messages</code> ディレクトリが Function のソースなので、ターミナルでここに移動し、</p>
+<pre><code>tsc init
+</code></pre>
+<p>を実行します。すると <code>tsconfig.json</code> が作成されるので、それを次のように書き換えます。</p>
+<p><strong>messages/tsconfig.json</strong></p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>  <span class="token property">"compilerOptions"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token property">"target"</span><span class="token operator">:</span> <span class="token string">"es2015"</span><span class="token punctuation">,</span><br>    <span class="token property">"module"</span><span class="token operator">:</span> <span class="token string">"commonjs"</span><span class="token punctuation">,</span><br>    <span class="token property">"sourceMap"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span><br>    <span class="token property">"strict"</span><span class="token operator">:</span> <span class="token boolean">false</span><span class="token punctuation">,</span><br>    <span class="token property">"esModuleInterop"</span><span class="token operator">:</span> <span class="token boolean">true</span><br>  <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>コメント行や説明のコメントは省略しています。既定値から変えたのは次の通り。</p>
+<ul>
+<li><code>&quot;target&quot;: &quot;es2015&quot;</code> - Azure Functions の実行環境は <a href="https://docs.microsoft.com/ja-jp/azure/azure-functions/functions-reference-node#node-version-and-package-management">node.js v8.4.0 以上を推奨</a> とのことで、node v8.2.0 は ES2016 までの API をすべてサポートしています</li>
+<li><code>&quot;sourceMap&quot;: true</code> - ソースマップを有効にし、ローカルでの TypeScript デバッグを可能にします。</li>
+<li><code>&quot;strict&quot;: false</code> - とりあえず厳密な型チェックはOFFで</li>
+</ul>
+<p>次に TypeScript で必要なモジュールをインストールします。</p>
+<p>ターミナルで <code>messages</code> ディレクトリに移動し、</p>
+<pre><code>npm install @types/node --save-dev
+</code></pre>
+<p>を実行します。実行後、 <code>package.json</code> に <code>@types/node</code> が追加されます。</p>
+<p><strong>messages/package.json</strong></p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>  <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"emptybot"</span><span class="token punctuation">,</span><br>  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"1.0.0"</span><span class="token punctuation">,</span><br>  <span class="token property">"description"</span><span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span><br>  <span class="token property">"main"</span><span class="token operator">:</span> <span class="token string">"index.js"</span><span class="token punctuation">,</span><br>  <span class="token property">"dependencies"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token property">"botbuilder"</span><span class="token operator">:</span> <span class="token string">"^3.13.1"</span><span class="token punctuation">,</span><br>    <span class="token property">"botbuilder-azure"</span><span class="token operator">:</span> <span class="token string">"^3.0.4"</span><br>  <span class="token punctuation">}</span><span class="token punctuation">,</span><br>  <span class="token property">"devDependencies"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token property">"@types/node"</span><span class="token operator">:</span> <span class="token string">"^10.5.1"</span><span class="token punctuation">,</span>   &lt;-- ここが追加された<br>    <span class="token property">"restify"</span><span class="token operator">:</span> <span class="token string">"^5.0.0"</span><br>  <span class="token punctuation">}</span><span class="token punctuation">,</span><br>  <span class="token property">"scripts"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token property">"test"</span><span class="token operator">:</span> <span class="token string">"echo \"Error: no test specified\" &amp;&amp; exit 1"</span><br>  <span class="token punctuation">}</span><span class="token punctuation">,</span><br>  <span class="token property">"author"</span><span class="token operator">:</span> <span class="token string">""</span><span class="token punctuation">,</span><br>  <span class="token property">"license"</span><span class="token operator">:</span> <span class="token string">"ISC"</span><br><span class="token punctuation">}</span></code></pre>
+<p>次に <code>index.js</code> をリネームし <code>index.ts</code> とし、内容を次のように書き換えます。</p>
+<p><strong>messages/index.ts</strong></p>
+<pre class="language-typescript"><code class="language-typescript"><span class="token keyword">import</span> <span class="token punctuation">{</span> ChatConnector<span class="token punctuation">,</span> MemoryBotStorage<span class="token punctuation">,</span> UniversalBot<span class="token punctuation">,</span> Session <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'botbuilder'</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token punctuation">{</span> BotServiceConnector<span class="token punctuation">,</span> AzureTableClient<span class="token punctuation">,</span> AzureBotStorage <span class="token punctuation">}</span> <span class="token keyword">from</span> <span class="token string">'botbuilder-azure'</span><span class="token punctuation">;</span><br><span class="token keyword">import</span> <span class="token operator">*</span> <span class="token keyword">as</span> path <span class="token keyword">from</span> <span class="token string">'path'</span><span class="token punctuation">;</span><br><br><span class="token keyword">const</span> useEmulator <span class="token operator">=</span> <span class="token punctuation">(</span>process<span class="token punctuation">.</span>env<span class="token punctuation">.</span><span class="token constant">NODE_ENV</span> <span class="token operator">==</span> <span class="token string">'development'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token keyword">const</span> connector <span class="token operator">=</span> useEmulator <span class="token operator">?</span> <span class="token keyword">new</span> <span class="token class-name">ChatConnector</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">BotServiceConnector</span><span class="token punctuation">(</span><span class="token punctuation">{</span><br>    appId<span class="token operator">:</span> process<span class="token punctuation">.</span>env<span class="token punctuation">[</span><span class="token string">'MicrosoftAppId'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><br>    appPassword<span class="token operator">:</span> process<span class="token punctuation">.</span>env<span class="token punctuation">[</span><span class="token string">'MicrosoftAppPassword'</span><span class="token punctuation">]</span><span class="token punctuation">,</span><br>    openIdMetadata<span class="token operator">:</span> process<span class="token punctuation">.</span>env<span class="token punctuation">[</span><span class="token string">'BotOpenIdMetadata'</span><span class="token punctuation">]</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token comment">/*----------------------------------------------------------------------------------------<br>* Bot Storage: This is a great spot to register the private state storage for your bot. <br>* We provide adapters for Azure Table, CosmosDb, SQL Azure, or you can implement your own!<br>* For samples and documentation, see: https://github.com/Microsoft/BotBuilder-Azure<br>* ---------------------------------------------------------------------------------------- */</span><br><br><span class="token keyword">const</span> tableName <span class="token operator">=</span> <span class="token string">'botdata'</span><span class="token punctuation">;</span><br><span class="token keyword">const</span> azureTableClient <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">AzureTableClient</span><span class="token punctuation">(</span>tableName<span class="token punctuation">,</span> process<span class="token punctuation">.</span>env<span class="token punctuation">[</span><span class="token string">'AzureWebJobsStorage'</span><span class="token punctuation">]</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token keyword">const</span> storage <span class="token operator">=</span> useEmulator <span class="token operator">?</span> <span class="token keyword">new</span> <span class="token class-name">MemoryBotStorage</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">:</span> <span class="token keyword">new</span> <span class="token class-name">AzureBotStorage</span><span class="token punctuation">(</span><span class="token punctuation">{</span> gzipData<span class="token operator">:</span> <span class="token boolean">false</span> <span class="token punctuation">}</span><span class="token punctuation">,</span> azureTableClient<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token keyword">const</span> bot <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">UniversalBot</span><span class="token punctuation">(</span>connector<span class="token punctuation">)</span><span class="token punctuation">;</span><br>bot<span class="token punctuation">.</span><span class="token function">localePath</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span><span class="token function">join</span><span class="token punctuation">(</span>__dirname<span class="token punctuation">,</span> <span class="token string">'./locale'</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>bot<span class="token punctuation">.</span><span class="token keyword">set</span><span class="token punctuation">(</span><span class="token string">'storage'</span><span class="token punctuation">,</span> storage<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>bot<span class="token punctuation">.</span><span class="token function">dialog</span><span class="token punctuation">(</span><span class="token string">'/'</span><span class="token punctuation">,</span> <span class="token keyword">function</span> <span class="token punctuation">(</span>session<span class="token operator">:</span> Session<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    session<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token string">'あなたは '</span> <span class="token operator">+</span> session<span class="token punctuation">.</span>message<span class="token punctuation">.</span>text <span class="token operator">+</span> <span class="token string">'と言いましたね。'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token keyword">if</span> <span class="token punctuation">(</span>useEmulator<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token keyword">const</span> restify <span class="token operator">=</span> <span class="token keyword">require</span><span class="token punctuation">(</span><span class="token string">'restify'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">const</span> server <span class="token operator">=</span> restify<span class="token punctuation">.</span><span class="token function">createServer</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    server<span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token number">3978</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token builtin">console</span><span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token string">'test bot endpont at http://localhost:3978/api/messages'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    server<span class="token punctuation">.</span><span class="token function">post</span><span class="token punctuation">(</span><span class="token string">'/api/messages'</span><span class="token punctuation">,</span> connector<span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <br><span class="token punctuation">}</span> <span class="token keyword">else</span> <span class="token punctuation">{</span><br>    <span class="token keyword">module</span><span class="token punctuation">.</span>exports <span class="token operator">=</span> connector<span class="token punctuation">.</span><span class="token function">listen</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>処理内容はほぼ変えず、文法を TypeScript にしただけです（<code>MemoryBotStorage</code> を使うとこだけ処理を追加してます、これをしないとローカルで動かなかったので）。</p>
+<p><code>messages</code> ディレクトリで</p>
+<pre><code>tsc
+</code></pre>
+<p>を実行します。すると同じディレクトリに <code>index.js</code> と <code>index.js.mmap</code> が生成されます。</p>
+<p>この <code>index.js</code> をこれまでの <code>index.js</code> の代わりに Azure にアップロードすれば、関数はいままでどおり動作します。</p>
+<h2 id="%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%81%A7%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%99%E3%82%8B%EF%BC%88vscode%E4%BD%BF%E7%94%A8)">ローカルでデバッグする（VSCode使用) <a class="direct-link" href="#%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E3%81%A7%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E3%81%99%E3%82%8B%EF%BC%88vscode%E4%BD%BF%E7%94%A8)">#</a></h2>
+<p><code>launch.json</code> の定義が古いのでちょっと追記します。</p>
+<p><strong>messages/.vscode/launch.json</strong></p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>    <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"0.2.0"</span><span class="token punctuation">,</span><br>    <span class="token property">"configurations"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>        <span class="token punctuation">{</span><br>            <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Launch"</span><span class="token punctuation">,</span><br>            <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"node"</span><span class="token punctuation">,</span><br>            <span class="token property">"request"</span><span class="token operator">:</span> <span class="token string">"launch"</span><span class="token punctuation">,</span><br>            <span class="token property">"protocol"</span><span class="token operator">:</span> <span class="token string">"inspector"</span><span class="token punctuation">,</span>  &lt;-- この行を追加<br>            <span class="token property">"program"</span><span class="token operator">:</span> <span class="token string">"${workspaceRoot}/index.js"</span><span class="token punctuation">,</span><br>            <span class="token property">"cwd"</span><span class="token operator">:</span> <span class="token string">"${workspaceRoot}"</span><span class="token punctuation">,</span><br>            <span class="token property">"env"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>                <span class="token property">"NODE_ENV"</span><span class="token operator">:</span> <span class="token string">"development"</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p><code>index.ts</code>(.js じゃないよ) の適当な行にブレークポイントを仕掛けて、メニュー -&gt; デバッグ -&gt; デバッグの開始 をします。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/9daa452f-fa27-666d-e0c9-5bacfdd4a2b5.png" alt="image.png"></p>
+<p>ちゃんと止まるはずです。</p>
+<p><a href="https://github.com/Microsoft/BotFramework-Emulator/">BotFramework-Emulator</a> にローカルのエンドポイントである <code>http://localhost:3978/api/messages</code> を指定すれば、ボットのデバッグができます。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/77955829-c30e-6890-3c39-cd29d3274b6e.png" alt="image.png"></p>
+<h2 id="%E7%92%B0%E5%A2%83">環境 <a class="direct-link" href="#%E7%92%B0%E5%A2%83">#</a></h2>
+<ul>
+<li>macOS - 10.13.5</li>
+<li>Node.js - v8.9.4</li>
+<li>npm - 5.6.0</li>
+<li>TypeScript - 2.9.2</li>
+<li>Visual Studio Code(VSCode) - 1.24.1</li>
+<li>BotFramework-Emulator - 3.5.36</li>
+</ul>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://qiita.com/annie/items/cf93a7a832123946a7da">祝GA！Azure Bot Service 概略&amp;作成～公開手順 - Qiita</a></li>
+<li><a href="https://qiita.com/TsuyoshiUshio@github/items/41c085a5e68fea0ff9bb">Azure Functions を TypeScript で書いてみる。 - Qiita</a></li>
+<li><a href="https://code.visualstudio.com/docs/nodejs/nodejs-debugging#_supported-nodelike-runtimes">Debug Node.js Apps using VS Code</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2018-07-05">05 Jul 2018</time>
+
+tags: 
+
+  <a href="/tags/Azure/" class="post-tag">Azure</a>
+  <a href="/tags/AzureFunctions/" class="post-tag">AzureFunctions</a>
+  <a href="/tags/BotFramework/" class="post-tag">BotFramework</a>
+  <a href="/tags/TypeScript/" class="post-tag">TypeScript</a>
+  <a href="/tags/VSCode/" class="post-tag">VSCode</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-07-12-62e1eb656fbd730b3dd1/">Angular + VSCode でデバッグ開始したときに ng serve する</a></li><li>Previous: <a href="/posts/2018-07-03-renew_microsoft_most_valuable_professional_2018/">MVP Renewal</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-07-05-c572870378b9e61f3399/ -->
+  </body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Android/iOS で IsolatedStorage を使う</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Android/iOS で IsolatedStorage を使う</h1>
+
+<p>アプリの設定情報なんかを保存する時、Android では SharedPreference 、iOS では NSUserDefaults を使うわけですが、プラットフォーム毎にコード書くのめんどい！と思って</p>
+<!--more-->
+<blockquote class="twitter-tweet" lang="ja"><p><a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; あめい@ざまらーさん (@amay077) <a href="https://twitter.com/amay077/status/326942931028148224">2013年4月24日</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>とツイートしたところ、Xamarin の中の人である <a href="https://twitter.com/atsushieno">@atsushieno</a> さんから、</p>
+<blockquote class="twitter-tweet" data-conversation="none" lang="ja"><p>IsolatedStorageじゃダメなんでしょうか? RT @<a href="https://twitter.com/amay077">amay077</a>: <a href="https://twitter.com/search/%23Xamarin">#Xamarin</a> さん、SharedPref/android と userDefaults/ios が共通のInterfaceで使えるコンポーネントが欲しいです</p>&mdash; Atsushi Enoさん (@atsushieno) <a href="https://twitter.com/atsushieno/status/327355284416757761">2013年4月25日</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>とアドバイスを頂きました。</p>
+<p>IsolatedStorage(分離ストレージ) とは、.NET Framework(当然 Mono も)に用意されている、OS のファイルシステムとは切り離されたデータ領域の事で、アプリケーション毎、ユーザー毎など、アクセス権限を細かく設定できるのが特徴です。</p>
+<p>そこで気になったのは、Xamarin.Android/iOS で IsolatedStorage を利用した時に、実体はどこに保存されるのか？ということ。</p>
+<p>Android では、ストレージの <code>/data/data/&lt;アプリ名&gt;</code> 配下は、そのアプリ専用のデータ領域であり、そのアプリしかアクセス許可が与えられていない他、アプリをアンインストールするとそのデータ領域も削除されます。<br>
+(iOS は詳しくないですが、 userDefaults も同様だろうと思ってます。)</p>
+<p>で、調べてみました。</p>
+<h2 id="xamarin.android-%E3%81%AE%E5%A0%B4%E5%90%88">Xamarin.Android の場合 <a class="direct-link" href="#xamarin.android-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<p>Xamarin Studio で、適当な Xamarin.Android プロジェクトを作って、MainActivity の onCreate で、IsolatedStorage にファイルを作成しています。<br>
+IsolatedStorage は、どこまでアクセス許可を与えるかを <a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragescope.aspx"><code>IsolatedStorageScope</code></a> 列挙体 で指定しますが、ここでは、SharedPreference の MODE_PRIVATE に最も近いであろう <code>Application</code> と <code>User</code> を組み合わせた Scope で生成する <code>GetUserStoreForApplication()</code> を使います。</p>
+<p>サンプルコードは、</p>
+<ul>
+<li><a href="http://ch3cooh.jp/index.php/tips/windowsphone7/system/strage/using-isolated-storage/">分離ストレージ（Isolated Storage）を使ってデータの保存と取得を行う – CH3COOH(酢酸)の実験室</a></li>
+</ul>
+<p>を参考にさせてもらいました。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span><br><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>App</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>Content</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>Runtime</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>Views</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>Widget</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">Android<span class="token punctuation">.</span>OS</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>IO<span class="token punctuation">.</span>IsolatedStorage</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>IO</span><span class="token punctuation">;</span><br><br><span class="token keyword">namespace</span> <span class="token namespace">IsolatedStorageTest</span><br><span class="token punctuation">{</span><br>    <span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">Activity</span> <span class="token attribute-arguments"><span class="token punctuation">(</span>Label <span class="token operator">=</span> <span class="token string">"IsolatedStorageTest"</span><span class="token punctuation">,</span> MainLauncher <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br>    <span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">Activity1</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">Activity</span></span><br>    <span class="token punctuation">{</span><br>        <span class="token class-name"><span class="token keyword">int</span></span> count <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">;</span><br><br>        <span class="token keyword">protected</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">OnCreate</span><span class="token punctuation">(</span><span class="token class-name">Bundle</span> bundle<span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">OnCreate</span><span class="token punctuation">(</span>bundle<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>            <span class="token comment">// Set our view from the "main" layout resource</span><br>            <span class="token function">SetContentView</span><span class="token punctuation">(</span>Resource<span class="token punctuation">.</span>Layout<span class="token punctuation">.</span>Main<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>            <span class="token class-name"><span class="token keyword">var</span></span> file <span class="token operator">=</span> IsolatedStorageFile<span class="token punctuation">.</span><span class="token function">GetUserStoreForApplication</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <br>            <span class="token comment">// 分離ストレージにtest.txtというファイルを作成しストリームを開く</span><br>            <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">IsolatedStorageFileStream</span> strm <span class="token operator">=</span> file<span class="token punctuation">.</span><span class="token function">CreateFile</span><span class="token punctuation">(</span><span class="token string">"test.txt"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">StreamWriter</span> writer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">StreamWriter</span><span class="token punctuation">(</span>strm<span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">{</span><br>                <span class="token comment">// データを書き込む</span><br>                writer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token string">"Hello!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>                writer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token string">"Storage."</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>上記の <code>var file = …</code> の次の行にブレークポイントを設置して、デバッグ実行します。<br>
+ブレークしたら、変数 <code>file</code> をウォッチなどを覗いてみると、Non-public なフィールド <code>directory</code> が「/data/data/&lt;アプリ名&gt;/files/.config/.isolated-storage」<br>
+を示していることが分かります。</p>
+<p><img src="/img/posts/location_of_isolatedstorage_in_xamarin1.png" alt="image1"></p>
+<h2 id="xamarin.ios-%E3%81%AE%E5%A0%B4%E5%90%88">Xamarin.iOS の場合 <a class="direct-link" href="#xamarin.ios-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<p>次に Xamarin.iOS でも適当なプロジェクトを作って、<code>ViewDidLoad</code> に IsolatedStorage への書き出しコードを挿入します。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">using</span> <span class="token namespace">System</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>Drawing</span><span class="token punctuation">;</span><br><br><span class="token keyword">using</span> <span class="token namespace">MonoTouch<span class="token punctuation">.</span>Foundation</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">MonoTouch<span class="token punctuation">.</span>UIKit</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>IO<span class="token punctuation">.</span>IsolatedStorage</span><span class="token punctuation">;</span><br><span class="token keyword">using</span> <span class="token namespace">System<span class="token punctuation">.</span>IO</span><span class="token punctuation">;</span><br><br><span class="token keyword">namespace</span> <span class="token namespace">IsolatedStorageiOSTest</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token keyword">partial</span> <span class="token keyword">class</span> <span class="token class-name">IsolatedStorageiOSTestViewController</span> <span class="token punctuation">:</span> <span class="token type-list"><span class="token class-name">UIViewController</span></span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">public</span> <span class="token function">IsolatedStorageiOSTestViewController</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">:</span> <span class="token keyword">base</span> <span class="token punctuation">(</span><span class="token string">"IsolatedStorageiOSTestViewController"</span><span class="token punctuation">,</span> <span class="token keyword">null</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>        <span class="token punctuation">}</span><br>		<br>        <span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">DidReceiveMemoryWarning</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            <span class="token comment">// Releases the view if it doesn't have a superview.</span><br>            <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">DidReceiveMemoryWarning</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>			<br>            <span class="token comment">// Release any cached data, images, etc that aren't in use.</span><br>        <span class="token punctuation">}</span><br>		<br>        <span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">void</span></span> <span class="token function">ViewDidLoad</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            <span class="token keyword">base</span><span class="token punctuation">.</span><span class="token function">ViewDidLoad</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>			<br>            <span class="token class-name"><span class="token keyword">var</span></span> file <span class="token operator">=</span> IsolatedStorageFile<span class="token punctuation">.</span><span class="token function">GetUserStoreForApplication</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <br>            <span class="token comment">// 分離ストレージにtest.txtというファイルを作成しストリームを開く</span><br>            <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">IsolatedStorageFileStream</span> strm <span class="token operator">=</span> file<span class="token punctuation">.</span><span class="token function">CreateFile</span><span class="token punctuation">(</span><span class="token string">"test.txt"</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>                <span class="token keyword">using</span> <span class="token punctuation">(</span><span class="token class-name">StreamWriter</span> writer <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">StreamWriter</span><span class="token punctuation">(</span>strm<span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">{</span><br>                <span class="token comment">// データを書き込む</span><br>                writer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token string">"Hello!"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>                writer<span class="token punctuation">.</span><span class="token function">Write</span><span class="token punctuation">(</span><span class="token string">"Storage."</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><br>		<br>        <span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">bool</span></span> <span class="token function">ShouldAutorotateToInterfaceOrientation</span><span class="token punctuation">(</span><span class="token class-name">UIInterfaceOrientation</span> toInterfaceOrientation<span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            <span class="token comment">// Return true for supported orientations</span><br>            <span class="token keyword">return</span> <span class="token punctuation">(</span>toInterfaceOrientation <span class="token operator">!=</span> UIInterfaceOrientation<span class="token punctuation">.</span>PortraitUpsideDown<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p>デバッグして、<code>file</code> 変数を覗いてみると、<code>directory</code> が「&lt;省略&gt;/iPhone Simulator/6.1/Applications/&lt;アプリのUUID&gt;/Documents/.config/.isolated-storage」<br>
+を示していることが分かります。</p>
+<p><img src="/img/posts/location_of_isolatedstorage_in_xamarin2.png" alt="image2"></p>
+<p>ということで、IsolatedStorage の保存先は、Android では <code>/data/data/&lt;アプリ名&gt;/</code>、iOS の場合は <code>/&lt;アプリのUUID&gt;/Documents/</code> と、アプリごとの固有の場所になっている事が分かりました。</p>
+<h2 id="%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E4%B8%8A%E3%81%AE%E6%B3%A8%E6%84%8F">セキュリティ上の注意 <a class="direct-link" href="#%E3%82%BB%E3%82%AD%E3%83%A5%E3%83%AA%E3%83%86%E3%82%A3%E4%B8%8A%E3%81%AE%E6%B3%A8%E6%84%8F">#</a></h2>
+<p>Android の <code>/data/data/&lt;アプリ名&gt;</code> はアプリしかアクセスできないディレクトリですが、データ自体が暗号化されるわけではありません。(端末のROOT化や、apkを入手してエミュレータでアプリを実行することで /data/data/ のデータは取り出せます。)</p>
+<p>また、iOS の <code>/&lt;アプリUIID&gt;/</code> はセキュアではないようです。(UUIDさえ分かれば他のアプリからもアクセスできるという事？)</p>
+<ul>
+<li><a href="http://software-security.sans.org/blog/2011/01/05/using-keychain-to-store-passwords-ios-iphone-ipad">How Not to Store Passwords in iOS</a></li>
+<li><a href="http://stackoverflow.com/questions/1560801/how-to-secure-nsuserdefaults">iphone - How to secure NSUserDefaults? - Stack Overflow</a></li>
+<li><a href="http://iphonedevsdk.com/forum/iphone-sdk-development/28041-nsuserdefaults-secure.html">NSUserDefaults Secure? - iPhone Dev SDK</a></li>
+</ul>
+<p>秘匿情報の保存には <code>KeyChain</code> を使え、と書いてありますね。</p>
+<p>さらに、.NET の IsolatedStorage の説明にも、「暗号化されていないキーやパスワードは保存するな」と書いてあります。</p>
+<ul>
+<li><a href="http://msdn.microsoft.com/en-us/library/3ak841sy.aspx">Scenarios for Isolated Storage - MSDN</a></li>
+</ul>
+<blockquote>
+<p>You <strong>should not use</strong> isolated storage in the following situations:</p>
+<ul>
+<li>To store high-value secrets, such as unencrypted keys or passwords, because isolated storage is not protected from highly trusted code, from unmanaged code, or from trusted users of the computer.</li>
+</ul>
+</blockquote>
+<p>(つか、<a href="http://msdn.microsoft.com/ja-jp/library/vstudio/3ak841sy.aspx#scenarios_for_isolated_storage">日本語サイト</a>、誤訳ってない？)</p>
+<p>ということで、パスワードなどの秘匿情報をどうしても端末に保存する時は、</p>
+<ul>
+<li>iOS なら KeyChain を使う</li>
+<li>Android の場合は独自の暗号化を施す(Mono の <code>SecureString</code> とか <code>ProtectedData</code> が使える？)</li>
+</ul>
+<p>などの対策が必要です。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<ul>
+<li>IsolatedStorage は、SharedPreference や NSUserDefaults の代わりに、「アプリケーション情報格納領域」として使える
+<ul>
+<li>本文に書きませんでしたが、アプリ専用領域なので、アプリをアンインストールするとちゃんと消えます</li>
+</ul>
+</li>
+<li>ただし、パスワードとかの秘匿情報は保存しちゃダメよ</li>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/system.io.isolatedstorage.isolatedstoragesettings"><code>IsolatedStorageSettings</code></a> が使えたらもっと便利だったが、 System.Windows.dll が必要なのでムリー</li>
+</ul>
+<h2 id="%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E6%B0%97%E3%81%AB%E3%81%AA%E3%82%8B">ちょっと気になる <a class="direct-link" href="#%E3%81%A1%E3%82%87%E3%81%A3%E3%81%A8%E6%B0%97%E3%81%AB%E3%81%AA%E3%82%8B">#</a></h2>
+<ul>
+<li><a href="http://msdn.microsoft.com/ja-jp/library/3ak841sy">分離ストレージ - MSDN</a></li>
+</ul>
+<p>に、</p>
+<blockquote>
+<p>分離ストレージは Windows ストア の apps では使用できません。 代わりに、ローカル データとファイルを格納する Windows ランタイム API に含まれる Windows.Storage の名前空間にアプリケーション データのクラスを使用します。 詳細については、Windows Dev センターの&quot; アプリケーション データ &quot;を参照してください。</p>
+</blockquote>
+<p>と書いてある。Windows 8 の Store App だと、IsolatedStorage が使えなくて、代わりに WinRT を使う必要があるらしい。それを考えると、IsolatedStorage を直で使わずに１枚咬ませた方が良さそう。</p>
+
+
+published at <time class="postlist-date" datetime="2013-04-26">26 Apr 2013</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2013-05-06-circle-on-google-maps-sdk/">Google Maps SDK(Android/iOS) で円を描く</a></li><li>Previous: <a href="/posts/2013-04-22-xamarin-ios-using-gmap-ios-sdk/">Google Maps SDK for iOS を Xamarin.iOS で使う</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2013-04-26-using-isolatedstorage-in-xamarin/ -->
+  </body>
+</html>

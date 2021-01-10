@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>moment.js(JavaScript) vs Calendar(Java) vs DateTime(C#)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>moment.js(JavaScript) vs Calendar(Java) vs DateTime(C#)</h1>
+
+<p>プログラム言語をまたいでいて、いつも迷うので書いておきます。</p>
+<!--more-->
+<p>JavaScript、なぜ標準の Date型 ではなく moment.js なのかというと、今使っているのが moment だからです。</p>
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Left align</th>
+<th style="text-align:left">moment.js(JavaScript)</th>
+<th style="text-align:left">Calendar(Java)</th>
+<th style="text-align:left">DateTime(C#)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">文字列からのパース</td>
+<td style="text-align:left">moment(text, format)</td>
+<td style="text-align:left">Calendarにはない(DateFormatで代用)</td>
+<td style="text-align:left">DateTime.Parse(text, culture)</td>
+</tr>
+<tr>
+<td style="text-align:left">年を取得</td>
+<td style="text-align:left">year()</td>
+<td style="text-align:left">get(Calendar.YEAR)</td>
+<td style="text-align:left">Year</td>
+</tr>
+<tr>
+<td style="text-align:left">月を取得</td>
+<td style="text-align:left">month() <strong>※０〜</strong></td>
+<td style="text-align:left">get(Calendar.MONTH) <strong>※０〜</strong></td>
+<td style="text-align:left">Month <strong>※1〜</strong></td>
+</tr>
+<tr>
+<td style="text-align:left">日を取得</td>
+<td style="text-align:left">date()</td>
+<td style="text-align:left">get(Calendar.DATE)</td>
+<td style="text-align:left"><strong>Day</strong></td>
+</tr>
+<tr>
+<td style="text-align:left">曜日を取得</td>
+<td style="text-align:left"><strong>day()</strong> SUN:0〜</td>
+<td style="text-align:left">get(Calendar.DAY_OF_WEEK) <strong>SUN:1〜</strong></td>
+<td style="text-align:left">DayOfWeek         SUN:0〜</td>
+</tr>
+<tr>
+<td style="text-align:left">文字列へのフォーマット</td>
+<td style="text-align:left">format(format)</td>
+<td style="text-align:left">DateFormatで代用</td>
+<td style="text-align:left">ToString(format)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">サンプル <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">#</a></h2>
+<p>2018年1月1日は 「月曜日」 です。<br>
+あと、parse や format は Locale や Culture などに依存かもしれないので、ここでは触れないけど要注意！</p>
+<h3 id="moment.js(node.js-v8.9.0)">Moment.js(Node.js v8.9.0) <a class="direct-link" href="#moment.js(node.js-v8.9.0)">#</a></h3>
+<p><strong>コード</strong></p>
+<pre class="language-javascript"><code class="language-javascript"><span class="token keyword">const</span> moment <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span><span class="token string">'moment'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token keyword">const</span> m <span class="token operator">=</span> <span class="token function">moment</span><span class="token punctuation">(</span><span class="token string">'20180101'</span><span class="token punctuation">,</span> <span class="token string">'YYYYMMDD'</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">年=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>m<span class="token punctuation">.</span><span class="token function">year</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">月=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>m<span class="token punctuation">.</span><span class="token function">month</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">日=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>m<span class="token punctuation">.</span><span class="token function">date</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">曜日=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>m<span class="token punctuation">.</span><span class="token function">day</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>    <span class="token comment">// &lt;---------曜日が day() で取れるなんて、わかるわけ…</span><br>console<span class="token punctuation">.</span><span class="token function">log</span><span class="token punctuation">(</span><span class="token template-string"><span class="token template-punctuation string">`</span><span class="token string">整形=</span><span class="token interpolation"><span class="token interpolation-punctuation punctuation">${</span>m<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token string">'YYYY年MM月DD日'</span><span class="token punctuation">)</span><span class="token interpolation-punctuation punctuation">}</span></span><span class="token template-punctuation string">`</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p><strong>結果</strong></p>
+<pre><code>年=2018
+月=0                  &lt;---------月は0から
+日=1
+曜日=1                &lt;---------日曜=０から
+整形=2018年01月01日
+</code></pre>
+<h3 id="calendar(java-v1.8.0)">Calendar(Java v1.8.0) <a class="direct-link" href="#calendar(java-v1.8.0)">#</a></h3>
+<p><strong>コード</strong></p>
+<pre class="language-java"><code class="language-java"><span class="token comment">//import java.text.DateFormat;</span><br><span class="token comment">//import java.text.SimpleDateFormat;</span><br><span class="token comment">//import java.util.Date;</span><br><span class="token comment">//import java.util.Calendar;</span><br><span class="token comment">//import java.util.Locale;</span><br><br><span class="token class-name">DateFormat</span> df <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SimpleDateFormat</span><span class="token punctuation">(</span><span class="token string">"yyyy/MM/dd"</span><span class="token punctuation">,</span> <span class="token class-name">Locale</span><span class="token punctuation">.</span>JAPAN<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">Date</span> d <span class="token operator">=</span> df<span class="token punctuation">.</span><span class="token function">parse</span><span class="token punctuation">(</span><span class="token string">"2018/01/01"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">Calendar</span> cal <span class="token operator">=</span> <span class="token class-name">Calendar</span><span class="token punctuation">.</span><span class="token function">getInstance</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>cal<span class="token punctuation">.</span><span class="token function">setTime</span><span class="token punctuation">(</span>d<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"年="</span> <span class="token operator">+</span> cal<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token class-name">Calendar</span><span class="token punctuation">.</span>YEAR<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"月="</span> <span class="token operator">+</span> cal<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token class-name">Calendar</span><span class="token punctuation">.</span>MONTH<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"日="</span> <span class="token operator">+</span> cal<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token class-name">Calendar</span><span class="token punctuation">.</span>DATE<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"曜日="</span> <span class="token operator">+</span> cal<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token class-name">Calendar</span><span class="token punctuation">.</span>DAY_OF_WEEK<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"整形="</span> <span class="token operator">+</span> df<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span>cal<span class="token punctuation">.</span><span class="token function">getTime</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p><strong>結果</strong></p>
+<pre><code>年=2018
+月=0                  &lt;---------月は0から
+日=1
+曜日=2                &lt;---------日曜=1から
+整形=2018年01月01日
+</code></pre>
+<h3 id="datetime(c%23-%2F-.net-core-2.1)">DateTime(C# / .NET Core 2.1) <a class="direct-link" href="#datetime(c%23-%2F-.net-core-2.1)">#</a></h3>
+<p><strong>コード</strong></p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name"><span class="token keyword">var</span></span> d <span class="token operator">=</span> DateTime<span class="token punctuation">.</span><span class="token function">Parse</span><span class="token punctuation">(</span><span class="token string">"2018/01/01"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"年=</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">d<span class="token punctuation">.</span>Year</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"月=</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">d<span class="token punctuation">.</span>Month</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"日=</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">d<span class="token punctuation">.</span>Day</span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"曜日=</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">d<span class="token punctuation">.</span>DayOfWeek</span><span class="token punctuation">}</span></span><span class="token string">(</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp"><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">)</span>d<span class="token punctuation">.</span>DayOfWeek</span><span class="token punctuation">}</span></span><span class="token string">)"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token interpolation-string"><span class="token string">$"整形=</span><span class="token interpolation"><span class="token punctuation">{</span><span class="token expression language-csharp">d<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token string">"yyyy年MM月dd日"</span><span class="token punctuation">)</span></span><span class="token punctuation">}</span></span><span class="token string">"</span></span><span class="token punctuation">)</span><span class="token punctuation">;</span>  <span class="token comment">// &lt;------ MM だけ大文字だ</span></code></pre>
+<p><strong>結果</strong></p>
+<pre><code>年=2018
+月=1             &lt;---------月は1から
+日=1
+曜日=Monday(1)   &lt;---------日曜=０から(Enumでも可)
+整形=2018年01月01日
+</code></pre>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<h3 id="moment.js">Moment.js <a class="direct-link" href="#moment.js">#</a></h3>
+<ul>
+<li><a href="https://momentjs.com/">Moment.js / Home</a></li>
+<li><a href="https://www.yoheim.net/blog.php?q=20180201">[Javascript] Moment.jsを使って日付を扱おう - YoheiM .NET</a></li>
+</ul>
+<h3 id="calendar(java)">Calendar(Java) <a class="direct-link" href="#calendar(java)">#</a></h3>
+<ul>
+<li><a href="https://www.sejuku.net/blog/20325">【Java入門】Calendarの日付フォーマットを指定する(format) | 侍エンジニア塾ブログ | プログラミング入門者向け学習情報サイト</a></li>
+<li><a href="https://teratail.com/questions/33597">Java - string型をcalender型に変換したい(33597)｜teratail</a></li>
+<li><a href="http://hensa40.cutegirl.jp/archives/5373">[ Java ] 日付に対応する曜日を取得する (Calendar.DAY_OF_WEEK) – 行け！偏差値40プログラマー</a></li>
+<li><a href="https://yurufuwa-tech.hatenablog.com/entry/2017/07/13/222455">SimpleDateFormatのparseでコケるときに確認すること #60 - ゆるふわ技術日誌</a></li>
+</ul>
+<h3 id="datetime(c%23%2F.net)">DateTime(C#/.NET) <a class="direct-link" href="#datetime(c%23%2F.net)">#</a></h3>
+<ul>
+<li><a href="https://dobon.net/vb/dotnet/string/datetimeparse.html#section1">日時を表す文字列をDateTimeオブジェクトに変換する - .NET Tips (VB.NET,C#...)</a></li>
+<li><a href="http://www.atmarkit.co.jp/ait/articles/0408/27/news104.html">日付や時刻を文字列に変換するには？：.NET TIPS - ＠IT</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2018-07-30">30 Jul 2018</time>
+
+tags: 
+
+  <a href="/tags/JavaScript/" class="post-tag">JavaScript</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/Node.js/" class="post-tag">Node.js</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-07-31-46ad2c8aa114bdf53abb/">Azure Functions で REST な API を作る</a></li><li>Previous: <a href="/posts/2018-07-25-e00a7c459bc555556bfa/">Angular 6 で、日付や時刻との双方向データバインディング</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2018-07-30-524240ebec6e75366b66/ -->
+  </body>
+</html>

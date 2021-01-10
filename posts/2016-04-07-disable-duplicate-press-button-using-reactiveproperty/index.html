@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReactiveProperty で2度押し防止(Using使ったやつ)</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>ReactiveProperty で2度押し防止(Using使ったやつ)</h1>
+
+<ul>
+<li><a href="http://tamafuyou.hatenablog.com/entry/2016/04/06/213633">ReactivePropertyで2度押し防止 - 眠いしお腹すいたし(´・ω・`)</a></li>
+</ul>
+<p>を拝見しまして、前から気になってたので考えてみました。</p>
+<!--more-->
+<p>先に別件。</p>
+<p>ReactiveCommand は <code>IObservable&lt;T&gt;</code>、そしてロジックの方も <code>IObservable&lt;T&gt;</code> で作ることが多いのですが、その場合「ボタンをクリックした時に、ロジックを実行する」というコードは大抵以下のようになります。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">//MainViewModel.cs </span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainViewModel</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveCommand</span> TestCommand <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">></span></span> IsBusy <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token keyword">public</span> <span class="token function">MainViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        TestCommand <span class="token operator">=</span> IsBusy<span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>x <span class="token operator">=></span> <span class="token operator">!</span>x<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ToReactiveCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        TestCommand<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>_ <span class="token operator">=></span><br>        <span class="token punctuation">{</span><br>            <span class="token comment">// log("ボタンが押されたよ");</span><br>            IsBusy<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span><br>            SomeLogicAsObservable<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>__ <span class="token operator">=></span><br>            <span class="token punctuation">{</span><br>                <span class="token comment">// log("処理が実行されたよ");</span><br>                IsBusy<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">;</span> <span class="token comment">// ほんとは OnCompleted と OnError でやるべき</span><br>            <span class="token punctuation">}</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br>    <br>    <span class="token comment">// なんか重い非同期な処理</span><br>    <span class="token keyword">private</span> <span class="token return-type class-name">IObservable<span class="token punctuation">&lt;</span>Unit<span class="token punctuation">></span></span> <span class="token function">SomeLogicAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> Observable<span class="token punctuation">.</span><span class="token function">Delay</span><span class="token punctuation">(</span>Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span>Unit<span class="token punctuation">.</span>Default<span class="token punctuation">)</span><span class="token punctuation">,</span> <br>                TimeSpan<span class="token punctuation">.</span><span class="token function">FromSeconds</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span>    <br><span class="token punctuation">}</span></code></pre>
+<p>こういうコードを書いていていつも「なんかカッコ悪いなー」と思っていました。<br>
+そう思う点は、<code>Subscribe</code> を2回書いていること。ボタンがクリックされた事の購読の中でさらにロジックが実行された事を購読している点です。<br>
+どちらも Stream なのだから、うまくマージできないかなと思っていました。</p>
+<p>これの解決も一緒に考えてみました。</p>
+<p>はい、</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">//MainViewModel.cs</span><br><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainViewModel</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveCommand</span> TestCommand <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">></span></span> IsBusy <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">bool</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token keyword">public</span> <span class="token function">MainViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        TestCommand <span class="token operator">=</span> TestCommand <span class="token operator">=</span> IsBusy<span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>x <span class="token operator">=></span> <span class="token operator">!</span>x<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ToReactiveCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        TestCommand<br>            <span class="token punctuation">.</span><span class="token function">SelectMany</span><span class="token punctuation">(</span>_ <span class="token operator">=></span> <span class="token function">UsingIsBusy</span><span class="token punctuation">(</span><span class="token function">SomeLogicAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>_ <span class="token operator">=></span> <span class="token punctuation">{</span> <span class="token comment">/* log("ボタンが押されてロジックが実行されたよ") ※ */</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token comment">// ※ロジックがたくさん OnNext を呼んでいたらここもたくさん呼ばれるから注意</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token keyword">private</span> <span class="token return-type class-name">IObservable<span class="token punctuation">&lt;</span>T<span class="token punctuation">></span></span> <span class="token generic-method"><span class="token function">UsingIsBusy</span><span class="token generic class-name"><span class="token punctuation">&lt;</span>T<span class="token punctuation">></span></span></span><span class="token punctuation">(</span><span class="token class-name">IObservable<span class="token punctuation">&lt;</span>T<span class="token punctuation">></span></span> observable<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> Observable<span class="token punctuation">.</span><span class="token function">Using</span><span class="token punctuation">(</span><br>            <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span><br>            <span class="token punctuation">{</span><br>                IsBusy<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token boolean">true</span><span class="token punctuation">;</span><br>                <span class="token keyword">return</span> Disposable<span class="token punctuation">.</span><span class="token function">Create</span><span class="token punctuation">(</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">=></span> IsBusy<span class="token punctuation">.</span>Value <span class="token operator">=</span> <span class="token boolean">false</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><span class="token punctuation">,</span><br>            _ <span class="token operator">=></span> observable<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token comment">// なんか重い非同期な処理</span><br>    <span class="token keyword">private</span> <span class="token return-type class-name">IObservable<span class="token punctuation">&lt;</span>Unit<span class="token punctuation">></span></span> <span class="token function">SomeLogicAsObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> Observable<span class="token punctuation">.</span><span class="token function">Delay</span><span class="token punctuation">(</span>Observable<span class="token punctuation">.</span><span class="token function">Return</span><span class="token punctuation">(</span>Unit<span class="token punctuation">.</span>Default<span class="token punctuation">)</span><span class="token punctuation">,</span><br>                                TimeSpan<span class="token punctuation">.</span><span class="token function">FromSeconds</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<p><code>IsBusy</code> の ON/OFF を <code>Observable.Using</code> に任せるようにしました。これは、第2引数に指定した <code>IObservable&lt;T&gt;</code> が完了または失敗した時にリソースを解放してくれる C# の <code>using 句</code> のようなもので、ここでは第2引数にロジックの <code>IObservable&lt;T&gt;</code> を渡すことで、ロジックが完了したら自動的に <code>IsBusy.Value = false</code> が実行されます。</p>
+<p>次に「<code>Subscribe</code>を2回してる問題」は、ボタンがクリックされた<code>IObserbale&lt;T&gt;</code> から <code>SelectMany</code> で繋いであげることで解決しています。</p>
+<p>このコードの要注意は、<code>IsBusy.Value = false</code> が実行されるのがUIスレッドとは限らないので、View側でバインドするまでに <code>ObserveOnUIDispatcher</code> などをしてあげないといけないことです（少なくとも Xamarin.Android + ReactiveProperty ではそうでした。WPFだと気にしないのでしょうか？）。</p>
+<p>もう少し汎用性を高めて、「<code>IsBusy プロパティを持った ReactiveCommand</code>」のようなものを作ったら便利なのかもしれないです。</p>
+
+
+published at <time class="postlist-date" datetime="2016-04-07">07 Apr 2016</time>
+
+tags: 
+
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/ReactiveProperty/" class="post-tag">ReactiveProperty</a>
+  <a href="/tags/ReactiveX/" class="post-tag">ReactiveX</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-04-29-what-is-xamarin-workbooks/">Xamarin Workbooks とかいうやつ</a></li><li>Previous: <a href="/posts/2016-04-06-started-keep-a-hamster/">ハムスターを飼い始めました</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-04-07-disable-duplicate-press-button-using-reactiveproperty/ -->
+  </body>
+</html>

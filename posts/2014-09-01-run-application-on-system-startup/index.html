@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システムの起動時にアプリを起動する</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>システムの起動時にアプリを起動する</h1>
+
+<p>ググれば出てくるんだけど、情報が古いので書きなおしてみた。</p>
+<!--more-->
+<h2 id="%E5%85%A8%E4%BD%93">全体 <a class="direct-link" href="#%E5%85%A8%E4%BD%93">#</a></h2>
+<p>Android OS の起動が終わると <code>android.intent.action.BOOT_COMPLETED</code> がブロードキャストされるので、それを捕まえて任意の処理をする。</p>
+<h2 id="%E8%B5%B7%E5%8B%95%E6%99%82%E3%81%AB%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%82%8C%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89">起動時に呼び出されるコード <a class="direct-link" href="#%E8%B5%B7%E5%8B%95%E6%99%82%E3%81%AB%E5%91%BC%E3%81%B3%E5%87%BA%E3%81%95%E3%82%8C%E3%82%8B%E3%82%B3%E3%83%BC%E3%83%89">#</a></h2>
+<p>ブロードキャストを捕まえたときに呼ばれるコード。<code>MyActivity</code> を開始している。BroadcastReceiver から Activity を開始するには <code>Intent.FLAG_ACTIVITY_NEW_TASK</code> が必要なので注意。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">StartupReceiver</span> <span class="token keyword">extends</span> <span class="token class-name">BroadcastReceiver</span> <span class="token punctuation">{</span><br>    <span class="token keyword">private</span> <span class="token keyword">static</span> <span class="token keyword">final</span> <span class="token class-name">String</span> TAG <span class="token operator">=</span> <span class="token string">"StartupReceiver"</span><span class="token punctuation">;</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">onReceive</span><span class="token punctuation">(</span><span class="token class-name">Context</span> context<span class="token punctuation">,</span> <span class="token class-name">Intent</span> intent<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token class-name">Log</span><span class="token punctuation">.</span><span class="token function">d</span><span class="token punctuation">(</span>TAG<span class="token punctuation">,</span> <span class="token string">"onReceive:"</span> <span class="token operator">+</span> <span class="token class-name">MyApplication</span><span class="token punctuation">.</span>data<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token class-name">Intent</span> intentActivity <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Intent</span><span class="token punctuation">(</span>context<span class="token punctuation">,</span> <span class="token class-name">MyActivity</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        intentActivity<span class="token punctuation">.</span><span class="token function">setFlags</span><span class="token punctuation">(</span><span class="token class-name">Intent</span><span class="token punctuation">.</span>FLAG_ACTIVITY_NEW_TASK<span class="token punctuation">)</span><span class="token punctuation">;</span><br>        context<span class="token punctuation">.</span><span class="token function">startActivity</span><span class="token punctuation">(</span>intentActivity<span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
+<h2 id="androidmanifest.xml-%E3%81%A7%E5%8F%97%E4%BF%A1%E7%99%BB%E9%8C%B2">AndroidManifest.xml で受信登録 <a class="direct-link" href="#androidmanifest.xml-%E3%81%A7%E5%8F%97%E4%BF%A1%E7%99%BB%E9%8C%B2">#</a></h2>
+<p><code>StartupReceiver</code> を登録する。<br>
+忘れちゃいけないのが <code>android.permission.RECEIVE_BOOT_COMPLETED</code> による権限の設定。これがないと受信できない。</p>
+<pre class="language-xml"><code class="language-xml"><span class="token prolog">&lt;?xml version="1.0" encoding="utf-8"?></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>manifest</span> <span class="token attr-name"><span class="token namespace">xmlns:</span>android</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>http://schemas.android.com/apk/res/android<span class="token punctuation">"</span></span><br>    <span class="token attr-name">package</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>com.amay077.reboottest<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>uses-permission</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.permission.RECEIVE_BOOT_COMPLETED<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>application</span><br>        <span class="token attr-name"><span class="token namespace">android:</span>allowBackup</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>true<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>icon</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@drawable/ic_launcher<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/app_name<span class="token punctuation">"</span></span><br>        <span class="token attr-name"><span class="token namespace">android:</span>theme</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@style/AppTheme<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>activity</span><br>            <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>.MyActivity<span class="token punctuation">"</span></span><br>            <span class="token attr-name"><span class="token namespace">android:</span>label</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>@string/app_name<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>intent-filter</span><span class="token punctuation">></span></span><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>action</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.action.MAIN<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>category</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.category.LAUNCHER<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>intent-filter</span><span class="token punctuation">></span></span><br><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>activity</span><span class="token punctuation">></span></span><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>receiver</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>.StartupReceiver<span class="token punctuation">"</span></span> <span class="token punctuation">></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>intent-filter</span><span class="token punctuation">></span></span><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>action</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.action.BOOT_COMPLETED<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>                <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>category</span> <span class="token attr-name"><span class="token namespace">android:</span>name</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>android.intent.category.DEFAULT<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>            <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>intent-filter</span><span class="token punctuation">></span></span><br>        <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>receiver</span><span class="token punctuation">></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>application</span><span class="token punctuation">></span></span><br><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>manifest</span><span class="token punctuation">></span></span></code></pre>
+<h2 id="%E7%AB%AF%E6%9C%AB%E3%82%92%E5%86%8D%E8%B5%B7%E5%8B%95%E3%81%97%E3%81%A6%E8%A9%A6%E3%81%99">端末を再起動して試す <a class="direct-link" href="#%E7%AB%AF%E6%9C%AB%E3%82%92%E5%86%8D%E8%B5%B7%E5%8B%95%E3%81%97%E3%81%A6%E8%A9%A6%E3%81%99">#</a></h2>
+<ul>
+<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト ｜ 9ensanのLifeHack</a></li>
+</ul>
+<p>で知った <code>adb shell am broadcast -a android.intent.action.BOOT_COMPLETED</code> は GenyMotion でも使えました。<br>
+<code>RECEIVE_BOOT_COMPLETED</code> の位置によっては、テストが成功したりしなかったりだと書かれておられますが、上記の <code>AndroidManifest.xml</code> では、テストも実際の再起動も成功しました。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="http://techbooster.jpn.org/andriod/application/1100/">システムの起動時にサービスを実行する « Tech Booster</a>(2010年なのでだいぶ古い、要注意)</li>
+<li><a href="http://9ensan.com/blog/smartphone/android/android-boot_completed-adb-shell-am-broadcast/">AndroidのBOOT_COMPLETEDの受信とテスト ｜ 9ensanのLifeHack</a>(2012年、まだまだ古い)</li>
+<li><a href="http://stackoverflow.com/questions/20441308/boot-completed-not-working-android/20441442#20441442">broadcastreceiver - BOOT_COMPLETED not working Android - Stack Overflow</a>(2013年、これなら何とか)</li>
+<li><a href="https://groups.google.com/forum/#!topic/android-group-japan/D1EKohMIji0">BOOT_COMPLETEDが受信出来ない - Google グループ</a> SDカードにインストールされるとこのブロードキャストを受信できないそうです</li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2014-09-01">01 Sep 2014</time>
+
+tags: 
+
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2014-09-09-using-xamarin-forms-with-reactiveproperty/">Xamarin.Forms と ReactiveProperty で快適MVVM生活</a></li><li>Previous: <a href="/posts/2014-08-31-xamarin-ios-designer-does-not-support-manual-unwind-segue/">Xamarin Studio の iOSデザイナでは、Unwind Segue に Identifier が付けられないようです</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2014-09-01-run-application-on-system-startup/ -->
+  </body>
+</html>

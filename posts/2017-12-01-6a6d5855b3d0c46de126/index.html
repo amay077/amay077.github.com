@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin を使えば iPhone 端末が要らない、ワケがない</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin を使えば iPhone 端末が要らない、ワケがない</h1>
+
+<p>今年も Advent Calendar 1番手、よろしくおねがいします。</p>
+<!--more-->
+<p>さて、Windows + Visual Studio 2017 を使った iOS アプリの開発でも、</p>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/cross-platform/windows/ios-simulator/">Remoted iOS Simulator</a></li>
+<li><a href="https://www.xamarin.com/live">Xamarin Live Player</a></li>
+</ul>
+<p>などの登場で、「おっ、これなら iPhone 端末なしで（Mac なしで) iOS アプリ開発できるんじゃね？」 という風説がチラホラ聞かれます。</p>
+<p>私は「んなことはない」と考えているのですが、実際どの辺が「ほら iPhone 実機必要でしょ？」なのかを検証してみようと思います。</p>
+<p>そして、 <strong>iPhone 実機が必要だということは Mac も必要だということになりますからね。Mac がないとアプリをビルドして実機に転送できないので。</strong></p>
+<p>今回は、 「iPhone 実機は必須」 → 「iPhone 実機がないと困ったことが起きる可能性がある」 → 「iPhone 実機でしか発生しないトラブルがある」 という観点で、「iPhone 実機でしか発生しないトラブル」は本当に実在するのかを調査しましょう。</p>
+<h2 id="xamarin.ios-%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E5%8B%95%E4%BD%9C%E3%81%AE%E4%BB%95%E7%B5%84%E3%81%BF">Xamarin.iOS アプリの動作の仕組み <a class="direct-link" href="#xamarin.ios-%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E5%8B%95%E4%BD%9C%E3%81%AE%E4%BB%95%E7%B5%84%E3%81%BF">#</a></h2>
+<ul>
+<li><a href="http://www.buildinsider.net/mobile/insidexamarin/05">Xamarin.iOSの仕組みとアプリケーションの構成 - Build Insider</a></li>
+</ul>
+<p>Xamarin.iOS のアプリ開発について、最初に知っておくべきことは、 <strong>「iPhone 実機向けと、iOS シミュレータ向けで、配布されるアプリケーションはまったく違う」</strong> ということです。</p>
+<p>iPhone 実機向けのビルドでは、 AOT(Ahead-Of-Time) コンパイラによって、 <strong>事前に</strong> プログラムをマシン語に変換されたものを配布します。Apple の制約で iOS 端末上では、動的なプログラムの実行が許可されていないためです。</p>
+<p>一方、 iOS シミュレータ向けのビルドでは、AOT ではなく JIT でアプリが動作します。なので AOT で生じる特有の「制約」が iOS シミュレータでは適用されないのです。</p>
+<p>しょせん、simulation は &quot;ニセモノ、まがい物&quot;、本物とは違うのです。<br>
+普通の思考なら、この時点で 「あっ、iPhone 実機要るわ」 となります、はい終了ー。</p>
+<h2 id="xamarin.ios---aot-%E3%81%AE%E5%88%B6%E7%B4%84%E3%82%92%E4%BD%93%E9%A8%93%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">Xamarin.iOS - AOT の制約を体験してみる <a class="direct-link" href="#xamarin.ios---aot-%E3%81%AE%E5%88%B6%E7%B4%84%E3%82%92%E4%BD%93%E9%A8%93%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>これで終わってもアレなので、もうちょっと突っ込んでみましょう。<br>
+じゃあ AOT で生じる特有の「制約」って具体的には何よ？ということで、それを体験してみましょう。</p>
+<p>AOT での制限事項は次に書いてあります。</p>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations - Xamarin</a></li>
+</ul>
+<p>ここに書いてある制限事項をトレースしてみましょう。</p>
+<h3 id="generic-subclasses-of-nsobjects-are-limited-%E2%86%92-%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D%3Aquestion%3A">Generic Subclasses of NSObjects are limited → 実機だけで発生するか？=:question: <a class="direct-link" href="#generic-subclasses-of-nsobjects-are-limited-%E2%86%92-%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D%3Aquestion%3A">#</a></h3>
+<p>えーと、「<code>NSObjects</code> を基底クラスにして Generic クラスを作るのには制限がある」と書いてありますかね。<br>
+ん？ 続いて &quot;While generic subclasses of NSObjects are possible, there are a few limitations. &quot; とあるので、なんかできるようになったっぽいです。わずかな制約はまだあるので油断は禁物、とも。</p>
+<p>試しにここに書いてある <code>class Foo&lt;T&gt; : UIView { }</code> というクラスを作って使ってみたのですが、実機でも特に問題なかったです。でも few limitations を確認してないので &quot;実機だけで発生するか？&quot; の評価は :question: で。</p>
+<h3 id="p%2Finvokes-in-generic-types---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D%3Ax%3A">P/Invokes in Generic Types - 実機だけで発生するか？=:x: <a class="direct-link" href="#p%2Finvokes-in-generic-types---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D%3Ax%3A">#</a></h3>
+<p>「Generic なクラス内で <code>P/Invoke</code> は使えない」と書いてありますね。</p>
+<p>Xamarin.iOS プロジェクトで、</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">class</span> <span class="token class-name">GenericType<span class="token punctuation">&lt;</span>T<span class="token punctuation">></span></span> <span class="token punctuation">{</span><br>    <span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">DllImport</span> <span class="token attribute-arguments"><span class="token punctuation">(</span><span class="token string">"System"</span><span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br>    <span class="token keyword">public</span> <span class="token keyword">static</span> <span class="token keyword">extern</span> <span class="token return-type class-name"><span class="token keyword">int</span></span> getpid <span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>というクラスを定義すると、</p>
+<blockquote>
+<p>The DllImport attribute cannot be applied to a method that is generic or contained in a generic type. (CS7042)</p>
+</blockquote>
+<p>というエラーがビルド時に出て進めません。これはシミュレータ向けでも実機向けでも同じです。また PCL プロジェクトでは <code>DllImport</code> 自体が使用できません。</p>
+<p>よって、この件について「実機だけで発生するか？」の問いには &quot;No&quot; の回答、:x: です。</p>
+<h3 id="property.setinfo-on-a-nullable-type-is-not-supported---%E8%A9%95%E4%BE%A1%E3%81%A7%E3%81%8D%E3%81%9A">Property.SetInfo on a Nullable Type is not supported - 評価できず <a class="direct-link" href="#property.setinfo-on-a-nullable-type-is-not-supported---%E8%A9%95%E4%BE%A1%E3%81%A7%E3%81%8D%E3%81%9A">#</a></h3>
+<p>Nullable Type どころか、Xamarin.iOS どころか、Xamarin.Android でも、普通のオブジェクトに対しても <code>Property.SetInfo</code> を機能させることができませんでしたー。ちょっと時間切れで割愛。</p>
+<h3 id="value-types-as-dictionary-keys---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Aquestion%3A">Value types as Dictionary Keys - 実機だけで発生するか？= :question: <a class="direct-link" href="#value-types-as-dictionary-keys---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Aquestion%3A">#</a></h3>
+<p>「値型を <code>Dictionary</code> のキーにすると実機でクラッシュする」と書いてあるように見えます、ほうほう。</p>
+<p><code>ValueType</code> から直接派生させる方法を知らないので、次のような struct を作って <code>Dictionary</code> のキーに突っ込んでみました。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">struct</span> <span class="token class-name">MyKey</span> <br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name"><span class="token keyword">string</span></span> Id <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token keyword">set</span><span class="token punctuation">;</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span><br><br><span class="token punctuation">[</span><span class="token attribute"><span class="token class-name">Register</span><span class="token attribute-arguments"><span class="token punctuation">(</span><span class="token string">"AppDelegate"</span><span class="token punctuation">)</span></span></span><span class="token punctuation">]</span><br><span class="token keyword">public</span> <span class="token keyword">partial</span> <span class="token keyword">class</span> <span class="token class-name">AppDelegate</span> <span class="token punctuation">:</span> <span class="token keyword">global</span><span class="token punctuation">::</span>Xamarin<span class="token punctuation">.</span>Forms<span class="token punctuation">.</span>Platform<span class="token punctuation">.</span>iOS<span class="token punctuation">.</span>FormsApplicationDelegate<br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">bool</span></span> <span class="token function">FinishedLaunching</span><span class="token punctuation">(</span><span class="token class-name">UIApplication</span> app<span class="token punctuation">,</span> <span class="token class-name">NSDictionary</span> options<span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token class-name"><span class="token keyword">var</span></span> dic <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">Dictionary<span class="token punctuation">&lt;</span>MyKey<span class="token punctuation">,</span> <span class="token keyword">string</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        dic<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyKey</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token string">"a"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token string">"aaa"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        dic<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyKey</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token string">"b"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token string">"bbb"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        dic<span class="token punctuation">.</span><span class="token function">Add</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyKey</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token string">"c"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span> <span class="token string">"ccc"</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>        <span class="token keyword">if</span> <span class="token punctuation">(</span>dic<span class="token punctuation">.</span><span class="token function">ContainsKey</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyKey</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token string">"b"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">{</span><br>            dic<span class="token punctuation">.</span><span class="token function">Remove</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">MyKey</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token string">"b"</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><br><br>        Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>dic<span class="token punctuation">.</span><span class="token function">Count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        ＜以下省略＞</code></pre>
+<p>特にクラッシュはしないですね、シミュレータでも実機でも。<br>
+しかしこんな簡単なケースだったらもっと大事になってる気がするし、この症状の再現方法に不安があるので :question: で。</p>
+<p>**2017/12/01 PM 追記 **</p>
+<p>この制限、もうないそうですｗ</p>
+<blockquote class="twitter-tweet" data-lang="ja"><p lang="ja" dir="ltr">Dictionaryの制約はもう無いってさ <a href="https://t.co/XSSsRAwUBo">pic.twitter.com/XSSsRAwUBo</a></p>&mdash; Atsushi Eno (@atsushieno) <a href="https://twitter.com/atsushieno/status/936421845527646208?ref_src=twsrc%5Etfw">2017年12月1日</a></blockquote>
+<script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<h2 id="no-dynamic-code-generation">No Dynamic Code Generation <a class="direct-link" href="#no-dynamic-code-generation">#</a></h2>
+<p>本題っぽくなってきました。<br>
+<code>Reflection.Emit</code> とか動的言語ランタイム(DLR)、Remoting は動きませんよー、と書いてあります。Remoting は調査してませんのであしからず。</p>
+<h3 id="refrection.emit---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Ax%3A">Refrection.Emit - 実機だけで発生するか？= :x: <a class="direct-link" href="#refrection.emit---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Ax%3A">#</a></h3>
+<p>実は使ったことないので、精鋭が書いたネットのコピペを元にやってみたんですが、どうも必要なクラスやメンバが Xamarin.iOS では公開されてない（あるいは実装されてない）っぽくて、シミュレータでも実機でも動作しませんでした。</p>
+<h3 id="dynamic-%E5%9E%8B---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Ax%3A">dynamic 型 - 実機だけで発生するか？= :x: <a class="direct-link" href="#dynamic-%E5%9E%8B---%E5%AE%9F%E6%A9%9F%E3%81%A0%E3%81%91%E3%81%A7%E7%99%BA%E7%94%9F%E3%81%99%E3%82%8B%E3%81%8B%EF%BC%9F%3D-%3Ax%3A">#</a></h3>
+<p>DLR が提供する代表的な機能である <code>dynamic</code> 型はどうでしょう？</p>
+<p>DLR を使用するには <code>Microsoft.CSharp</code> を nuget や参照の追加で Xamarin.iOS プロジェクトに追加する必要があります。</p>
+<p>その上で、次のような(<a href="http://ufcpp.net/study/csharp/sp4_dynamic.html">&quot;C# でぐぐれ！&quot;の人のサイトからの</a>)コードを実行してみました。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">static</span> <span class="token return-type class-name"><span class="token keyword">dynamic</span></span> <span class="token function">GetX</span><span class="token punctuation">(</span><span class="token class-name"><span class="token keyword">dynamic</span></span> obj<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">return</span> obj<span class="token punctuation">.</span>X<span class="token punctuation">;</span><br><span class="token punctuation">}</span><br><br><span class="token keyword">public</span> <span class="token keyword">override</span> <span class="token return-type class-name"><span class="token keyword">bool</span></span> <span class="token function">FinishedLaunching</span><span class="token punctuation">(</span><span class="token class-name">UIApplication</span> app<span class="token punctuation">,</span> <span class="token class-name">NSDictionary</span> options<span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> ret <span class="token operator">=</span> <span class="token function">GetX</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name">System<span class="token punctuation">.</span>Drawing<span class="token punctuation">.</span>Point</span> <span class="token punctuation">{</span> X <span class="token operator">=</span> <span class="token number">999</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>ret<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    ＜以下省略＞</code></pre>
+<p>このコードも、シミュレータでは当然動作しますが、なんと実機で動作します。どうなっとるんじゃい。<br>
+というわけでこれも :x:</p>
+<p>これについては、2014年にリリースされた Mono 3.2.7 で、</p>
+<ul>
+<li><a href="http://www.mono-project.com/docs/about-mono/releases/3.2.7/">New in Mono 3.2.7 | Mono</a></li>
+</ul>
+<blockquote>
+<p>System.Core now has an interpreter for LINQ expressions and dynamic statements that can be used by FullAOT runtimes.</p>
+</blockquote>
+<p>と書かれているので、それの恩恵かなと推測されます。<br>
+また、最近でも、</p>
+<ul>
+<li><a href="http://www.mono-project.com/news/2017/11/13/mono-interpreter/">Mono's New .NET Interpreter | Mono</a></li>
+</ul>
+<p>という話題があり、 <code>Reflection.Emit</code> もイケちゃうかもみたいな記述もあります。この辺りが好きな方は是非「<a href="https://qiita.com/advent-calendar/2017/aot">AOT技術 Advent Calendar 2017</a>」へ投稿をお願いします。 :pray:</p>
+<h3 id="reverse-callbacks">Reverse Callbacks <a class="direct-link" href="#reverse-callbacks">#</a></h3>
+<p>よくわからないので、割愛 :bow:</p>
+<h2 id="%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81">ここまでのまとめ <a class="direct-link" href="#%E3%81%93%E3%81%93%E3%81%BE%E3%81%A7%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<p>さて <a href="https://developer.xamarin.com/guides/ios/advanced_topics/limitations/">Limitations - Xamarin</a> を辿ってきましたが、明確に 「iPhone実機でのみ動作しないという制限」 は確認できませんでした。</p>
+<p>しかし、制限そのものが確認できなかったり、細かい制約はあるので、安心して「実機のみ動作しないことはない」とは言い切れません。</p>
+<h2 id="%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E3%81%8A%E4%BB%95%E4%BA%8B---%E3%81%BF%E3%81%AA%E3%81%95%E3%82%93%E3%81%8C%E3%80%8Caot-%E3%81%AE%E3%81%9B%E3%81%84%E3%80%8D%E3%81%A8%E6%99%AE%E6%AE%B5%E8%A8%80%E3%81%A3%E3%81%A6%E3%82%8B%E3%81%AE%E3%81%AF%E3%81%9F%E3%81%B6%E3%82%93%E3%81%93%E3%81%A3%E3%81%A1">リンカーのお仕事 - みなさんが「AOT のせい」と普段言ってるのはたぶんこっち <a class="direct-link" href="#%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AE%E3%81%8A%E4%BB%95%E4%BA%8B---%E3%81%BF%E3%81%AA%E3%81%95%E3%82%93%E3%81%8C%E3%80%8Caot-%E3%81%AE%E3%81%9B%E3%81%84%E3%80%8D%E3%81%A8%E6%99%AE%E6%AE%B5%E8%A8%80%E3%81%A3%E3%81%A6%E3%82%8B%E3%81%AE%E3%81%AF%E3%81%9F%E3%81%B6%E3%82%93%E3%81%93%E3%81%A3%E3%81%A1">#</a></h2>
+<p>とは言え、iPhone 実機でのみ動作しないコードに遭遇するという体験は確かにあります。</p>
+<p>例えば次のコード</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token class-name"><span class="token keyword">var</span></span> typeName <span class="token operator">=</span> <span class="token string">"System.Net.WebClient, System, Version=2.0.5.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e"</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> type <span class="token operator">=</span> Type<span class="token punctuation">.</span><span class="token function">GetType</span><span class="token punctuation">(</span>typeName<span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> client <span class="token operator">=</span> Activator<span class="token punctuation">.</span><span class="token function">CreateInstance</span><span class="token punctuation">(</span>type<span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>Debug<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>client<span class="token punctuation">.</span><span class="token function">GetType</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span>AssemblyQualifiedName<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>厳密名で指定してるから長いけど、要は「型を示す文字列からインスタンスを生成する」という処理。できる限り実装を外部から注入できるようにするとどこかで使うやつですね。</p>
+<p>このコード、iOSシミュレータでは動作しますが、iPhone 実機では動作しません（<code>type</code> が <code>null</code>、つまりそんな型はない、と言われます）。</p>
+<p>.NETフレームワークのクラスのひとつである「System.Net.WebClient」は確かに存在しているはずなのに、「ない」と言われる、なぜか？<br>
+そこで気にすべき存在が「リンカー」です。</p>
+<h3 id="%E3%80%8Cxamarin.ios-%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%80%8D%E3%81%A8%E3%81%AF%E3%81%AA%E3%81%AB%E3%81%8B%EF%BC%9F">「Xamarin.iOS におけるリンカー」とはなにか？ <a class="direct-link" href="#%E3%80%8Cxamarin.ios-%E3%81%AB%E3%81%8A%E3%81%91%E3%82%8B%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%80%8D%E3%81%A8%E3%81%AF%E3%81%AA%E3%81%AB%E3%81%8B%EF%BC%9F">#</a></h3>
+<p>リンカー(linker)とは、ソースコードを最終的に実行可能プログラムにするまでに登場するツールの一つですが、その辺のはなしは「compiler, linker」などとググればたくさん出てくるのでそちらで。</p>
+<p>Xamarin.iOS の文脈での「リンカー」のお仕事は、</p>
+<ul>
+<li>アプリケーションには不要な（=使用されないと判断した)クラスやメンバーを削除すること</li>
+</ul>
+<p>だと思っておけばよいでしょう。 Android だと ProGuard、.NET だと DotFuscator などの「難読化ツール」が持つ副次的な機能に「<a href="https://www.agtech.co.jp/products/preemptive/dotfuscator/featuresinfo.html#fet05">不要コードの除去</a>」がありますが、それと同じようなものだと理解できます。</p>
+<p>つまり、先のコードに出てきた <code>System.Net.WebClient</code> は、静的なソースコード解析によって「不要だと判断されて」削除されてしまいました。文字列の中に記述されているとはリンカーは知る由もありません。</p>
+<p>では、なぜ iOSシミュレータでは動作するのでしょう？<br>
+とここで Xamarin.iOS プロジェクトの設定を見てみましょう。</p>
+<p><strong>実機向けビルドの設定</strong></p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/7e56bf75-0b66-7987-0376-f8b0757d3f4a.png" alt="image.png"></p>
+<p><strong>iOSシミュレータ向けビルドの設定</strong></p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/c6b363ef-dcfb-2eeb-8e30-849c48381915.png" alt="image.png"></p>
+<p>はい、このように</p>
+<ul>
+<li>実機向けの場合は「フレームワークSDKのみをリンクする」</li>
+<li>シミュレータ向けの場合は「リンクしない」</li>
+</ul>
+<p>となっていました。つまりシミュレータ向けのアプリは「不要なコードを削除する処理が行われていない」ということになり、すべてのクラスが使用できていました。</p>
+<p>逆に言えば、 <strong>シミュレータ向けのビルド設定を「フレームワークSDKのみをリンクする」にすれば、実機と同じように上記コードは動作しなくなります</strong> 。</p>
+<p>シミュレータでは AOT は使用されないのに、実機と同じ症状を発生させられるのだから、これは 「AOT のせい」ではないことがわかります。</p>
+<p>おそらく一般的に「AOT のせいで iOS 実機で動作しない」と言われている事象のほとんどは「実はリンカーのせい」だと思われます。</p>
+<p>例えばこれ↓とか</p>
+<ul>
+<li><a href="https://qiita.com/amay077/items/3a6f50cede3425fc9f3f">Xamarin.iOS の AOT に気をつけろ！Rx の FromEventPattern を使うときの注意点</a></li>
+</ul>
+<p>書いたのオマエかよw</p>
+<p>なので、このトラブルは、iOSシミュレータ向けのビルド設定を「リンクする」に変更することで発見可能です。あれ、ここでも iPhone 実機必要なくなっちゃった。:sweat_smile:</p>
+<p>（実機向けのビルド設定を「リンクしない」にしても同様に動作しますが、配布する <code>.ipa</code> にデータサイズが巨大になってしまうので現実解ではないです。）</p>
+<h3 id="%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AB%E6%B6%88%E3%81%95%E3%82%8C%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B%E3%81%AB%E3%81%AF%EF%BC%9F">リンカーに消されないようにするには？ <a class="direct-link" href="#%E3%83%AA%E3%83%B3%E3%82%AB%E3%83%BC%E3%81%AB%E6%B6%88%E3%81%95%E3%82%8C%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B%E3%81%AB%E3%81%AF%EF%BC%9F">#</a></h3>
+<p>次の３つの方法があります。</p>
+<ol>
+<li>どこか1箇所でいいから、型を明示的にソースコード中に書く</li>
+<li>消されたくないクラスに <code>Preserve</code> 属性を付ける</li>
+<li>ビルド設定で「除外するアセンブリ」を指定する</li>
+</ol>
+<p>1 が一番よく行う方法です。アプリの static コンストラクタに</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token keyword">static</span> <span class="token function">AppDelegate</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br><span class="token punctuation">{</span><br>    <span class="token class-name"><span class="token keyword">var</span></span> dummy <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">System<span class="token punctuation">.</span>Net<span class="token punctuation">.</span>WebClient</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>などと書いておくだけでOKです。デメリットは、使用する実装クラスが予めわかっている必要があること、インスタンス生成のコストが発生することです。</p>
+<p>ライブラリでも、「とりあえずアプリ起動時に <code>MyLib.Init()</code> を呼べ」みたいなものがありますが、それもリンカー対策のために必須としていると思ってもよいでしょう。</p>
+<p>2 はライブラリ開発者側の話で、これは、消されるとまずいぞとわかっているクラスやメンバに <code>[Preserve]</code> という属性を付けておくと、リンカーさんは、それがついているクラスを無視してくれるというものです。</p>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/ios/advanced_topics/linker/#Preserving_Code">Preserving Code ｜ Linking on iOS - Xamarin</a></li>
+</ul>
+<p>デメリットは、ライブラリ開発者しか使えないということです。ライブラリ使用者つまりアプリ開発者は、問題が発生したライブラリに対して、この方法は適用できません。</p>
+<p>3 はビルド設定で、リンカーの対象外にするアセンブリを指定する、というものです。</p>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/ios/advanced_topics/linker/#Skipping_Assemblies">Skipping Assemblies ｜ Linking on iOS - Xamarin</a></li>
+</ul>
+<p>デメリットというか、どこに何を設定すれば機能するのか分からないんですよね、IDEでは。。。</p>
+<h2 id="%E3%81%95%E3%81%84%E3%81%94%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81">さいごのまとめ <a class="direct-link" href="#%E3%81%95%E3%81%84%E3%81%94%E3%81%AE%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<ul>
+<li>AOT の制限 -&gt; 実機でのみ再現する事象は確認できなかった(未確認な制限あり)</li>
+<li>リンカーによるトラブル -&gt; iOSシミュレータでもビルド設定を「リンクする」に変えれば未然に防げる</li>
+</ul>
+<p>あれ？ iOSシミュレータだけでも結構イケる？？？</p>
+<p>ままま、まあシミュレータは所詮シミュレータなんで！いつも実機で開発してないと、いざデプロイするときに絶対問題起こるんで！！:cold_sweat::sweat_drops:</p>
+<p>しかし会社の方針？とかでiPhone実機が提供されず、シミュレータしか使えない環境の人は、せめてビルド設定だけは変えておきましょう。</p>
+<p>ただし「Xamarin Live Playerだけ使えばOK」その考えはダメ。なぜならこれは「あなたのコードを、iOS アプリっぽい画面にインタラクティブに表示させるアプリ」だからです。</p>
+<h3 id="%E3%81%9D%E3%81%93%E3%81%A7-visual-studio-app-center-%E3%81%A7%E3%81%99%E3%82%88%EF%BC%88%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F%EF%BC%89">そこで Visual Studio App Center ですよ（ですか？） <a class="direct-link" href="#%E3%81%9D%E3%81%93%E3%81%A7-visual-studio-app-center-%E3%81%A7%E3%81%99%E3%82%88%EF%BC%88%E3%81%A7%E3%81%99%E3%81%8B%EF%BC%9F%EF%BC%89">#</a></h3>
+<p>Visual Studio Mobile Center から名称変更して正式リリースとなった <a href="https://azure.microsoft.com/ja-jp/services/app-center/">Visual Studio App Center</a> は、 <a href="https://www.xamarin.com/test-cloud">Xamarin Test cloud</a> のサブセット？を内包しており、雲の向こう側にある「実際の端末」を使ってテストができます。継続的に実機でテストが実施できるとしたら、それはとても恵まれた環境でしょう。けど、開発時に常時使うもんじゃないよね。</p>
+
+
+published at <time class="postlist-date" datetime="2017-12-01">01 Dec 2017</time>
+
+tags: 
+
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-12-04-6e1c94305420a41ff7ed/">LiveData について勘違いしていたことをいくつか</a></li><li>Previous: <a href="/posts/2017-11-30-b04427aeab4f10ec24f6/">RxJava の combineLatest のコード例</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-12-01-6a6d5855b3d0c46de126/ -->
+  </body>
+</html>

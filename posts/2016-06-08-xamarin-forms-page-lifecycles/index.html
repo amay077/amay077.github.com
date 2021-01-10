@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xamarin.Forms の画面(Page)のライフサイクルイベントについて</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Xamarin.Forms の画面(Page)のライフサイクルイベントについて</h1>
+
+<p>ちょっと誤解してた＆情報がなかったのでまとめてみました。</p>
+<!--more-->
+<h2 id="%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%82%A2%E3%83%97%E3%83%AA%E3%81%A7%E3%81%AE%E3%80%8C%E7%94%BB%E9%9D%A2%E3%80%8D%E3%81%AE%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88">モバイルアプリでの「画面」の基本的なライフサイクルイベント <a class="direct-link" href="#%E3%83%A2%E3%83%90%E3%82%A4%E3%83%AB%E3%82%A2%E3%83%97%E3%83%AA%E3%81%A7%E3%81%AE%E3%80%8C%E7%94%BB%E9%9D%A2%E3%80%8D%E3%81%AE%E5%9F%BA%E6%9C%AC%E7%9A%84%E3%81%AA%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88">#</a></h2>
+<p>まあ Android と iOS についてですが。</p>
+<p>画面が表示される時のイベント（コールバック）は、簡潔には以下のようになります。</p>
+<table>
+<thead>
+<tr>
+<th>順番</th>
+<th>イベント</th>
+<th>iOS(UIViewController)</th>
+<th>Android(Activity)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>画面がロードされる(た)時</td>
+<td>viewDidLoad</td>
+<td>onCreate</td>
+</tr>
+<tr>
+<td>2</td>
+<td>画面が表示される(た)時</td>
+<td>viewDidAppear</td>
+<td>onResume</td>
+</tr>
+<tr>
+<td>3</td>
+<td>画面が非表示になる(った)時</td>
+<td>viewDidDisappear</td>
+<td>onPause</td>
+</tr>
+<tr>
+<td>4</td>
+<td>画面がアンロードされる(た)時</td>
+<td>viewDidUnload</td>
+<td>onDestroy</td>
+</tr>
+</tbody>
+</table>
+<p>厳密にはもっと細かく、〜される前と後が iOS と Android で微妙に異なるのでだいたいこんな感じという程度と思って下さい。</p>
+<p>もう少し細かいイベントは以前調べた以下を参考にしてみてください。</p>
+<ul>
+<li><a href="http://qiita.com/amay077/items/52a0b0da97fe455abc08">iOS と Android で画面表示時のコールバックを比較する - Qiita</a></li>
+</ul>
+<h2 id="xamarin.forms-%E3%81%A7%E3%81%AE%E7%94%BB%E9%9D%A2%E3%81%AE%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88">Xamarin.Forms での画面のライフサイクルイベント <a class="direct-link" href="#xamarin.forms-%E3%81%A7%E3%81%AE%E7%94%BB%E9%9D%A2%E3%81%AE%E3%83%A9%E3%82%A4%E3%83%95%E3%82%B5%E3%82%A4%E3%82%AF%E3%83%AB%E3%82%A4%E3%83%99%E3%83%B3%E3%83%88">#</a></h2>
+<p>Xamarin.Forms では、上表のライフサイクルイベントは、アプリケーション<br>
+(Application) と、画面(Page) のイベントに分かれています。</p>
+<p>表に、Xamarin.Forms を追加してみました。</p>
+<table>
+<thead>
+<tr>
+<th>順番</th>
+<th>イベント</th>
+<th>iOS(UIViewController)</th>
+<th>Android(Activity)</th>
+<th>Xamarin.Forms</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>画面がロードされる(た)時</td>
+<td>viewDidLoad</td>
+<td>onCreate</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Page.OnAppearing()/">Page.OnAppearing</a></td>
+</tr>
+<tr>
+<td>2</td>
+<td>画面が表示される(た)時</td>
+<td>viewDidAppear</td>
+<td>onResume</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Application.OnResume()/">Application.OnResume</a> <strong>※要注意</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td>画面が非表示になる(った)時</td>
+<td>viewDidDisappear</td>
+<td>onPause</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Application.OnSleep()/">Application.OnSleep</a></td>
+</tr>
+<tr>
+<td>4</td>
+<td>画面がアンロードされる(た)時</td>
+<td>viewDidUnload</td>
+<td>onDestroy</td>
+<td><a href="https://developer.xamarin.com/api/member/Xamarin.Forms.Page.OnDisappearing()/">Page.OnDisappearing</a></td>
+</tr>
+</tbody>
+</table>
+<p>画面のロード時（<code>viewDidLoad/onCreate</code>）に相当するのは、Xamarin.Forms では <code>OnAppearing</code>、逆にアンロード時は <code>OnDisAppearing</code> です（名称が <code>viewDidAppear</code> に似てるので、画面の表示時かと勘違いしてました）。</p>
+<p>画面の表示／非表示時のイベントは、画面でなく Application クラスの <code>OnResume</code>, <code>OnSleep</code> で提供されます。</p>
+<p>要注意なのは <code>OnResume</code> です。これ、画面が表示される <strong>初回はイベントが発生しません</strong>。<br>
+一度、アプリを背面に退避し、再度前面に持ってきたときに初めて <code>OnResume</code> が呼び出されます。iOS や Android の <code>viewDidAppear / OnResume</code> と同じだと思ってつかうとハマります。</p>
+<p>基本的には、 <code>OnAppearing</code> でリソースの確保を、 <code>OnDisAppearing</code> で解放をすればよさそうです。</p>
+<p>GPS など、電池消費の激しいリソースを使う場合は、アプリが背面へ隠れたら直ちにそのリソースを解放した方がよいです。その場合は <code>OnResume-OnSleep</code> を使いますが、前述の通り、画面初回表示時は <code>OnResume</code> が走らないので、少し工夫が必要です。</p>
+<h2 id="%E7%94%BB%E9%9D%A2%E3%81%8C%E5%9B%9E%E8%BB%A2%E3%81%95%E3%82%8C%E3%81%9F%E6%99%82">画面が回転された時 <a class="direct-link" href="#%E7%94%BB%E9%9D%A2%E3%81%8C%E5%9B%9E%E8%BB%A2%E3%81%95%E3%82%8C%E3%81%9F%E6%99%82">#</a></h2>
+<p>端末を横向きに回転すると、Android では Activity が破棄されて再度生成される事が知られています。</p>
+<p>Xamarin.Forms では Android でもそのような事はなく、 <code>Page.OnSizeAllocated</code> が呼び出されるだけです(iOS も当然同じ)。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://developer.xamarin.com/guides/xamarin-forms/working-with/app-lifecycle/">Working with the App Lifecycle - Xamarin</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2016-06-08">08 Jun 2016</time>
+
+tags: 
+
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/Xamarin.Forms/" class="post-tag">Xamarin.Forms</a>
+  <a href="/tags/iOS/" class="post-tag">iOS</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-06-27-release-xamarin-forms-googlemaps/">Xamarin.Forms 向けの地図ライブラリ「Xamarin.Forms.GoogleMaps」をリリースしました</a></li><li>Previous: <a href="/posts/2016-05-27-impression-of-decode16/">de:code 2016 に参加した感想</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2016-06-08-xamarin-forms-page-lifecycles/ -->
+  </body>
+</html>

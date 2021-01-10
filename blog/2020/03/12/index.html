@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue+Nuxt+TypeScript のプロジェクトを VSCode でデバッグ可能にする</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Vue+Nuxt+TypeScript のプロジェクトを VSCode でデバッグ可能にする</h1>
+
+<p>vue 初心者です。<br>
+Angular のマネをしたら、なんだかできたのでメモしておきます。</p>
+<!--more-->
+<p>vue のプロジェクトは <a href="https://github.com/tokyo-metropolitan-gov/covid19">tokyo-metropolitan-gov/covid19</a> から派生した <a href="https://github.com/code4nagoya/covid19">code4nagoya/covid19: 愛知県 新型コロナウイルス感染症対策サイト</a> を使います。</p>
+<p>VSCode の拡張機能は、</p>
+<ul>
+<li>Vetur</li>
+<li>Debugger for Chrome</li>
+</ul>
+<p>を入れています。</p>
+<h2 id="1.-sourcemap-%E3%82%92%E6%9C%89%E5%8A%B9%E3%81%AB%E3%81%99%E3%82%8B">1. SourceMap を有効にする <a class="direct-link" href="#1.-sourcemap-%E3%82%92%E6%9C%89%E5%8A%B9%E3%81%AB%E3%81%99%E3%82%8B">#</a></h2>
+<p><code>nuxt.config.ts</code> に sourceMap を有効にする設定を記述します。</p>
+<pre class="language-typescript"><code class="language-typescript">  ＜省略＞<br>  googleAnalytics<span class="token operator">:</span> <span class="token punctuation">{</span><br>    id<span class="token operator">:</span> <span class="token string">'xxx'</span><br>  <span class="token punctuation">}</span><span class="token punctuation">,</span><br>  build<span class="token operator">:</span> <span class="token punctuation">{</span><br>    <span class="token comment">//// 追加ここから</span><br>    <span class="token function">extend</span><span class="token punctuation">(</span>config<span class="token punctuation">,</span> <span class="token punctuation">{</span> isClient <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>      <span class="token keyword">if</span> <span class="token punctuation">(</span>isClient<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        config<span class="token punctuation">.</span>devtool <span class="token operator">=</span> <span class="token string">'source-map'</span><br>      <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token comment">//// 追加ここまで</span><br>    postcss<span class="token operator">:</span> <span class="token punctuation">{</span><br>      plugins<span class="token operator">:</span> <span class="token punctuation">[</span><br>        <span class="token function">autoprefixer</span><span class="token punctuation">(</span><span class="token punctuation">{</span> grid<span class="token operator">:</span> <span class="token string">'autoplace'</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>        <span class="token function">purgecss</span><span class="token punctuation">(</span><span class="token punctuation">{</span><br>          content<span class="token operator">:</span> <span class="token punctuation">[</span><br>  ＜省略＞</code></pre>
+<h2 id="2.-vscode-%E3%81%AE%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">2. VSCode のタスクを追加する <a class="direct-link" href="#2.-vscode-%E3%81%AE%E3%82%BF%E3%82%B9%E3%82%AF%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">#</a></h2>
+<p><code>.vscode/tasks.json</code> に、デバッグを開始するためのタスクを追加します。</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"2.0.0"</span><span class="token punctuation">,</span><br>  <span class="token property">"tasks"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>    <span class="token punctuation">{</span><br>      <span class="token property">"label"</span><span class="token operator">:</span> <span class="token string">"yarn-dev"</span><span class="token punctuation">,</span><br>      <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"shell"</span><span class="token punctuation">,</span><br>      <span class="token property">"isBackground"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span><br>      <span class="token property">"command"</span><span class="token operator">:</span> <span class="token string">"yarn dev"</span><span class="token punctuation">,</span><br>      <span class="token property">"problemMatcher"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>        <span class="token property">"owner"</span><span class="token operator">:</span> <span class="token string">"custom"</span><span class="token punctuation">,</span><br>        <span class="token property">"pattern"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>          <span class="token property">"regexp"</span><span class="token operator">:</span> <span class="token string">"^$"</span><br>        <span class="token punctuation">}</span><span class="token punctuation">,</span><br>        <span class="token property">"background"</span><span class="token operator">:</span> <span class="token punctuation">{</span><br>          <span class="token property">"activeOnStart"</span><span class="token operator">:</span> <span class="token boolean">true</span><span class="token punctuation">,</span><br>          <span class="token property">"beginsPattern"</span><span class="token operator">:</span> <span class="token string">"yarn run.*"</span><span class="token punctuation">,</span><br>          <span class="token property">"endsPattern"</span><span class="token operator">:</span> <span class="token string">".*Waiting for file changes.*"</span><br>        <span class="token punctuation">}</span><br>      <span class="token punctuation">}</span><br>    <span class="token punctuation">}</span><br>  <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p><code>yarn dev</code> でローカルサーバーを起動、Webアプリが配置されますが、それをバックグラウンドで行うタスクです。<br>
+<code>yarn dev</code> コマンドは、その開始時に <code>yarn run</code> という文字列が出力されるので、それをタスクの開始を示す <code>beginsPattern</code> に指定します。<br>
+同じく、<code>yarn dev</code> でローカルサーバーの準備ができたときに <code>Waiting for file changes</code> という文字が出力されるので、それを &quot;endsPattern&quot; に指定しておきます。<br>
+つまり <code>Waiting for file changes</code> が来たら、このタスクは終了となります。</p>
+<h2 id="3.-vscode-%E3%81%AE%E8%B5%B7%E5%8B%95%E8%A8%AD%E5%AE%9A%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">3. VSCode の起動設定を追加する <a class="direct-link" href="#3.-vscode-%E3%81%AE%E8%B5%B7%E5%8B%95%E8%A8%AD%E5%AE%9A%E3%82%92%E8%BF%BD%E5%8A%A0%E3%81%99%E3%82%8B">#</a></h2>
+<p><code>.vscode/launch.json</code> に、デバッグを開始する設定を記述します。</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>  <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"0.2.0"</span><span class="token punctuation">,</span><br>  <span class="token property">"configurations"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>    <span class="token punctuation">{</span><br>      <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"chrome"</span><span class="token punctuation">,</span><br>      <span class="token property">"request"</span><span class="token operator">:</span> <span class="token string">"launch"</span><span class="token punctuation">,</span><br>      <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Launch Chrome"</span><span class="token punctuation">,</span><br>      <span class="token property">"url"</span><span class="token operator">:</span> <span class="token string">"http://localhost:3000"</span><span class="token punctuation">,</span><br>      <span class="token property">"webRoot"</span><span class="token operator">:</span> <span class="token string">"${workspaceFolder}"</span><span class="token punctuation">,</span><br>      <span class="token property">"preLaunchTask"</span><span class="token operator">:</span> <span class="token string">"yarn-dev"</span><br>    <span class="token punctuation">}</span><br>  <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p>Chrome を起動して <a href="http://localhost:3000">http://localhost:3000</a> を開くというコマンドですが、<code>&quot;preLaunchTask&quot;: &quot;yarn-dev&quot;</code> とすることで、バックグラウンドで <code>yarn dev</code> の準備ができたらブラウザを起動する、という挙動になります。</p>
+<h2 id="4.-%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">4. デバッグ実行してみる <a class="direct-link" href="#4.-%E3%83%87%E3%83%90%E3%83%83%E3%82%B0%E5%AE%9F%E8%A1%8C%E3%81%97%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>例えば <code>pages/about.vue</code> のタイトルを返す行あたりにブレークポイントを張って、<br>
+F5 キーまたはメニュー -&gt; Debug -&gt; Start Debugging を実行します。</p>
+<p>しばらく待つとブラウザでページが表示されるので、「当サイトについて」を押すと、ブレークポイントで停まります。</p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/437d0d5e-b570-3eb5-4994-72772628f708.png" alt="image.png"></p>
+<p>（なぜか仕掛けた行で止まってくれないこともあるけど、大目に見よう）</p>
+<p>vue.js は何もわからないので、もっと良いやり方があったら教えて下さい。</p>
+<p>今回の修正差分は</p>
+<ul>
+<li><a href="https://github.com/amay077/covid19-1/commit/eb717611210af1477e0b2b90c72d805b7c56e009">https://github.com/amay077/covid19-1/commit/eb717611210af1477e0b2b90c72d805b7c56e009</a></li>
+</ul>
+<p>です。</p>
+<h2 id="%E7%89%A9%E8%B6%B3%E3%82%8A%E3%81%AA%E3%81%84%E3%81%A8%E3%81%93%E3%82%8D">物足りないところ <a class="direct-link" href="#%E7%89%A9%E8%B6%B3%E3%82%8A%E3%81%AA%E3%81%84%E3%81%A8%E3%81%93%E3%82%8D">#</a></h2>
+<p>F5 でデバッグ開始できるようになりましたが、Shift + F5（あるいはメニュー -&gt; Debug -&gt; Stop Debugging）すると、ブラウザは閉じますが、バックグラウンドで動いているローカルサーバーは停止しません。ファイル監視モードで常駐しているので放置でも問題ないですが、ちょっと気持ち悪いです。停止させるには Terminal で Ctrl+c しなければなりません。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://qiita.com/amay077/items/62e1eb656fbd730b3dd1">Angular + VSCode でデバッグ開始したときに ng serve する - Qiita</a></li>
+<li><a href="https://github.com/microsoft/vscode-recipes/blob/master/vuejs-cli/README.md">vscode-recipes/README.md at master · microsoft/vscode-recipes</a></li>
+<li><a href="https://codeburst.io/debugging-nuxt-js-with-visual-studio-code-724920140b8f">Debugging Nuxt.js with Visual Studio Code - codeburst</a>  ※情報古いな</li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2020-03-12">12 Mar 2020</time>
+
+tags: 
+
+  <a href="/tags/Vue.js/" class="post-tag">Vue.js</a>
+  <a href="/tags/TypeScript/" class="post-tag">TypeScript</a>
+  <a href="/tags/VSCode/" class="post-tag">VSCode</a>
+  <a href="/tags/Chrome/" class="post-tag">Chrome</a>
+
+<hr>
+<ul><li>Next: <a href="/blog/2020/12/31/year_end/">ふりかえり2020</a></li><li>Previous: <a href="/posts/2020-03-05-81bbb556b9d6063370fb/">Serverless Framework で AWS Lambda と API Gateway をデプロイする</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /blog/2020/03/12/ -->
+  </body>
+</html>

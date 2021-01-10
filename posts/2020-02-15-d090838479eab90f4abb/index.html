@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debugger for Chrome の launch で Google  アカウントでのログインができなくなった件</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Debugger for Chrome の launch で Google  アカウントでのログインができなくなった件</h1>
+
+<p>Firebase Auth を使った Web アプリを VSCode にて開発中、昨年(2019年)末からだと思うのですけど、Google アカウントでのログインができなくなったことに気づきました。</p>
+<!--more-->
+<p>あ、これを書いてる時点の Chrome バージョンは 80.0.3987.106（Official Build） （64 ビット）で、OS は Windows 10 Pro で依然として再現しています。</p>
+<p>Web アプリ開発で、VSCode に <a href="https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome">Debugger for Chrome</a> を追加して  <code>launch.json</code> に次のように記述する方法はよく知られています。</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>    <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"0.2.0"</span><span class="token punctuation">,</span><br>    <span class="token property">"configurations"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>      <span class="token punctuation">{</span><br>        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"chrome"</span><span class="token punctuation">,</span><br>        <span class="token property">"request"</span><span class="token operator">:</span> <span class="token string">"launch"</span><span class="token punctuation">,</span><br>        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Debug with Chrome"</span><span class="token punctuation">,</span><br>        <span class="token property">"url"</span><span class="token operator">:</span> <span class="token string">"http://localhost:4200"</span><span class="token punctuation">,</span><br>        <span class="token property">"webRoot"</span><span class="token operator">:</span> <span class="token string">"${workspaceFolder}"</span><br>      <span class="token punctuation">}</span><br>    <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p>が、これで起動される Chrome では、Google アカウントでのログインができず、次のようなエラーになってしまいます。</p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/0a705bb3-7981-a565-37e4-5ddc7b0d1b0c.png" alt="image.png"></p>
+<p>なぜこれが発生するのかは私は完全に理解していませんが、起動された Chrome がセキュリティ要件を満たさないものと推測されます。（同じ時期に、Google アカウントを利用したゲームにログインできなくなった、というような話題を主に海外で発見しました。）</p>
+<h2 id="%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%B3%95">解決方法 <a class="direct-link" href="#%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%B3%95">#</a></h2>
+<p>ということをツイートしたら、有用な情報を頂きました。ありがとうございます。</p>
+<blockquote class="twitter-tweet"><p lang="ja" dir="ltr">ん、私はなんか出来てますね。<br>Debugger用にprofileを分けてるからっていうのもあるかもしれません。<br>&quot;webRoot&quot;: &quot;${workspaceFolder}&quot;,<br>&quot;sourceMaps&quot;: true,<br>&quot;userDataDir&quot;: &quot;${workspaceRoot}/.vscode/chrome&quot;,<br>こんな感じで、プロファイルを.vscode以下に作るようにしてます。</p>&mdash; ちゅうこ (@y_chu5) <a href="https://twitter.com/y_chu5/status/1228329982021095427?ref_src=twsrc%5Etfw">February 14, 2020</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>さらに調べたところ、  <code>launch.json</code> に次のように <code>userDataDir</code> を追記することで解決できました。</p>
+<pre class="language-json"><code class="language-json"><span class="token punctuation">{</span><br>    <span class="token property">"version"</span><span class="token operator">:</span> <span class="token string">"0.2.0"</span><span class="token punctuation">,</span><br>    <span class="token property">"configurations"</span><span class="token operator">:</span> <span class="token punctuation">[</span><br>      <span class="token punctuation">{</span><br>        <span class="token property">"type"</span><span class="token operator">:</span> <span class="token string">"chrome"</span><span class="token punctuation">,</span><br>        <span class="token property">"request"</span><span class="token operator">:</span> <span class="token string">"launch"</span><span class="token punctuation">,</span><br>        <span class="token property">"name"</span><span class="token operator">:</span> <span class="token string">"Debug with Chrome"</span><span class="token punctuation">,</span><br>        <span class="token property">"url"</span><span class="token operator">:</span> <span class="token string">"http://localhost:4200"</span><span class="token punctuation">,</span><br>        <span class="token property">"webRoot"</span><span class="token operator">:</span> <span class="token string">"${workspaceFolder}"</span><span class="token punctuation">,</span><br>        <span class="token property">"userDataDir"</span><span class="token operator">:</span> <span class="token string">""</span> <br>      <span class="token punctuation">}</span><br>    <span class="token punctuation">]</span><br><span class="token punctuation">}</span></code></pre>
+<p><code>&quot;userDataDir&quot;: &quot;&quot;</code> と空文字を指定すると、起動する Chrome がいつものユーザー、いつものプロファイルになり、Google アカウントでのログインも行えるようになりました。</p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/e0a3c886-482d-0577-5209-00892e5d4746.png" alt="image.png"></p>
+<p>注意点は、この指定で起動される Chrome は、普段使いの Chrome が既に起動済の場合は、そのプロセスを流用する、ということです。</p>
+<p>そのため、</p>
+<ul>
+<li>開発中のアプリが死ぬと普段使いのタブも道連れに死ぬ</li>
+<li>普段使いの Chrome もデバッグ用のポートを開けておかないとデバッグできない</li>
+</ul>
+<p>という注意点があります。</p>
+<p>普段使う Chrome のショートカットに引数を追加しておきます（最初から付いてたっけ？）。</p>
+<p><img src="https://qiita-image-store.s3.ap-northeast-1.amazonaws.com/0/8227/8ee7f851-730b-e6d6-a792-7e35792891fc.png" alt="image.png"></p>
+<pre><code>&quot;C:\Program Files (x86)\Google\Chrome\Application\chrome.exe&quot; --profile-directory=Default --remote-debugging-port=9222
+</code></pre>
+<h2 id="%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%B3%95">その他の解決方法 <a class="direct-link" href="#%E3%81%9D%E3%81%AE%E4%BB%96%E3%81%AE%E8%A7%A3%E6%B1%BA%E6%96%B9%E6%B3%95">#</a></h2>
+<ul>
+<li><a href="https://docs.microsoft.com/ja-jp/microsoft-edge/visual-studio-code/debugger-for-edge">Debugger for Edge (Chromium)</a> を使う</li>
+<li><a href="https://marketplace.visualstudio.com/items?itemName=firefox-devtools.vscode-firefox-debug">Debugger for Firefox</a> を使う</li>
+<li>launch ではなく <a href="https://github.com/Microsoft/vscode-chrome-debug#attach"><strong>attach</strong></a> を使う</li>
+</ul>
+<p>Debugger for Edge でも問題を解決することができました。<br>
+Debugger for Firefox は未確認で「たぶん解決できるだろう」という程度です。<br>
+<strong>attach</strong> は launch より面倒な感じがして試してません、みんな常用してるのでしょうか。。</p>
+<h2 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h2>
+<ul>
+<li><a href="https://github.com/microsoft/vscode-chrome-debug/blob/master/README.md">vscode-chrome-debug/README.md at master · microsoft/vscode-chrome-debug</a></li>
+<li><a href="http://chrome.half-moon.org/43.htm">起動オプション - Google Chrome まとめWiki</a></li>
+<li><a href="https://ics.media/entry/11356/">Visual Studio CodeでのJSのデバッグ方法（2018年版） - ICS MEDIA</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2020-02-15">15 Feb 2020</time>
+
+tags: 
+
+  <a href="/tags/VSCode/" class="post-tag">VSCode</a>
+  <a href="/tags/JavaScript/" class="post-tag">JavaScript</a>
+  <a href="/tags/Firebase/" class="post-tag">Firebase</a>
+  <a href="/tags/FirebaseAuth. googleapi/" class="post-tag">FirebaseAuth. googleapi</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2020-02-24-386da362df3ecc0157e2/">MapBox GL JS でラベル付きマーカー</a></li><li>Previous: <a href="/posts/2020-02-01-2c4d2234b7f8b0e11f4b/">先輩に捧げる全国の飛び地リストを作る（市区町村編）</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2020-02-15-d090838479eab90f4abb/ -->
+  </body>
+</html>

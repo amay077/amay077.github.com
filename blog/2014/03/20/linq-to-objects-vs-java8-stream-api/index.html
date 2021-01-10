@@ -1,1380 +1,369 @@
 <!doctype html>
-<html ⚡ lang="ja">
+<html lang="en">
   <head>
-  <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,300,700' rel='stylesheet' type='text/css'>
-  <link href='https://fonts.googleapis.com/css?family=Lora:400,700' rel='stylesheet' type='text/css'>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LINQ to Objects と Java8-Stream API の対応表</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
 
-  <script async custom-element="amp-analytics" src="https://cdn.ampproject.org/v0/amp-analytics-0.1.js"></script>
-  <script async custom-element="amp-iframe" src="https://cdn.ampproject.org/v0/amp-iframe-0.1.js"></script>
-  <script async custom-element="amp-twitter" src="https://cdn.ampproject.org/v0/amp-twitter-0.1.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width,minimum-scale=1">
-
-  <meta name="google-site-verification" content="yZ76oR_wPibHDqC7gbKMMioGgxvUVqaeAV7XDZ7Zdgg" />
-
-  <title>LINQ to Objects と Java8-Stream API の対応表</title>
-  <meta name="description" content="Java8 で filter や map が使えるようになったー！というわけで .NET の LINQ to Objects との対応表を作ってみました。  LINQ - Enumerable クラス (System.Linq)  Java8 - Stream (Java Platform SE 8 )">
-
-  <link rel="alternate" type="application/rss+xml" title="Experiments Never Fail" href="https://blog.amay0777.net/feed.xml">
-
-  <!--ogp-->
-  <!-- Begin Jekyll SEO tag v2.5.0 -->
-<title>LINQ to Objects と Java8-Stream API の対応表 | Experiments Never Fail</title>
-<meta name="generator" content="Jekyll v3.8.4" />
-<meta property="og:title" content="LINQ to Objects と Java8-Stream API の対応表" />
-<meta property="og:locale" content="en_US" />
-<meta name="description" content="Java8 で filter や map が使えるようになったー！ というわけで .NET の LINQ to Objects との対応表を作ってみました。 LINQ - Enumerable クラス (System.Linq) Java8 - Stream (Java Platform SE 8 )" />
-<meta property="og:description" content="Java8 で filter や map が使えるようになったー！ というわけで .NET の LINQ to Objects との対応表を作ってみました。 LINQ - Enumerable クラス (System.Linq) Java8 - Stream (Java Platform SE 8 )" />
-<link rel="canonical" href="https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/" />
-<meta property="og:url" content="https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/" />
-<meta property="og:site_name" content="Experiments Never Fail" />
-<meta property="og:type" content="article" />
-<meta property="article:published_time" content="2014-03-20T15:15:00-05:00" />
-<script type="application/ld+json">
-{"headline":"LINQ to Objects と Java8-Stream API の対応表","dateModified":"2014-03-20T15:15:00-05:00","datePublished":"2014-03-20T15:15:00-05:00","@type":"BlogPosting","mainEntityOfPage":{"@type":"WebPage","@id":"https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/"},"url":"https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/","publisher":{"@type":"Organization","logo":{"@type":"ImageObject","url":"https://blog.amay0777.net/assets/images/logo.svg"}},"description":"Java8 で filter や map が使えるようになったー！ というわけで .NET の LINQ to Objects との対応表を作ってみました。 LINQ - Enumerable クラス (System.Linq) Java8 - Stream (Java Platform SE 8 )","@context":"http://schema.org"}</script>
-<!-- End Jekyll SEO tag -->
-
-
-  <script type="application/ld+json">
-  
-{
-  "@context": "http://schema.org",
-  "@type": "NewsArticle",
-  "mainEntityOfPage": "https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api/",
-  "headline": "LINQ to Objects と Java8-Stream API の対応表",
-  "datePublished": "2014-03-20T15:15:00-05:00",
-  "dateModified": "2014-03-20T15:15:00-05:00",
-  "description": "Java8 で filter や map が使えるようになったー！というわけで .NET の LINQ to Objects との対応表を作ってみました。  LINQ - Enumerable クラス (System.Linq)  Java8 - Stream (Java Platform SE 8 )",
-  "author": {
-    "@type": "Person",
-    "name": "amay077"
-  },
-  "publisher": {
-    "@type": "Organization",
-    "name": "Experiments Never Fail",
-    "logo": {
-      "@type": "ImageObject",
-      "url": "https://blog.amay0777.net/assets/images/logo.png",
-      "width": "60",
-      "height": "60"
-    }
-  },
-  "image": {
-    "@type": "ImageObject",
-    "url": "https://blog.amay0777.net/assets/images/logo.png",
-    "height": "60",
-    "width": "60"
-  }
-}
-
-  </script>
-  
-  <style amp-custom>
-  
-  .icon > svg {
-  display: inline-block;
-  width: 16px;
-  height: 16px;
-  vertical-align: middle; }
-  .icon > svg path {
-    fill: #828282; }
-
-amp-img {
-  background-color: grey; }
-
-.cf:after {
-  content: "";
-  display: table;
-  clear: both; }
-
-main {
-  display: block; }
-
-body {
-  background-color: #fff;
-  font-family: Arial, YuGothic;
-  margin: 0;
-  padding: 0;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased; }
-
-.site-header {
-  position: relative;
-  width: 100%;
-  max-width: 700px;
-  margin: 16px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .site-header {
-      padding: 0 16px; } }
-  .site-header .page-links {
-    display: block;
-    position: absolute;
-    top: 10px;
-    right: 16px;
-    font-weight: 200;
-    font-style: normal;
-    font-size: 18px;
-    line-height: 30px; }
-    .site-header .page-links a {
-      text-decoration: none;
-      color: #999999; }
-      .site-header .page-links a:hover {
-        color: #333333; }
-
-.blog-header {
-  width: 100%;
-  max-width: 700px;
-  margin: 0 auto;
-  position: relative;
-  padding: 0;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  .blog-header .blog-title {
-    margin-bottom: 8px;
-    font-size: 50px;
-    font-weight: 700;
-    letter-spacing: -2px;
-    outline: 0;
-    line-height: 50px;
-    word-break: break-word;
-    color: #333333; }
-  .blog-header .blog-description {
-    font-size: 28px;
-    margin: 0 0 20px;
-    padding: 0;
-    line-height: 1.2;
-    color: #666666;
-    font-weight: 300; }
-
-.content {
-  width: 100%;
-  max-width: 700px;
-  margin: 25px auto 0 auto;
-  -webkit-box-sizing: border-box;
-  -moz-box-sizing: border-box;
-  box-sizing: border-box; }
-  @media only screen and (max-width: 800px) {
-    .content {
-      padding: 0 16px; } }
-  .content article {
-    padding: 20px 0;
-    border-bottom: 1px solid #f2f2f0; }
-    .content article:last-child {
-      border-bottom: 0px; }
-    .content article .post-title {
-      letter-spacing: -0.02em;
-      font-weight: 700;
-      font-style: normal;
-      display: block;
-      font-size: 36px;
-      line-height: 1.15;
-      margin: 0 0; }
-      .content article .post-title a {
-        text-decoration: none;
-        color: #333332; }
-        .content article .post-title a:hover {
-          text-decoration: none; }
-    .content article .post-excerpt {
-      letter-spacing: -0.02em;
-      font-weight: 300;
-      font-style: normal;
-      font-size: 20px;
-      line-height: 1.59;
-      color: #666665; }
-    .content article .post-meta {
-      font-size: 14px;
-      color: #b3b3b1;
-      line-height: 30px; }
-      .content article .post-meta a {
-        color: #b3b3b1;
-        text-decoration: none; }
-        .content article .post-meta a:hover {
-          text-decoration: underline; }
-
-.post-template .content {
-  max-width: 700px; }
-
-.index-headline {
-  border-top: 1px solid #dededc;
-  margin: 0;
-  padding: 16px 0; }
-  .index-headline span {
-    color: #b3b3b1;
-    font-size: 10px;
-    text-transform: uppercase;
-    letter-spacing: 1px; }
-
-.pagination {
-  text-align: center;
-  padding: 16px 0 0;
-  font-size: 12px; }
-  .pagination a {
-    color: #999999;
-    text-decoration: none; }
-    .pagination a:hover {
-      color: #333333; }
-
-.site-footer {
-  margin: 0 auto;
-  padding: 48px 0;
-  width: 100%;
-  max-width: 700px;
-  font-size: 12px;
-  text-align: center;
-  color: #999999;
-  line-height: 17.6px; }
-  .site-footer a {
-    color: #666666;
-    text-decoration: none; }
-    .site-footer a:hover {
-      color: #333333; }
-
-.post .post-meta {
-  font-family: Arial, YuGothic; }
-.post .post-title {
-  font-weight: 700;
-  font-style: normal;
-  letter-spacing: -0.04em;
-  font-size: 50px;
-  line-height: 1.1;
-  color: #333332;
-  margin-bottom: 50px; }
-.post .author-image {
-  background-image: url(/assets/images/author.svg);
-  display: inline-block;
-  width: 30px;
-  height: 30px;
-  line-height: 30px;
-  margin-right: 8px;
-  margin-bottom: -10px;
-  float: left;
-  background-size: cover;
-  border-radius: 100%;
-  text-indent: -9999px; }
-.post .post-meta-text {
-  color: #b3b3b1;
-  letter-spacing: -0.02em;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 14px;
-  overflow: hidden;
-  font-family: Arial, YuGothic;
-  white-space: nowrap;
-  text-overflow: ellipsis; }
-.post .post-content {
-  width: 100%;
-  font-family: Verdana, YuGothic;
-  color: #333333; }
-  .post .post-content h1, .post .post-content h2, .post .post-content h3 {
-    font-family: Arial, YuGothic; }
-  .post .post-content h3, .post .post-content h4, .post .post-content h5, .post .post-content h6 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 24px;
-    line-height: 1.3;
-    margin-top: 50px;
-    margin-bottom: 0px;
-    font-family: Arial, YuGothic; }
-  .post .post-content h3 {
-    font-size: 36px; }
-  .post .post-content h2, .post .post-content h1 {
-    letter-spacing: -0.02em;
-    font-weight: 700;
-    font-style: normal;
-    font-size: 42px;
-    line-height: 1.2;
-    margin-top: 50px;
-    margin-bottom: 0px; }
-  .post .post-content table {
-    border-collapse: collapse; }
-  .post .post-content p {
-    font-weight: 400;
-    font-style: normal;
-    font-size: 22px;
-    line-height: 1.59;
-    letter-spacing: -.002em;
-    margin-top: 30px;
-    margin-bottom: 0;
-    color: #333333;
-    -webkit-hyphens: auto;
-    -moz-hyphens: auto;
-    hyphens: auto; }
-  .post .post-content a {
-    color: #469af6;
-    text-decoration: none; }
-  .post .post-content amp-img, .post .post-content amp-youtube {
-    margin-top: 30px; }
-  .post .post-content figure {
-    margin: 0;
-    padding: 0 0 30px; }
-  .post .post-content figcaption {
-    font-weight: 400;
-    font-style: italic;
-    font-size: 16px;
-    line-height: 1.3;
-    color: #666665;
-    outline: 0;
-    z-index: 300;
-    text-align: center; }
-  .post .post-content hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 90%;
-    margin: 30px auto;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .post-content blockquote {
-    margin: 0 0 30px;
-    margin-left: -26px;
-    border-left: 3px solid #57ad68;
-    padding-left: 20px; }
-    .post .post-content blockquote p {
-      letter-spacing: 0.01rem;
-      font-weight: 400;
-      mborder-left: 3px solid #57ad68;
-      mpadding-left: 20px;
-      mmargin-left: -26px;
-      padding-bottom: 3px; }
-  .post .post-content ul, .post .post-content ol {
-    padding: 30px 0 30px;
-    margin: 0; }
-  .post .post-content li {
-    padding: 0;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 23px;
-    line-height: 30px;
-    margin-left: 30px;
-    margin-bottom: 12px;
-    padding-top: 2px; }
-    .post .post-content li p {
-      padding: 0 0 1.618rem; }
-  .post .post-content ol li {
-    list-style-type: decimal; }
-.post .bottom-teaser {
-  padding: 50px 0 0 0;
-  font-family: Arial, YuGothic; }
-  .post .bottom-teaser hr {
-    border: 0;
-    padding: 0;
-    display: block;
-    width: 15%;
-    margin: 16px 0 16px 100px;
-    border: 0px solid #dddddd;
-    border-top: 1px solid #dddddd; }
-  .post .bottom-teaser .isLeft {
-    float: left;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isLeft {
-        width: 100%;
-        padding-bottom: 32px; } }
-    .post .bottom-teaser .isLeft .bio {
-      margin-top: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .username {
-      margin-left: 4px;
-      margin-right: 18px;
-      margin-bottom: 18px; }
-    .post .bottom-teaser .isLeft .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isLeft a {
-      color: black;
-      text-decoration: none; }
-      .post .bottom-teaser .isLeft a:hover {
-        color: #333333;
-        text-decoration: underline; }
-    .post .bottom-teaser .isLeft .author-image {
-      display: block;
-      width: 80px;
-      height: 80px;
-      float: left;
-      background-size: cover;
-      border-radius: 100%;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft .mvp-image {
-      background-image: url(/assets/images/mvp_logo_v.svg);
-      display: block;
-      width: 80px;
-      height: 127px;
-      float: left;
-      background-size: cover;
-      text-indent: -9999px; }
-    .post .bottom-teaser .isLeft h4 {
-      font-size: 18px;
-      line-height: 1.1;
-      font-weight: 700;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-    .post .bottom-teaser .isLeft p {
-      font-size: 14px;
-      line-height: 1.3;
-      font-weight: 400;
-      padding: 0;
-      margin: 0;
-      padding-left: 100px; }
-      .post .bottom-teaser .isLeft p.published {
-        color: #999999; }
-  .post .bottom-teaser .isRight {
-    float: right;
-    width: 47%;
-    -webkit-box-sizing: border-box;
-    -moz-box-sizing: border-box;
-    box-sizing: border-box; }
-    @media only screen and (max-width: 800px) {
-      .post .bottom-teaser .isRight {
-        width: 100%; } }
-    .post .bottom-teaser .isRight .index-headline {
-      padding-bottom: 32px; }
-    .post .bottom-teaser .isRight .site-footer {
-      margin: 0;
-      padding: 0;
-      color: #333333;
-      text-align: left;
-      font-size: 14px;
-      line-height: 1.3;
-      color: #999999; }
-      .post .bottom-teaser .isRight .site-footer a {
-        color: #333333;
-        text-decoration: none; }
-        .post .bottom-teaser .isRight .site-footer a:hover {
-          text-decoration: underline; }
-      .post .bottom-teaser .isRight .site-footer .poweredby {
-        display: block;
-        padding-bottom: 18px;
-        font-weight: 700;
-        color: #333333; }
-
-.share {
-  text-align: right;
-  padding: 0; }
-  .share a {
-    text-decoration: none;
-    color: #bbbbbb;
-    padding-left: 12px; }
-    .share a .hidden {
-      display: none; }
-    .share a:hover {
-      color: #333333; }
-
-pre,
-code {
-  font-family: Menlo,'Bitstream Vera Sans Mono','DejaVu Sans Mono',Monaco,Consolas,monospace;
-  font-size: 15px;
-  border: 1px solid #d8d8d8;
-  border-radius: 5px;
-  background-color: #f8f8f8; }
-
-code {
-  padding: 1px 5px; }
-
-pre {
-  padding: 8px 12px;
-  overflow-x: scroll; }
-  pre > code {
-    border: 0;
-    padding-right: 0;
-    padding-left: 0; }
-
-.pagination .disabled {
-  opacity: 0; }
-
-.categories {
-  overflow: hidden;
-  padding: 20px 0 0 0; }
-
-.category {
-  float: left;
-  border: 1px;
-  border-radius: 3px;
-  background-color: #eeeeee;
-  border-style: solid;
-  border-width: 1px 1px 1px 1px;
-  border-color: #dddddd;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-#disqus_thread a {
-  color: #333333;
-  text-decoration: none; }
-
-.published {
-  float: left;
-  padding: 0px 3px;
-  margin: 1px 4px 1px 0px;
-  line-height: 30px;
-  color: #777777; }
-
-img {
-  height: auto;
-  max-width: 100%;
-  vertical-align: middle;
-  border: 0;
-  -ms-interpolation-mode: bicubic; }
-
-.amazon-ads {
-  padding: 0 0 20px 0; }
-
-
-  .highlight table td { padding: 5px; }
-.highlight table pre { margin: 0; }
-.highlight .cm {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cp {
-  color: #999999;
-  font-weight: bold;
-}
-.highlight .c1 {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .cs {
-  color: #999999;
-  font-weight: bold;
-  font-style: italic;
-}
-.highlight .c, .highlight .cd {
-  color: #999988;
-  font-style: italic;
-}
-.highlight .err {
-  color: #a61717;
-  background-color: #e3d2d2;
-}
-.highlight .gd {
-  color: #000000;
-  background-color: #ffdddd;
-}
-.highlight .ge {
-  color: #000000;
-  font-style: italic;
-}
-.highlight .gr {
-  color: #aa0000;
-}
-.highlight .gh {
-  color: #999999;
-}
-.highlight .gi {
-  color: #000000;
-  background-color: #ddffdd;
-}
-.highlight .go {
-  color: #888888;
-}
-.highlight .gp {
-  color: #555555;
-}
-.highlight .gs {
-  font-weight: bold;
-}
-.highlight .gu {
-  color: #aaaaaa;
-}
-.highlight .gt {
-  color: #aa0000;
-}
-.highlight .kc {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kd {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kn {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kp {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kr {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .kt {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .k, .highlight .kv {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .mf {
-  color: #009999;
-}
-.highlight .mh {
-  color: #009999;
-}
-.highlight .il {
-  color: #009999;
-}
-.highlight .mi {
-  color: #009999;
-}
-.highlight .mo {
-  color: #009999;
-}
-.highlight .m, .highlight .mb, .highlight .mx {
-  color: #009999;
-}
-.highlight .sb {
-  color: #d14;
-}
-.highlight .sc {
-  color: #d14;
-}
-.highlight .sd {
-  color: #d14;
-}
-.highlight .s2 {
-  color: #d14;
-}
-.highlight .se {
-  color: #d14;
-}
-.highlight .sh {
-  color: #d14;
-}
-.highlight .si {
-  color: #d14;
-}
-.highlight .sx {
-  color: #d14;
-}
-.highlight .sr {
-  color: #009926;
-}
-.highlight .s1 {
-  color: #d14;
-}
-.highlight .ss {
-  color: #990073;
-}
-.highlight .s {
-  color: #d14;
-}
-.highlight .na {
-  color: #008080;
-}
-.highlight .bp {
-  color: #999999;
-}
-.highlight .nb {
-  color: #0086B3;
-}
-.highlight .nc {
-  color: #445588;
-  font-weight: bold;
-}
-.highlight .no {
-  color: #008080;
-}
-.highlight .nd {
-  color: #3c5d5d;
-  font-weight: bold;
-}
-.highlight .ni {
-  color: #800080;
-}
-.highlight .ne {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nf {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nl {
-  color: #990000;
-  font-weight: bold;
-}
-.highlight .nn {
-  color: #555555;
-}
-.highlight .nt {
-  color: #000080;
-}
-.highlight .vc {
-  color: #008080;
-}
-.highlight .vg {
-  color: #008080;
-}
-.highlight .vi {
-  color: #008080;
-}
-.highlight .nv {
-  color: #008080;
-}
-.highlight .ow {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .o {
-  color: #000000;
-  font-weight: bold;
-}
-.highlight .w {
-  color: #bbbbbb;
-}
-.highlight {
-  background-color: #f8f8f8;
-}
-  
-  </style>
-
-  <style amp-boilerplate>body{-webkit-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-moz-animation:-amp-start 8s steps(1,end) 0s 1 normal both;-ms-animation:-amp-start 8s steps(1,end) 0s 1 normal both;animation:-amp-start 8s steps(1,end) 0s 1 normal both}@-webkit-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-moz-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-ms-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@-o-keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}@keyframes -amp-start{from{visibility:hidden}to{visibility:visible}}</style><noscript><style amp-boilerplate>body{-webkit-animation:none;-moz-animation:none;-ms-animation:none;animation:none}</style></noscript>
-  <script async src="https://cdn.ampproject.org/v0.js"></script>
-</head>
-
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
   <body>
-    
-  <amp-analytics type="googleanalytics" id="analytics1">
-  <script type="application/json">
-  {
-    "vars": {
-      "account": "UA-224332-7"
-    },
-    "triggers": {
-      "trackPageview": {
-        "on": "visible",
-        "request": "pageview"
-      }
-    }
-  }
-  </script>
-  </amp-analytics>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
 
+    <main class="tmpl-post">
 
-    <header class="site-header">
-  <a href="/" class="logo"><span class="logo"><amp-img src="/assets/images/logo.svg" width="48" height="48" /></span></a>
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
 
-  <div class="page-links">
-    <a class="page-link" href="/">Home</a>
-     • <a class="page-link" href="https://www.google.co.jp/?q=site:blog.amay0777.net" target="_blank">Search</a>
-    
-      
-      • <a class="page-link" href="/about/">About</a>
-      
-    
-      
-    
-      
-    
-      
-      • <a class="page-link" href="/job_history/">Job History</a>
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-      
-    
-  </div>
-</header>
+      <h1>LINQ to Objects と Java8-Stream API の対応表</h1>
 
-
-    <main class="content" role="main">
-  <article class="post">
-    <div class="post-meta">
-      <h1 class="post-title">LINQ to Objects と Java8-Stream API の対応表</h1>
-    </div>
-
-    <section class="post-content">
-      <a name="topofpage"></a>
-      <p>Java8 で <code class="highlighter-rouge">filter</code> や <code class="highlighter-rouge">map</code> が使えるようになったー！<br />
-というわけで .NET の LINQ to Objects との対応表を作ってみました。<br />
-<!--more--></p>
+<p>Java8 で <code>filter</code> や <code>map</code> が使えるようになったー！<br>
+というわけで .NET の LINQ to Objects との対応表を作ってみました。</p>
+<!--more-->
 <ul>
-  <li>LINQ - <a href="http://msdn.microsoft.com/ja-jp/library/system.linq.enumerable(v=vs.110).aspx">Enumerable クラス (System.Linq)</a></li>
-  <li>Java8 - <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">Stream (Java Platform SE 8 )</a></li>
+<li>LINQ - <a href="http://msdn.microsoft.com/ja-jp/library/system.linq.enumerable(v=vs.110).aspx">Enumerable クラス (System.Linq)</a></li>
+<li>Java8 - <a href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">Stream (Java Platform SE 8 )</a></li>
 </ul>
-
 <p>の比較です。</p>
-
 <p>Java の方は</p>
-
 <ul>
-  <li><a href="http://download.java.net/jdk8/docs/api/java/util/stream/Collectors.html">Collectors (Java Platform SE 8 )</a></li>
+<li><a href="http://download.java.net/jdk8/docs/api/java/util/stream/Collectors.html">Collectors (Java Platform SE 8 )</a></li>
 </ul>
-
 <p>も使います。</p>
-
 <p>まだ試したものは少ないので間違ってるかもしれない ＆ カテゴライズが適当 なので、編集リクエストしてもらえるとありがたいです。</p>
-
 <table>
-  <thead>
-    <tr>
-      <th>機能</th>
-      <th>LINQ</th>
-      <th>Java8</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr>
-      <td><strong>【基本的なやつ】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>抽出</td>
-      <td>Where</td>
-      <td>filter</td>
-    </tr>
-    <tr>
-      <td>射影</td>
-      <td>Select</td>
-      <td>map</td>
-    </tr>
-    <tr>
-      <td>並べ替え</td>
-      <td>OrderBy / OrderByDescending</td>
-      <td>sorted</td>
-    </tr>
-    <tr>
-      <td>後続を並べ替え</td>
-      <td>ThenBy / ThenByDescending</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>平坦化して射影</td>
-      <td>SelectMany</td>
-      <td>flatMap</td>
-    </tr>
-    <tr>
-      <td><strong>【抽出系】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>ｎ件飛ばす</td>
-      <td>Skip</td>
-      <td>skip</td>
-    </tr>
-    <tr>
-      <td>条件を満たすまで飛ばす</td>
-      <td>SkipWhile</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>ｎ件まで流す</td>
-      <td>Take</td>
-      <td>limit</td>
-    </tr>
-    <tr>
-      <td>条件を満たすまで流す</td>
-      <td>TakeWhile</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td><strong>【合成系】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>連結</td>
-      <td>Concat</td>
-      <td>concat</td>
-    </tr>
-    <tr>
-      <td>積集合</td>
-      <td>Intersect</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>和集合</td>
-      <td>Union</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>差集合</td>
-      <td>Except</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>内部結合</td>
-      <td>Join</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>外部結合</td>
-      <td>GroupJoin</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>並びを逆にする</td>
-      <td>Reverse</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>2つの値を揃えて流す</td>
-      <td>Zip</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td><strong>【グループ化、集計系】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>重複を無くす</td>
-      <td>Distinct</td>
-      <td>distinct</td>
-    </tr>
-    <tr>
-      <td>畳み込み</td>
-      <td>Aggregate</td>
-      <td>reduce</td>
-    </tr>
-    <tr>
-      <td>グループ化</td>
-      <td>GroupBy</td>
-      <td>Collectors.groupingBy</td>
-    </tr>
-    <tr>
-      <td>平均</td>
-      <td>Average</td>
-      <td>IntStream.average /  Collectors.summarizingXXX</td>
-    </tr>
-    <tr>
-      <td>件数</td>
-      <td>Count / LongCount</td>
-      <td>count</td>
-    </tr>
-    <tr>
-      <td>最大</td>
-      <td>Max</td>
-      <td>max</td>
-    </tr>
-    <tr>
-      <td>最小</td>
-      <td>Min</td>
-      <td>min</td>
-    </tr>
-    <tr>
-      <td>合計</td>
-      <td>Sum</td>
-      <td>IntStream.sum / Collectors.summarizingXXX</td>
-    </tr>
-    <tr>
-      <td>先頭</td>
-      <td>First / FirstOrDefault</td>
-      <td>findFirst</td>
-    </tr>
-    <tr>
-      <td>終端</td>
-      <td>Last / LastOrDefault</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>とりあえず値を得る</td>
-      <td> </td>
-      <td>findAny</td>
-    </tr>
-    <tr>
-      <td>集計用の汎用関数？</td>
-      <td> </td>
-      <td>collect</td>
-    </tr>
-    <tr>
-      <td>1件の値を得る</td>
-      <td>Single / SingleOrDefault</td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>空なら既定値を返す</td>
-      <td>DefaultIfEmpty</td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>全データが条件にマッチするか？</td>
-      <td>All</td>
-      <td>allMatch</td>
-    </tr>
-    <tr>
-      <td>いずれかのデータが条件にマッチするか？</td>
-      <td>Any</td>
-      <td>anyMatch</td>
-    </tr>
-    <tr>
-      <td>いずれかのデータも条件にマッチしないか？</td>
-      <td> </td>
-      <td>noneMatch</td>
-    </tr>
-    <tr>
-      <td><strong>【生成系】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>空っぽ</td>
-      <td>Empty</td>
-      <td>empty</td>
-    </tr>
-    <tr>
-      <td>範囲を生成</td>
-      <td>Range</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>繰り返す</td>
-      <td>Repeat</td>
-      <td>n/a</td>
-    </tr>
-    <tr>
-      <td>無限リスト生成</td>
-      <td> </td>
-      <td>generate / iterate</td>
-    </tr>
-    <tr>
-      <td><strong>【その他】</strong></td>
-      <td> </td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td> </td>
-      <td>SequenceEqual</td>
-      <td> </td>
-    </tr>
-    <tr>
-      <td>列挙</td>
-      <td>ToList().ForEach</td>
-      <td>forEach</td>
-    </tr>
-    <tr>
-      <td>なんか Action を挟む(デバッグ用？)</td>
-      <td> </td>
-      <td>peek</td>
-    </tr>
-  </tbody>
+<thead>
+<tr>
+<th>機能</th>
+<th>LINQ</th>
+<th>Java8</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>【基本的なやつ】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>抽出</td>
+<td>Where</td>
+<td>filter</td>
+</tr>
+<tr>
+<td>射影</td>
+<td>Select</td>
+<td>map</td>
+</tr>
+<tr>
+<td>並べ替え</td>
+<td>OrderBy / OrderByDescending</td>
+<td>sorted</td>
+</tr>
+<tr>
+<td>後続を並べ替え</td>
+<td>ThenBy / ThenByDescending</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>平坦化して射影</td>
+<td>SelectMany</td>
+<td>flatMap</td>
+</tr>
+<tr>
+<td><strong>【抽出系】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>ｎ件飛ばす</td>
+<td>Skip</td>
+<td>skip</td>
+</tr>
+<tr>
+<td>条件を満たすまで飛ばす</td>
+<td>SkipWhile</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>ｎ件まで流す</td>
+<td>Take</td>
+<td>limit</td>
+</tr>
+<tr>
+<td>条件を満たすまで流す</td>
+<td>TakeWhile</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><strong>【合成系】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>連結</td>
+<td>Concat</td>
+<td>concat</td>
+</tr>
+<tr>
+<td>積集合</td>
+<td>Intersect</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>和集合</td>
+<td>Union</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>差集合</td>
+<td>Except</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>内部結合</td>
+<td>Join</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>外部結合</td>
+<td>GroupJoin</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>並びを逆にする</td>
+<td>Reverse</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>2つの値を揃えて流す</td>
+<td>Zip</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td><strong>【グループ化、集計系】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>重複を無くす</td>
+<td>Distinct</td>
+<td>distinct</td>
+</tr>
+<tr>
+<td>畳み込み</td>
+<td>Aggregate</td>
+<td>reduce</td>
+</tr>
+<tr>
+<td>グループ化</td>
+<td>GroupBy</td>
+<td>Collectors.groupingBy</td>
+</tr>
+<tr>
+<td>平均</td>
+<td>Average</td>
+<td>IntStream.average /  Collectors.summarizingXXX</td>
+</tr>
+<tr>
+<td>件数</td>
+<td>Count / LongCount</td>
+<td>count</td>
+</tr>
+<tr>
+<td>最大</td>
+<td>Max</td>
+<td>max</td>
+</tr>
+<tr>
+<td>最小</td>
+<td>Min</td>
+<td>min</td>
+</tr>
+<tr>
+<td>合計</td>
+<td>Sum</td>
+<td>IntStream.sum / Collectors.summarizingXXX</td>
+</tr>
+<tr>
+<td>先頭</td>
+<td>First / FirstOrDefault</td>
+<td>findFirst</td>
+</tr>
+<tr>
+<td>終端</td>
+<td>Last / LastOrDefault</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>とりあえず値を得る</td>
+<td></td>
+<td>findAny</td>
+</tr>
+<tr>
+<td>集計用の汎用関数？</td>
+<td></td>
+<td>collect</td>
+</tr>
+<tr>
+<td>1件の値を得る</td>
+<td>Single / SingleOrDefault</td>
+<td></td>
+</tr>
+<tr>
+<td>空なら既定値を返す</td>
+<td>DefaultIfEmpty</td>
+<td></td>
+</tr>
+<tr>
+<td>全データが条件にマッチするか？</td>
+<td>All</td>
+<td>allMatch</td>
+</tr>
+<tr>
+<td>いずれかのデータが条件にマッチするか？</td>
+<td>Any</td>
+<td>anyMatch</td>
+</tr>
+<tr>
+<td>いずれかのデータも条件にマッチしないか？</td>
+<td></td>
+<td>noneMatch</td>
+</tr>
+<tr>
+<td><strong>【生成系】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>空っぽ</td>
+<td>Empty</td>
+<td>empty</td>
+</tr>
+<tr>
+<td>範囲を生成</td>
+<td>Range</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>繰り返す</td>
+<td>Repeat</td>
+<td>n/a</td>
+</tr>
+<tr>
+<td>無限リスト生成</td>
+<td></td>
+<td>generate / iterate</td>
+</tr>
+<tr>
+<td><strong>【その他】</strong></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td></td>
+<td>SequenceEqual</td>
+<td></td>
+</tr>
+<tr>
+<td>列挙</td>
+<td>ToList().ForEach</td>
+<td>forEach</td>
+</tr>
+<tr>
+<td>なんか Action を挟む(デバッグ用？)</td>
+<td></td>
+<td>peek</td>
+</tr>
+</tbody>
 </table>
-
-<p>ううむ、合成系の機能はほとんどないようです…ので自力でやるしか。<br />
+<p>ううむ、合成系の機能はほとんどないようです…ので自力でやるしか。<br>
 以下、サンプル。</p>
-
-<h2 id="サンプル">サンプル</h2>
-
+<h2 id="%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">サンプル <a class="direct-link" href="#%E3%82%B5%E3%83%B3%E3%83%97%E3%83%AB">#</a></h2>
 <p>LINQ の方は Mac+Mono(Xamarin) で試しています（ぼそり</p>
-
-<h3 id="抽出where並べ替えorderby射影select">抽出(Where)、並べ替え(OrderBy)、射影(Select)</h3>
-
+<h3 id="%E6%8A%BD%E5%87%BA(where)%E3%80%81%E4%B8%A6%E3%81%B9%E6%9B%BF%E3%81%88(orderby)%E3%80%81%E5%B0%84%E5%BD%B1(select)">抽出(Where)、並べ替え(OrderBy)、射影(Select) <a class="direct-link" href="#%E6%8A%BD%E5%87%BA(where)%E3%80%81%E4%B8%A6%E3%81%B9%E6%9B%BF%E3%81%88(orderby)%E3%80%81%E5%B0%84%E5%BD%B1(select)">#</a></h3>
 <p>0〜9 を、偶数値だけ抽出して、降順にソートして、値を10倍して、出力。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="n">Enumerable</span><span class="p">.</span><span class="nf">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">Where</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">%</span> <span class="m">2</span> <span class="p">==</span> <span class="m">0</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">OrderByDescending</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">Select</span><span class="p">(</span><span class="n">x</span> <span class="p">=&gt;</span> <span class="n">x</span> <span class="p">*</span> <span class="m">10</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<p>```java Java<br />
-Arrays.asList(0,1,2,3,4,5,6,7,8,9).stream()<br />
-  .filter(x -&gt; x % 2 == 0)<br />
-  .sorted((x, y) -&gt; y - x)<br />
-  .map(x -&gt; x * 10)<br />
-  .forEach(System.out::println);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>80 60 40 20 0</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 平坦化して射影(SelectMany)
-
-1〜5のリストから、「n×10から始まるn件」のリストを生成。(結果見たほうが分かりやすいな（^_^;)
-
-```csharp
-//C#
-Enumerable.Range(1, 5)
-  .SelectMany(x =&gt; Enumerable.Range(10 * x, x))
-  .ToList().ForEach(Console.WriteLine);
-</code></pre></div></div>
-
-<p>```java Java<br />
-Arrays.asList(1,2,3,4,5).stream()<br />
-  .flatMap(x -&gt; IntStream.range(x * 10, x * 10 + x).boxed())<br />
-  .forEach(System.out::println);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>10 <br />
-20 21 <br />
-30 31 32 <br />
-40 41 42 43 <br />
-50 51 52 53 54</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-### 抽出系(Take, Skip)
-
-1〜10のリストの3件飛ばして、5件取得。
-
-```csharp
-// C#
-Enumerable.Range(1, 10)
-  .Skip(3)
-  .Take(5)
-  .ToList().ForEach(Console.WriteLine);
-</code></pre></div></div>
-
-<p>```java Java<br />
-// 無限リストでも limit あるから大丈夫<br />
-Stream.iterate(1, x-&gt; x++)<br />
-  .skip(3)<br />
-  .limit(5)<br />
-  .forEach(System.out::println);</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-</code></pre></div></div>
-<p>4 5 6 7 8</p>
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
-LINQ には件数でなく条件を指定できる ``TakeWhile`` ``SkipWhile`` がありますが、Java にはなさそうなので ``filter`` で代用しないといけなさそう。
-
-```csharp
-// C#
-Enumerable.Range(1, 10)
-  .SkipWhile(x =&gt; x &lt; 4)
-  .TakeWhile(x =&gt; x &lt; 9)
-  .ToList().ForEach(Console.WriteLine);
-</code></pre></div></div>
-
-<h3 id="連結concat">連結(Concat)</h3>
-
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br>Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">Where</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">OrderByDescending</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x<span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x <span class="token operator">*</span> <span class="token number">10</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token number">9</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>x <span class="token operator">-></span> x <span class="token operator">%</span> <span class="token number">2</span> <span class="token operator">==</span> <span class="token number">0</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">-></span> y <span class="token operator">-</span> x<span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>x <span class="token operator">-></span> x <span class="token operator">*</span> <span class="token number">10</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>80 60 40 20 0
+</code></pre>
+<h3 id="%E5%B9%B3%E5%9D%A6%E5%8C%96%E3%81%97%E3%81%A6%E5%B0%84%E5%BD%B1(selectmany)">平坦化して射影(SelectMany) <a class="direct-link" href="#%E5%B9%B3%E5%9D%A6%E5%8C%96%E3%81%97%E3%81%A6%E5%B0%84%E5%BD%B1(selectmany)">#</a></h3>
+<p>1〜5のリストから、「n×10から始まるn件」のリストを生成。(結果見たほうが分かりやすいな（^_^;)</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">//C#</span><br>Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">5</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">SelectMany</span><span class="token punctuation">(</span>x <span class="token operator">=></span> Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">10</span> <span class="token operator">*</span> x<span class="token punctuation">,</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token class-name">IntStream</span><span class="token punctuation">.</span><span class="token function">range</span><span class="token punctuation">(</span>x <span class="token operator">*</span> <span class="token number">10</span><span class="token punctuation">,</span> x <span class="token operator">*</span> <span class="token number">10</span> <span class="token operator">+</span> x<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">boxed</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>10 
+20 21 
+30 31 32 
+40 41 42 43 
+50 51 52 53 54
+</code></pre>
+<h3 id="%E6%8A%BD%E5%87%BA%E7%B3%BB(take%2C-skip)">抽出系(Take, Skip) <a class="direct-link" href="#%E6%8A%BD%E5%87%BA%E7%B3%BB(take%2C-skip)">#</a></h3>
+<p>1〜10のリストの3件飛ばして、5件取得。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br>Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">Skip</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">Take</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// 無限リストでも limit あるから大丈夫</span><br><span class="token class-name">Stream</span><span class="token punctuation">.</span><span class="token function">iterate</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> x<span class="token operator">-></span> x<span class="token operator">++</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">skip</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">limit</span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>4 5 6 7 8
+</code></pre>
+<p>LINQ には件数でなく条件を指定できる <code>TakeWhile</code> <code>SkipWhile</code> がありますが、Java にはなさそうなので <code>filter</code> で代用しないといけなさそう。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br>Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">SkipWhile</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x <span class="token operator">&lt;</span> <span class="token number">4</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">TakeWhile</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x <span class="token operator">&lt;</span> <span class="token number">9</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<h3 id="%E9%80%A3%E7%B5%90(concat)">連結(Concat) <a class="direct-link" href="#%E9%80%A3%E7%B5%90(concat)">#</a></h3>
 <p>2つのリストをつなげる</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span> <span class="p">}.</span><span class="nf">Concat</span><span class="p">(</span><span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span> <span class="m">30</span><span class="p">,</span> <span class="m">20</span><span class="p">,</span> <span class="m">10</span> <span class="p">})</span>
-<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span>
-  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">).</span><span class="na">stream</span><span class="o">(),</span> 
-  <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">30</span><span class="o">,</span><span class="mi">20</span><span class="o">,</span><span class="mi">10</span><span class="o">).</span><span class="na">stream</span><span class="o">())</span>
-<span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</code></pre></div></div>
-
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> <span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span> <span class="token punctuation">}</span><span class="token punctuation">.</span><span class="token function">Concat</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span><span class="token punctuation">{</span> <span class="token number">30</span><span class="token punctuation">,</span> <span class="token number">20</span><span class="token punctuation">,</span> <span class="token number">10</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token class-name">Stream</span><span class="token punctuation">.</span><span class="token function">concat</span><span class="token punctuation">(</span><br>  <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <br>  <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">30</span><span class="token punctuation">,</span><span class="token number">20</span><span class="token punctuation">,</span><span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br><span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 <p>なんで static メソッドやねん…。</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 2 3 30 20 10
-</code></pre></div></div>
-
-<h3 id="積集合intersect和集合union差集合except">積集合(Intersect)、和集合(Union)、差集合(Except)</h3>
-
-<p>積集合：2つのリストから重複をなくす。<br />
-和集合：2つのリストをマージする。<br />
+<pre><code>1 2 3 30 20 10
+</code></pre>
+<h3 id="%E7%A9%8D%E9%9B%86%E5%90%88(intersect)%E3%80%81%E5%92%8C%E9%9B%86%E5%90%88(union)%E3%80%81%E5%B7%AE%E9%9B%86%E5%90%88(except)">積集合(Intersect)、和集合(Union)、差集合(Except) <a class="direct-link" href="#%E7%A9%8D%E9%9B%86%E5%90%88(intersect)%E3%80%81%E5%92%8C%E9%9B%86%E5%90%88(union)%E3%80%81%E5%B7%AE%E9%9B%86%E5%90%88(except)">#</a></h3>
+<p>積集合：2つのリストから重複をなくす。<br>
+和集合：2つのリストをマージする。<br>
 差集合：リスト1を基準にリスト2との差分を得る。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">6</span><span class="p">};</span>
-<span class="kt">var</span> <span class="n">list2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">8</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">6</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">4</span><span class="p">};</span>
-
-<span class="n">list1</span><span class="p">.</span><span class="nf">Intersect</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-            
-<span class="n">list1</span><span class="p">.</span><span class="nf">Union</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-            
-<span class="n">list1</span><span class="p">.</span><span class="nf">Except</span><span class="p">(</span><span class="n">list2</span><span class="p">)</span>
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="c1">// 自力で実現かよｗ</span>
-<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">anyMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-
-<span class="n">Stream</span><span class="o">.</span><span class="na">concat</span><span class="o">(</span><span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">(),</span> 
-  <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">)))</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-
-<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">filter</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">list2</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">noneMatch</span><span class="o">(</span><span class="n">y</span> <span class="o">-&gt;</span> <span class="n">y</span> <span class="o">==</span> <span class="n">x</span><span class="o">))</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>4 5 6 // 積
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> list1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span><span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">}</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> list2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span><span class="token punctuation">{</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">}</span><span class="token punctuation">;</span><br><br>list1<span class="token punctuation">.</span><span class="token function">Intersect</span><span class="token punctuation">(</span>list2<span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <br>list1<span class="token punctuation">.</span><span class="token function">Union</span><span class="token punctuation">(</span>list2<span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <br>list1<span class="token punctuation">.</span><span class="token function">Except</span><span class="token punctuation">(</span>list2<span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token comment">// 自力で実現かよｗ</span><br>list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>x <span class="token operator">-></span> list2<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">anyMatch</span><span class="token punctuation">(</span>y <span class="token operator">-></span> y <span class="token operator">==</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token class-name">Stream</span><span class="token punctuation">.</span><span class="token function">concat</span><span class="token punctuation">(</span>list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <br>  list2<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>x <span class="token operator">-></span> list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">noneMatch</span><span class="token punctuation">(</span>y <span class="token operator">-></span> y <span class="token operator">==</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>x <span class="token operator">-></span> list2<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">noneMatch</span><span class="token punctuation">(</span>y <span class="token operator">-></span> y <span class="token operator">==</span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>4 5 6 // 積
 1 2 3 4 5 6 8 7 // 和
 1 2 3 // 差
-</code></pre></div></div>
-
-<h3 id="内部結合join">内部結合(Join)</h3>
-
+</code></pre>
+<h3 id="%E5%86%85%E9%83%A8%E7%B5%90%E5%90%88(join)">内部結合(Join) <a class="direct-link" href="#%E5%86%85%E9%83%A8%E7%B5%90%E5%90%88(join)">#</a></h3>
 <p>商品マスタと売上テーブルを INNER JOIN する的な。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Apple"</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Grape"</span> <span class="p">}</span>
-<span class="p">};</span> 
-
-<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span> 
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
-<span class="p">};</span>
-            
-<span class="n">master</span><span class="p">.</span><span class="nf">Join</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span> 
-  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
-  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
-  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">i</span><span class="p">.</span><span class="n">Sales</span> <span class="p">})</span>
-<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="c1">// 自力</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">"Apple"</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">"Grape"</span><span class="o">)</span>
-<span class="o">);</span>
-
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-<span class="o">);</span>
-
-<span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-  <span class="o">.</span><span class="na">flatMap</span><span class="o">(</span><span class="n">outer</span> <span class="o">-&gt;</span> <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span> <span class="o">-&gt;</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span>
-    <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">z</span><span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="n">z</span><span class="o">.</span><span class="na">getValue</span><span class="o">())))</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ Name = Apple, Sales = 100 }
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> master <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> Name <span class="token operator">=</span> <span class="token string">"Apple"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Name <span class="token operator">=</span> <span class="token string">"Grape"</span> <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span> <br><br><span class="token class-name"><span class="token keyword">var</span></span> sales <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span> <br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">100</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">200</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">300</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">400</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span><br>            <br>master<span class="token punctuation">.</span><span class="token function">Join</span><span class="token punctuation">(</span>sales<span class="token punctuation">,</span> <br>  outer<span class="token operator">=></span>outer<span class="token punctuation">.</span>Id<span class="token punctuation">,</span> <br>  inner<span class="token operator">=></span>inner<span class="token punctuation">.</span>Id<span class="token punctuation">,</span> <br>  <span class="token punctuation">(</span>o<span class="token punctuation">,</span> i<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token keyword">new</span> <span class="token punctuation">{</span> o<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> i<span class="token punctuation">.</span>Sales <span class="token punctuation">}</span><span class="token punctuation">)</span><br><span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token comment">// 自力</span><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Pair</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">String</span><span class="token punctuation">></span><span class="token punctuation">></span></span> master <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"Apple"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"Grape"</span><span class="token punctuation">)</span><br><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Pair</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span><span class="token punctuation">></span></span> sales <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">200</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">300</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">400</span><span class="token punctuation">)</span><br><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>master<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">flatMap</span><span class="token punctuation">(</span>outer <span class="token operator">-></span> sales<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>inner <span class="token operator">-></span> outer<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> inner<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>z<span class="token operator">-></span> <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span></span><span class="token punctuation">(</span>outer<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> z<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>{ Name = Apple, Sales = 100 }
 { Name = Grape, Sales = 200 }
 { Name = Grape, Sales = 300 }
-</code></pre></div></div>
-
-<h3 id="外部結合groupjoin">外部結合(GroupJoin)</h3>
-
+</code></pre>
+<h3 id="%E5%A4%96%E9%83%A8%E7%B5%90%E5%90%88(groupjoin)">外部結合(GroupJoin) <a class="direct-link" href="#%E5%A4%96%E9%83%A8%E7%B5%90%E5%90%88(groupjoin)">#</a></h3>
 <p>商品マスタと売上テーブルを OUTER JOIN する的な。結合先のテーブルに行が見つからなかったものは null になる。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">master</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Apple"</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Grape"</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">5</span><span class="p">,</span> <span class="n">Name</span> <span class="p">=</span> <span class="s">"Orange"</span> <span class="p">},</span>
-<span class="p">};</span> 
-
-<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span>  <span class="c1">// Orange は無い</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span><span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span><span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span><span class="p">},</span>
-<span class="p">};</span>
-            
-<span class="n">master</span><span class="p">.</span><span class="nf">GroupJoin</span><span class="p">(</span><span class="n">sales</span><span class="p">,</span> 
-  <span class="n">outer</span><span class="p">=&gt;</span><span class="n">outer</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
-  <span class="n">inner</span><span class="p">=&gt;</span><span class="n">inner</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> 
-  <span class="p">(</span><span class="n">o</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span> <span class="n">o</span><span class="p">.</span><span class="n">Name</span><span class="p">,</span> <span class="n">FirstOfSales</span> <span class="p">=</span> <span class="n">i</span><span class="p">.</span><span class="nf">Select</span><span class="p">(</span>
-    <span class="n">x</span><span class="p">=&gt;(</span><span class="kt">int</span><span class="p">?)</span><span class="n">x</span><span class="p">.</span><span class="n">Sales</span><span class="p">).</span><span class="nf">FirstOrDefault</span><span class="p">()</span> <span class="p">})</span> <span class="c1">// 無かったら null にしたいので null許容型にしてから FirstOrDefault</span>
-<span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> master <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> Name <span class="token operator">=</span> <span class="token string">"Apple"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Name <span class="token operator">=</span> <span class="token string">"Grape"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">5</span><span class="token punctuation">,</span> Name <span class="token operator">=</span> <span class="token string">"Orange"</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span> <br><br><span class="token class-name"><span class="token keyword">var</span></span> sales <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span>  <span class="token comment">// Orange は無い</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">100</span><span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">200</span><span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">400</span><span class="token punctuation">}</span><span class="token punctuation">,</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span><br>            <br>master<span class="token punctuation">.</span><span class="token function">GroupJoin</span><span class="token punctuation">(</span>sales<span class="token punctuation">,</span> <br>  outer<span class="token operator">=></span>outer<span class="token punctuation">.</span>Id<span class="token punctuation">,</span> <br>  inner<span class="token operator">=></span>inner<span class="token punctuation">.</span>Id<span class="token punctuation">,</span> <br>  <span class="token punctuation">(</span>o<span class="token punctuation">,</span> i<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token keyword">new</span> <span class="token punctuation">{</span> o<span class="token punctuation">.</span>Name<span class="token punctuation">,</span> FirstOfSales <span class="token operator">=</span> i<span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span><br>    x<span class="token operator">=></span><span class="token punctuation">(</span><span class="token keyword">int</span><span class="token punctuation">?</span><span class="token punctuation">)</span>x<span class="token punctuation">.</span>Sales<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">FirstOrDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">)</span> <span class="token comment">// 無かったら null にしたいので null許容型にしてから FirstOrDefault</span><br><span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
 <p>たぶん普通は First じゃなくて Sum とか使うんだろう。</p>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="c1">// これも自力</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">String</span><span class="o">&gt;&gt;</span> <span class="n">master</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="s">"Apple"</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="s">"Grape"</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">5</span><span class="o">,</span> <span class="s">"Orange"</span><span class="o">)</span>
-<span class="o">);</span>
-
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">sales</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-<span class="o">);</span>
-
-<span class="n">master</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">map</span><span class="o">(</span><span class="n">outer</span><span class="o">-&gt;</span><span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">String</span><span class="o">,</span> <span class="n">Optional</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;&gt;(</span><span class="n">outer</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> 
-  <span class="n">sales</span><span class="o">.</span><span class="na">stream</span><span class="o">()</span>
-    <span class="o">.</span><span class="na">filter</span><span class="o">(</span><span class="n">inner</span><span class="o">-&gt;</span><span class="n">inner</span><span class="o">.</span><span class="na">getKey</span><span class="o">()</span> <span class="o">==</span> <span class="n">outer</span><span class="o">.</span><span class="na">getKey</span><span class="o">())</span> <span class="c1">// Id でフィルタ</span>
-      <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span><span class="o">-&gt;</span><span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">())</span> <span class="c1">// Sales だけに射影</span>
-      <span class="o">.</span><span class="na">findFirst</span><span class="o">()))</span> <span class="c1">// 同一Id中の先頭</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[.NET]
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token comment">// これも自力</span><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Pair</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">String</span><span class="token punctuation">></span><span class="token punctuation">></span></span> master <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token string">"Apple"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token string">"Grape"</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">5</span><span class="token punctuation">,</span> <span class="token string">"Orange"</span><span class="token punctuation">)</span><br><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Pair</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span><span class="token punctuation">></span></span> sales <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">200</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">300</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">400</span><span class="token punctuation">)</span><br><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>master<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>outer<span class="token operator">-></span><span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">,</span> <span class="token class-name">Optional</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span><span class="token punctuation">></span></span><span class="token punctuation">(</span>outer<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <br>  sales<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">filter</span><span class="token punctuation">(</span>inner<span class="token operator">-></span>inner<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">==</span> outer<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// Id でフィルタ</span><br>      <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>x<span class="token operator">-></span>x<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// Sales だけに射影</span><br>      <span class="token punctuation">.</span><span class="token function">findFirst</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// 同一Id中の先頭</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>[.NET]
 { Name = Apple, FirstOfSales = 100 }
 { Name = Grape, FirstOfSales = 200 }
 { Name = Orange, FirstOfSales = } // 相手が居ないやつは null になる
@@ -1383,116 +372,35 @@ Enumerable.Range(1, 10)
 Apple=Optional[100]
 Grape=Optional[200]
 Orange=Optional.empty // Option だから empty になるのは良い
-</code></pre></div></div>
-
-<h3 id="2つの値を揃えて流すzip">2つの値を揃えて流す(Zip)</h3>
-
+</code></pre>
+<h3 id="2%E3%81%A4%E3%81%AE%E5%80%A4%E3%82%92%E6%8F%83%E3%81%88%E3%81%A6%E6%B5%81%E3%81%99(zip)">2つの値を揃えて流す(Zip) <a class="direct-link" href="#2%E3%81%A4%E3%81%AE%E5%80%A4%E3%82%92%E6%8F%83%E3%81%88%E3%81%A6%E6%B5%81%E3%81%99(zip)">#</a></h3>
 <p>２つのリストの値をひとつずつセットにして流す。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">arr1</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]</span> <span class="p">{</span> <span class="m">1</span><span class="p">,</span> <span class="m">2</span><span class="p">,</span> <span class="m">3</span><span class="p">,</span> <span class="m">4</span><span class="p">,</span> <span class="m">5</span> <span class="p">};</span>
-<span class="kt">var</span> <span class="n">arr2</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">string</span><span class="p">[]</span> <span class="p">{</span> <span class="s">"hoge"</span><span class="p">,</span> <span class="s">"fuga"</span><span class="p">,</span> <span class="s">"piyo"</span> <span class="p">};</span>
-
-<span class="n">arr1</span><span class="p">.</span><span class="nf">Zip</span><span class="p">(</span><span class="n">arr2</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span>  <span class="k">new</span> <span class="p">{</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">})</span>
-    <span class="p">.</span><span class="nf">ToList</span><span class="p">()</span>
-    <span class="p">.</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="c1">// FIXME どうやるの？ Streams.zip はどこいった？</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{ x = 1, y = hoge }
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> arr1 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> <span class="token punctuation">{</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">4</span><span class="token punctuation">,</span> <span class="token number">5</span> <span class="token punctuation">}</span><span class="token punctuation">;</span><br><span class="token class-name"><span class="token keyword">var</span></span> arr2 <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">string</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span> <span class="token punctuation">{</span> <span class="token string">"hoge"</span><span class="token punctuation">,</span> <span class="token string">"fuga"</span><span class="token punctuation">,</span> <span class="token string">"piyo"</span> <span class="token punctuation">}</span><span class="token punctuation">;</span><br><br>arr1<span class="token punctuation">.</span><span class="token function">Zip</span><span class="token punctuation">(</span>arr2<span class="token punctuation">,</span> <span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">=></span>  <span class="token keyword">new</span> <span class="token punctuation">{</span>x<span class="token punctuation">,</span> y<span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token comment">// FIXME どうやるの？ Streams.zip はどこいった？</span></code></pre>
+<pre><code>{ x = 1, y = hoge }
 { x = 2, y = fuga }
 { x = 3, y = piyo }
-</code></pre></div></div>
-
-<h3 id="重複を無くすdistinct">重複を無くす(Distinct)</h3>
-
+</code></pre>
+<h3 id="%E9%87%8D%E8%A4%87%E3%82%92%E7%84%A1%E3%81%8F%E3%81%99(distinct)">重複を無くす(Distinct) <a class="direct-link" href="#%E9%87%8D%E8%A4%87%E3%82%92%E7%84%A1%E3%81%8F%E3%81%99(distinct)">#</a></h3>
 <p>重複する数値リストから重複をなくす。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">4</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
-  <span class="p">.</span><span class="nf">Distinct</span><span class="p">()</span>
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-  <span class="o">.</span><span class="na">distinct</span><span class="o">()</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 3 4 2
-</code></pre></div></div>
-
-<h3 id="畳み込み">畳み込み</h3>
-
-<p>いろいろな集計の素、畳み込み。言語により fold とか reduce とか aggregate とか、いろいろな呼び名がありますね。<br />
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span><span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">}</span><br>  <span class="token punctuation">.</span><span class="token function">Distinct</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">distinct</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>1 3 4 2
+</code></pre>
+<h3 id="%E7%95%B3%E3%81%BF%E8%BE%BC%E3%81%BF">畳み込み <a class="direct-link" href="#%E7%95%B3%E3%81%BF%E8%BE%BC%E3%81%BF">#</a></h3>
+<p>いろいろな集計の素、畳み込み。言語により fold とか reduce とか aggregate とか、いろいろな呼び名がありますね。<br>
 よい例が浮かなかったので Max を実装してみました。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">max</span> <span class="p">=</span> <span class="k">new</span> <span class="kt">int</span><span class="p">[]{</span><span class="m">1</span><span class="p">,</span><span class="m">5</span><span class="p">,</span><span class="m">3</span><span class="p">,</span><span class="m">7</span><span class="p">,</span><span class="m">2</span><span class="p">,</span><span class="m">4</span><span class="p">}</span>
-    <span class="p">.</span><span class="nf">Aggregate</span><span class="p">(</span><span class="n">Int32</span><span class="p">.</span><span class="n">MinValue</span><span class="p">,</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="n">Math</span><span class="p">.</span><span class="nf">Max</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">));</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="n">max</span><span class="p">);</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="kt">int</span> <span class="n">max</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">1</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">4</span><span class="o">).</span><span class="na">stream</span><span class="o">()</span>
-  <span class="o">.</span><span class="na">reduce</span><span class="o">(</span><span class="n">Integer</span><span class="o">.</span><span class="na">MIN_VALUE</span><span class="o">,</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">Math</span><span class="o">.</span><span class="na">max</span><span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">));</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">max</span><span class="o">);</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>7
-</code></pre></div></div>
-
-<h3 id="グループ化">グループ化</h3>
-
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> max <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name"><span class="token keyword">int</span><span class="token punctuation">[</span><span class="token punctuation">]</span></span><span class="token punctuation">{</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">}</span><br>    <span class="token punctuation">.</span><span class="token function">Aggregate</span><span class="token punctuation">(</span>Int32<span class="token punctuation">.</span>MinValue<span class="token punctuation">,</span> <span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">=></span> Math<span class="token punctuation">.</span><span class="token function">Max</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span>max<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token keyword">int</span> max <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">reduce</span><span class="token punctuation">(</span><span class="token class-name">Integer</span><span class="token punctuation">.</span>MIN_VALUE<span class="token punctuation">,</span> <span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token class-name">Math</span><span class="token punctuation">.</span><span class="token function">max</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>max<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre><code>7
+</code></pre>
+<h3 id="%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E5%8C%96">グループ化 <a class="direct-link" href="#%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%97%E5%8C%96">#</a></h3>
 <p>リストの要素をキーにしてグループ化する。Salesは合計を計算する。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">sales</span> <span class="p">=</span> <span class="k">new</span> <span class="p">[]</span> <span class="p">{</span> 
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">1</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">100</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">200</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">2</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">300</span> <span class="p">},</span>
-    <span class="k">new</span> <span class="p">{</span> <span class="n">Id</span> <span class="p">=</span> <span class="m">3</span><span class="p">,</span> <span class="n">Sales</span> <span class="p">=</span> <span class="m">400</span> <span class="p">},</span>
-<span class="p">};</span>
-            
-<span class="n">sales</span><span class="p">.</span><span class="nf">GroupBy</span><span class="p">(</span><span class="n">x</span><span class="p">=&gt;</span><span class="n">x</span><span class="p">.</span><span class="n">Id</span><span class="p">,</span> <span class="p">(</span><span class="n">Id</span><span class="p">,</span> <span class="n">groupedSales</span><span class="p">)</span> <span class="p">=&gt;</span> <span class="k">new</span> <span class="p">{</span><span class="n">Id</span><span class="p">,</span> 
-    <span class="n">SumOfSales</span> <span class="p">=</span> <span class="n">groupedSales</span><span class="p">.</span><span class="nf">Sum</span><span class="p">(</span> <span class="n">element</span> <span class="p">=&gt;</span> <span class="n">element</span><span class="p">.</span><span class="n">Sales</span><span class="p">)</span> <span class="c1">// Sales は合計する</span>
-  <span class="p">})</span> 
-  <span class="p">.</span><span class="nf">ToList</span><span class="p">().</span><span class="nf">ForEach</span><span class="p">(</span><span class="n">Console</span><span class="p">.</span><span class="n">WriteLine</span><span class="p">);</span>
-</code></pre></div></div>
-
-<p>（LINQ ではありませんが、 <code class="highlighter-rouge">List.LookUp</code> を使って実現することもできるようです → <a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302#comment-82388821b902ad7999b0">コメント:2014/03/22 00:29</a>）</p>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="c1">// javafx に Pair があったので Tuple 代わりに使っちゃった</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">1</span><span class="o">,</span> <span class="mi">100</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">200</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">2</span><span class="o">,</span> <span class="mi">300</span><span class="o">),</span>
-  <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;&gt;(</span><span class="mi">3</span><span class="o">,</span> <span class="mi">400</span><span class="o">)</span>
-<span class="o">);</span>
-
-<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">groupingBy</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">()))</span>
-  <span class="o">.</span><span class="na">entrySet</span><span class="o">().</span><span class="na">stream</span><span class="o">()</span> <span class="c1">// group化の結果が Map なので、エントリを Stream 化</span>
-  <span class="o">.</span><span class="na">map</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">Pair</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(</span>
-    <span class="n">x</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="c1">// Key が Id に相当</span>
-    <span class="n">x</span><span class="o">.</span><span class="na">getValue</span><span class="o">().</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summingInt</span><span class="o">(</span><span class="n">y</span><span class="o">-&gt;</span><span class="n">y</span><span class="o">.</span><span class="na">getValue</span><span class="o">()))))</span> <span class="c1">// Value が List なのでまた Stream 化して合計を得る</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">(</span><span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">::</span><span class="n">println</span><span class="o">);</span>
-
-<span class="c1">// Collectors.groupingBy 使わずに Map.merge を使ったほうが分かりやすい気も。。。</span>
-<span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span>
-  <span class="o">()</span> <span class="o">-&gt;</span> <span class="k">new</span> <span class="n">HashMap</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">,</span> <span class="n">Integer</span><span class="o">&gt;(),</span>
-  <span class="o">(</span><span class="n">map</span><span class="o">,</span> <span class="n">item</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">map</span><span class="o">.</span><span class="na">merge</span><span class="o">(</span><span class="n">item</span><span class="o">.</span><span class="na">getKey</span><span class="o">(),</span> <span class="n">item</span><span class="o">.</span><span class="na">getValue</span><span class="o">(),</span> <span class="o">(</span><span class="n">x</span><span class="o">,</span> <span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">x</span> <span class="o">+</span> <span class="n">y</span><span class="o">),</span> <span class="c1">// 同じキーの値を加算してく</span>
-  <span class="o">(</span><span class="n">left</span><span class="o">,</span> <span class="n">right</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">left</span><span class="o">.</span><span class="na">putAll</span><span class="o">(</span><span class="n">right</span><span class="o">))</span>
-  <span class="o">.</span><span class="na">forEach</span><span class="o">((</span><span class="n">k</span><span class="o">,</span> <span class="n">v</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="n">k</span> <span class="o">+</span> <span class="s">":"</span> <span class="o">+</span> <span class="n">v</span><span class="o">));</span>
-</code></pre></div></div>
-
-<p>Java の方、カオスすぎる…。.NET の <code class="highlighter-rouge">IGrouping</code> を Map でやってるからだな。</p>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>[.NET]
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> sales <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">{</span> <br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">1</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">100</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">200</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">2</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">300</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br>    <span class="token keyword">new</span> <span class="token punctuation">{</span> Id <span class="token operator">=</span> <span class="token number">3</span><span class="token punctuation">,</span> Sales <span class="token operator">=</span> <span class="token number">400</span> <span class="token punctuation">}</span><span class="token punctuation">,</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span><br>            <br>sales<span class="token punctuation">.</span><span class="token function">GroupBy</span><span class="token punctuation">(</span>x<span class="token operator">=></span>x<span class="token punctuation">.</span>Id<span class="token punctuation">,</span> <span class="token punctuation">(</span>Id<span class="token punctuation">,</span> groupedSales<span class="token punctuation">)</span> <span class="token operator">=></span> <span class="token keyword">new</span> <span class="token punctuation">{</span>Id<span class="token punctuation">,</span> <br>    SumOfSales <span class="token operator">=</span> groupedSales<span class="token punctuation">.</span><span class="token function">Sum</span><span class="token punctuation">(</span> element <span class="token operator">=></span> element<span class="token punctuation">.</span>Sales<span class="token punctuation">)</span> <span class="token comment">// Sales は合計する</span><br>  <span class="token punctuation">}</span><span class="token punctuation">)</span> <br>  <span class="token punctuation">.</span><span class="token function">ToList</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ForEach</span><span class="token punctuation">(</span>Console<span class="token punctuation">.</span>WriteLine<span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>（LINQ ではありませんが、 <code>List.LookUp</code> を使って実現することもできるようです → <a href="http://qiita.com/amay077/items/9d2941283c4a5f61f302#comment-82388821b902ad7999b0">コメント:2014/03/22 00:29</a>）</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token comment">// javafx に Pair があったので Tuple 代わりに使っちゃった</span><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Pair</span><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span><span class="token punctuation">></span></span> list1 <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">100</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">200</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">2</span><span class="token punctuation">,</span> <span class="token number">300</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token number">400</span><span class="token punctuation">)</span><br><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">groupingBy</span><span class="token punctuation">(</span>x <span class="token operator">-></span> x<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">entrySet</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token comment">// group化の結果が Map なので、エントリを Stream 化</span><br>  <span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>x <span class="token operator">-></span> <span class="token keyword">new</span> <span class="token class-name">Pair</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><br>    x<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">// Key が Id に相当</span><br>    x<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">summingInt</span><span class="token punctuation">(</span>y<span class="token operator">-></span>y<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span> <span class="token comment">// Value が List なのでまた Stream 化して合計を得る</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token operator">::</span><span class="token function">println</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token comment">// Collectors.groupingBy 使わずに Map.merge を使ったほうが分かりやすい気も。。。</span><br>list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><br>  <span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token keyword">new</span> <span class="token class-name">HashMap</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">,</span> <span class="token class-name">Integer</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span><br>  <span class="token punctuation">(</span>map<span class="token punctuation">,</span> item<span class="token punctuation">)</span> <span class="token operator">-></span> map<span class="token punctuation">.</span><span class="token function">merge</span><span class="token punctuation">(</span>item<span class="token punctuation">.</span><span class="token function">getKey</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> item<span class="token punctuation">.</span><span class="token function">getValue</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token punctuation">(</span>x<span class="token punctuation">,</span> y<span class="token punctuation">)</span> <span class="token operator">-></span> x <span class="token operator">+</span> y<span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token comment">// 同じキーの値を加算してく</span><br>  <span class="token punctuation">(</span>left<span class="token punctuation">,</span> right<span class="token punctuation">)</span> <span class="token operator">-></span> left<span class="token punctuation">.</span><span class="token function">putAll</span><span class="token punctuation">(</span>right<span class="token punctuation">)</span><span class="token punctuation">)</span><br>  <span class="token punctuation">.</span><span class="token function">forEach</span><span class="token punctuation">(</span><span class="token punctuation">(</span>k<span class="token punctuation">,</span> v<span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span>k <span class="token operator">+</span> <span class="token string">":"</span> <span class="token operator">+</span> v<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>Java の方、カオスすぎる…。.NET の <code>IGrouping</code> を Map でやってるからだな。</p>
+<pre><code>[.NET]
 { Id = 1, SumOfSales = 100 }
 { Id = 2, SumOfSales = 500 } // ID=2 の Sales が合計されている
 { Id = 3, SumOfSales = 400 }
@@ -1501,127 +409,38 @@ Orange=Optional.empty // Option だから empty になるのは良い
 1=100
 2=500
 3=400
-</code></pre></div></div>
-
-<h3 id="合計sum最大max最小min平均average件数count先頭first終端last">合計(Sum)、最大(Max)、最小(Min)、平均(Average)、件数(Count)、先頭(First)、終端(Last)</h3>
-
+</code></pre>
+<h3 id="%E5%90%88%E8%A8%88(sum)%E3%80%81%E6%9C%80%E5%A4%A7(max)%E3%80%81%E6%9C%80%E5%B0%8F(min)%E3%80%81%E5%B9%B3%E5%9D%87(average)%E3%80%81%E4%BB%B6%E6%95%B0(count)%E3%80%81%E5%85%88%E9%A0%AD(first)%E3%80%81%E7%B5%82%E7%AB%AF(last)">合計(Sum)、最大(Max)、最小(Min)、平均(Average)、件数(Count)、先頭(First)、終端(Last) <a class="direct-link" href="#%E5%90%88%E8%A8%88(sum)%E3%80%81%E6%9C%80%E5%A4%A7(max)%E3%80%81%E6%9C%80%E5%B0%8F(min)%E3%80%81%E5%B9%B3%E5%9D%87(average)%E3%80%81%E4%BB%B6%E6%95%B0(count)%E3%80%81%E5%85%88%E9%A0%AD(first)%E3%80%81%E7%B5%82%E7%AB%AF(last)">#</a></h3>
 <p>集計いろいろ。</p>
-
-<div class="language-csharp highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// C#</span>
-<span class="kt">var</span> <span class="n">list1</span> <span class="p">=</span> <span class="n">Enumerable</span><span class="p">.</span><span class="nf">Range</span><span class="p">(</span><span class="m">0</span><span class="p">,</span> <span class="m">10</span><span class="p">);</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Sum={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Sum</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Max={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Max</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Min={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Min</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Count={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Count</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"First={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">First</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Last={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Last</span><span class="p">());</span>
-<span class="n">Console</span><span class="p">.</span><span class="nf">WriteLine</span><span class="p">(</span><span class="s">"Average={0}"</span><span class="p">,</span> <span class="n">list1</span><span class="p">.</span><span class="nf">Average</span><span class="p">());</span>
-</code></pre></div></div>
-
-<div class="language-java highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="c1">// Java</span>
-<span class="n">List</span><span class="o">&lt;</span><span class="n">Integer</span><span class="o">&gt;</span> <span class="n">list1</span> <span class="o">=</span> <span class="n">Arrays</span><span class="o">.</span><span class="na">asList</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">1</span><span class="o">,</span><span class="mi">2</span><span class="o">,</span><span class="mi">3</span><span class="o">,</span><span class="mi">4</span><span class="o">,</span><span class="mi">5</span><span class="o">,</span><span class="mi">6</span><span class="o">,</span><span class="mi">7</span><span class="o">,</span><span class="mi">8</span><span class="o">,</span><span class="mi">9</span><span class="o">);</span>
-<span class="n">IntSummaryStatistics</span> <span class="n">stats</span> <span class="o">=</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">collect</span><span class="o">(</span><span class="n">Collectors</span><span class="o">.</span><span class="na">summarizingInt</span><span class="o">(</span><span class="n">x</span> <span class="o">-&gt;</span> <span class="n">x</span><span class="o">));</span> <span class="c1">// Max,Min,Count,Average が取得できる</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Sum="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getSum</span><span class="o">());</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Max="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMax</span><span class="o">());</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Min="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getMin</span><span class="o">());</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Count="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getCount</span><span class="o">());</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"First="</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// summarizing では取れない</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Last="</span> <span class="o">+</span> <span class="n">list1</span><span class="o">.</span><span class="na">stream</span><span class="o">().</span><span class="na">sorted</span><span class="o">((</span><span class="n">x</span><span class="o">,</span><span class="n">y</span><span class="o">)</span> <span class="o">-&gt;</span> <span class="n">y</span><span class="o">-</span><span class="n">x</span><span class="o">).</span><span class="na">findFirst</span><span class="o">().</span><span class="na">orElse</span><span class="o">(-</span><span class="mi">1</span><span class="o">));</span> <span class="c1">// 微妙</span>
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Average="</span> <span class="o">+</span> <span class="n">stats</span><span class="o">.</span><span class="na">getAverage</span><span class="o">());</span>
-
-<span class="n">System</span><span class="o">.</span><span class="na">out</span><span class="o">.</span><span class="na">println</span><span class="o">(</span><span class="s">"Average="</span> <span class="o">+</span> <span class="n">IntStream</span><span class="o">.</span><span class="na">range</span><span class="o">(</span><span class="mi">0</span><span class="o">,</span> <span class="mi">10</span><span class="o">).</span><span class="na">average</span><span class="o">());</span> <span class="c1">// 型指定 Stream なら average, sum がある（結果は Option に包まれる）</span>
-</code></pre></div></div>
-
-<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>Sum=45
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// C#</span><br><span class="token class-name"><span class="token keyword">var</span></span> list1 <span class="token operator">=</span> Enumerable<span class="token punctuation">.</span><span class="token function">Range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Sum={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Sum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Max={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Max</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Min={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Min</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Count={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Count</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"First={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">First</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Last={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Last</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>Console<span class="token punctuation">.</span><span class="token function">WriteLine</span><span class="token punctuation">(</span><span class="token string">"Average={0}"</span><span class="token punctuation">,</span> list1<span class="token punctuation">.</span><span class="token function">Average</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">// Java</span><br><span class="token class-name">List</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Integer</span><span class="token punctuation">></span></span> list1 <span class="token operator">=</span> <span class="token class-name">Arrays</span><span class="token punctuation">.</span><span class="token function">asList</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span><span class="token number">1</span><span class="token punctuation">,</span><span class="token number">2</span><span class="token punctuation">,</span><span class="token number">3</span><span class="token punctuation">,</span><span class="token number">4</span><span class="token punctuation">,</span><span class="token number">5</span><span class="token punctuation">,</span><span class="token number">6</span><span class="token punctuation">,</span><span class="token number">7</span><span class="token punctuation">,</span><span class="token number">8</span><span class="token punctuation">,</span><span class="token number">9</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">IntSummaryStatistics</span> stats <span class="token operator">=</span> list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">collect</span><span class="token punctuation">(</span><span class="token class-name">Collectors</span><span class="token punctuation">.</span><span class="token function">summarizingInt</span><span class="token punctuation">(</span>x <span class="token operator">-></span> x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// Max,Min,Count,Average が取得できる</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Sum="</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getSum</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Max="</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getMax</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Min="</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getMin</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Count="</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getCount</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"First="</span> <span class="token operator">+</span> list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">findFirst</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// summarizing では取れない</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Last="</span> <span class="token operator">+</span> list1<span class="token punctuation">.</span><span class="token function">stream</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">sorted</span><span class="token punctuation">(</span><span class="token punctuation">(</span>x<span class="token punctuation">,</span>y<span class="token punctuation">)</span> <span class="token operator">-></span> y<span class="token operator">-</span>x<span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">findFirst</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">orElse</span><span class="token punctuation">(</span><span class="token operator">-</span><span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 微妙</span><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Average="</span> <span class="token operator">+</span> stats<span class="token punctuation">.</span><span class="token function">getAverage</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br><span class="token class-name">System</span><span class="token punctuation">.</span>out<span class="token punctuation">.</span><span class="token function">println</span><span class="token punctuation">(</span><span class="token string">"Average="</span> <span class="token operator">+</span> <span class="token class-name">IntStream</span><span class="token punctuation">.</span><span class="token function">range</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">average</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span> <span class="token comment">// 型指定 Stream なら average, sum がある（結果は Option に包まれる）</span></code></pre>
+<pre><code>Sum=45
 Max=9
 Min=0
 Count=10
 First=0
 Last=9
 Average=4.5
-</code></pre></div></div>
-
+</code></pre>
 <p>…疲れた。。。</p>
 
-    </section>
-    <footer class="post-footer">
 
-      <section class="categories">
-        
-        <div class="category">C#</div>
-        
-        <div class="category">Java</div>
-        
-        <div class="category">LINQ</div>
-        
-        <p class="published">published <time datetime="2014-03-20 15:15">20 Mar 2014</time></p>
-      </section>
-      
-      <section class="share">
-          <a href="https://github.com/amay077/blog.vNext/tree/master/_posts/2014-03-20-linq-to-objects-vs-java8-stream-api.markdown" target="_blank">Edit on GitHub</a>
-          &nbsp;
-          <a class="icon" href="https://twitter.com/intent/tweet?url=https://blog.amay0777.net/blog/2014/03/20/linq-to-objects-vs-java8-stream-api&text=LINQ+to+Objects+%E3%81%A8+Java8-Stream+API+%E3%81%AE%E5%AF%BE%E5%BF%9C%E8%A1%A8&via=amay077" target="_blank">
-          Share on
-          
-<span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span>
+published at <time class="postlist-date" datetime="2014-03-20">20 Mar 2014</time>
 
+tags: 
 
-        </a>
-      </section>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/Java/" class="post-tag">Java</a>
+  <a href="/tags/LINQ/" class="post-tag">LINQ</a>
 
-      <div class="amazon-ads">
-        <h4>Ads</h4>
-        <amp-iframe src="https://ws-fe.assoc-amazon.com/widgets/cm?o=9&p=48&l=ur1&category=manga_anime&f=ifr&linkID=df82ebeeda21125f8fc45ac1de9b5e8c&t=oku2008-22&tracking_id=oku2008-22" width="728" height="90" frameborder="0" scrolling="no"></amp-iframe>
-      </div>
-      
+<hr>
+<ul><li>Next: <a href="/blog/2014/04/01/receive-intent-by-xamarin-android/">Xamarin.Android で Intent を受けとるには？</a></li><li>Previous: <a href="/blog/2014/03/19/pair-iterator-implements-by-linq/">ふたつの Iterator を LINQ で</a></li>
+</ul>
 
-    </footer>
-    <div class="bottom-teaser cf">
-      <div class="isLeft">
-        <h5 class="index-headline featured"><span>Written by</span></h5>
-        <section class="author">
-          <a href="/about/" class="mvp-image"></a>
-          <a href="/about/"><h4>amay077</h4></a>
-          <p class="bio">Microsoft MVP(Xamarin). フルリモートワーカー. Geospatial Mobile app developer. Love C#.
-</p>
+    </main>
 
-          <p>
-            <span>
-              
-                <a href="https://github.com/amay077"><span class="icon icon--github"><svg viewBox="0 0 16 16"><path fill="#828282" d="M7.999,0.431c-4.285,0-7.76,3.474-7.76,7.761 c0,3.428,2.223,6.337,5.307,7.363c0.388,0.071,0.53-0.168,0.53-0.374c0-0.184-0.007-0.672-0.01-1.32 c-2.159,0.469-2.614-1.04-2.614-1.04c-0.353-0.896-0.862-1.135-0.862-1.135c-0.705-0.481,0.053-0.472,0.053-0.472 c0.779,0.055,1.189,0.8,1.189,0.8c0.692,1.186,1.816,0.843,2.258,0.645c0.071-0.502,0.271-0.843,0.493-1.037 C4.86,11.425,3.049,10.76,3.049,7.786c0-0.847,0.302-1.54,0.799-2.082C3.768,5.507,3.501,4.718,3.924,3.65 c0,0,0.652-0.209,2.134,0.796C6.677,4.273,7.34,4.187,8,4.184c0.659,0.003,1.323,0.089,1.943,0.261 c1.482-1.004,2.132-0.796,2.132-0.796c0.423,1.068,0.157,1.857,0.077,2.054c0.497,0.542,0.798,1.235,0.798,2.082 c0,2.981-1.814,3.637-3.543,3.829c0.279,0.24,0.527,0.713,0.527,1.437c0,1.037-0.01,1.874-0.01,2.129 c0,0.208,0.14,0.449,0.534,0.373c3.081-1.028,5.302-3.935,5.302-7.362C15.76,3.906,12.285,0.431,7.999,0.431z"/></svg>
-</span><span class="username">amay077</span></a>
+    <footer></footer>
 
-              
-            </span>
-
-            <span>
-              
-                
-<a href="https://twitter.com/amay077"><span class="icon icon--twitter"><svg viewBox="0 0 16 16"><path fill="#828282" d="M15.969,3.058c-0.586,0.26-1.217,0.436-1.878,0.515c0.675-0.405,1.194-1.045,1.438-1.809c-0.632,0.375-1.332,0.647-2.076,0.793c-0.596-0.636-1.446-1.033-2.387-1.033c-1.806,0-3.27,1.464-3.27,3.27 c0,0.256,0.029,0.506,0.085,0.745C5.163,5.404,2.753,4.102,1.14,2.124C0.859,2.607,0.698,3.168,0.698,3.767 c0,1.134,0.577,2.135,1.455,2.722C1.616,6.472,1.112,6.325,0.671,6.08c0,0.014,0,0.027,0,0.041c0,1.584,1.127,2.906,2.623,3.206 C3.02,9.402,2.731,9.442,2.433,9.442c-0.211,0-0.416-0.021-0.615-0.059c0.416,1.299,1.624,2.245,3.055,2.271 c-1.119,0.877-2.529,1.4-4.061,1.4c-0.264,0-0.524-0.015-0.78-0.046c1.447,0.928,3.166,1.469,5.013,1.469 c6.015,0,9.304-4.983,9.304-9.304c0-0.142-0.003-0.283-0.009-0.423C14.976,4.29,15.531,3.714,15.969,3.058z"/></svg>
-</span><span class="username">amay077</span></a>
-
-
-              
-            </span>
-          </p>
-        </section>
-      </div>
-      
-
-      <div class="isRight">
-        <h5 class="index-headline featured"><span>Supported by</span></h5>
-        <footer class="site-footer">
-          <section class="poweredby">Proudly published with <a href="http://jekyllrb.com"> Jekyll</a> and <a href="https://github.com/ageitgey/amplify">Amplify</a></section>
-          <a class="subscribe" href="/feed.xml"> <span class="tooltip"> <i class="fa fa-rss"></i> You should subscribe to my feed.</span></a>
-          <div class="inner">
-            <section class="copyright">All content copyright <a href="mailto:okuokuoku[at]gmail.com">amay077</a> &copy; 2020<br>All rights reserved.</section>
-          </div>
-        </footer>
-      </div>
-    </div>
-  </article>
-</main>
-
+    <!-- Current page: /blog/2014/03/20/linq-to-objects-vs-java8-stream-api/ -->
   </body>
 </html>

@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RxJava + MVVM パターンで作るストップウォッチアプリ</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>RxJava + MVVM パターンで作るストップウォッチアプリ</h1>
+
+<p>これは <a href="http://qiita.com/advent-calendar/2015/rxjava">RxJava Advent Calendar 2015 24日目</a> の記事です。</p>
+<p>先日、</p>
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/entry/2015/12/20/012007">JXUGC #9 Xamarin.Forms Mvvm 実装方法 Teachathon を開催しました - Xamarin 日本語情報</a></li>
+</ul>
+<p>というイベントがありまして、エクセルソフトの田淵さんが作成したストップウォッチのアプリケーション(注:田淵さんはプログラマではないｗ)を、MVVM識者の方々が「MVVMとしてはこうあるべきだ」と叩きまくる、という恐ろしい?ものでした。</p>
+<!--more-->
+<p>私はこの勉強会には参加できなかったのですが、ストリーミングとか見て、</p>
+<blockquote class="twitter-tweet" lang="ja"><p lang="ja" dir="ltr">僕もストップウォッチ作ってみるかー</p>&mdash; ジェットあめいカスタム (@amay077) <a href="https://twitter.com/amay077/status/677561989359472640">2015, 12月 17</a></blockquote>
+<script async src="//platform.twitter.com/widgets.js" charset="utf-8"></script>
+<p>などとつぶやいたらご指名されてしまいました(^^)<br>
+このイベントは Xamarin を使ったアプリ製作でしたが、せっかくなので <strong>RxJava + MVVM</strong> で作ってみました。<br>
+(ご指名に応えないといけないのでその後 Xamarin版も製作)</p>
+<h1 id="%E3%82%B9%E3%83%88%E3%83%83%E3%83%97%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E4%BB%95%E6%A7%98">ストップウォッチアプリの仕様 <a class="direct-link" href="#%E3%82%B9%E3%83%88%E3%83%83%E3%83%97%E3%82%A6%E3%82%A9%E3%83%83%E3%83%81%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E4%BB%95%E6%A7%98">#</a></h1>
+<p>上記リンクからの引用です。</p>
+<ul>
+<li>Start/Stop ボタン、Lap ボタン</li>
+<li>StartするとラップボタンはEnable.ストップするとDisable
+<ul>
+<li>スタートしてからの経過時間をXX'XX.XXXみたいな感じで表示</li>
+</ul>
+</li>
+<li>履歴をListViewで残す</li>
+<li>ストップしたら結果をダイアログで出して分岐？</li>
+<li>今までのラップよりMin, Maxなどをダイアログに表示して次のページに遷移 ←ここ勝手に Toast に仕様変更しましたｗ</li>
+<li>スイッチの切り替えで、ミリ秒の桁を表示/非表示</li>
+</ul>
+<p>こんな機能を満たすサンプルを</p>
+<ol>
+<li>RxJava を使った Android アプリ(Java言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</li>
+<li>Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</li>
+</ol>
+<p>でそれぞれ作ってみました。</p>
+<h1 id="%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%80%81%E4%BD%9C%E3%81%A3%E3%81%9F%E3%82%82%E3%81%AE">とりあえず、作ったもの <a class="direct-link" href="#%E3%81%A8%E3%82%8A%E3%81%82%E3%81%88%E3%81%9A%E3%80%81%E4%BD%9C%E3%81%A3%E3%81%9F%E3%82%82%E3%81%AE">#</a></h1>
+<p><img src="/img/posts/rxjava_mvvm_stopwatch_00.gif" alt="つくったもの"></p>
+<p>左は Android-Java製、右は Xamarin.iOS製です。(Xamarin.Android製は省略)</p>
+<h1 id="1.-rxjava-%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F-android-%E3%82%A2%E3%83%97%E3%83%AA(java%E8%A8%80%E8%AA%9E)">1. RxJava を使った Android アプリ(Java言語) <a class="direct-link" href="#1.-rxjava-%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F-android-%E3%82%A2%E3%83%97%E3%83%AA(java%E8%A8%80%E8%AA%9E)">#</a></h1>
+<h2 id="model-viewmodel-view(mvvm)-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">Model-ViewModel-View(MVVM) で考える <a class="direct-link" href="#model-viewmodel-view(mvvm)-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B">#</a></h2>
+<p>構成図っぽいものを描くとこんな感じになります。</p>
+<p><img src="/img/posts/rxjava_mvvm_stopwatch_01.png" alt="クラス図的なの"></p>
+<h3 id="model">Model <a class="direct-link" href="#model">#</a></h3>
+<p>この仕様だと、ストップウォッチの一通りの機能を満たすクラスが Model になります。これを <code>StopWatchModel</code> という名前にしました。</p>
+<p><strong>「ロジック」は、すべてこの層（このクラス）に書きます。</strong><br>
+　<br>
+　例えば、ストップウォッチのタイマーを実行するには、 RxJava で <code>Observable.interval</code> としますが、これを ViewModel層に書いたら「負け」です。<br>
+　<br>
+また、ストップウォッチの実行は、画面の表示/破棄と連動しなくてよい(画面遷移しても計測し続けるべき)なので、StopWatchModel の生存期間は、アプリケーションの起動時から終了まで、という事になります。</p>
+<p>RxJava を全面的に使いたいので、 StopWatchModel のプロパティは全て <code>Observable&lt;T&gt;</code> にしました。RxJava を使わなかったらプロパティではなくコールバックですね。<br>
+　何かメソッドを実行したら、その結果は全て <code>Observable&lt;T&gt;</code> を通じて通知される仕組みです。なので原則として Model のメソッドの戻り値は <code>void</code> です。</p>
+<h3 id="viewmodel">ViewModel <a class="direct-link" href="#viewmodel">#</a></h3>
+<p>しつこいようですが <strong>ここにロジックを書いたら負け</strong> です。<br>
+個人としては、条件分岐もしたくない、変数宣言もしたくない、くらいのつもりでいます。もし書いてしまったら「それはModelの方が適切ではないか？」を検討します。</p>
+<p>ViewModel の役割は、Model のプロパティ(コールバック)を、View用に変換して流すこと、Viewのための機能をコマンドとして公開することです。</p>
+<p>例えば、仕様の内、</p>
+<blockquote>
+<p>スイッチの切り替えで、ミリ秒の桁を表示/非表示</p>
+</blockquote>
+<p>が、「View用に変換」の良い例になります。<br>
+　私の実装では、ミリ秒の桁を表示するか否かの bool 値を、format関数の書式文字列に変換しています。(View側で format して表示しています。)<br>
+　↓のような感じです。</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">/** 時間の表示フォーマット */</span><br><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> timeFormat<span class="token punctuation">;</span> <span class="token comment">// field</span><br><br><br><span class="token keyword">this</span><span class="token punctuation">.</span>timeFormat <span class="token operator">=</span> _stopWatch<span class="token punctuation">.</span>isVisibleMillis<span class="token punctuation">.</span><span class="token function">map</span><span class="token punctuation">(</span>visible <span class="token operator">-></span> <br>    visible <span class="token operator">?</span> <span class="token string">"mm:ss.SSS"</span> <span class="token operator">:</span> <span class="token string">"mm:ss"</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>RxJava で「変換」とくれば、 <code>map</code> など、 <code>Observable</code> の投影系のメソッドの出番となります。</p>
+<p>ViewModel が公開するプロパティも、基本的には <code>Observable&lt;T&gt;</code> になりました。(これはこのアプリの仕様上、OneWayバインディング＜=Modelによるデータの変化をViewに表示する＞だけで済んだためです。TwoWayバインディング＜=Viewからのデータの入力を受け付ける＞が必要な場合は、<code>Subject</code>など、データをセットできる機能が必要になります。)</p>
+<p>コマンドとは、Modelのメソッドを呼ぶためのものですが、それに加えて「そのコマンドが実行可能か？」を示すフラグも持ちます。さらにこのフラグも <code>Observable&lt;boolean&gt;</code> で表します。<br>
+こうする事で、「機能が利用可能な時のみボタンを Enable にする」のようなバインディングが可能になります。今回の仕様で言えば</p>
+<blockquote>
+<p>StartするとラップボタンはEnable.ストップするとDisable</p>
+</blockquote>
+<p>に該当します。</p>
+<p>コマンドのインターフェースは↓のようになります。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token keyword">interface</span> <span class="token class-name">Command</span> <span class="token punctuation">{</span><br>    <span class="token comment">/** このコマンドが実行可能かを示すフラグの更新を通知するObservable */</span><br>    <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Boolean</span><span class="token punctuation">></span></span> <span class="token function">canExecuteObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token comment">/** このコマンドの処理を実装する */</span><br>    <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>今回は、このインターフェースを ViewModel で匿名クラスを作ることで実装しました。↓のような感じです。この <code>commandLap</code> をラップボタンとバインドさせます。</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">/** 経過時間の記録 */</span><br><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token class-name">Command</span> commandLap <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Command</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Boolean</span><span class="token punctuation">></span></span> <span class="token function">canExecuteObservable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token keyword">return</span> _stopWatch<span class="token punctuation">.</span>isRunning<span class="token punctuation">;</span> <span class="token comment">// 実行中のみ記録可能</span><br>    <span class="token punctuation">}</span><br><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        _stopWatch<span class="token punctuation">.</span><span class="token function">lap</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span></code></pre>
+<p>あ、ViewModel は View とは疎結合に作ります。Viewを参照してはいけないのはもちろん、<code>TextView</code> や <code>Activity</code> などが import されていたら「負け」です。</p>
+<p>他には、Viewの状態を保持する役割も担いますが、本アプリの仕様では、それに該当する処理はありませんでした。</p>
+<h3 id="view">View <a class="direct-link" href="#view">#</a></h3>
+<p>View層で行うことは、画面要素のレイアウトとViewModelとのバインディングです。それ以外の事は行いません。.NETの世界では、View層において値の変換を行う機能=ValueConverterが存在しますが、ValueConverterを使うべきかViewModelで行うべきかでよく議論になります。<br>
+　<br>
+　バインディングの実体は、ViewModelのプロパティである <code>Observable&lt;T&gt;</code> を <code>subscribe</code> して、Viewのプロパティにセットしているだけです。前述の通り今回は TwoWay は無いので楽です。TwoWay が出てくるとバインディングのフレームワークにお願いした方がよいです。<br>
+　<br>
+　例えば、 <code>Observalbe&lt;String&gt;</code> と TextViewのtextプロパティのバインディングは、下のようになります。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">TextViewBinder</span> <span class="token function">toTextOneWay</span><span class="token punctuation">(</span><span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    _subscriptions<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><br>        prop<span class="token punctuation">.</span><span class="token function">observeOn</span><span class="token punctuation">(</span><span class="token class-name">AndroidSchedulers</span><span class="token punctuation">.</span><span class="token function">mainThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> _textView<span class="token punctuation">.</span><span class="token function">setText</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span> <span class="token comment">// メソッドチェーンで連続して呼べるようにしてるだけ</span><br><span class="token punctuation">}</span></code></pre>
+<p>.NETの世界では、このバインディングを画面定義ファイル(.xaml)に直接記述できます。<br>
+Androidでも一部のライブラリや、<a href="http://developer.android.com/intl/ja/tools/data-binding/guide.html">今後公式にデータバインディングがサポートされる模様</a>ですが、xml でのバンディングの記述は、デバッグしづらくなるので個人的にはそれほどメリットを感じないです。デザイナーとの分業と言っても別な理由で不可能なケースが多いと思います。</p>
+<h2 id="%E7%94%BB%E9%9D%A2%E9%81%B7%E7%A7%BB%E3%82%84-toast-%E3%81%AE%E8%A1%A8%E7%A4%BA%E3%81%AF%E8%AA%B0%E3%81%AE%E8%B2%AC%E5%8B%99%EF%BC%9F">画面遷移や Toast の表示は誰の責務？ <a class="direct-link" href="#%E7%94%BB%E9%9D%A2%E9%81%B7%E7%A7%BB%E3%82%84-toast-%E3%81%AE%E8%A1%A8%E7%A4%BA%E3%81%AF%E8%AA%B0%E3%81%AE%E8%B2%AC%E5%8B%99%EF%BC%9F">#</a></h2>
+<p>大抵の MVVMフレームワーク に備わっている <code>Messenger</code> という機能を使います。Android界隈の人には「EventBus」と言った方がわかりやすいかも知れません。</p>
+<p>ViewModelが「画面遷移を要求するメッセージ」を投げ、それをViewが受信して画面遷移を行います。</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">//メッセージ送信側(MainViewModel.java)</span><br><span class="token keyword">public</span> <span class="token keyword">final</span> <span class="token class-name">Command</span> commandNextView <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Command</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">execute</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token comment">// LapActivity へ遷移させる</span><br>        <span class="token comment">// ほんとは LapViewModel.class を指定すべき(LapActivity は使いたくない)</span><br>        messenger<span class="token punctuation">.</span><span class="token function">send</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">StartActivityMessage</span><span class="token punctuation">(</span><span class="token class-name">LapActivity</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">;</span></code></pre>
+<pre class="language-java"><code class="language-java"><span class="token comment">//メッセージ受信側(MainActivity.java)</span><br><span class="token comment">// 画面遷移のメッセージ受信</span><br>_viewModel<span class="token punctuation">.</span>messenger<span class="token punctuation">.</span><span class="token function">register</span><span class="token punctuation">(</span><span class="token class-name">StartActivityMessage</span><span class="token punctuation">.</span><span class="token keyword">class</span><span class="token punctuation">.</span><span class="token function">getName</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token keyword">new</span> <span class="token class-name">Action1</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">Message</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    <span class="token annotation punctuation">@Override</span><br>    <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">call</span><span class="token punctuation">(</span><span class="token keyword">final</span> <span class="token class-name">Message</span> message<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>        <span class="token function">runOnUiThread</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Runnable</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>            <span class="token annotation punctuation">@Override</span><br>            <span class="token keyword">public</span> <span class="token keyword">void</span> <span class="token function">run</span><span class="token punctuation">(</span><span class="token punctuation">)</span> <span class="token punctuation">{</span><br>                <span class="token keyword">final</span> <span class="token class-name">StartActivityMessage</span> m <span class="token operator">=</span> <span class="token punctuation">(</span><span class="token class-name">StartActivityMessage</span><span class="token punctuation">)</span>message<span class="token punctuation">;</span><br>                <span class="token class-name">Intent</span> intent <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">Intent</span><span class="token punctuation">(</span><span class="token class-name">MainActivity</span><span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">,</span> m<span class="token punctuation">.</span>activityClass<span class="token punctuation">)</span><span class="token punctuation">;</span><br>                <span class="token class-name">MainActivity</span><span class="token punctuation">.</span><span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">startActivity</span><span class="token punctuation">(</span>intent<span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token punctuation">}</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>今回は簡単な Messenger を実装しました。VM-&gt;Vの通知にしか使わないのでVM毎に一つ持つようにしています。</p>
+<h1 id="2.3.-reactive-extensions%2C-reactiveproperty-%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F-android%2Fios-%E3%82%A2%E3%83%97%E3%83%AA(xamarin%2C-c%23%E8%A8%80%E8%AA%9E)">2.3. Reactive Extensions, ReactiveProperty を使った Android/iOS アプリ(Xamarin, C#言語) <a class="direct-link" href="#2.3.-reactive-extensions%2C-reactiveproperty-%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F-android%2Fios-%E3%82%A2%E3%83%97%E3%83%AA(xamarin%2C-c%23%E8%A8%80%E8%AA%9E)">#</a></h1>
+<p><a href="https://xamarin.com/">Xamarin</a> は、 C# で Android/iOS が作れるプロダクトです。<br>
+RubyMotion のように、CocoaTouch や Android SDK の API をラップし、同じ名称のクラス,メソッドで C# から呼び出せるようにしています。</p>
+<ul>
+<li><a href="http://ytabuchi.hatenablog.com/">Xamarin 日本語情報</a></li>
+<li><a href="http://qiita.com/amay077/items/2e86b44e5f274a34b2e9">マカーの人が Xamarin について勘違いしていそうな５つのこと - Qiita</a></li>
+</ul>
+<p>.NETのオープンソース実装である mono 由来の製品であり、また Microsoft とのパートナーシップも結んでいることから、.NET の資産の多くが利用可能です。</p>
+<p>何が言いたいかと言うと、RxJava も MVVM パターンも、元は .NET のアプリケーション開発の分野で発案・成熟してきた考え方であり、豊富な.NET製ライブラリ(今回だと Reactive Extensions と ReactiveProperty)を使って Android/iOS アプリを開発できる、という事です。</p>
+<h2 id="model-viewmodel-view(mvvm)-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B-2">Model-ViewModel-View(MVVM) で考える <a class="direct-link" href="#model-viewmodel-view(mvvm)-%E3%81%A7%E8%80%83%E3%81%88%E3%82%8B-2">#</a></h2>
+<p>Xamarin でも MVVM の役割はまったく同じですが、<br>
+<strong>「Model-ViewModel を Android/iOS で使いまわせる」</strong><br>
+という大きなメリットがあります。</p>
+<p>Model と ViewModel からは、プラットフォームに依存するコードは排除できます(すべきです)。<br>
+Xamarin(というか .NET) ではプラットフォーム非依存の処理をライブラリ化できます(これを PCL=Portable Class Library と言います)。</p>
+<p>Android と iOS でそれぞれに実装が必要なのは、View と、そのバインディングのみです。</p>
+<p><img src="/img/posts/rxjava_mvvm_stopwatch_02.png" alt="クラス図的なの"></p>
+<h2 id="reactive-extensions-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">Reactive Extensions について <a class="direct-link" href="#reactive-extensions-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">#</a></h2>
+<p>本家<a href="https://github.com/Reactive-Extensions/Rx.NET">Rx.NET</a>です。RxJava はこの Reactive Extensions を Java にポートしたものです。<br>
+RxJava には、いくつか便利なメソッドが追加されています(<code>compose</code> とか)が、殆ど同じです。<br>
+また、 C# はラムダ式を標準でサポートしていることから、 retrolambda などに頼らなくても見やすいコードが書けるのは言うまでもないでしょう。</p>
+<h2 id="reactiveproperty-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">ReactiveProperty について <a class="direct-link" href="#reactiveproperty-%E3%81%AB%E3%81%A4%E3%81%84%E3%81%A6">#</a></h2>
+<p><a href="https://github.com/runceel/ReactiveProperty/blob/master/README-ja.md">ReactiveProperty</a> は、Rxの機能を活かしてMVVMパターンの実装を手助けしてくれるライブラリです。</p>
+<ul>
+<li><a href="http://blog.okazuki.jp/entry/2015/02/22/212827">MVVMとリアクティブプログラミングを支援するライブラリ「ReactiveProperty v2.0」オーバービュー - かずきのBlog@hatena</a></li>
+</ul>
+<p>Java版ストップウォッチでは、<code>StopWatchModel</code> や ViewModel のプロパティを全て <code>Observable&lt;T&gt;</code> としましたが、 Xamarin版では <code>ReactiveProperty&lt;T&gt;</code> としています。 <code>ReactiveProperty&lt;T&gt;</code> は <code>Observable&lt;T&gt;</code> から継承しているので、それほど大差はありませんが、<code>Subject</code> のように値の設定をサポートしていたり、バリデーション、エラー通知の仕組みが備わっています。</p>
+<p>また、ReactiveProperty は、 Android の View要素とのバインディング機能も持ちます。これを使うとバインディングが以下のように書けます。</p>
+<pre class="language-csharp"><code class="language-csharp"><span class="token comment">// TextView(textTime) と viewModel.Time のバインド</span><br><span class="token generic-method"><span class="token function">FindViewById</span><span class="token generic class-name"><span class="token punctuation">&lt;</span>TextView<span class="token punctuation">></span></span></span><span class="token punctuation">(</span>Resource<span class="token punctuation">.</span>Id<span class="token punctuation">.</span>textTime<span class="token punctuation">)</span><br>    <span class="token punctuation">.</span><span class="token function">SetBinding</span><span class="token punctuation">(</span>v <span class="token operator">=></span> v<span class="token punctuation">.</span>Text<span class="token punctuation">,</span> <br>        _viewModel<span class="token punctuation">.</span>Time<span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x<span class="token punctuation">.</span><span class="token function">ToString</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">ObserveOnUIDispatcher</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>        <span class="token punctuation">.</span><span class="token function">ToReactiveProperty</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>iOS のバインディングはありませんが、 <s>ソースの一部を持ってくる事で、殆ど解決します</s> <a href="https://twitter.com/okazuki/status/679256704689684480">ツイートしたら取り込んでもらえました(^^)</a> 。</p>
+<h1 id="%E4%BD%9C%E3%81%A3%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9">作ったアプリのソース <a class="direct-link" href="#%E4%BD%9C%E3%81%A3%E3%81%9F%E3%82%A2%E3%83%97%E3%83%AA%E3%81%AE%E3%82%BD%E3%83%BC%E3%82%B9">#</a></h1>
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample">amay077/StopWatchSample</a></li>
+</ul>
+<p>それぞれ、</p>
+<ol>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppAndroid">RxJava を使った Android アプリ(Java言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Android">Reactive Extensions, ReactiveProperty を使った Android アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.iOS">Reactive Extensions, ReactiveProperty を使った iOS アプリ(Xamarin, C#言語)</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/tree/master/StopWatchAppXamarin/StopWatchApp.Core">Xamarin版アプリの Model, ViewModel</a></li>
+</ol>
+<p>にあります。</p>
+<p>Java版は、</p>
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a></li>
+</ul>
+<p>を見るとだいたい分かると思います。</p>
+<p>また、Java版 と Xamarin版では、</p>
+<ul>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/models/StopWatchModel.java">StopWatchModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/Models/StopWatchModel.cs">StopWatchModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/viewmodel/MainViewModel.java">MainViewModel.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Core/ViewModels/MainViewModel.cs">MainViewModel.cs</a></li>
+<li><a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppAndroid/app/src/main/java/com/amay077/stopwatchapp/views/MainActivity.java">MainActivity.java</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.Android/Views/MainActivity.cs">MainActivity.cs</a> と <a href="https://github.com/amay077/StopWatchSample/blob/master/StopWatchAppXamarin/StopWatchApp.iOS/Views/MainViewController.cs">MainViewController.cs</a></li>
+</ul>
+<p>あたりを見比べるといいと思います。</p>
+<h1 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h1>
+<p>MVVM と RxJava はとても相性がよいと感じました。</p>
+<p>Model → ViewModel → View と通知を伝搬させるのに、そのまま <code>Observable&lt;T&gt;</code> を繋げればよいのですから。加工が必要なら <code>map</code> などのオペレータを挟むだけ。<br>
+これがコールバックだったら…恐ろしくて想像したくありません。</p>
+<p>Model が使用するDB層やWebAPIなども RxJava をサポートしていたら、もっと便利になると思います。(Realm は RxJava サポートが追加されたようですね！)</p>
+<p>View - ViewModel のデータバインディングにも RxJava は有効ですが、こちらは、Android公式の Data Binding がどう実装されるかで未来が変わってきそうです。</p>
+<p>Android-Java には、まだメジャーな MVVMフレームワークが無いので、登場が待たれるところです。</p>
+<h1 id="%E3%81%8A%E3%81%BE%E3%81%91%EF%BC%9A%E5%8F%8D%E7%9C%81%E3%81%AA%E3%81%A9">おまけ：反省など <a class="direct-link" href="#%E3%81%8A%E3%81%BE%E3%81%91%EF%BC%9A%E5%8F%8D%E7%9C%81%E3%81%AA%E3%81%A9">#</a></h1>
+<h2 id="view-%E3%81%8B-viewmodel-%E3%81%8B-model-%E3%81%8B%E5%95%8F%E9%A1%8C">View か ViewModel か Model か問題 <a class="direct-link" href="#view-%E3%81%8B-viewmodel-%E3%81%8B-model-%E3%81%8B%E5%95%8F%E9%A1%8C">#</a></h2>
+<p>下は View に書かれている「現在時刻と表示書式文字列のどちらかが更新されたら、時刻をフォーマットして流す」という Observable です。</p>
+<pre class="language-java"><code class="language-java"><span class="token comment">// フォーマットされた時間を表す Observable（time と timeFormat のどちらかが変更されたら更新）</span><br><span class="token keyword">final</span> <span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> formattedTime <span class="token operator">=</span> <span class="token class-name">Observable</span><span class="token punctuation">.</span><span class="token function">combineLatest</span><span class="token punctuation">(</span><br>        _viewModel<span class="token punctuation">.</span>time<span class="token punctuation">,</span><br>        _viewModel<span class="token punctuation">.</span>timeFormat<span class="token punctuation">,</span> <span class="token punctuation">(</span><span class="token class-name">Long</span> time<span class="token punctuation">,</span> <span class="token class-name">String</span> format<span class="token punctuation">)</span> <span class="token operator">-></span> <span class="token punctuation">{</span><br>            <span class="token keyword">final</span> <span class="token class-name">SimpleDateFormat</span> sdf <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token class-name">SimpleDateFormat</span><span class="token punctuation">(</span>format<span class="token punctuation">,</span> <span class="token class-name">Locale</span><span class="token punctuation">.</span><span class="token function">getDefault</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>            <span class="token keyword">return</span> sdf<span class="token punctuation">.</span><span class="token function">format</span><span class="token punctuation">(</span><span class="token keyword">new</span> <span class="token class-name">Date</span><span class="token punctuation">(</span>time<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">;</span></code></pre>
+<p>これは、ViewModel に用意すべきだったかも知れません。いやいや、フォーマットされた時間を通知する機能が Model にあってもおかしくないとも言えます。<br>
+実際、 <code>LapActivity</code> でも同じコードを書いているので D.R.Y原則にも反します。やっぱ Model に持たせるべきだったと反省。</p>
+<h2 id="model-%E3%81%AB%E6%88%BB%E3%82%8A%E5%80%A4%E3%81%8C-void-%E3%81%A7%E3%81%AA%E3%81%84%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%9C%E3%81%A3%E3%81%A1%E3%82%83%E3%81%A3%E3%81%9F%E5%95%8F%E9%A1%8C">Model に戻り値が void でないメソッドを作っちゃった問題 <a class="direct-link" href="#model-%E3%81%AB%E6%88%BB%E3%82%8A%E5%80%A4%E3%81%8C-void-%E3%81%A7%E3%81%AA%E3%81%84%E3%83%A1%E3%82%BD%E3%83%83%E3%83%89%E3%82%92%E4%BD%9C%E3%81%A3%E3%81%A1%E3%82%83%E3%81%A3%E3%81%9F%E5%95%8F%E9%A1%8C">#</a></h2>
+<blockquote>
+<p>原則として Model のメソッドの戻り値は void です</p>
+</blockquote>
+<p>の原則に反して、戻り値で最速、最遅ラップ値を返してしまいました。<br>
+Toast表示のためだけに取得できればいいやと思いこうしたのですが、これでは「最速、最遅ラップを常に画面に表示する」という仕様変更があっただけで破綻します。これは悪手でした、反省。</p>
+<p>だいたいラップの最大、最小の取得は、 <code>Observable&lt;List&lt;Long&gt;&gt; laps</code>  を <code>map</code> で変換すればよいだけの話ですね。LINQ あるいは Stream API が使えれば <code>List&lt;Long&gt;</code> から min/max を取得するのも簡単ですし。</p>
+<h2 id="timer-%E3%82%92-1ms-%E9%96%93%E9%9A%94%E3%81%AB%E3%81%97%E3%81%A1%E3%82%83%E3%81%A3%E3%81%9F%E5%95%8F%E9%A1%8C">Timer を 1ms 間隔にしちゃった問題 <a class="direct-link" href="#timer-%E3%82%92-1ms-%E9%96%93%E9%9A%94%E3%81%AB%E3%81%97%E3%81%A1%E3%82%83%E3%81%A3%E3%81%9F%E5%95%8F%E9%A1%8C">#</a></h2>
+<p><code>Observable.interval(1ms)</code> ってやっちゃいましたが、START の時間を覚えておいて、LAP, STOP された時に、現在時刻との差分を取ればよかったですね。基本的なムダで反省。</p>
+<p><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を ｜ Moonmile Solutions Blog</a> より</p>
+<blockquote>
+<p>Lap ボタンを押したタイミングで DateTime.Now を取得すればよいわけで、何も定期的に内部データを更新する必要はありません</p>
+</blockquote>
+<p>その通りですね。。。</p>
+<h2 id="ui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%B8%E3%81%AE%E5%A4%89%E6%8F%9B%E3%82%92%E3%81%A0%E3%82%8C%E3%81%8C%E3%82%84%E3%82%8B%E3%81%AE%E3%81%8B%E5%95%8F%E9%A1%8C">UIスレッドへの変換をだれがやるのか問題 <a class="direct-link" href="#ui%E3%82%B9%E3%83%AC%E3%83%83%E3%83%89%E3%81%B8%E3%81%AE%E5%A4%89%E6%8F%9B%E3%82%92%E3%81%A0%E3%82%8C%E3%81%8C%E3%82%84%E3%82%8B%E3%81%AE%E3%81%8B%E5%95%8F%E9%A1%8C">#</a></h2>
+<p>今回は、以下のように、自作したバインディングの中で <code>observeOn(AndroidSchedulers.mainThread())</code> 行っています。</p>
+<pre class="language-java"><code class="language-java"><span class="token keyword">public</span> <span class="token class-name">TextViewBinder</span> <span class="token function">toTextOneWay</span><span class="token punctuation">(</span><span class="token class-name">Observable</span><span class="token generics"><span class="token punctuation">&lt;</span><span class="token class-name">String</span><span class="token punctuation">></span></span> prop<span class="token punctuation">)</span> <span class="token punctuation">{</span><br>    _subscriptions<span class="token punctuation">.</span><span class="token function">add</span><span class="token punctuation">(</span><br>        prop<span class="token punctuation">.</span><span class="token function">observeOn</span><span class="token punctuation">(</span><span class="token class-name">AndroidSchedulers</span><span class="token punctuation">.</span><span class="token function">mainThread</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">)</span><br>            <span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span>x <span class="token operator">-></span> _textView<span class="token punctuation">.</span><span class="token function">setText</span><span class="token punctuation">(</span>x<span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br><br>    <span class="token keyword">return</span> <span class="token keyword">this</span><span class="token punctuation">;</span><br><span class="token punctuation">}</span></code></pre>
+<p>これを ViewModel で行うこと(ViewModel が公開する Observable は必ずUIスレッドで実行されるというルール)もできます。<br>
+が、セオリーが分かっていません。とりあえず View側で observeOn しとけば安全かなと思って上記のようにしているだけです。使用するMVVMフレームワークの仕様にも依存しそうです。</p>
+<h2 id="stopwatchmodel-%E3%81%AE%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3%E3%81%AF-hot%EF%BC%9F-%E3%81%9D%E3%82%8C%E3%81%A8%E3%82%82-cold%EF%BC%9F">StopWatchModel のプロパティは Hot？ それとも Cold？ <a class="direct-link" href="#stopwatchmodel-%E3%81%AE%E3%83%97%E3%83%AD%E3%83%91%E3%83%86%E3%82%A3%E3%81%AF-hot%EF%BC%9F-%E3%81%9D%E3%82%8C%E3%81%A8%E3%82%82-cold%EF%BC%9F">#</a></h2>
+<p>StopWatchModel の各プロパティである <code>Observable&lt;T&gt;</code> は、 <strong><code>subscribe</code> をトリガーに値が流れ始めるものではないので Hot</strong> ですね。</p>
+<p>また、<code>BehaviorSubject</code> を使っているので、 <code>subscribe</code> 時には、その時点の最新の値が流れてきます。</p>
+<p>シングルトンの <code>StopWatchModel</code> に対して、 <code>MainActivity</code> に続いて <code>LapActivity</code> でも購読した時に、正しくラップタイム群が表示できるのは、<code>BehaviorSubject</code> であるためですね。</p>
+<p><code>refCount</code> してないけど、ちゃんと破棄されているのかは未確認。。。</p>
+<h2 id="observalbe%3Clist%3Ct%3E%3E">Observalbe&lt;List&lt;T&gt;&gt; <a class="direct-link" href="#observalbe%3Clist%3Ct%3E%3E">#</a></h2>
+<p>ラップタイム群を通知するプロパティは <code>Observalbe&lt;List&lt;T&gt;&gt;</code> にしています。<br>
+この場合、List の中身を変更されても通知されないので  <code>Collections.unmodifiableList</code> で変更不可にしてから onNext で通知しています。LAPボタンが押される度に List を作りなおしている感じになります。</p>
+<p>ListView とのバインディングも同じで、onNext を受信する度に、ListView を洗い替えしています。<br>
+このムダが嫌、大量データでパフォーマンスに問題が出る場合は、.NET にある <a href="https://msdn.microsoft.com/ja-jp/library/ms668604(v=vs.110).aspx"><code>ObservableCollection&lt;T&gt;</code></a> のような仕組みを作る必要があります。(<a href="http://Rx.NET">Rx.NET</a>, RxJava では管轄外かな？)</p>
+<p><code>ObservableCollection&lt;T&gt;</code> は、リストへの追加、削除、変更をアイテム毎に通知／監視できます(「 <em>項目X</em> が <em>2番目</em> に <em>追加</em> された」のような)。適切な通知とバインディングを実装すれば、ListView の差分更新が可能です（面倒ですが）。</p>
+<h1 id="%E5%8F%82%E8%80%83">参考 <a class="direct-link" href="#%E5%8F%82%E8%80%83">#</a></h1>
+<ul>
+<li><a href="http://ugaya40.hateblo.jp/entry/model-mistake">MVVMのModelにまつわる誤解 - the sea of fertility</a></li>
+<li><a href="http://www.moonmile.net/blog/archives/7627">JXUG で話した MVVM の活用の解説を ｜ Moonmile Solutions Blog</a> - タイマを View/ViewModel/Model に持つそれぞれの理由が解説されています。</li>
+<li><a href="http://qiita.com/hide92795/items/f7205c8171826cc2153b">RxJava - Rxで知っておくと便利なSubjectたち - Qiita</a></li>
+<li><a href="http://qiita.com/amay077/items/4bb6b09a1911b074f50c">RxJava - Hot Observable と ConnectableObservable について - Qiita</a></li>
+</ul>
+
+
+published at <time class="postlist-date" datetime="2015-12-24">24 Dec 2015</time>
+
+tags: 
+
+  <a href="/tags/RxJava/" class="post-tag">RxJava</a>
+  <a href="/tags/Android/" class="post-tag">Android</a>
+  <a href="/tags/ReactiveX/" class="post-tag">ReactiveX</a>
+  <a href="/tags/MVVM/" class="post-tag">MVVM</a>
+  <a href="/tags/Xamarin/" class="post-tag">Xamarin</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2016-01-16-misunderstood-task-to-observable-conversion/">Task→Observable 変換でハマったこと</a></li><li>Previous: <a href="/posts/2015-12-17-about-hot-observable-and-connectableobservable/">Hot Observable と ConnectableObservable について</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2015-12-24-creating-stopwatchapp-using-rxjava-and-mvvm-patternn/ -->
+  </body>
+</html>

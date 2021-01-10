@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapbox GL JS の描画の仕組み</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Mapbox GL JS の描画の仕組み</h1>
+
+<p>ベクトルタイルと言えば MapBox、MapBox といえば ベクトルタイル。</p>
+<!--more-->
+<p>というわけで、以前こんな↓記事を書きました。</p>
+<ul>
+<li><a href="https://qiita.com/amay077/items/5b2cbde9e06184166f35">Mapbox GL JS をデバッグするまで - Qiita</a></li>
+</ul>
+<p>Google Maps や Apple のマップアプリでは、もはや自然にベクトルタイルが採用されているわｋですが、あれらは当然ながらプロプライエタリ・ソフトウェアであり、ソースは公開されていません。</p>
+<p>MapBox は多くのソースコードを公開してくれていて、プログラマにはありがたいかぎりです。</p>
+<ul>
+<li><a href="https://github.com/mapbox">Mapbox - github</a></li>
+</ul>
+<p>最近では、Android 向け Google Maps で、Web版のような「<a href="http://appllio.com/google-maps-embedded-two-fingers-touch-scroll">２本指スクロール</a>」を実現しようとしたのですが、Google Maps SDK にはそのような機能はないので、 <a href="https://github.com/mapbox/mapbox-gl-native/tree/master/platform/android/MapboxGLAndroidSDK/src/main/java/com/almeros/android/multitouch/gesturedetectors">MapBox のソースコード</a>を一部改造して実現してみたり。</p>
+<h2 id="mapbox-gl-js-%E3%81%AE%E6%8F%8F%E7%94%BB%E5%87%A6%E7%90%86%E3%82%92%E8%BF%BD%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">MapBox GL JS の描画処理を追ってみる <a class="direct-link" href="#mapbox-gl-js-%E3%81%AE%E6%8F%8F%E7%94%BB%E5%87%A6%E7%90%86%E3%82%92%E8%BF%BD%E3%81%A3%E3%81%A6%E3%81%BF%E3%82%8B">#</a></h2>
+<p>ということで、前回デバッグ環境を作ったので、今回は地図の描画処理を追ってみたいと思います。<br>
+描画のアルゴリズム自体は、必ずしもベクトルタイル特有のものではありませんが、その高速な描画処理は、他へも活かせるノウハウであると思っています。</p>
+<p>さて、いろいろすっ飛ばして本題に入りますが、描画に係る主要なソースコードは <a href="https://github.com/mapbox/mapbox-gl-js/tree/master/src">./src</a> ディレクトリに点在しています。主な登場人物は、次のとおりです。</p>
+<ul>
+<li>Mapbox</li>
+<li>Tile</li>
+<li>Bucket</li>
+<li>Layer</li>
+<li>Painter</li>
+<li>WebGL</li>
+</ul>
+<p><code>Mapbox</code> は、画面に張り付いている「ビュー」です。<br>
+<code>Tile</code> はみなさんご存知の「タイル」です。データはほとんど保持していなくて空間インデックスで使われる概念的なものです。<br>
+<code>Bucket</code> が、<code>Tile</code> のデータを表す存在です。<a href="https://qiita.com/hfu/items/69fbe24be92654f634da">前日の記事</a>で @hfu さんが言われている <code>.mvt</code> や <code>.pbf</code> のようなベクトルタイルファイルそのものと言ってもよいです。<br>
+<code>Layer</code> はGISでおなじみの地図のレイヤですが、GISでのレイヤほど縛りが強くないというか、地物に付いているタグのような印象を受けました（外しているかもです）。<br>
+<code>Painter</code> は「描画者」で、実際に「WebGL」を使って<code>Bucket</code>のデータを描画するのが仕事です。<br>
+そして WebGL が描画に使用されています。</p>
+<p>これらの仕事をシーケンス図風に乱暴に描くと次のようになります。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/2b056303-f802-4eee-6316-9753d5ae41dd.png" alt="image.png"></p>
+<ol>
+<li>ユーザーの操作などで地図の表示範囲が変更されると、その範囲に触れる <code>Tile</code> 群を計算して得ます。</li>
+<li>得られた <code>Tile</code> 群のデータをロードします。これは即ち <code>.mvt</code> ファイルをダウンロードして読み込み、内容を <code>Bucket</code> に変換することです。ここで WebGL ならではの重要なことは、図形の座標データの実体は <code>Bucket</code> が持つのではなく、WebGL の（<strong>GPU上の</strong>）「頂点バッファ」と呼ばれる領域にコピーすることです。そして <code>Bucket</code> は、各図形の座標群として、この「頂点バッファへのインデックス」を持ちます。</li>
+<li><code>Bucket</code> のロードは非同期で行われるため、ロードが完了したときに Mapbox 側に通知を出し、再描画を促します。</li>
+<li><code>Mapbox</code> の描画命令が呼ばれると、ロード済みの <code>Tile</code> 群が対象になります。</li>
+<li><code>Mapbox</code> は <code>Painter</code> に <code>Tile</code> の描画を依頼します。</li>
+<li><code>Painter</code> は、<code>Layer</code> から描画に必要なスタイル情報を得て、それを使用し <code>Tile</code> 内のすべての図形を WebGL を使って描画します。座標データはすでに GPU の頂点バッファにあります。ただしこれは画面座標ではなく、タイル内の相対座標?なので、画面座標へ変換して描画します。この変換処理も WebGL で、つまり GPU で行わせています。</li>
+</ol>
+<p>このように、GISのライブラリを作ったことがある人ならば、普通のシーケンスであると思われるでしょう。<br>
+ただ 「WebGL を使う＝GPUの性能をフル活用する」ための工夫が見られます。再度抜き出すと次のようになります。</p>
+<ul>
+<li>データの実体を GPU 上に持ち、ムダなコピーを持たない</li>
+<li>座標変換などの計算もなるべく GPU にやらせる</li>
+</ul>
+<p>これらのノウハウは、ガチな描画系のプログラムを描く人には常識でも、私のような「にわか」には得られてよかったことです。</p>
+<p>例えば GIS アプリケーションで必要な「投影法」や「座標系」などの変換を、GPU に行わせることはできないだろうかという興味が湧いてきます。<br>
+それがデータ変換プログラムなら、変換にかかる時間が短くなることが期待できるし、QGIS のようなデスクトップアプリならば、オンザフライでの投影法変換を行ってもサクサクと動くかも知れません。</p>
+<p>今後もベクトルタイルならびに MapBox GL JS/Native の理解を進めて、C# に移植してみたいというのが目下の大きな関心ごとのひとつです。</p>
+<h2 id="%E3%81%9D%E3%82%82%E3%81%9D%E3%82%82%E5%9B%B3%E5%BD%A2%E6%95%B0%E3%81%8C%E5%B0%91%E3%81%AA%E3%81%84%E3%81%AE%E3%81%A7%E3%81%AF%E3%81%AA%E3%81%84%E3%81%8B%E8%AA%AC">そもそも図形数が少ないのではないか説 <a class="direct-link" href="#%E3%81%9D%E3%82%82%E3%81%9D%E3%82%82%E5%9B%B3%E5%BD%A2%E6%95%B0%E3%81%8C%E5%B0%91%E3%81%AA%E3%81%84%E3%81%AE%E3%81%A7%E3%81%AF%E3%81%AA%E3%81%84%E3%81%8B%E8%AA%AC">#</a></h2>
+<p>おまけです。</p>
+<p>ソースコードを対象改造して、描画した図形の数をカウントしてみたところ、下図の見た目で <strong>約4500個</strong> でした。ホントかなあ(もっと多そう)という感じがしますが、美麗なスタイルのせいで精度が高い＝図形数が多いと錯覚させるのかも知れません。</p>
+<p><img src="https://qiita-image-store.s3.amazonaws.com/0/8227/aeb62af8-6a9c-1bc6-c9c7-8a60d27a6f7b.png" alt="image004.png"></p>
+
+
+published at <time class="postlist-date" datetime="2017-12-19">19 Dec 2017</time>
+
+tags: 
+
+  <a href="/tags/JavaScript/" class="post-tag">JavaScript</a>
+  <a href="/tags/geo/" class="post-tag">geo</a>
+  <a href="/tags/GIS/" class="post-tag">GIS</a>
+  <a href="/tags/mapbox/" class="post-tag">mapbox</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2018-01-27-542f1bf5ba5bc0b85b84/">MonoDevelop をビルドするまで on macOS</a></li><li>Previous: <a href="/posts/2017-12-10-f8ddea2324cc7d149969/">PowerShell の既定の配色がキツ過ぎたので変えてみた</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-12-19-314732b049aaa810750a/ -->
+  </body>
+</html>

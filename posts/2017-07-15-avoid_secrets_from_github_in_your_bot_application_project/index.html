@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Bot Application のソースコードを GitHub で公開する時に秘匿情報を含めない方法</h1>
+
+<p>別に Bot Application に限った話ではないのですけどね。</p>
+<!--more-->
+<p>Microsoft の Bot Framework を使った Bot Application の作成方法は、いくつかWebで公開されていますが、それらに沿って作成したソースコードを GitHub などの誰でも閲覧できるリポジトリで管理・公開すると、本来公開すべきでない以下の情報が含まれてしまいます。</p>
+<ul>
+<li>Bot Directory へ登録する際に発行される「Bot ID」, 「App ID」, 「App Password」</li>
+<li>Azure へ発行する際の設定情報</li>
+</ul>
+<p>これらをソースコード管理に含めないようにする方法を紹介します。</p>
+<h2 id="%E3%80%8Cbot-id%E3%80%8D%2C-%E3%80%8Capp-id%E3%80%8D%2C-%E3%80%8Capp-password%E3%80%8D-%E3%82%92%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E7%AE%A1%E7%90%86%E3%81%AB%E5%90%AB%E3%82%81%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B">「Bot ID」, 「App ID」, 「App Password」 をソースコード管理に含めないようにする <a class="direct-link" href="#%E3%80%8Cbot-id%E3%80%8D%2C-%E3%80%8Capp-id%E3%80%8D%2C-%E3%80%8Capp-password%E3%80%8D-%E3%82%92%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E7%AE%A1%E7%90%86%E3%81%AB%E5%90%AB%E3%82%81%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B">#</a></h2>
+<p>たとえば、</p>
+<ul>
+<li><a href="https://blogs.msdn.microsoft.com/bluesky/2016/11/15/5-step-tutorial-smilescorebot-bot-framework-cognitive-services-ja/">5ステップでズバリ！笑顔判定BOT を作成しよう by Microsoft Bot Framework and Cognitive Services – 青い空の向こうへ</a></li>
+</ul>
+<p>では、BotのIDやパスワードなどを、<code>Web.config</code> の <code>&lt;app key=&quot;BotId&quot;</code> などに設定するよう書かれています。<br>
+実際プロジェクト作成直後の <code>Web.config</code> を見ても &quot;YourBotID&quot; などと書かれており、「ここに書くのが当然」感を醸し出しています。これがよくない！</p>
+<pre class="language-xml"><code class="language-xml"><span class="token comment">&lt;!-- Web.config --></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appsettings</span><span class="token punctuation">></span></span><br>    <span class="token comment">&lt;!-- update these with your BotId, Microsoft App Id and your Microsoft App Password--></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>BotId<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>YourBotID<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>MicrosoftAppId<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span><span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>MicrosoftAppPassword<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span><span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>    <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appsettings</span><span class="token punctuation">></span></span><br>: (略)</code></pre>
+<p><code>Web.config</code> 及び <code>Web.Debug.config</code>, <code>Web.Release.config</code> は、 <a href="http://ASP.NET">ASP.NET</a> の Webアプリケーションに関する設定を記述するもので、ソースコード管理に含めるべき情報です。<br>
+<strong>ここにIDやパスワードを記述してはいけません</strong></p>
+<p>ではどこに記述するかというと、</p>
+<ul>
+<li><a href="http://devadjust.exblog.jp/20400427/">ASP.NET Web アプリで、APIキーなどの &quot;秘密のキー&quot; をどこに保存するべきか? : @jsakamoto</a></li>
+</ul>
+<p>で紹介されている方法を使って、別のファイルに逃します。</p>
+<p>具体的には、</p>
+<ol>
+<li>新たに <code>Web.local.config</code> というファイル（ファイル名は何でもよい）をプロジェクトに追加し、秘匿情報を含む XML のブロックはそちらに記述する</li>
+<li><code>Web.config</code> に上記ファイルへの参照を記述する</li>
+</ol>
+<p>とします。</p>
+<p><code>Web.local.config</code> は、 <code>Web.config</code> などと同じディレクトリに追加し、ビルドアクションを「コンテンツ」とします。</p>
+<p><img src="/img/posts/avoid_secrets_from_github_in_your_bot_application_project_01.png" alt=""></p>
+<p><code>Web.local.config</code> の内容は以下です。</p>
+<pre class="language-xml"><code class="language-xml"><span class="token comment">&lt;!-- Web.local.config --></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appSettings</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>BotId<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>＜あならのBOTID＞<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>MicrosoftAppId<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>＜あなたのMicrosoftAppId＞<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>add</span> <span class="token attr-name">key</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>MicrosoftAppPassword<span class="token punctuation">"</span></span> <span class="token attr-name">value</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>＜あなたのMicrosoftAppPassword＞<span class="token punctuation">"</span></span> <span class="token punctuation">/></span></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appSettings</span><span class="token punctuation">></span></span></code></pre>
+<p><code>Web.config</code> に記述していた <code>&lt;appSettings&gt;</code> 要素を切り出してきた感じですね。</p>
+<p>そして、 <code>Web.config</code> を次のように修正します。</p>
+<pre class="language-xml"><code class="language-xml"><span class="token comment">&lt;!-- Web.config --></span><br><span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>configuration</span><span class="token punctuation">></span></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;</span>appSettings</span> <span class="token attr-name">file</span><span class="token attr-value"><span class="token punctuation attr-equals">=</span><span class="token punctuation">"</span>Web.local.config<span class="token punctuation">"</span></span><span class="token punctuation">></span></span><br>    <span class="token comment">&lt;!-- 秘匿でない設定情報があればここに書く --></span><br>  <span class="token tag"><span class="token tag"><span class="token punctuation">&lt;/</span>appSettings</span><span class="token punctuation">></span></span><br>: (略)</code></pre>
+<p><code>&lt;appSettings file=&quot;Web.local.config&quot;&gt;</code> と記述することで、<code>Web.local.config</code> の内容をここに注入できます。</p>
+<p>あとは <code>Web.local.config</code> を <code>.gitignore</code> に追加するなどしてソースコード管理対象から除外します。<br>
+<code>Web.local.config</code> が存在しなくてもビルドや実行はできるようですが、初見の人には不親切なので、 <code>README.md</code> で補足説明をしておくのがよいでしょう。</p>
+<h2 id="%E9%96%8B%E7%99%BA%E7%94%A8%E3%81%A8%E3%83%97%E3%83%AD%E3%83%80%E3%82%AF%E3%83%88%E7%94%A8%E3%81%A7-%E3%80%8Cbot-id%E3%80%8D%2C-%E3%80%8Capp-id%E3%80%8D%2C-%E3%80%8Capp-password%E3%80%8D-%E3%82%92%E5%88%87%E3%82%8A%E6%9B%BF%E3%81%88%E3%82%8B">開発用とプロダクト用で 「Bot ID」, 「App ID」, 「App Password」 を切り替える <a class="direct-link" href="#%E9%96%8B%E7%99%BA%E7%94%A8%E3%81%A8%E3%83%97%E3%83%AD%E3%83%80%E3%82%AF%E3%83%88%E7%94%A8%E3%81%A7-%E3%80%8Cbot-id%E3%80%8D%2C-%E3%80%8Capp-id%E3%80%8D%2C-%E3%80%8Capp-password%E3%80%8D-%E3%82%92%E5%88%87%E3%82%8A%E6%9B%BF%E3%81%88%E3%82%8B">#</a></h2>
+<p>前の手順で設定したID、パスワードなどは「開発用」の情報です。<br>
+Azureに配置した本番環境では、別のID、パスワードを使用したいケースは普通にあります。<br>
+本番環境の設定はAzureポータルから行えます。</p>
+<p><img src="/img/posts/avoid_secrets_from_github_in_your_bot_application_project_02.png" alt=""></p>
+<p>この図のように、</p>
+<ol>
+<li>Azure ポータル（<a href="https://portal.azure.com/%EF%BC%89">https://portal.azure.com/）</a> で、配布した Bot Application（App Service） を開き、さらに「アプリケーション設定」を開きます</li>
+<li>「アプリ設定」で、 本番用の「Bot ID」, 「App ID」, 「App Password」を追加します</li>
+<li>最後に「保存」を押します</li>
+</ol>
+<p>ここで設定した内容は、配布した <code>Web.config</code> にある <code>&lt;appSettings&gt;</code> の内容を上書きします。</p>
+<h2 id="azure-%E3%81%B8%E7%99%BA%E8%A1%8C%E3%81%99%E3%82%8B%E9%9A%9B%E3%81%AE%E8%A8%AD%E5%AE%9A%E6%83%85%E5%A0%B1%E3%82%92%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E7%AE%A1%E7%90%86%E3%81%AB%E5%90%AB%E3%82%81%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B">Azure へ発行する際の設定情報をソースコード管理に含めないようにする <a class="direct-link" href="#azure-%E3%81%B8%E7%99%BA%E8%A1%8C%E3%81%99%E3%82%8B%E9%9A%9B%E3%81%AE%E8%A8%AD%E5%AE%9A%E6%83%85%E5%A0%B1%E3%82%92%E3%82%BD%E3%83%BC%E3%82%B9%E3%82%B3%E3%83%BC%E3%83%89%E7%AE%A1%E7%90%86%E3%81%AB%E5%90%AB%E3%82%81%E3%81%AA%E3%81%84%E3%82%88%E3%81%86%E3%81%AB%E3%81%99%E3%82%8B">#</a></h2>
+<p>Visual Studio 2017 は、IDE から Azure への発行ができてとても便利なのですが、発行のための情報も保持してしまうので、その際の情報もソースコード管理に含めるべきではありません。</p>
+<p><img src="/img/posts/avoid_secrets_from_github_in_your_bot_application_project_03.png" alt=""></p>
+<p>これらの情報はプロジェクトのディレクトリの <code>Properties\PublishProfiles</code> というサブディレクトリに、 <code>*.pubxml</code>, <code>*.pubxml.user</code> というファイル名で保存されるようなので、このディレクトリ毎、あるいは個別のファイルを <code>.gitignore</code> に追加すればよいです。</p>
+<h2 id="%E3%81%BE%E3%81%A8%E3%82%81">まとめ <a class="direct-link" href="#%E3%81%BE%E3%81%A8%E3%82%81">#</a></h2>
+<ul>
+<li><code>Web.config</code> には秘匿情報を書かない</li>
+<li><code>Web.local.config</code> を作って、そちらに書く、このファイルはソースコード管理しない</li>
+<li>本番用のIDやパスワードはAzureポータルで設定する</li>
+<li>Azureへ発行する際の設定情報もソースコード管理しない</li>
+</ul>
+<p>結果、 <code>.gitignore</code> に次の２行を追加するとよいです。</p>
+<pre class="language-bash"><code class="language-bash"><span class="token comment"># .gitignore</span><br>＜省略＞<br><br>*.local.config<br>PublishProfiles/</code></pre>
+<p>手前味噌ですが、上記以外の <code>.gitignore</code> の設定は <a href="https://www.gitignore.io/">https://www.gitignore.io/</a> で &quot;VisualStudio&quot; と検索して生成されるものを使用すると便利です（上の2行が含まれているわけではありません）。</p>
+
+
+published at <time class="postlist-date" datetime="2017-07-15">15 Jul 2017</time>
+
+tags: 
+
+  <a href="/tags/BotFramework/" class="post-tag">BotFramework</a>
+  <a href="/tags/C#/" class="post-tag">C#</a>
+  <a href="/tags/.NET/" class="post-tag">.NET</a>
+  <a href="/tags/ASP.NET/" class="post-tag">ASP.NET</a>
+  <a href="/tags/VisualStudio/" class="post-tag">VisualStudio</a>
+
+<hr>
+<ul><li>Next: <a href="/posts/2017-07-18-how_to_troubleshoots_about_xamarin_programming/">Xamarin を使用したアプリ開発での、問題解決の方法</a></li><li>Previous: <a href="/posts/2017-07-13-solution_created_vs4mac_does_not_running_on_vs2017/">Visual Studio for Mac で作ったプロジェクトを Visual Studio 2017 で実行する時気をつけること</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2017-07-15-avoid_secrets_from_github_in_your_bot_application_project/ -->
+  </body>
+</html>
