@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Csharp + ReactiveProperty vs Kotlin + RxProperty : Command 編</title>
+    <title>C# + ReactiveProperty vs Kotlin + RxProperty : Command 編</title>
     <meta name="description" content="Try and try again">
     <link rel="stylesheet" href="/css/index.css">
     <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
@@ -43,24 +43,24 @@
       </div>
       Stop deleting -->
 
-      <h1>Csharp + ReactiveProperty vs Kotlin + RxProperty : Command 編</h1>
+      <h1>C# + ReactiveProperty vs Kotlin + RxProperty : Command 編</h1>
 
 <p>ボタンを押したら、数値が１ずつ加算されていく、というやつの ViewModel 側</p>
 <!--more-->
-<h2 id="csharp-%2B-reactiveproperty-%E3%81%AE%E5%A0%B4%E5%90%88">Csharp + ReactiveProperty の場合 <a class="direct-link" href="#csharp-%2B-reactiveproperty-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
+<h2 id="c%23-%2B-reactiveproperty-%E3%81%AE%E5%A0%B4%E5%90%88">C# + ReactiveProperty の場合 <a class="direct-link" href="#c%23-%2B-reactiveproperty-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
 <p><code>Counter</code> がラベルにバインドする数値、 <code>Increment</code> がボタンにバインドするコマンド。</p>
 <pre class="language-csharp"><code class="language-csharp"><span class="token keyword">public</span> <span class="token keyword">class</span> <span class="token class-name">MainViewModel</span><br><span class="token punctuation">{</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span> Counter <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span> <span class="token operator">=</span> <span class="token keyword">new</span> <span class="token constructor-invocation class-name">ReactiveProperty<span class="token punctuation">&lt;</span><span class="token keyword">int</span><span class="token punctuation">></span></span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token keyword">public</span> <span class="token return-type class-name">ReactiveCommand</span> Increment <span class="token punctuation">{</span> <span class="token keyword">get</span><span class="token punctuation">;</span> <span class="token punctuation">}</span> <br><br>    <span class="token keyword">public</span> <span class="token function">MainViewModel</span><span class="token punctuation">(</span><span class="token punctuation">)</span><br>    <span class="token punctuation">{</span><br>        <span class="token comment">// Increment コマンドは、 Counter が 10 未満の間、使用可能</span><br>        Increment <span class="token operator">=</span> Counter<span class="token punctuation">.</span><span class="token function">Select</span><span class="token punctuation">(</span>x <span class="token operator">=></span> x <span class="token operator">&lt;</span> <span class="token number">10</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">ToReactiveCommand</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>        <span class="token comment">// Increment コマンドが実行されたら Counter を +1 してく</span><br>        Increment<span class="token punctuation">.</span><span class="token function">Subscribe</span><span class="token punctuation">(</span>x <span class="token operator">=></span> Counter<span class="token punctuation">.</span>Value <span class="token operator">=</span> Counter<span class="token punctuation">.</span>Value <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">;</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
 <h2 id="kotlin-%2B-rxproperty-%E3%81%AE%E5%A0%B4%E5%90%88">Kotlin + RxProperty の場合 <a class="direct-link" href="#kotlin-%2B-rxproperty-%E3%81%AE%E5%A0%B4%E5%90%88">#</a></h2>
 <p><code>counter</code> がラベルにバインドする数値、 <code>increment</code> がボタンにバインドするコマンド。</p>
 <pre class="language-kotlin"><code class="language-kotlin"><span class="token keyword">class</span> MainViewModel <span class="token punctuation">{</span><br>    <span class="token keyword">val</span> counter <span class="token operator">=</span> RxProperty<span class="token operator">&lt;</span>Int<span class="token operator">></span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">)</span><br><br>    <span class="token comment">// Increment コマンドは、 Counter が 10 未満の間、使用可能</span><br>    <span class="token keyword">val</span> increment <span class="token operator">=</span> RxCommand<span class="token operator">&lt;</span>Unit<span class="token operator">></span><span class="token punctuation">(</span>counter<span class="token punctuation">.</span><span class="token function">map</span> <span class="token punctuation">{</span> it <span class="token operator">&lt;</span> <span class="token number">10</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><span class="token punctuation">.</span><span class="token function">apply</span> <span class="token punctuation">{</span><br>        <span class="token comment">// Increment コマンドが実行されたら Counter を +1 してく</span><br>        <span class="token keyword">this</span><span class="token punctuation">.</span><span class="token function">subscribe</span><span class="token punctuation">(</span><span class="token punctuation">{</span> counter<span class="token punctuation">.</span><span class="token function">set</span><span class="token punctuation">(</span>counter<span class="token punctuation">.</span><span class="token function">get</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token operator">!!</span> <span class="token operator">+</span> <span class="token number">1</span><span class="token punctuation">)</span> <span class="token punctuation">}</span><span class="token punctuation">)</span><br>    <span class="token punctuation">}</span><br><span class="token punctuation">}</span></code></pre>
-<p>Csharp は言語の仕様？で、読み取り専用プロパティの定義のなかで他のプロパティを参照できない。のでコンストラクタに書く。</p>
+<p>C# は言語の仕様？で、読み取り専用プロパティの定義のなかで他のプロパティを参照できない。のでコンストラクタに書く。</p>
 <p>Kotlin はその辺のしがらみが少ないので、思った通りに書ける感じ。<br>
 さらに <code>.apply</code> 関数で Command の subscribe 処理も定義できるので、結果コンストラクタに書くことがなくなりました、スッキリ。</p>
 <p>Android + Kotlin な人は、 RxProperty もっと使っていきましょー</p>
 <ul>
 <li><a href="https://qiita.com/k-kagurazaka@github/items/3fc1fc19ea608cac9913">RxPropertyでRxJavaとAndroid Data Bindingを連携する - Qiita</a></li>
 </ul>
-<p>コードの短さだと Kotlin だし、この Csharp の <code>MainViewModel.cs</code> は、Xamarin(Android, iOS, Mac) や Windows など全部共通実装でいけちゃう。</p>
+<p>コードの短さだと Kotlin だし、この C# の <code>MainViewModel.cs</code> は、Xamarin(Android, iOS, Mac) や Windows など全部共通実装でいけちゃう。</p>
 <p>どちらも良い。</p>
 
 
@@ -69,7 +69,7 @@ published at <time class="postlist-date" datetime="2017-11-28">28 Nov 2017</time
 tags: 
 
   <a href="/tags/Android/" class="post-tag">Android</a>
-  <a href="/tags/Csharp/" class="post-tag">Csharp</a>
+  <a href="/tags/Csharp/" class="post-tag">C#</a>
   <a href="/tags/iOS/" class="post-tag">iOS</a>
   <a href="/tags/Kotlin/" class="post-tag">Kotlin</a>
 
