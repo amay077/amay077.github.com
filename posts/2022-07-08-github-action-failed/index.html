@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Actions で Permission denied (publickey) が出ていたので直した</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>GitHub Actions で Permission denied (publickey) が出ていたので直した</h1>
+
+<p>このブログは Github Pages でホストしていて、ソースの repo からホスト用の repo に GitHub Actions で push することでデプロイする仕組みになっている。</p>
+<p>久しぶりに更新してデプロイしたら GitHub Actions でエラーが出ていた。</p>
+<pre><code>##[debug]Evaluating condition for step: 'Run git clone -b master git@github.com:amay077/amay077.github.com.git data --depth 1'
+##[debug]Evaluating: success()
+##[debug]Evaluating success:
+##[debug]=&gt; true
+##[debug]Result: true
+##[debug]Starting: Run git clone -b master git@github.com:amay077/amay077.github.com.git data --depth 1
+##[debug]Loading inputs
+##[debug]Loading env
+Run git clone -b master git@github.com:amay077/amay077.github.com.git data --depth 1
+##[debug]/usr/bin/bash -e /home/runner/work/_temp/96d95386-4acf-402a-b18c-992e32501447.sh
+Cloning into 'data'...
+Warning: Permanently added the ECDSA host key for IP address xxx.xxx.xxx.xxx' to the list of known hosts.
+git@github.com: Permission denied (publickey).
+fatal: Could not read from remote repository.
+Please make sure you have the correct access rights
+and the repository exists.
+Error: Process completed with exit code 128.
+##[debug]Finishing: Run git clone -b master git@github.com:amay077/amay077.github.com.git data --depth 1
+</code></pre>
+<p>以下、これを解決するために行ったこと。</p>
+<ol>
+<li>自PCで ssh-keygen で <code>id_rsa</code> と <code>id_rsa.pub</code> を生成</li>
+<li>GitHub の Setting -&gt; SSH and GPG keys に <code>id_rsa.pub</code> の内容を貼り付けて追加（名前は何でも）
+<ul>
+<li>ここの登録が何も無かったから、過去に気が触れて消しちゃったんだと思う。</li>
+</ul>
+</li>
+<li>GitHub Actions の repo の Setting -&gt; Secrets -&gt; Actions にある SSH_KEY と SSH_KEY_PUBLIC を <code>id_rsa</code> と <code>id_rsa.pub</code> の内容で Update 。</li>
+<li>GitHub Actions を Re-run(failed jobs) を実行</li>
+<li>成功！</li>
+</ol>
+
+
+published at <time class="postlist-date" datetime="2022-07-08">08 Jul 2022</time>
+
+tags: 
+
+  <a href="/tags/GitHub/" class="post-tag">GitHub</a>
+  <a href="/tags/GitHub Actions/" class="post-tag">GitHub Actions</a>
+
+<hr>
+<ul><li>Previous: <a href="/posts/2021-01-12-moved_to_eleventy/">Jekyll から Eleventy に移行した</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2022-07-08-github-action-failed/ -->
+  </body>
+</html>
