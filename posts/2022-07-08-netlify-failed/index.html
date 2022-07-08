@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Netlify でも Permission denied (publickey) が出ていたので直した</title>
+    <meta name="description" content="Try and try again">
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/prism-base16-monokai.dark.css">
+    <link rel="alternate" href="/feed/feed.xml" type="application/atom+xml" title="Experiments Never Fail">
+    <link rel="alternate" href="/feed/feed.json" type="application/json" title="Experiments Never Fail">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-224332-7"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'UA-224332-7');
+    </script>
+  </head>
+  <body>
+    <header>
+      <h1 class="home"><a href="/">Experiments Never Fail</a></h1>
+      <ul class="nav">
+        <li class="nav-item"><a href="/">Home</a></li>
+        <li class="nav-item"><a href="/posts/">Archive</a></li>
+        <li class="nav-item"><a href="/about/">About Me</a></li>
+      </ul>
+    </header>
+
+    <main class="tmpl-post">
+
+      <!-- Delete this message 
+      <div class="warning">
+        <ol>
+          <li>Edit the <code>_data/metadata.json</code> with your blog’s information.</li>
+          <li>(Optional) Edit <code>.eleventy.js</code> with your <a href="https://www.11ty.dev/docs/config/">configuration preferences</a>.</li>
+          <li>Delete this message from <code>_includes/layouts/base.njk</code>.</li>
+        </ol>
+        <p><em>This is an <a href="https://www.11ty.dev/">Eleventy project</a> created from the <a href="https://github.com/11ty/eleventy-base-blog"><code>eleventy-base-blog</code> repo</a>.</em></p>
+      </div>
+      Stop deleting -->
+
+      <h1>Netlify でも Permission denied (publickey) が出ていたので直した</h1>
+
+<p>このブログは Github Pages でホストしているといったな、あれはウソだ。<br>
+実際には、Netlify とも連動させていて、ドメイン管理共々 Netlify の CDN でホスティングされている。</p>
+<p>で、久しぶりに更新してデプロイしたら GitHub Actions に続いて Netlify でもエラーが出ていた。</p>
+<h2 id="%E3%82%A8%E3%83%A9%E3%83%BC1%3A-build-image-no-longer-supported">エラー1: Build image no longer supported <a class="direct-link" href="#%E3%82%A8%E3%83%A9%E3%83%BC1%3A-build-image-no-longer-supported">#</a></h2>
+<pre><code>10:01:49 AM: Build ready to start
+10:01:50 AM: ---------------------------------------------------------------------
+  UNSUPPORTED BUILD IMAGE
+
+  The build image for this site uses Ubuntu 14.04 Trusty Tahr, which is no longer supported.
+
+  To enable builds for this site, select a later build image at the following link:
+  https://app.netlify.com/sites/geologist-bells-42765/settings/deploys#build-image-selection
+
+  For more details, visit the build image migration guide:
+  https://answers.netlify.com/t/end-of-support-for-trusty-build-image-everything-you-need-to-know/39004
+  ---------------------------------------------------------------------
+</code></pre>
+<p>Site settings -&gt; Build &amp; Deploy -&gt; Continuous Deployment の Build image selection で &quot;Ubuntu Focal 20.04&quot; を選択して解決。</p>
+<p>これで Retry すると次のエラー。</p>
+<h2 id="%E3%82%A8%E3%83%A9%E3%83%BC2%3A-git%40github.com%3A-permission-denied-(publickey).">エラー2: <a href="mailto:git@github.com">git@github.com</a>: Permission denied (publickey). <a class="direct-link" href="#%E3%82%A8%E3%83%A9%E3%83%BC2%3A-git%40github.com%3A-permission-denied-(publickey).">#</a></h2>
+<p>またか。</p>
+<pre><code>WARNING: Your site had a deprecated version of Ruby pinned (2.3.6), which is incompatible with this
+build image. This build image only supports 2.4.x and later. We changed it to 2.7.2.
+
+To learn how to set a custom Ruby version, visit the following link:
+https://docs.netlify.com/configure-builds/manage-dependencies/#ruby
+
+If you set a custom Ruby version lower than 2.4.x, you will need to select a different build image (Ubuntu Xenial 16.04).
+The current build image only supports 2.4.x and later. You can select a different build image at the following link:
+https://app.netlify.com/sites/geologist-bells-42765/settings/deploys#build-image-selection
+---------------------------------------------------------------------
+10:05:09 AM: build-image version: 0e2f4c52031ab562db66aec633308326e3b108d0 (focal)
+10:05:09 AM: build-image tag: focal
+10:05:09 AM: buildbot version: ed990b4b6588208e959ba45b6b7b05738f8b6004
+10:05:09 AM: Fetching cached dependencies
+10:05:09 AM: Failed to fetch cache, continuing with build
+10:05:09 AM: Starting to prepare the repo for build
+10:05:09 AM: User git error while checking for ref refs/heads/master
+10:05:09 AM: Creating deploy upload records
+10:05:09 AM: Failing build: Failed to prepare repo
+10:05:09 AM: Failed during stage 'preparing repo': error checking for ref: Warning: Permanently added 'github.com' (ECDSA) to the list of known hosts.
+
+git@github.com: Permission denied (publickey).
+
+fatal: Could not read from remote repository.
+
+Please make sure you have the correct access rights
+and the repository exists.
+: exit status 128
+10:05:09 AM: Finished processing build request in 829.555573ms
+</code></pre>
+<p>以下、これを解決するために行ったこと。</p>
+<ol>
+<li>Site settings -&gt; Build &amp; Deploy -&gt; Deploy key に <code>ssh-rsa ...</code> な公開鍵が載っているので、これをコピー</li>
+<li>GitHub の Setting -&gt; SSH and GPG keys に追加して貼り付け（名前は何でもよいが Netlify とでもしておく）
+<ul>
+<li>ここの登録が何も無かったから、過去に気が触れて消しちゃったんだと思うII。</li>
+</ul>
+</li>
+<li>Netlify で Retry</li>
+<li>成功！</li>
+</ol>
+<p>ただし、↑の方法だと Netlify に GitHub の My repo's へのフルアクセスを提供していそうなので、<br>
+<a href="https://docs.netlify.com/configure-builds/repo-permissions-linking/?_ga=2.59853678.25272126.1657242224-795194358.1657242224#access-other-repositories-at-build">Repository permissions and linking | Netlify Docs</a><br>
+に書かれているように Read-only な Personal access token を作成して、それを使った方が良いのかも知れない。</p>
+
+
+published at <time class="postlist-date" datetime="2022-07-08">08 Jul 2022</time>
+
+tags: 
+
+  <a href="/tags/Netlify/" class="post-tag">Netlify</a>
+  <a href="/tags/GitHub/" class="post-tag">GitHub</a>
+
+<hr>
+<ul><li>Previous: <a href="/posts/2022-07-08-github-action-failed/">GitHub Actions で Permission denied (publickey) が出ていたので直した</a></li>
+</ul>
+
+    </main>
+
+    <footer></footer>
+
+    <!-- Current page: /posts/2022-07-08-netlify-failed/ -->
+  </body>
+</html>
